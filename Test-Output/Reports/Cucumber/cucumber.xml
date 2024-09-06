@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Cucumber" time="15.527" tests="1" skipped="0" failures="0" errors="0">
+<testcase classname="Search" name="Verify Search result updated according to the applied Sorting manner" time="15.303">
+<system-out><![CDATA[
+Given The user is on the homepage...........................................passed
+Given The search results are displayed......................................passed
+When the user chooses to sort the results (eg price)........................passed
+Then the search results should be sorted accordingly........................passed
+]]></system-out>
+</testcase>
+</testsuite>

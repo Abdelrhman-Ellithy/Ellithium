@@ -1,0 +1,38 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="UI Cross Browser Testing and API" verbose="1" data-provider-thread-count="3" >
+                <test name="API " parallel="methods">
+                      <classes>
+                           <class name="API.DetailsTests"/>
+<!--                           <class name="API.PopularTests"/>-->
+<!--                           <class name="API.SearchTest"/>-->
+                      </classes>
+                 </test>
+
+                   <test name="UI Cross Browser Chrome">
+                       <parameter name="BrowserName" value="Chrome"/>
+                       <parameter name="HeadlessMode" value="false"/>
+                       <parameter name="PageLoadStrategy" value="Eager"/>
+                       <classes>
+                           <class name="UI.TestRunner.Runner"/>
+                       </classes>
+                   </test>
+
+<!--          <test name="UI Cross Browser Edge">-->
+<!--              <parameter name="BrowserName" value="Edge"/>-->
+<!--              <parameter name="HeadlessMode" value="False"/>-->
+<!--              <parameter name="PageLoadStrategy" value="Eager"/>-->
+<!--              <classes>-->
+<!--                  <class name="UI.TestRunner.Runner"/>-->
+<!--              </classes>-->
+<!--          </test>-->
+
+<!--      <test name="UI Cross Browser FireFox">-->
+<!--          <parameter name="BrowserName" value="FireFox"/>-->
+<!--          <parameter name="HeadlessMode" value="False"/>-->
+<!--          <parameter name="PageLoadStrategy" value="Eager"/>-->
+<!--          <classes>-->
+<!--              <class name="UI.TestRunner.Runner"/>-->
+<!--          </classes>-->
+<!--      </test>-->
+
+</suite>
