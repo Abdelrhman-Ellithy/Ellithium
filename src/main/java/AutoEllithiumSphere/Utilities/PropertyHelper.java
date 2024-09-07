@@ -14,10 +14,10 @@ public class PropertyHelper extends DataUtils {
         }
         return prop.getProperty(key);
     }
-    public static String getDataFromProperties(String FilePath,String fileName,  String key) {
+    public static String getDataFromProperties(String FilePath,  String key) {
         Properties prop = new Properties();
         try {
-            prop.load(new FileInputStream(FilePath +File.pathSeparator+ fileName+".properties"));
+            prop.load(new FileInputStream(FilePath +".properties"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
