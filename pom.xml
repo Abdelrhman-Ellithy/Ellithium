@@ -40,7 +40,7 @@
     <distributionManagement>
         <repository>
             <id>github</id>
-            <name>GitHub AutoEllithiumSphere Apache Maven Packages</name>
+            <name>GitHub Abdelrhman-Ellithy Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</url>
         </repository>
     </distributionManagement>
@@ -157,6 +157,12 @@
             <artifactId>rest-assured</artifactId>
             <version>${restversion}</version>
             <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.0.0-M1</version>
         </dependency>
 
     </dependencies>
