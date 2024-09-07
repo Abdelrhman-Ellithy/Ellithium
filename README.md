@@ -1,5 +1,11 @@
 # 🌀 AutoEllithiumSphere
-
+<table border="0" align="center">
+ <tr>
+  <td colspan="3" align="center">
+   <a href="https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/" target="_blank"><img width="600" alt="SHAFT_ENGINE" src="src\main\resources\logo\AutoEllithiumSphere.png"></a>
+  </td>
+ </tr>
+</table>
 ## **Enhanced Test Automation Framework for UI, API Tests**
 
 **AutoEllithiumSphere** is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process. Leveraging tools such as **TestNG**, **Cucumber**, **Rest Assured**, and others, it provides an end-to-end solution for automated testing. With support for **BDD**, **cross-browser testing**, **parallel execution**, **headless testing**, and detailed **Allure reporting**, AutoEllithiumSphere aims to make your test automation faster, more reliable, and easier to maintain.
