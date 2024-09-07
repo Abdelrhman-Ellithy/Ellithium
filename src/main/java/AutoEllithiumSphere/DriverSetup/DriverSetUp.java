@@ -11,16 +11,16 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 
 public class DriverSetUp {
     // Private method to configure browser options and return the WebDriver instance
-    public static WebDriver setupLocalDriver(String browserName, String headlessMode, String PageLoadStrategy) {
-        switch (browserName) {
+    public static WebDriver setupLocalDriver(String browserName, String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
+        switch (browserName.toLowerCase()) {
             case "chrome":
-                ChromeOptions chromeOptions = configureChromeOptions(headlessMode, PageLoadStrategy);
+                ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new ChromeDriver(chromeOptions);
             case "firefox":
-                FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, PageLoadStrategy);
+                FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new FirefoxDriver(firefoxOptions);
             case "edge":
-                EdgeOptions edgeOptions = configureEdgeOptions(headlessMode,PageLoadStrategy);
+                EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new EdgeDriver(edgeOptions);
             default:
                 throw new IllegalArgumentException("Invalid browser: " + browserName);
@@ -28,52 +28,75 @@ public class DriverSetUp {
     }
 
     // Configure Chrome options
-    private static ChromeOptions configureChromeOptions(String headlessMode,String pageLoadStrategy) {
+    private static ChromeOptions configureChromeOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
         ChromeOptions chromeOptions = new ChromeOptions();
-        if ("true".equals(headlessMode)) {
+        if ("true".equalsIgnoreCase(headlessMode)) {
             chromeOptions.addArguments("--headless");
         }
-        if ("eager".equals(pageLoadStrategy)){
+        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
             chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        chromeOptions.addArguments("--incognito");
-        chromeOptions.addArguments("--no-sandbox");
+        if ("true".equalsIgnoreCase(privateMode)) {
+            chromeOptions.addArguments("--incognito");
+        }
+        if ("false".equalsIgnoreCase(sandboxMode)) {
+            chromeOptions.addArguments("--no-sandbox");
+        }
+        if ("false".equalsIgnoreCase(webSecurityMode)) {
+            chromeOptions.addArguments("--disable-web-security");
+            chromeOptions.addArguments("--allow-running-insecure-content");
+        }
+        // Other common options
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--remote-allow-origins=*");
         chromeOptions.addArguments("--ignore-certificate-errors");
-        chromeOptions.addArguments("--allow-running-insecure-content");
-       // chromeOptions.addArguments("--disable-search-engine-choice-screen");
-       // chromeOptions.addArguments("--disable-features=OptimizationGuideModelDownloading,OptimizationHintsFetching,OptimizationTargetPrediction,OptimizationHints");
         return chromeOptions;
     }
 
     // Configure Firefox options
-    private static FirefoxOptions configureFirefoxOptions(String headlessMode,String pageLoadStrategy) {
+    private static FirefoxOptions configureFirefoxOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
-        if ("true".equals(headlessMode)) {
+        if ("true".equalsIgnoreCase(headlessMode)) {
             firefoxOptions.addArguments("--headless");
         }
-        if ("eager".equals(pageLoadStrategy)){
+        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
             firefoxOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        firefoxOptions.addArguments("--private");  // Firefox private mode
-        firefoxOptions.addArguments("--no-sandbox");  // Equivalent to Chrome's no-sandbox
-        firefoxOptions.addArguments("--disable-dev-shm-usage");  // Solve resource problems
+        if ("true".equalsIgnoreCase(privateMode)) {
+            firefoxOptions.addArguments("--private");
+        }
+        if ("false".equalsIgnoreCase(sandboxMode)) {
+            firefoxOptions.addArguments("--no-sandbox");
+        }
+        if ("false".equalsIgnoreCase(webSecurityMode)) {
+            firefoxOptions.addPreference("security.mixed_content.block_active_content", false);
+        }
+        // Other common options
+        firefoxOptions.addArguments("--disable-dev-shm-usage");
         return firefoxOptions;
     }
 
     // Configure Edge options
-    private static EdgeOptions configureEdgeOptions(String headlessMode,String pageLoadStrategy) {
+    private static EdgeOptions configureEdgeOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
         EdgeOptions edgeOptions = new EdgeOptions();
-        if ("true".equals(headlessMode)) {
+        if ("true".equalsIgnoreCase(headlessMode)) {
             edgeOptions.addArguments("--headless");
         }
-        if ("eager".equals(pageLoadStrategy)){
+        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
             edgeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        edgeOptions.addArguments("--inprivate");  // Edge inprivate mode
-        edgeOptions.addArguments("--no-sandbox");  // Equivalent to Chrome's no-sandbox
-        edgeOptions.addArguments("--disable-dev-shm-usage");  // Solve resource problems
+        if ("true".equalsIgnoreCase(privateMode)) {
+            edgeOptions.addArguments("--inprivate");
+        }
+        if ("false".equalsIgnoreCase(sandboxMode)) {
+            edgeOptions.addArguments("--no-sandbox");
+        }
+        if ("false".equalsIgnoreCase(webSecurityMode)) {
+            edgeOptions.addArguments("--disable-web-security");
+            edgeOptions.addArguments("--allow-running-insecure-content");
+        }
+        // Other common options
+        edgeOptions.addArguments("--disable-dev-shm-usage");
         return edgeOptions;
     }
 }

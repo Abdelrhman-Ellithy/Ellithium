@@ -1,24 +1,15 @@
-2024-09-06 15:09:46 INFO  java:54):22 - [34m--------------------------------------------------------[37m
-2024-09-06 15:09:46 INFO  java:55):22 - [36m------- AutoEllithiumSphere  Engine Setup  -------------[37m
-2024-09-06 15:09:46 INFO  java:56):22 - [34m--------------------------------------------------------[37m
-2024-09-06 15:09:46 INFO  java:43):22 - [36m API  Tests Started[37m
-2024-09-06 15:09:46 INFO  java:16):22 - [34m [START] Test invalidParamter started[37m
-2024-09-06 15:09:46 INFO  java:16):22 - [34m [START] Test validID started[37m
-2024-09-06 15:09:46 INFO  java:16):22 - [34m [START] Test invalidID started[37m
-2024-09-06 15:09:48 INFO  java:23):22 - [32m [PASSED] Test invalidID passed[37m
-2024-09-06 15:09:48 INFO  java:30):22 - [31m [FAILED] Test invalidParamter failed[37m
-2024-09-06 15:09:48 INFO  java:23):22 - [32m [PASSED] Test validID passed[37m
-2024-09-06 15:09:48 INFO  java:48):22 - [35m All tests completed: API [37m
-2024-09-06 15:09:48 INFO  java:43):22 - [36m UI Cross Browser Chrome Tests Started[37m
-2024-09-06 15:09:49 INFO  java:26):22 - [36m [START] chrome[34m Scenario Verify Search result updated according to the applied Sorting manner started
-[37m
-2024-09-06 15:10:02 INFO  java:49):22 - [32m chrome [PASSED] Scenario Verify Search result updated according to the applied Sorting manner passed[37m
-2024-09-06 15:10:02 INFO  java:48):22 - [35m All tests completed: UI Cross Browser Chrome[37m
-2024-09-06 15:10:02 INFO  java:62):22 - [34m-----------------------------------------------------[37m
-2024-09-06 15:10:02 INFO  java:63):22 - [36m------- AutoEllithiumSphere  Engine TearDown  -------[37m
-2024-09-06 15:10:02 INFO  java:64):22 - [34m-----------------------------------------------------[37m
-2024-09-06 15:10:02 INFO  java:70):22 - [36m
+2024-09-07 16:43:38 INFO  java:54):22 - [34m--------------------------------------------------------[37m
+2024-09-07 16:43:38 INFO  java:55):22 - [36m------- AutoEllithiumSphere  Engine Setup  -------------[37m
+2024-09-07 16:43:38 INFO  java:56):22 - [34m--------------------------------------------------------[37m
+2024-09-07 16:43:39 INFO  java:43):22 - [36m[START] API  [TESTS STARTED][37m
+2024-09-07 16:43:39 INFO  java:48):22 - [35m [ALL TESTS COMPLETED]: API [37m
+2024-09-07 16:43:39 INFO  java:43):22 - [36m[START] UI Cross Browser Chrome [TESTS STARTED][37m
+2024-09-07 16:43:39 INFO  java:48):22 - [35m [ALL TESTS COMPLETED]: UI Cross Browser Chrome[37m
+2024-09-07 16:43:39 INFO  java:62):22 - [34m-----------------------------------------------------[37m
+2024-09-07 16:43:39 INFO  java:63):22 - [36m------- AutoEllithiumSphere  Engine TearDown  -------[37m
+2024-09-07 16:43:39 INFO  java:64):22 - [34m-----------------------------------------------------[37m
+2024-09-07 16:43:39 INFO  java:70):22 - [36m
 
-Total Execution Time is: 0 Min 16 Sec 536 Mills
+Total Execution Time is: 0 Min 0 Sec 534 Mills
 
 [37m

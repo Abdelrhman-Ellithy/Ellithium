@@ -23,8 +23,11 @@ public class CucumberDefaultHooks {
         browserName = System.getProperty("BrowserName", "Chrome").toLowerCase();  // Default to Chrome if not set
         String headlessMode = System.getProperty("HeadlessMode", "false").toLowerCase(); // Default to false if not set
         String PageLoadStrategy=System.getProperty("PageLoadStrategy", "normal").toLowerCase(); // Default to normal if not set
-        logsUtils.info(CYAN + " [START] " + browserName + BLUE + " Scenario " + scenario.getName() + " started\n" + RESET);
-        WebDriver localDriver = DriverSetUp.setupLocalDriver(browserName, headlessMode,PageLoadStrategy);
+        String PrivateMode=System.getProperty("PrivateMode", "true").toLowerCase();
+        String SandboxMode=System.getProperty("SandboxMode","Sandbox").toLowerCase();
+        String WebSecurityMode=System.getProperty("WebSecurityMode","True").toLowerCase();
+        logsUtils.info(CYAN + " [START] " + browserName + BLUE + " Scenario " + scenario.getName() + " [START]\n" + RESET);
+        WebDriver localDriver = DriverSetUp.setupLocalDriver(browserName, headlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
         localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.set(localDriver);  // Set WebDriver for this thread
     }
@@ -39,17 +42,17 @@ public class CucumberDefaultHooks {
                 case FAILED:
                     try {
                         String browserName=System.getProperty("BrowserName");
-                        logsUtils.info(RED+' '+browserName + " [FAILED] Scenario " + scenario.getName() + " failed" + RESET);
+                        logsUtils.info(RED+' '+browserName + " [FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
                         Files.move(screenshot, new File("Test-Output/ScreenShots/Failed/" +browserName+ scenario.getName() + ".png"));
                     } catch (IOException e) {
                         logsUtils.logException(e);
                     }
                     break;
                 case PASSED:
-                    logsUtils.info(GREEN +' '+browserName+ " [PASSED] Scenario " + scenario.getName() + " passed" + RESET);
+                    logsUtils.info(GREEN +' '+browserName+ " [PASSED] Scenario " + scenario.getName() + " [PASSED]" + RESET);
                     break;
                 case SKIPPED:
-                    logsUtils.info(YELLOW+' '+browserName + " [SKIPPED] Scenario " + scenario.getName() + " skipped" + RESET);
+                    logsUtils.info(YELLOW+' '+browserName + " [SKIPPED] Scenario " + scenario.getName() + " [SKIPPED]" + RESET);
                     break;
             }
              localDriver.quit();

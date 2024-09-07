@@ -18,18 +18,24 @@ import org.testng.annotations.*;
         tags = "@Run"
 )
 public class SETUP extends AbstractTestNGCucumberTests {
-        @Parameters({"BrowserName","HeadlessMode","PageLoadStrategy"})
-        @BeforeClass(alwaysRun = true)
-        protected void setUp(@Optional("Chrome") String BrowserName, @Optional("false") String HeadlessMode,@Optional("Normal") String PageLoadStrategy) {
-                System.setProperty("BrowserName", BrowserName.toLowerCase());  // Set browser name for the current test run
+        @Parameters({"BrowserName","HeadlessMode","PageLoadStrategy","PrivateMode","SandboxMode", "WebSecurityMode" })
+        @BeforeTest(alwaysRun = true)
+        protected void setUp(@Optional("Chrome") String BrowserName, @Optional("false") String HeadlessMode,@Optional("Normal") String PageLoadStrategy,@Optional("True") String PrivateMode,@Optional("Sandbox") String SandboxMode,@Optional("True") String WebSecurityMode) {
+                System.setProperty("BrowserName", BrowserName.toLowerCase());
                 System.setProperty("HeadlessMode",HeadlessMode.toLowerCase());
                 System.setProperty("PageLoadStrategy",PageLoadStrategy.toLowerCase());
+                System.setProperty("PrivateMode",PrivateMode.toLowerCase());
+                System.setProperty("SandboxMode", SandboxMode.toLowerCase());
+                System.setProperty("WebSecurityMode",WebSecurityMode.toLowerCase());
         }
-        @AfterClass(alwaysRun = true)
+        @AfterTest(alwaysRun = true)
         protected void tearDown() {
-                System.clearProperty("BrowserName");  // Clean up system property after test run
-                System.clearProperty("HeadlessMode");   // Clean up system property after test run
-                System.clearProperty("PageLoadStrategy");   // Clean up system property after test run
+                System.clearProperty("BrowserName");
+                System.clearProperty("HeadlessMode");
+                System.clearProperty("PageLoadStrategy");
+                System.clearProperty("PrivateMode");
+                System.clearProperty("SandboxMode");
+                System.clearProperty("WebSecurityMode");
         }
         @Override
         @DataProvider(parallel = true) // always false
