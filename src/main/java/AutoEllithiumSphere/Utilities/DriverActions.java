@@ -10,8 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
 
-public class Utils {
-    // utility methods
+public class DriverActions {
     public static void SendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
                 .pollingEvery(Duration.ofMillis(pollingEvery))
@@ -51,10 +50,7 @@ public class Utils {
     public static void scrollToElement(WebDriver driver, By locator) {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", findWebelement(driver, locator));
     }
-    // Find an element
-    public static WebElement findWebelement(WebDriver driver, By locator) {
-        return driver.findElement(locator);
-    }
+
     // Get a timestamp
     public static String getTimeStamp() {
         return new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
@@ -174,6 +170,129 @@ public class Utils {
     // Switch to the original window
     public static void switchToOriginalWindow(WebDriver driver, String originalWindowHandle) {
         driver.switchTo().window(originalWindowHandle);
+    }
+
+
+
+    // overloading polling time
+
+    public static void SendData(WebDriver driver, By locator, String data, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        driver.findElement(locator).clear();
+        driver.findElement(locator).sendKeys(data);
+    }
+    public static void SendData(WebDriver driver, By locator, Keys data, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        driver.findElement(locator).clear();
+        driver.findElement(locator).sendKeys(data);
+    }
+    public static String getText(WebDriver driver, By locator, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        return driver.findElement(locator).getText();
+    }
+    public static void ClickingOnElement(WebDriver driver, By locator, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.elementToBeClickable(locator));
+        driver.findElement(locator).click();
+    }
+    public static void waitForInvisibility(WebDriver driver, By locator, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+    // General wait
+    public static WebDriverWait getGeneralWait(WebDriver driver, int timeout) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeout));
+    }
+    // Find an element
+    public static WebElement findWebelement(WebDriver driver, By locator) {
+        return driver.findElement(locator);
+    }
+
+
+    // Get a timestamp
+    public static void selectDropdownByText(WebDriver driver, By locator, String option, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByVisibleText(option);
+    }
+    // Select dropdown option by value
+    public static void selectDropdownByValue(WebDriver driver, By locator, String value, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByValue(value);
+    }
+    // Select dropdown option by index
+    public static void selectDropdownByIndex(WebDriver driver, By locator, int index, int timeout) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByIndex(index);
+    }
+
+    // overloading timeout
+
+    public static void SendData(WebDriver driver, By locator, String data) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        driver.findElement(locator).clear();
+        driver.findElement(locator).sendKeys(data);
+    }
+    public static void SendData(WebDriver driver, By locator, Keys data) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        driver.findElement(locator).clear();
+        driver.findElement(locator).sendKeys(data);
+    }
+    public static String getText(WebDriver driver, By locator) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        return driver.findElement(locator).getText();
+    }
+    public static void ClickingOnElement(WebDriver driver, By locator) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.elementToBeClickable(locator));
+        driver.findElement(locator).click();
+    }
+    public static void waitForInvisibility(WebDriver driver, By locator) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+
+    // Get a timestamp
+    public static void selectDropdownByText(WebDriver driver, By locator, String option) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByVisibleText(option);
+    }
+    // Select dropdown option by value
+    public static void selectDropdownByValue(WebDriver driver, By locator, String value) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByValue(value);
+    }
+    // Select dropdown option by index
+    public static void selectDropdownByIndex(WebDriver driver, By locator, int index) {
+        new FluentWait<>(driver).withTimeout(Duration.ofSeconds(8))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebelement(driver, locator)).selectByIndex(index);
     }
 
 }
