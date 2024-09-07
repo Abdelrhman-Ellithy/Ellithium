@@ -1,5 +1,5 @@
 package AutoEllithiumSphere.com;
-import static AutoEllithiumSphere.com.Colors.*;
+import static AutoEllithiumSphere.Utilities.Colors.*;
 
 import AutoEllithiumSphere.DriverSetup.DriverSetUp;
 import AutoEllithiumSphere.Utilities.logsUtils;
