@@ -7,6 +7,9 @@
                        <parameter name="BrowserName" value="Chrome"/>
                        <parameter name="HeadlessMode" value="false"/>
                        <parameter name="PageLoadStrategy" value="Eager"/>
+                       <parameter name="PrivateMode" value="True"/>
+                       <parameter name="SandboxMode" value="Sandbox"/>
+                       <parameter name="WebSecurityMode" value="True"/>
                    </test>
 
 <!--          <test name="UI Cross Browser Edge">-->
@@ -17,7 +20,6 @@
 <!--                  <class name="UI.TestRunner.Runner"/>-->
 <!--              </classes>-->
 <!--          </test>-->
-
 <!--      <test name="UI Cross Browser FireFox">-->
 <!--          <parameter name="BrowserName" value="FireFox"/>-->
 <!--          <parameter name="HeadlessMode" value="False"/>-->
