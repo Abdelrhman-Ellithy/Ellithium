@@ -2,7 +2,7 @@ package AutoEllithiumSphere.com;
 
 import AutoEllithiumSphere.Utilities.logsUtils;
 import org.testng.*;
-import static AutoEllithiumSphere.com.Colors.*;
+import static AutoEllithiumSphere.Utilities.Colors.*;
 
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
