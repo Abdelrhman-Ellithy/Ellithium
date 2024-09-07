@@ -1,8 +1,7 @@
 package AutoEllithiumSphere.Utilities;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import java.beans.JavaBean;
+import java.io.*;
 import java.util.Properties;
 public class PropertyHelper extends DataUtils {
     // File Properties
@@ -10,6 +9,15 @@ public class PropertyHelper extends DataUtils {
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream(TEST_DATA_PATH + "environment.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return prop.getProperty(key);
+    }
+    public static String getDataFromProperties(String FilePath,String fileName,  String key) {
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream(FilePath +File.pathSeparator+ fileName+".properties"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
