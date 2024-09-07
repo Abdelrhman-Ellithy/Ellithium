@@ -6,6 +6,15 @@
     <groupId>com.example</groupId>
     <artifactId>AutoEllithiumSphere</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <developers>
+        <developer>
+            <name>Abdelrahman Ellithy</name>
+            <email>abdelarhmanellithy@gmail.com.</email>
+            <organization>GitHub</organization>
+            <organizationUrl>https://github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</organizationUrl>
+            <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
+        </developer>
+    </developers>
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -26,9 +35,15 @@
         <Cucumber>7.18.0</Cucumber>
         <cucumberTsetNG>7.18.0</cucumberTsetNG>
         <restversion>5.4.0</restversion>
-        <ThreadValue>2</ThreadValue>
+        <gherkinversion>28.0.0</gherkinversion>
     </properties>
-
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub AutoEllithiumSphere Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</url>
+        </repository>
+    </distributionManagement>
     <dependencies>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -47,6 +62,13 @@
             <artifactId>gson</artifactId>
             <version>${gsonVersion}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.cucumber/gherkin -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>gherkin</artifactId>
+            <version>${gherkinversion}</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -64,6 +86,18 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
+            <version>${log4jVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4jVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-1.2-api -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
             <version>${log4jVersion}</version>
         </dependency>
         <dependency>
