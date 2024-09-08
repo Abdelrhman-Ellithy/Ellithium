@@ -24,7 +24,7 @@ public class AllureHelper {
         if (openFlag.equalsIgnoreCase("true")) {
 
             // Dynamically resolve the Allure binary path
-            String allureBinaryPath = "src"+ File.separator +"main"+ File.separator +"resources"+
+            String allureBinaryPath = System.getProperty("user.dir") + File.separator +"src"+ File.separator +"main"+ File.separator +"resources"+
                     File.separator + File.separator +"allure-2.30.0"+ File.separator +"bin";
 
             if (allureBinaryPath != null) {
