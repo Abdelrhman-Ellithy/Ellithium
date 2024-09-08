@@ -5,18 +5,20 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.autoellithiumsphere</groupId>
     <artifactId>autoellithiumsphere</artifactId>
-    <version>1.0.1</version>
+    <version>${AutoEllithiumSphereVersion}</version>
     <name>AutoEllithiumSphere</name>
     <developers>
         <developer>
             <name>Abdelrahman Ellithy</name>
             <email>abdelarhmanellithy@gmail.com.</email>
-            <organization>GitHub</organization>
+            <organization>Git
+                Hub</organization>
             <organizationUrl>https://github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</organizationUrl>
             <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
         </developer>
     </developers>
     <properties>
+        <AutoEllithiumSphereVersion>1.0.0</AutoEllithiumSphereVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -188,7 +190,6 @@
 <!--                          </properties>-->
                     </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -213,7 +214,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <!-- **Maven Clean Plugin** to clean allure results -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -274,6 +274,27 @@
                     </properties>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <key>AutoEllithiumSphereVersion</key>
+                            <value>${AutoEllithiumSphereVersion}</value>
+                        </property>
+                    </systemProperties>
+                    <mainClass>AutoEllithiumSphere.MainClass</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -292,6 +313,12 @@
                 <directory>src/main/resources/properties/custom</directory>
                 <includes>
                     <include>**/*.properties</include> <!-- Include all properties files -->
+                </includes>
+            </resource>
+            <resource>
+                <directory>.allure/allure-2.30.0/bin</directory>
+                <includes>
+                    <include>**/*</include> <!-- Include all properties files -->
                 </includes>
             </resource>
         </resources>
