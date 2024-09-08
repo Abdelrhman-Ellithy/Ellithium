@@ -298,25 +298,7 @@
         </plugins>
         <resources>
             <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.properties</include> <!-- Include all properties files -->
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources/properties/default</directory>
-                <includes>
-                    <include>**/*.properties</include> <!-- Include all properties files -->
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources/properties/custom</directory>
-                <includes>
-                    <include>**/*.properties</include> <!-- Include all properties files -->
-                </includes>
-            </resource>
-            <resource>
-                <directory>.allure/allure-2.30.0/bin</directory>
+                <directory>src/main/resources/</directory>
                 <includes>
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>
