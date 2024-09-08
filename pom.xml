@@ -303,6 +303,12 @@
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>
             </resource>
+            <resource>
+                <directory>.allure</directory>
+                <includes>
+                    <include>**/*</include> <!-- Include all properties files -->
+                </includes>
+            </resource>
         </resources>
         <!-- Maven Surefire Plugin for Unit Tests -->
     </build>
