@@ -12,7 +12,7 @@ import java.util.Properties;
 public class PropertyMaker {
     private static final String basePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator;
     private static final String testPath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "test" + File.separator + "resources" + File.separator + "TestData";
-    private static final String ScreenShotPath = System.getProperty("user.dir") + File.separator + "TestOutput" + File.separator + "ScreenShots" + File.separator + "Failed" ;
+    private static final String ScreenShotPath = System.getProperty("user.dir") + File.separator + "Test-Output" + File.separator + "ScreenShots" + File.separator + "Failed" ;
     private static final String allurePath = basePath + "allure.properties";
     private static final String configPath = basePath + "config.properties";
     private static final String logPath = basePath + "log4j2.properties";
