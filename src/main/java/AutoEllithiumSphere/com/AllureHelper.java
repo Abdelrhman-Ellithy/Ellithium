@@ -1,36 +1,38 @@
 package AutoEllithiumSphere.com;
 
 import AutoEllithiumSphere.Utilities.CommandExecutor;
-import AutoEllithiumSphere.Utilities.PropertyHelper;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.xmlbeans.SystemProperties;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
+import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static AutoEllithiumSphere.Utilities.PropertyHelper.getDataFromProperties;
+
 public class AllureHelper {
+
     private static File allureDirectory;
+    private static File allureBinaryDirectory;
 
     public static void allureOpen() {
         // Fetch the properties file path
-        String propertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator
-                + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default"
-                + File.separator + "allure";
-
+        String allurePropertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
         // Check if we should open the Allure report after execution
-        String openFlag = PropertyHelper.getDataFromProperties(propertiesFilePath, "allure.open.afterExecution");
-        if (openFlag.equalsIgnoreCase("true")) {
+        String openFlag = SystemProperties.getProperty("allure.open.afterExecution");//getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+        if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
             // Check or resolve Allure binary path
             String allureBinaryPath = resolveAllureBinaryPath();
 
             if (allureBinaryPath != null) {
                 // Define the commands to generate and open the report using the resolved binary path
-                String generateCommand = allureBinaryPath + "allure generate .Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-results --clean -o Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
-                String openCommand = allureBinaryPath + "allure open .\\Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
+                String generateCommand = allureBinaryPath + "allure generate ."+ File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-results --clean -o Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
+                String openCommand = allureBinaryPath + "allure open ."+ File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
 
                 // Execute the commands using the CommandExecutor class
                 CommandExecutor.executeCommand(generateCommand);
@@ -50,16 +52,31 @@ public class AllureHelper {
     private static String resolveAllureBinaryPath() {
         String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository" + File.separator + "allure";
         allureDirectory = new File(allurePath);
-
+        String configFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
         // Check if Allure folder exists in .m2/repository
         if (allureDirectory.exists()) {
             System.out.println("Allure folder exists at: " + allurePath);
+            // Identify the bin folder within the allure directory
+            File[] subDirs = allureDirectory.listFiles(File::isDirectory);
+            if (subDirs != null && subDirs.length > 0) {
+                // Assuming the first subdirectory contains the bin folder
+                allureBinaryDirectory = new File(subDirs[0], "bin");
+                if (!allureBinaryDirectory.exists()) {
+                    System.err.println("Binary directory not found in the expected location.");
+                    return null;
+                }
+                System.out.println("Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath());
+                return allureBinaryDirectory.getAbsolutePath() + File.separator;
+            } else {
+                System.err.println("No subdirectories found in the Allure directory.");
+                return null;
+            }
         } else {
             // Extract Allure from the JAR to .m2/repository/allure
             System.out.println("Allure folder not found. Extracting from JAR...");
-            String version = System.getProperty("AutoEllithiumSphereVersion");
+            String version = SystemProperties.getProperty("AutoEllithiumSphereVersion");//getDataFromProperties(configFilePath, "AutoEllithiumSphereVersion");
             String allureJarPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
-                    + File.separator + "org" + File.separator + "autoellithiumsphere" + File.separator + "autoellithiumsphere"
+                    + File.separator + "io" + File.separator + "github" + File.separator + "autoellithiumsphere"
                     + File.separator + version + File.separator + "autoellithiumsphere-" + version + ".jar";
 
             File jarFile = new File(allureJarPath);
@@ -70,17 +87,17 @@ public class AllureHelper {
 
             try {
                 extractAllureFolderFromJar(jarFile, allureDirectory);
+                String allureVersion = SystemProperties.getProperty("allureVersion");//getDataFromProperties(configFilePath, "allureVersion");
+                // Define the allure binary directory based on the extracted version
+                allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
+                addAllureToSystemPath(allureBinaryDirectory);
             } catch (IOException e) {
                 System.err.println("Failed to extract Allure folder from JAR: " + e.getMessage());
                 return null;
             }
         }
-
-        // Add the Allure binary folder to the system PATH
-        addAllureToSystemPath(allureDirectory);
-
         // Return the path to the Allure binary
-        return allureDirectory.getAbsolutePath() + File.separator;
+        return allureBinaryDirectory != null ? allureBinaryDirectory.getAbsolutePath() + File.separator : null;
     }
 
     /**
@@ -115,6 +132,7 @@ public class AllureHelper {
             }
         }
     }
+
     /**
      * Add the Allure binary folder to the system PATH.
      *
@@ -124,8 +142,29 @@ public class AllureHelper {
         String path = System.getenv("PATH");
         String allureBinaryPath = allureDirectory.getAbsolutePath();
         if (!path.contains(allureBinaryPath)) {
+            // Update PATH locally for the current JVM session
             System.setProperty("PATH", path + File.pathSeparator + allureBinaryPath);
-            System.out.println("Added Allure to system PATH: " + allureBinaryPath);
+            System.out.println("Added Allure to system PATH for current session: " + allureBinaryPath);
+
+            // Check if the OS is Windows or Unix-based
+            if (SystemUtils.IS_OS_WINDOWS) {
+                // Windows-specific: use setx to persist the PATH update
+                String command = "setx PATH \"%PATH%;" + allureBinaryPath + "\"";
+                CommandExecutor.executeCommand(command);
+                System.out.println("Allure binary path added to the system PATH (Windows).");
+
+            } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
+                // Unix-based systems: append to ~/.bashrc or ~/.zshrc
+                String shellConfig = System.getenv("SHELL").contains("zsh") ? "~/.zshrc" : "~/.bashrc";
+                String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
+                CommandExecutor.executeCommand(command);
+                System.out.println("Allure binary path added to " + shellConfig + " (Unix-based).");
+
+            } else {
+                System.out.println("Unsupported OS.");
+            }
+        } else {
+            System.out.println("Allure binary path already exists in the system PATH.");
         }
     }
 }

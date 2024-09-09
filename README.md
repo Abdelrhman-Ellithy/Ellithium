@@ -47,8 +47,6 @@ Ensure you have the following installed:
 - **Java Development Kit (JDK)**: Version 17 or higher
 - **Maven**: 3.8.1 or higher
 - **Browsers**: Latest versions of **Chrome, Firefox,** and **Edge**
-- **Allure Command-Line Tool**: Installed and added to your system's **PATH**  
-  Visit the [Allure GitHub page](https://github.com/allure-framework/allure2) to download the latest release, extract it, and add the `bin` folder path to your system's **PATH**.
 
 ### 📄 Supported File Formats
 
