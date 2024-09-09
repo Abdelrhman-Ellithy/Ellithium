@@ -1,27 +1,39 @@
 package AutoEllithiumSphere.properties;
+import AutoEllithiumSphere.Utilities.logsUtils;
+import AutoEllithiumSphere.com.Colors;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 public class PropertyMaker {
-    private static final String allurePath = System.getProperty("user.dir")+File.separator +"src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
-    private static final String configPath = System.getProperty("user.dir")+File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
-    private static final String logPath =  System.getProperty("user.dir")+File.separator +"src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "log";
+    private static final String allurePath = System.getProperty("user.dir")+File.separator +"src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure.properties";
+    private static final String configPath = System.getProperty("user.dir")+File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config.properties";
+    private static final String logPath =  System.getProperty("user.dir")+File.separator +"src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "log4j2.properties";
+    private static File propertiesDirectory;
     public static void main(String[] args) {
         System.out.println("Application started with properties initialized.");
-        try {
-            // Set Allure properties
-            setDataToProperties(allurePath, "allure.results.directory", "Test-Output/Reports/Allure/allure-results");
-            setDataToProperties(allurePath, "allure.open.afterExecution", "true");
+        String propertiesDirectoryPath = System.getProperty("user.dir")+File.separator +"src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default";
+        propertiesDirectory = new File(allurePath);
+        if(propertiesDirectory.exists()){
+            logsUtils.info(Colors.GREEN+"properties exists already");
+        }
+        else {
 
-            // Create and set config properties
-            setConfigProperties(configPath);
+            try {
+                // Set Allure properties
+                setDataToProperties(allurePath, "allure.results.directory", "Test-Output/Reports/Allure/allure-results");
+                setDataToProperties(allurePath, "allure.open.afterExecution", "true");
 
-            // Create and set log properties
-            setLogProperties(logPath);
+                // Create and set config properties
+                setConfigProperties(configPath);
 
-        } catch (IOException e) {
-            System.err.println("Error initializing properties: " + e.getMessage());
+                // Create and set log properties
+                setLogProperties(logPath);
+
+            } catch (IOException e) {
+                System.err.println("Error initializing properties: " + e.getMessage());
+            }
         }
     }
     private static void setDataToProperties(String filePath, String key, String value) throws IOException {

@@ -6,7 +6,6 @@ import static AutoEllithiumSphere.Utilities.Colors.*;
 
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
-
     private long timeStartMills;
     private long timeFinishMills;
 

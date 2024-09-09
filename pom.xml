@@ -310,31 +310,31 @@
                     </properties>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.codehaus.mojo</groupId>-->
-<!--                <artifactId>exec-maven-plugin</artifactId>-->
-<!--                <version>3.0.0</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>initialize-properties</id>-->
-<!--                        <phase>process-resources</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>java</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <mainClass>AutoEllithiumSphere.properties.PropertyMaker</mainClass>-->
-<!--                            <includePluginDependencies>true</includePluginDependencies>-->
-<!--                            <classpathScope>compile</classpathScope> &lt;!&ndash; Ensures classpath is correctly set &ndash;&gt;-->
-<!--                            <systemProperties>-->
-<!--                                <property>-->
-<!--                                    <key>AutoEllithiumSphereVersion</key>-->
-<!--                                    <value>${AutoEllithiumSphereVersion}</value>-->
-<!--                                </property>-->
-<!--                            </systemProperties>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>initialize-properties</id>
+                        <phase>post-clean</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>AutoEllithiumSphere.properties.PropertyMaker</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <classpathScope>compile</classpathScope> <!-- Ensures classpath is correctly set -->
+                            <systemProperties>
+                                <property>
+                                    <key>AutoEllithiumSphereVersion</key>
+                                    <value>${AutoEllithiumSphereVersion}</value>
+                                </property>
+                            </systemProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
