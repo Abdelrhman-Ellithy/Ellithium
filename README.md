@@ -23,6 +23,8 @@
 - **Allure Reporting**: Generate rich and interactive test reports with **Allure**.
 - **Customizable Configurations**: Flexible configuration options for different test environments, browsers, and execution modes.
 - **Modular Design**: A well-structured and modular design that promotes code reusability and easy maintenance.
+- **Executing OS Commands** : Provides Command Executer Interface to execute Commands
+- **Test Data Generation**: Supports dynamic test data generation using **Java Faker** for realistic names, emails, addresses, and more.
 
 ## 👨‍💻 Developed using:
 <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" height="50px"></a>
@@ -56,8 +58,6 @@ Ellithium supports reading and writing data from various file formats, including
 - **CSV**
 - **Excel**
 - **Properties**
-- **Coomend Executer for Windows, Unix Based OS**
-
 
 ## 📬 Contact
 
