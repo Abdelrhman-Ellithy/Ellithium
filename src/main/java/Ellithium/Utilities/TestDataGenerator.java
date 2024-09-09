@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.Utilities;
 
 import com.github.javafaker.Faker;
 public class TestDataGenerator {

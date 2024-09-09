@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github</groupId>
-    <artifactId>Ellithium</artifactId>
+    <artifactId>ellithium</artifactId>
     <version>${EllithiumVersion}</version>
     <name>Ellithium</name>
     <developers>
@@ -39,6 +39,7 @@
         <cucumberTsetNG>7.18.0</cucumberTsetNG>
         <restversion>5.4.0</restversion>
         <gherkinversion>28.0.0</gherkinversion>
+        <hamcrestversion>3.0</hamcrestversion>
     </properties>
     <distributionManagement>
         <repository>
@@ -114,6 +115,13 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${Commons}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.hamcrest/hamcrest -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrestversion}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Apache Commons CSV -->
@@ -225,20 +233,6 @@
                     <target>21</target>
                 </configuration>
             </plugin>
-            <!--            <plugin>-->
-            <!--                <groupId>org.sonatype.central</groupId>-->
-            <!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
-            <!--                <version>0.5.0</version>-->
-            <!--                <extensions>true</extensions>-->
-            <!--                <configuration>-->
-            <!--                    <publishingServerId>central</publishingServerId>-->
-            <!--                    <centralBaseUrl>https://central.sonatype.com</centralBaseUrl>-->
-            <!--                    <autoPublish>true</autoPublish>-->
-            <!--                    <waitUntil>published</waitUntil>-->
-            <!--                    <waitMaxTime>3600</waitMaxTime> &lt;!&ndash; one hour &ndash;&gt;-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
-            <!-- **Allure Maven Plugin** to generate reports -->
             <plugin>
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>

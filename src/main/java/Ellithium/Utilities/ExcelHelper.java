@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.Utilities;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

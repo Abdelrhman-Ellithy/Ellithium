@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.DriverSetup;
+package Ellithium.DriverSetup;
 
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;

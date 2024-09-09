@@ -1,6 +1,6 @@
-package AutoEllithiumSphere.properties;
-import AutoEllithiumSphere.Utilities.logsUtils;
-import AutoEllithiumSphere.com.Colors;
+package Ellithium.properties;
+import Ellithium.Utilities.logsUtils;
+import Ellithium.com.Colors;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class PropertyMaker {
 
     private static void setConfigProperties(String configFilePath) throws IOException {
         Properties configProperties = new Properties();
-        configProperties.setProperty("AutoEllithiumSphereVersion", "1.0.0");
+        configProperties.setProperty("EllithiumVersion", "1.0.0");
         configProperties.setProperty("allureVersion", "2.30.0");
         configProperties.setProperty("closeDriverAfterScenario", "true");
         File configFile = new File(configFilePath);

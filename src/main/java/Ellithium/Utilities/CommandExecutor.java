@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.Utilities;
 
 import org.apache.commons.lang3.SystemUtils;
 import java.io.IOException;

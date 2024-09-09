@@ -1,8 +1,8 @@
-package AutoEllithiumSphere.com;
+package Ellithium.com;
 
-import AutoEllithiumSphere.Utilities.logsUtils;
+import Ellithium.Utilities.logsUtils;
 import org.testng.*;
-import static AutoEllithiumSphere.Utilities.Colors.*;
+import static Ellithium.Utilities.Colors.*;
 
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
@@ -51,7 +51,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     public void onExecutionStart() {
         timeStartMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "--------------------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- AutoEllithiumSphere  Engine Setup  -------------" + RESET);
+        logsUtils.info(CYAN + "------- Ellithium  Engine Setup  -------------" + RESET);
         logsUtils.info(BLUE + "--------------------------------------------------------" + RESET);
     }
 
@@ -59,7 +59,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     public void onExecutionFinish() {
         timeFinishMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "-----------------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- AutoEllithiumSphere  Engine TearDown  -------" + RESET);
+        logsUtils.info(CYAN + "------- Ellithium  Engine TearDown  -------" + RESET);
         logsUtils.info(BLUE + "-----------------------------------------------------" + RESET);
         long totalMills, totalSeconds, totalMinutes, totalExecutionTime;
         totalExecutionTime = (timeFinishMills - timeStartMills);
