@@ -2,6 +2,7 @@ package AutoEllithiumSphere.com;
 import static AutoEllithiumSphere.Utilities.Colors.*;
 
 import AutoEllithiumSphere.DriverSetup.DriverSetUp;
+import AutoEllithiumSphere.Utilities.PropertyHelper;
 import AutoEllithiumSphere.Utilities.logsUtils;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -55,7 +56,13 @@ public class CucumberDefaultHooks {
                     logsUtils.info(YELLOW+' '+browserName + " [SKIPPED] Scenario " + scenario.getName() + " [SKIPPED]" + RESET);
                     break;
             }
-             localDriver.quit();
+            String closeFlag= PropertyHelper.getDataFromProperties("src"+File.separator+"main"
+                    +File.separator+"resources"+File.separator+"properties"+
+                     File.separator+"default"+File.separator+"config",
+                    "closeDriverAfterScenario");
+            if(closeFlag.equalsIgnoreCase("true")){
+                localDriver.quit();
+            }
             driver.remove();  // Remove WebDriver instance for this thread
         }
     }

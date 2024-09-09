@@ -4,25 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github</groupId>
-    <artifactId>autoellithiumsphere</artifactId>
-    <version>${AutoEllithiumSphereVersion}</version>
-    <name>AutoEllithiumSphere</name>
+    <artifactId>Ellithium</artifactId>
+    <version>${EllithiumVersion}</version>
+    <name>Ellithium</name>
     <developers>
         <developer>
             <name>Abdelrahman Ellithy</name>
             <email>abdelarhmanellithy@gmail.com.</email>
             <organization>Git
                 Hub</organization>
-            <organizationUrl>https://github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</organizationUrl>
+            <organizationUrl>https://github.com/Abdelrhman-Ellithy/Ellithium</organizationUrl>
             <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
         </developer>
     </developers>
     <properties>
-        <AutoEllithiumSphereVersion>1.0.0</AutoEllithiumSphereVersion>
+        <EllithiumVersion>1.0.0</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <seleniumVersion>4.23.1</seleniumVersion>
+        <seleniumVersion>4.24.0</seleniumVersion>
         <testNG>7.10.2</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.10.1</gsonVersion>
@@ -44,7 +44,7 @@
         <repository>
             <id>github</id>
             <name>GitHub Abdelrhman-Ellithy Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/AutoEllithiumSphere</url>
+            <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium</url>
         </repository>
     </distributionManagement>
     <dependencies>
@@ -189,6 +189,8 @@
                 <version>3.5.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <printSummary>false</printSummary> <!-- Suppresses some output -->
                     <testFailureIgnore>true</testFailureIgnore>
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     <failIfNoTests>false</failIfNoTests>
@@ -197,7 +199,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>AutoEllithiumSphere.com.CustomTestNGListener</value>
+                            <value>Ellithium.com.CustomTestNGListener</value>
                         </property>
                     </properties>
                 </configuration>
@@ -223,19 +225,19 @@
                     <target>21</target>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.sonatype.central</groupId>-->
-<!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
-<!--                <version>0.5.0</version>-->
-<!--                <extensions>true</extensions>-->
-<!--                <configuration>-->
-<!--                    <publishingServerId>central</publishingServerId>-->
-<!--                    <centralBaseUrl>https://central.sonatype.com</centralBaseUrl>-->
-<!--                    <autoPublish>true</autoPublish>-->
-<!--                    <waitUntil>published</waitUntil>-->
-<!--                    <waitMaxTime>3600</waitMaxTime> &lt;!&ndash; one hour &ndash;&gt;-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.sonatype.central</groupId>-->
+            <!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
+            <!--                <version>0.5.0</version>-->
+            <!--                <extensions>true</extensions>-->
+            <!--                <configuration>-->
+            <!--                    <publishingServerId>central</publishingServerId>-->
+            <!--                    <centralBaseUrl>https://central.sonatype.com</centralBaseUrl>-->
+            <!--                    <autoPublish>true</autoPublish>-->
+            <!--                    <waitUntil>published</waitUntil>-->
+            <!--                    <waitMaxTime>3600</waitMaxTime> &lt;!&ndash; one hour &ndash;&gt;-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
             <!-- **Allure Maven Plugin** to generate reports -->
             <plugin>
                 <groupId>io.qameta.allure</groupId>
@@ -265,6 +267,7 @@
                             <directory>Test-Output/Logs</directory> <!-- Clean logs -->
                         </fileset>
                     </filesets>
+                    <failOnError>false</failOnError>
                 </configuration>
             </plugin>
             <!-- **Maven Resources Plugin** to clear directories before test -->
@@ -305,35 +308,10 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>AutoEllithiumSphere.com.CustomTestNGListener</value>
+                            <value>Ellithium.com.CustomTestNGListener</value>
                         </property>
                     </properties>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>initialize-properties</id>
-                        <phase>post-clean</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>AutoEllithiumSphere.properties.PropertyMaker</mainClass>
-                            <includePluginDependencies>true</includePluginDependencies>
-                            <classpathScope>compile</classpathScope> <!-- Ensures classpath is correctly set -->
-                            <systemProperties>
-                                <property>
-                                    <key>AutoEllithiumSphereVersion</key>
-                                    <value>${AutoEllithiumSphereVersion}</value>
-                                </property>
-                            </systemProperties>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
         <resources>

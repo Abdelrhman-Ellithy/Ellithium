@@ -1,8 +1,10 @@
 package AutoEllithiumSphere.com;
 
 import AutoEllithiumSphere.Utilities.CommandExecutor;
+import AutoEllithiumSphere.Utilities.logsUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.xmlbeans.SystemProperties;
+import org.checkerframework.checker.units.qual.C;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +26,7 @@ public class AllureHelper {
         // Fetch the properties file path
         String allurePropertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
         // Check if we should open the Allure report after execution
-        String openFlag = SystemProperties.getProperty("allure.open.afterExecution");//getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+        String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
         if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
             // Check or resolve Allure binary path
             String allureBinaryPath = resolveAllureBinaryPath();
@@ -55,8 +57,9 @@ public class AllureHelper {
         String configFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
         // Check if Allure folder exists in .m2/repository
         if (allureDirectory.exists()) {
-            System.out.println("Allure folder exists at: " + allurePath);
+            logsUtils.info(Colors.GREEN+"Allure folder exists at: " + allurePath+ Colors.RESET);
             // Identify the bin folder within the allure directory
+
             File[] subDirs = allureDirectory.listFiles(File::isDirectory);
             if (subDirs != null && subDirs.length > 0) {
                 // Assuming the first subdirectory contains the bin folder
@@ -65,7 +68,7 @@ public class AllureHelper {
                     System.err.println("Binary directory not found in the expected location.");
                     return null;
                 }
-                System.out.println("Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath());
+                logsUtils.info(Colors.GREEN+"Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath()+ Colors.RESET);
                 return allureBinaryDirectory.getAbsolutePath() + File.separator;
             } else {
                 System.err.println("No subdirectories found in the Allure directory.");
@@ -74,7 +77,7 @@ public class AllureHelper {
         } else {
             // Extract Allure from the JAR to .m2/repository/allure
             System.out.println("Allure folder not found. Extracting from JAR...");
-            String version = SystemProperties.getProperty("AutoEllithiumSphereVersion");//getDataFromProperties(configFilePath, "AutoEllithiumSphereVersion");
+            String version = getDataFromProperties(configFilePath, "AutoEllithiumSphereVersion");
             String allureJarPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
                     + File.separator + "io" + File.separator + "github" + File.separator + "autoellithiumsphere"
                     + File.separator + version + File.separator + "autoellithiumsphere-" + version + ".jar";
@@ -87,7 +90,7 @@ public class AllureHelper {
 
             try {
                 extractAllureFolderFromJar(jarFile, allureDirectory);
-                String allureVersion = SystemProperties.getProperty("allureVersion");//getDataFromProperties(configFilePath, "allureVersion");
+                String allureVersion = getDataFromProperties(configFilePath, "allureVersion");
                 // Define the allure binary directory based on the extracted version
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
                 addAllureToSystemPath(allureBinaryDirectory);
@@ -144,27 +147,28 @@ public class AllureHelper {
         if (!path.contains(allureBinaryPath)) {
             // Update PATH locally for the current JVM session
             System.setProperty("PATH", path + File.pathSeparator + allureBinaryPath);
-            System.out.println("Added Allure to system PATH for current session: " + allureBinaryPath);
+            logsUtils.info(Colors.GREEN+"Added Allure to system PATH for current session: " + allureBinaryPath+ Colors.RESET);
 
             // Check if the OS is Windows or Unix-based
             if (SystemUtils.IS_OS_WINDOWS) {
                 // Windows-specific: use setx to persist the PATH update
                 String command = "setx PATH \"%PATH%;" + allureBinaryPath + "\"";
                 CommandExecutor.executeCommand(command);
-                System.out.println("Allure binary path added to the system PATH (Windows).");
+                logsUtils.info(Colors.GREEN+"Allure binary path added to the system PATH (Windows).");
 
             } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
                 // Unix-based systems: append to ~/.bashrc or ~/.zshrc
                 String shellConfig = System.getenv("SHELL").contains("zsh") ? "~/.zshrc" : "~/.bashrc";
                 String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
                 CommandExecutor.executeCommand(command);
-                System.out.println("Allure binary path added to " + shellConfig + " (Unix-based).");
+                logsUtils.info(Colors.GREEN+"Allure binary path added to " + shellConfig + " (Unix-based)."+ Colors.RESET);
 
             } else {
                 System.out.println("Unsupported OS.");
             }
         } else {
-            System.out.println("Allure binary path already exists in the system PATH.");
+
+            logsUtils.info(Colors.GREEN+"Allure binary path already exists in the system PATH."+ Colors.RESET);
         }
     }
 }
