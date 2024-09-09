@@ -12,28 +12,28 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(BLUE + " [START] Test " + result.getName() + " [STARTED]" + RESET);
+            logsUtils.info(BLUE + "[START] Test " + result.getName() + " [STARTED]" + RESET);
         }
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(GREEN + " [PASSED] Test " + result.getName() + " [PASSED]" + RESET);
+            logsUtils.info(GREEN + "[PASSED] Test " + result.getName() + " [PASSED]" + RESET);
         }
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(RED + " [FAILED] Test " + result.getName() + " [FAILED]" + RESET);
+            logsUtils.info(RED + "[FAILED] Test " + result.getName() + " [FAILED]" + RESET);
         }
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(YELLOW + " [SKIPPED] Test " + result.getName() + " [SKIPPED]" + RESET);
+            logsUtils.info(YELLOW + "[SKIPPED] Test " + result.getName() + " [SKIPPED]" + RESET);
         }
     }
 
@@ -44,7 +44,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
 
     @Override
     public void onFinish(ITestContext context) {
-        logsUtils.info(PURPLE + " [ALL TESTS COMPLETED]: " + context.getName() + RESET);
+        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName() + RESET);
     }
 
     @Override
