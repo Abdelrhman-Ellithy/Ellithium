@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.Utilities;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;

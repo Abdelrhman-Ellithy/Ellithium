@@ -1,6 +1,5 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.Utilities;
 
-import java.beans.JavaBean;
 import java.io.*;
 import java.util.Properties;
 public class PropertyHelper extends DataUtils {

@@ -1,9 +1,9 @@
-package AutoEllithiumSphere.com;
-import static AutoEllithiumSphere.Utilities.Colors.*;
+package Ellithium.com;
+import static Ellithium.Utilities.Colors.*;
 
-import AutoEllithiumSphere.DriverSetup.DriverSetUp;
-import AutoEllithiumSphere.Utilities.PropertyHelper;
-import AutoEllithiumSphere.Utilities.logsUtils;
+import Ellithium.DriverSetup.DriverSetUp;
+import Ellithium.Utilities.PropertyHelper;
+import Ellithium.Utilities.logsUtils;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;

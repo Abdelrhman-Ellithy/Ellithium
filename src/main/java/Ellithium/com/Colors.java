@@ -1,4 +1,4 @@
-package AutoEllithiumSphere.Utilities;
+package Ellithium.com;
 
 public class Colors {
     public static final String RESET = "\u001B[37m";

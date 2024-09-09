@@ -1,5 +1,4 @@
-package AutoEllithiumSphere.DriverSetup;
-import AutoEllithiumSphere.com.CustomTestNGListener;
+package Ellithium.DriverSetup;
 import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
 import io.qameta.allure.testng.AllureTestNg;
@@ -8,7 +7,7 @@ import org.testng.annotations.*;
 @Listeners({AllureTestNg.class})
 @CucumberOptions(
         features = "src/test/resources/features",
-        glue = {"UI.stepDefinitions","AutoEllithiumSphere.com", "AutoEllithiumSphere.DriverSetup"},
+        glue = {"UI.stepDefinitions","Ellithium.com", "Ellithium.DriverSetup"},
         plugin = {
                 "pretty",
                 "html:Test-Output/Reports/Cucumber/cucumber.html",
