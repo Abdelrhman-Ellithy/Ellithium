@@ -33,10 +33,7 @@ public class AllureHelper {
 
                 CommandExecutor.executeCommand(generateCommand);
                 CommandExecutor.executeCommand(openCommand);
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    CommandExecutor.executeCommand("pause");
-                }
-                CommandExecutor.executeCommand("exit");
+                System.exit(0);
             } else {
                 System.err.println("Failed to resolve Allure binary path.");
             }

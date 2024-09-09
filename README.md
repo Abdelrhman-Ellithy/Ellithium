@@ -44,7 +44,7 @@
 
 Ensure you have the following installed:
 
-- **Java Development Kit (JDK)**: Version 17 or higher
+- **Java Development Kit (JDK)**: Version 21
 - **Maven**: 3.8.1 or higher
 - **Browsers**: Latest versions of **Chrome, Firefox,** and **Edge**
 
@@ -56,6 +56,8 @@ Ellithium supports reading and writing data from various file formats, including
 - **CSV**
 - **Excel**
 - **Properties**
+- **Coomend Executer for Windows, Unix Based OS**
+
 
 ## 📬 Contact
 

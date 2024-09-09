@@ -6,15 +6,12 @@ import org.testng.annotations.*;
 
 @Listeners({AllureTestNg.class})
 @CucumberOptions(
-        features = "src/test/resources/features",
-        glue = {"UI.stepDefinitions","Ellithium.com", "Ellithium.DriverSetup"},
+        glue = {"stepDefinitions","Ellithium.com", "Ellithium.DriverSetup"},
         plugin = {
                 "pretty",
                 "html:Test-Output/Reports/Cucumber/cucumber.html",
                 "json:Test-Output/Reports/Cucumber/cucumber.json",
-        },
-        monochrome = true,
-        tags = "@Run"
+        }
 )
 public class SETUP extends AbstractTestNGCucumberTests {
         @Parameters({"BrowserName","HeadlessMode","PageLoadStrategy","PrivateMode","SandboxMode", "WebSecurityMode" })
