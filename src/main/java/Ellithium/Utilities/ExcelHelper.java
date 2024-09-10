@@ -2,14 +2,11 @@ package Ellithium.Utilities;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class ExcelHelper extends DataUtils {
-    // Excel
+
     public static List<Map<String, String>> getExcelData(String fileName, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(TEST_DATA_PATH + fileName + ".xlsx");
@@ -37,13 +34,16 @@ public class ExcelHelper extends DataUtils {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logsUtils.error(Colors.RED + "Failed to read Excel file: " + fileName + Colors.RESET);
+            logsUtils.logException(e);
         }
         return data;
     }
+
     public static void setExcelData(String fileName, String sheetName, List<Map<String, String>> data) {
         try (FileInputStream fis = new FileInputStream(TEST_DATA_PATH + fileName + ".xlsx");
              Workbook workbook = new XSSFWorkbook(fis)) {
+
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
                 sheet = workbook.createSheet(sheetName);
@@ -71,9 +71,11 @@ public class ExcelHelper extends DataUtils {
                 workbook.write(fos);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logsUtils.error(Colors.RED + "Failed to write Excel file: " + fileName + Colors.RESET);
+            logsUtils.logException(e);
         }
     }
+
     private static String getCellValueAsString(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:

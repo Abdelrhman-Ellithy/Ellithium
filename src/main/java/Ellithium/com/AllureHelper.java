@@ -95,7 +95,8 @@ public class AllureHelper {
                 extractFileFromJar(jarFile, "logo/styles.css", myStyle);
                 addAllureToSystemPath(allureBinaryDirectory);
             } catch (IOException e) {
-                System.err.println("Failed to extract Allure folder from JAR: " + e.getMessage());
+                System.err.println("Failed to extract Allure folder from JAR: ");
+                logsUtils.logException(e);
                 return null;
             }
         }
@@ -119,7 +120,7 @@ public class AllureHelper {
                 CommandExecutor.executeCommand(command);
                 logsUtils.info(Colors.GREEN + "Allure binary path added to " + shellConfig + " (Unix-based)." + Colors.RESET);
             } else {
-                System.out.println("Unsupported OS.");
+                logsUtils.error(Colors.RED + "Unsupported OS." + Colors.RESET);
             }
         } else {
             logsUtils.info(Colors.GREEN + "Allure binary path already exists in the system PATH." + Colors.RESET);
