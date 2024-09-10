@@ -17,7 +17,7 @@
 - **Parallel Execution**: Execute tests in parallel to reduce overall test execution time and improve efficiency.
 - **Headless Testing**: Run tests in headless mode for faster execution and to save resources.
 - **BDD Support**: Implements Behavior-Driven Development (BDD) using **Cucumber** to create human-readable test scenarios.
-- **Data-Driven Testing**: Read and write data from various formats such as **JSON, CSV, Excel, and properties files**.
+- **Data-Driven Testing**: Read and write data from various formats such as **JSON, CSV, Excel, properties and Jar files**.
 - **Custom Listeners**: Additional listeners for better control and enhanced test reporting.
 - **Logging**: Comprehensive logging using **Log4j2** for debugging and tracking purposes.
 - **Allure Reporting**: Generate rich and interactive test reports with **Allure**.
@@ -56,6 +56,7 @@ Ellithium supports reading and writing data from various file formats, including
 - **CSV**
 - **Excel**
 - **Properties**
+- **Jar**
 
 ## 🏁 Getting Started
 
@@ -230,8 +231,26 @@ import io.cucumber.testng.CucumberOptions;
 public class TestRunner extends SETUP {
 }
 ```
+### Step 4: To Create a BaseStepDefinitions Class.
 
-### Step 4: Create a `TestNGRunner.xml` File
+- **Create a BaseStepDefinitions class that will be used to extend the other StepDefinitions Classes from it**.
+```
+package Base;
+import Ellithium.DriverSetup.DriverFactory;
+import org.openqa.selenium.WebDriver;
+public class BaseStepDefinitions {
+    protected WebDriver driver;
+    public BaseStepDefinitions(){
+        driver= DriverFactory.getDriver();
+    }
+}
+```
+
+### 🗒️ Note:
+
+- **To Create a WebDriver Instance use .DriverFactory.getDriver();**
+
+### Step 5: Create a `TestNGRunner.xml` File
 
 - **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.**
 

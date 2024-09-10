@@ -4,13 +4,10 @@ import Ellithium.Utilities.logsUtils;
 import Ellithium.com.Colors;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
-import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -54,15 +51,11 @@ public class StartUpLoader {
         switch (propertyFileType) {
             case "allure":
                 if (!checkFileExists(allurePath)) {
-                    try {
-                        File jarFile = findJarFile();
-                        if (jarFile != null) {
-                            extractFileFromJar(jarFile, "properties/default/allure.properties", new File(allurePath));
-                        } else {
-                            System.err.println("JAR file not found.");
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Error initializing allure properties: " + e.getMessage());
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        extractFileFromJar(jarFile, "properties/default/allure.properties", new File(allurePath));
+                    } else {
+                        System.err.println("JAR file not found.");
                     }
                 } else {
                     logsUtils.info(Colors.GREEN + "Allure properties already exist.");
@@ -70,16 +63,12 @@ public class StartUpLoader {
                 break;
             case "config":
                 if (!checkFileExists(configPath)) {
-                    try {
-                        File jarFile = findJarFile();
-                        if (jarFile != null) {
-                            extractFileFromJar(jarFile, "properties/default/config.properties", new File(configPath));
-                            logsUtils.info(Colors.GREEN + "Config properties initialized.");
-                        } else {
-                            System.err.println("JAR file not found.");
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Error initializing config properties: " + e.getMessage());
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        extractFileFromJar(jarFile, "properties/default/config.properties", new File(configPath));
+                        logsUtils.info(Colors.GREEN + "Config properties initialized.");
+                    } else {
+                        System.err.println("JAR file not found.");
                     }
                 } else {
                     logsUtils.info(Colors.GREEN + "Config properties already exist.");
@@ -87,16 +76,12 @@ public class StartUpLoader {
                 break;
             case "log4j2":
                 if (!checkFileExists(logPath)) {
-                    try {
-                        File jarFile = findJarFile();
-                        if (jarFile != null) {
-                            extractFileFromJar(jarFile, "properties/default/log4j2.properties", new File(logPath));
-                            logsUtils.info(Colors.GREEN + "Log4j2 properties initialized.");
-                        } else {
-                            System.err.println("JAR file not found.");
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Error initializing log4j2 properties: " + e.getMessage());
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        extractFileFromJar(jarFile, "properties/default/log4j2.properties", new File(logPath));
+                        logsUtils.info(Colors.GREEN + "Log4j2 properties initialized.");
+                    } else {
+                        System.err.println("JAR file not found.");
                     }
                 } else {
                     logsUtils.info(Colors.GREEN + "Log4j2 properties already exist.");
@@ -106,6 +91,9 @@ public class StartUpLoader {
                 System.err.println("Unknown property file type: " + propertyFileType);
                 break;
         }
+    }
+
+    private static void extractFileFromJar(File jarFile, String s, File file) {
     }
 
     private static boolean checkFileExists(String filePath) {
@@ -127,7 +115,7 @@ public class StartUpLoader {
         }
         return null;
     }
-    public static void extractFolderFromJar(File jarFile, File targetDirectory) throws IOException {
+    public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
@@ -150,20 +138,4 @@ public class StartUpLoader {
             }
         }
     }
-
-    public static void extractFileFromJar(File jarFile, String filePathInJar, File outputFile) throws IOException {
-        try (JarFile jar = new JarFile(jarFile)) {
-            JarEntry entry = jar.getJarEntry(filePathInJar);
-            if (entry != null) {
-                if (!outputFile.getParentFile().exists()) {
-                    outputFile.getParentFile().mkdirs();
-                }
-                Files.copy(jar.getInputStream(entry), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("Extracted file from JAR: " + filePathInJar);
-            } else {
-                System.err.println("File not found in JAR: " + filePathInJar);
-            }
-        }
-    }
-
 }
