@@ -8,8 +8,8 @@ import java.io.File;
 import java.io.IOException;
 
 import static Ellithium.Utilities.PropertyHelper.getDataFromProperties;
-import static Ellithium.properties.StartUpLoader.extractFileFromJar;
-import static Ellithium.properties.StartUpLoader.extractFolderFromJar;
+import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
+import static Ellithium.properties.StartUpLoader.extractAllureFolderFromJar;
 
 public class AllureHelper {
 
@@ -84,10 +84,9 @@ public class AllureHelper {
                 return null;
             }
             try {
-                extractFolderFromJar(jarFile, allureDirectory);
+                extractAllureFolderFromJar(jarFile, allureDirectory);
                 String allureVersion = getDataFromProperties(configFilePath, "allureVersion");
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
-
                 String allureLogoDirectoryPath = allureDirectory.getPath() + File.separator + "-" + allureVersion + File.separator + "plugins" + File.separator + "custom-logo-plugin" + File.separator + "static";
                 File allureLogoDirectory = new File(allureLogoDirectoryPath, "custom-logo.svg");
                 allureLogoDirectory.delete();
