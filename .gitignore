@@ -2,7 +2,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-TestNGRunner.xml.xml
+TestNGRunner.xml
 Test-Output/Reports
 Test-Output/Logs
 Test-Output/ScreenShots
