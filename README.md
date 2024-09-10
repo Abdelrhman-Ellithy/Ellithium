@@ -97,7 +97,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <dependency>
         <groupId>io.github</groupId>
         <artifactId>Ellithium</artifactId>
-        <version>1.0.0</version>
+        <version>${Ellithiumversion}</version>
     </dependency>
 
     <!-- Rest Assured for API Testing -->
