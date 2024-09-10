@@ -214,7 +214,7 @@ Here is the updated **Getting Started** section formatted for your README file:
 
 ### Step 3: Create a Test Runner Class
 
-- **Create a runner class that extends the `SETUP` class from **Ellithium**.
+- **Create a runner class that extends the `SETUP` class from Ellithium**.
 - **Specify the paths for your feature files and step definitions using the `@CucumberOptions`.**
 
 ```
@@ -252,7 +252,7 @@ public class TestRunner extends SETUP {
 </suite>
 ```
 
-The default values if you didn't add the paramaters to the TestNGRunner.xml File are:
+- **The default values** if you **didn't add the paramaters** to the **TestNGRunner.xml** File are:
 
 ```
     @default("Chrome") String BrowserName, // can be Chrome or Edge or Firefox
@@ -263,6 +263,11 @@ The default values if you didn't add the paramaters to the TestNGRunner.xml File
     @default("True") String WebSecurityMode // can be True or False 
 )
 ```
+
+- **Edit the number of data-provider-thread-count to the number of Scenarios you to run at a time** 
+- **For parallel execution make it 2 or above**
+ 
+- **Note you cannot run the Tests in paralle with diffrent Configurations**
 ---
 - **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.**
 
@@ -270,6 +275,6 @@ The default values if you didn't add the paramaters to the TestNGRunner.xml File
 ## 📬 Contact
 
 - **For questions, suggestions, or feedback, feel free to reach out to Abdelrahman Ellithy**
-** at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).**
+**at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).**
 
 ---
