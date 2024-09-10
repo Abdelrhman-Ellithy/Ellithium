@@ -7,10 +7,12 @@ import Ellithium.Utilities.logsUtils;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
+import io.qameta.allure.Allure;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
 import com.google.common.io.Files;
@@ -27,7 +29,7 @@ public class CucumberDefaultHooks {
         String PrivateMode=System.getProperty("PrivateMode", "true").toLowerCase();
         String SandboxMode=System.getProperty("SandboxMode","Sandbox").toLowerCase();
         String WebSecurityMode=System.getProperty("WebSecurityMode","True").toLowerCase();
-        logsUtils.info(CYAN + " [START] " + browserName + BLUE + " Scenario " + scenario.getName() + " [START]\n" + RESET);
+        logsUtils.info(CYAN + "[START] " + browserName.toUpperCase() + BLUE + " Scenario " + scenario.getName() + " [START]\n" + RESET);
         WebDriver localDriver = DriverSetUp.setupLocalDriver(browserName, headlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
         localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.set(localDriver);  // Set WebDriver for this thread
@@ -38,22 +40,25 @@ public class CucumberDefaultHooks {
         if (localDriver != null) {
             TakesScreenshot camera = (TakesScreenshot) localDriver;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-
             switch (scenario.getStatus()) {
                 case FAILED:
                     try {
-                        String browserName=System.getProperty("BrowserName");
-                        logsUtils.info(RED+' '+browserName + " [FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
-                        Files.move(screenshot, new File("Test-Output/ScreenShots/Failed/" +browserName+ scenario.getName() + ".png"));
+                        logsUtils.info(RED + ' ' + browserName.toUpperCase() + "[FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
+
+                        File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + browserName + scenario.getName() + ".png");
+                        Files.move(screenshot, screenShotFile);
+                        try (FileInputStream fis = new FileInputStream(screenShotFile)) {
+                            Allure.addAttachment(browserName.toUpperCase() + "-" + scenario.getName(), "image/png", fis, ".png");
+                        }
                     } catch (IOException e) {
                         logsUtils.logException(e);
                     }
                     break;
                 case PASSED:
-                    logsUtils.info(GREEN +' '+browserName+ " [PASSED] Scenario " + scenario.getName() + " [PASSED]" + RESET);
+                    logsUtils.info(GREEN + ' ' + browserName + "[PASSED] Scenario " + scenario.getName() + " [PASSED]" + RESET);
                     break;
                 case SKIPPED:
-                    logsUtils.info(YELLOW+' '+browserName + " [SKIPPED] Scenario " + scenario.getName() + " [SKIPPED]" + RESET);
+                    logsUtils.info(YELLOW + ' ' + browserName + "[SKIPPED] Scenario " + scenario.getName() + " [SKIPPED]" + RESET);
                     break;
             }
             String closeFlag= PropertyHelper.getDataFromProperties("src"+File.separator+"main"

@@ -66,7 +66,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
         totalMills = totalExecutionTime % 1000;
         totalSeconds = (totalExecutionTime / 1000) % 60;
         totalMinutes = (totalExecutionTime / 60000) % 60;
-        logsUtils.info(CYAN + "\n\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n\n" + RESET);
+        logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
         AllureHelper.allureOpen();
     }
 }
