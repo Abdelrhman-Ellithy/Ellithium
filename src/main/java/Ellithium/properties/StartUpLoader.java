@@ -1,7 +1,7 @@
 package Ellithium.properties;
 
+import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.logsUtils;
-import Ellithium.com.Colors;
 import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;

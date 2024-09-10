@@ -8,7 +8,6 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import io.qameta.allure.Allure;
-import io.qameta.allure.AllureResultsWriter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -17,6 +16,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
 import com.google.common.io.Files;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.devtools.DevTools;
+import org.openqa.selenium.devtools.v85.log.Log;
+import org.openqa.selenium.edge.EdgeDriver;
+
 public class CucumberDefaultHooks {
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     private String browserName;
@@ -32,6 +36,39 @@ public class CucumberDefaultHooks {
         String WebSecurityMode=System.getProperty("WebSecurityMode","True").toLowerCase();
         logsUtils.info(CYAN + "[START] " + browserName.toUpperCase() + BLUE + " Scenario " + scenario.getName() + " [START]\n" + RESET);
         WebDriver localDriver = DriverSetUp.setupLocalDriver(browserName, headlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
+        String configFilePath=System.getProperty("user.dir") + File.separator + "src"
+                + File.separator + "main" + File.separator + "resources"
+                + File.separator + "properties" + File.separator + "default" + File.separator + "config";
+        String loggerExtensiveTraceModeFlag=PropertyHelper.getDataFromProperties(configFilePath, "loggerExtensiveTraceMode");
+        if (loggerExtensiveTraceModeFlag.equalsIgnoreCase("true")){
+            DevTools devTools;
+            switch (browserName.toLowerCase()){
+                case "edge" :
+                    devTools=((EdgeDriver)localDriver).getDevTools();
+                    devTools.createSession();
+                    devTools.send(Log.enable());
+                    devTools.addListener(Log.entryAdded(), logEntry -> {
+                        logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+"\n"+RESET);
+                        logsUtils.info(BLUE+"Text: "+logEntry.getText()+"\n"+RESET);
+                        logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+"\n"+RESET);
+                        logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+"\n"+RESET);
+                    });
+                    break;
+                case "chrome":
+                    devTools=((ChromeDriver)localDriver).getDevTools();
+                    devTools.createSession();
+                    devTools.send(Log.enable());
+                    devTools.addListener(Log.entryAdded(), logEntry -> {
+                        logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+"\n"+RESET);
+                        logsUtils.info(BLUE+"Text: "+logEntry.getText()+"\n"+RESET);
+                        logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+"\n"+RESET);
+                        logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+"\n"+RESET);
+                    });
+                    break;
+                default:
+                    break;
+            }
+        }
         localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.set(localDriver);  // Set WebDriver for this thread
     }
@@ -39,13 +76,12 @@ public class CucumberDefaultHooks {
     public void tearDown(Scenario scenario) {
         WebDriver localDriver = driver.get();
         if (localDriver != null) {
-            TakesScreenshot camera = (TakesScreenshot) localDriver;
-            File screenshot = camera.getScreenshotAs(OutputType.FILE);
             switch (scenario.getStatus()) {
                 case FAILED:
                     try {
                         logsUtils.info(RED + ' ' + browserName.toUpperCase() + "[FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
-
+                        TakesScreenshot camera = (TakesScreenshot) localDriver;
+                        File screenshot = camera.getScreenshotAs(OutputType.FILE);
                         File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + browserName + scenario.getName() + ".png");
                         Files.move(screenshot, screenShotFile);
                         try (FileInputStream fis = new FileInputStream(screenShotFile)) {
