@@ -201,7 +201,7 @@ Here is the updated **Getting Started** section formatted for your README file:
                         <goal>java</goal>
                     </goals>
                     <configuration>
-                        <mainClass>Ellithium.properties.PropertyMaker</mainClass>
+                        <mainClass>Ellithium.properties.StartUpLoader</mainClass>
                         <includePluginDependencies>true</includePluginDependencies>
                         <classpathScope>compile</classpathScope>
                     </configuration>

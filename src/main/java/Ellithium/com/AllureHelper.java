@@ -5,16 +5,11 @@ import Ellithium.Utilities.logsUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 import static Ellithium.Utilities.PropertyHelper.getDataFromProperties;
+import static Ellithium.properties.StartUpLoader.extractFileFromJar;
+import static Ellithium.properties.StartUpLoader.extractFolderFromJar;
 
 public class AllureHelper {
 
@@ -93,7 +88,7 @@ public class AllureHelper {
                 String allureVersion = getDataFromProperties(configFilePath, "allureVersion");
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
 
-                String allureLogoDirectoryPath = allureDirectory.getPath() + File.separator + "-" + allureVersion + File.separator + "plugins" + File.separator + "custom-logo-plugin" + File.separator + "static" + File.separator;
+                String allureLogoDirectoryPath = allureDirectory.getPath() + File.separator + "-" + allureVersion + File.separator + "plugins" + File.separator + "custom-logo-plugin" + File.separator + "static";
                 File allureLogoDirectory = new File(allureLogoDirectoryPath, "custom-logo.svg");
                 allureLogoDirectory.delete();
                 new File(allureLogoDirectoryPath, "styles.css").delete();
@@ -106,44 +101,6 @@ public class AllureHelper {
             }
         }
         return allureBinaryDirectory != null ? allureBinaryDirectory.getAbsolutePath() + File.separator : null;
-    }
-    private static void extractFolderFromJar(File jarFile, File targetDirectory) throws IOException {
-        if (!targetDirectory.exists()) {
-            Files.createDirectory(targetDirectory.toPath());
-        }
-
-        try (JarFile jar = new JarFile(jarFile)) {
-            Enumeration<JarEntry> entries = jar.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (entry.getName().startsWith("allure")) {
-                    File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
-                    if (entry.isDirectory()) {
-                        targetFile.mkdirs();
-                    } else {
-                        Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {
-                            targetFile.setExecutable(true);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void extractFileFromJar(File jarFile, String filePathInJar, File outputFile) throws IOException {
-        try (JarFile jar = new JarFile(jarFile)) {
-            JarEntry entry = jar.getJarEntry(filePathInJar);
-            if (entry != null) {
-                if (!outputFile.getParentFile().exists()) {
-                    outputFile.getParentFile().mkdirs();
-                }
-                Files.copy(jar.getInputStream(entry), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("Extracted file from JAR: " + filePathInJar);
-            } else {
-                System.err.println("File not found in JAR: " + filePathInJar);
-            }
-        }
     }
 
     private static void addAllureToSystemPath(File allureDirectory) {
