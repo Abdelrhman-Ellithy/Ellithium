@@ -66,7 +66,7 @@ Here is the updated **Getting Started** section formatted for your README file:
 
 ### Step 1: Create a New Maven Project
 
-- **Create a new Maven project using your preferred IDE (e.g., IntelliJ IDEA).
+- **Create a new Maven project using your preferred IDE (e.g., IntelliJ IDEA).**
 
 ### Step 2: Update the `pom.xml`
 
@@ -233,7 +233,7 @@ public class TestRunner extends SETUP {
 
 ### Step 4: Create a `TestNGRunner.xml` File
 
-- **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.
+- **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.**
 
 ```xml
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
@@ -264,12 +264,12 @@ The default values if you didn't add the paramaters to the TestNGRunner.xml File
 )
 ```
 ---
-- **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.
+- **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.**
 
 
 ## 📬 Contact
 
-- **For questions, suggestions, or feedback, feel free to reach out to **Abdelrahman Ellithy**
-** at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).
+- **For questions, suggestions, or feedback, feel free to reach out to Abdelrahman Ellithy**
+** at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).**
 
 ---
