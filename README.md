@@ -248,7 +248,8 @@ public class BaseStepDefinitions {
 
 ### 🗒️ Note:
 
-- **To Create a WebDriver Instance use .DriverFactory.getDriver();**
+- **To Create a WebDriver Instance use 'DriverFactory.getDriver()' class from Ellithium.DriverSetup**
+- **like 'WebDriver driver= DriverFactory.getDriver();'**
 
 ### Step 5: Create a `TestNGRunner.xml` File
 
