@@ -16,7 +16,7 @@ public class DriverActions {
                 .pollingEvery(Duration.ofMillis(pollingEvery))
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         driver.findElement(locator).clear();
-        logsUtils.info(Colors.BLUE+"Sending Data To Element: "+locator+ " "+ data+Colors.RESET);
+        logsUtils.info(Colors.BLUE+"Sending Data \""+ data+"\" To Element: "+locator+Colors.RESET);
         driver.findElement(locator).sendKeys(data);
     }
 
@@ -25,7 +25,7 @@ public class DriverActions {
                 .pollingEvery(Duration.ofMillis(pollingEvery))
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         driver.findElement(locator).clear();
-        logsUtils.info(Colors.BLUE+"Sending Data To Element: "+locator+ " "+ data+Colors.RESET);
+        logsUtils.info(Colors.BLUE+"Sending Data \""+ data+"\" To Element: "+locator+Colors.RESET);
         driver.findElement(locator).sendKeys(data);
     }
 
@@ -221,9 +221,73 @@ public class DriverActions {
         driver.switchTo().window(originalWindowHandle);
         logsUtils.info(Colors.BLUE+"Switched To Original Window"+Colors.RESET);
     }
+    // Overloaded SendData method with pollingEvery 500ms
+    public static void SendData(WebDriver driver, By locator, String data) {
+        SendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
 
+    public static void SendData(WebDriver driver, By locator, Keys data) {
+        SendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded getText method with pollingEvery 500ms
+    public static String getText(WebDriver driver, By locator) {
+        return getText(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded ClickingOnElement method with pollingEvery 500ms
+    public static void ClickingOnElement(WebDriver driver, By locator) {
+        ClickingOnElement(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded waitForInvisibility method with pollingEvery 500ms
+    public static void waitForInvisibility(WebDriver driver, By locator) {
+        waitForInvisibility(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded selectDropdownByText method with pollingEvery 500ms
+    public static void selectDropdownByText(WebDriver driver, By locator, String option) {
+        selectDropdownByText(driver, locator, option, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded selectDropdownByValue method with pollingEvery 500ms
+    public static void selectDropdownByValue(WebDriver driver, By locator, String value) {
+        selectDropdownByValue(driver, locator, value, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded selectDropdownByIndex method with pollingEvery 500ms
+    public static void selectDropdownByIndex(WebDriver driver, By locator, int index) {
+        selectDropdownByIndex(driver, locator, index, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded waitForElementToBeClickable method with pollingEvery 500ms
+    public static WebElement waitForElementToBeClickable(WebDriver driver, By locator) {
+        return waitForElementToBeClickable(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded waitForElementToBeVisible method with pollingEvery 500ms
+    public static WebElement waitForElementToBeVisible(WebDriver driver, By locator) {
+        return waitForElementToBeVisible(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded waitForElementPresence method with pollingEvery 500ms
+    public static WebElement waitForElementPresence(WebDriver driver, By locator) {
+        return waitForElementPresence(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded waitForElementToDisappear method with pollingEvery 500ms
+    public static void waitForElementToDisappear(WebDriver driver, By locator) {
+        waitForElementToDisappear(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
+
+    // Overloaded getAttributeValue method with pollingEvery 500ms
+    public static String getAttributeValue(WebDriver driver, By locator, String attribute) {
+        return getAttributeValue(driver, locator, attribute, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    }
     // Find an element
     public static WebElement findWebelement(WebDriver driver, By locator) {
         return driver.findElement(locator);
     }
+
+
 }
