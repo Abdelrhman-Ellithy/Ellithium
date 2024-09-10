@@ -2,7 +2,7 @@ package Ellithium.properties;
 
 import Ellithium.Utilities.logsUtils;
 import Ellithium.com.Colors;
-
+import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,14 +20,12 @@ public class StartUpLoader {
     private static final String logPath = basePath + "log4j2.properties";
     private static final String cucumberPath = basePath + "cucumber.properties";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("Application started with properties initialized.");
-
         // Initialize each property file
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
-
         // Check if TestData directory exists or create it
         File testDataDirectory = new File(testPath);
         if (testDataDirectory.exists()) {
@@ -47,7 +45,7 @@ public class StartUpLoader {
         }
     }
 
-    private static void initializePropertyFiles(String propertyFileType) {
+    private static void initializePropertyFiles(String propertyFileType) throws IOException {
         switch (propertyFileType) {
             case "allure":
                 if (!checkFileExists(allurePath)) {
@@ -92,10 +90,6 @@ public class StartUpLoader {
                 break;
         }
     }
-
-    private static void extractFileFromJar(File jarFile, String s, File file) {
-    }
-
     private static boolean checkFileExists(String filePath) {
         File file = new File(filePath);
         return file.exists();
