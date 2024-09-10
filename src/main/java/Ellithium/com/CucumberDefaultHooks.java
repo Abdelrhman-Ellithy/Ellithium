@@ -8,6 +8,7 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import io.qameta.allure.Allure;
+import io.qameta.allure.AllureResultsWriter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -48,7 +49,8 @@ public class CucumberDefaultHooks {
                         File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + browserName + scenario.getName() + ".png");
                         Files.move(screenshot, screenShotFile);
                         try (FileInputStream fis = new FileInputStream(screenShotFile)) {
-                            Allure.addAttachment(browserName.toUpperCase() + "-" + scenario.getName(), "image/png", fis, ".png");
+                            Allure.description(browserName.toUpperCase()+ "-" + scenario.getName()+ " FAILED");
+                            Allure.addAttachment(browserName.toUpperCase() + "- Scenario " + scenario.getName(), "image/png", fis, ".png");
                         }
                     } catch (IOException e) {
                         logsUtils.logException(e);
