@@ -1,5 +1,6 @@
 package Ellithium.com;
 
+import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.CommandExecutor;
 import Ellithium.Utilities.logsUtils;
 import org.apache.commons.lang3.SystemUtils;
