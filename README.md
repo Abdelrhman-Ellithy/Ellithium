@@ -40,8 +40,6 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://docs.qameta.io/allure/" target="_blank"><img src="https://avatars.githubusercontent.com/u/5879127?s=200&v=4" alt="Allure Reports" height="50px"></a>
 <br/><br/>
 
-## 🏁 Getting Started
-
 ### Prerequisites
 
 Ensure you have the following installed:
@@ -59,8 +57,219 @@ Ellithium supports reading and writing data from various file formats, including
 - **Excel**
 - **Properties**
 
+## 🏁 Getting Started
+
+- **Follow these steps to set up a new Maven project with Ellithium:**
+Here is the updated **Getting Started** section formatted for your README file:
+
+---
+
+### Step 1: Create a New Maven Project
+
+- **Create a new Maven project using your preferred IDE (e.g., IntelliJ IDEA).
+
+### Step 2: Update the `pom.xml`
+
+- **Add the following configuration to your `pom.xml` to set the Java version, include the required dependencies, and configure the plugins.**
+
+```xml
+<properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <restversion>5.4.0</restversion>
+    <Ellithiumversion>1.0.0</Ellithiumversion>
+</properties>
+
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+
+<dependencies>
+    <!-- Ellithium Framework -->
+    <dependency>
+        <groupId>io.github</groupId>
+        <artifactId>Ellithium</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+
+    <!-- Rest Assured for API Testing -->
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <version>${restversion}</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <!-- Maven Compiler Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>21</source>
+                <target>21</target>
+            </configuration>
+        </plugin>
+
+        <!-- Maven Surefire Plugin for TestNG Execution -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.5.0</version>
+            <configuration>
+                <suiteXmlFiles>
+                    <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
+                </suiteXmlFiles>
+                <properties>
+                    <property>
+                        <name>listener</name>
+                        <value>Ellithium.com.CustomTestNGListener</value>
+                    </property>
+                </properties>
+                <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                <testFailureIgnore>true</testFailureIgnore>
+                <failIfNoTests>false</failIfNoTests>
+            </configuration>
+        </plugin>
+
+        <!-- Maven Clean Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.3.2</version>
+            <configuration>
+                <filesets>
+                    <fileset>
+                        <directory>Test-Output/Reports/Allure/allure-results</directory>
+                    </fileset>
+                    <fileset>
+                        <directory>Test-Output/Logs</directory>
+                    </fileset>
+                </filesets>
+            </configuration>
+        </plugin>
+
+        <!-- Maven Resources Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+                <execution>
+                    <id>clear-allure-results</id>
+                    <phase>initialize</phase>
+                    <goals>
+                        <goal>resources</goal>
+                    </goals>
+                    <configuration>
+                        <resources>
+                            <resource>
+                                <directory>Test-Output/Reports/Allure/allure-results</directory>
+                                <includes>
+                                    <include>**/*</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>**/*.gitkeep</exclude>
+                                </excludes>
+                            </resource>
+                        </resources>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
+        <!-- Exec Maven Plugin -->
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+                <execution>
+                    <id>initialize</id>
+                    <phase>initialize</phase>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                    <configuration>
+                        <mainClass>Ellithium.properties.PropertyMaker</mainClass>
+                        <includePluginDependencies>true</includePluginDependencies>
+                        <classpathScope>compile</classpathScope>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+### Step 3: Create a Test Runner Class
+
+- **Create a runner class that extends the `SETUP` class from **Ellithium**.
+- **Specify the paths for your feature files and step definitions using the `@CucumberOptions`.**
+
+```
+package Runner;
+
+import Ellithium.DriverSetup.SETUP;
+import io.cucumber.testng.CucumberOptions;
+
+@CucumberOptions(
+        glue = "stepDefinitions", // path to your stepDefinitions package, note you should use . instead of /
+        features="src/test/resources/features" // path to your features folder
+)
+public class TestRunner extends SETUP {
+}
+```
+
+### Step 4: Create a `TestNGRunner.xml` File
+
+- **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.
+
+```xml
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="UI Chrome Browser Testing" verbose="1" data-provider-thread-count="1">
+    <test name="UI Chrome">
+        <parameter name="BrowserName" value="Chrome"/>
+        <parameter name="HeadlessMode" value="false"/>
+        <parameter name="PageLoadStrategy" value="Eager"/>
+        <parameter name="PrivateMode" value="True"/>
+        <parameter name="SandboxMode" value="Sandbox"/>
+        <parameter name="WebSecurityMode" value="True"/>
+        <classes>
+            <class name="Runner.TestRunner"/>
+        </classes>
+    </test>
+</suite>
+```
+
+The default values if you didn't add the paramaters to the TestNGRunner.xml File are:
+
+```
+    @default("Chrome") String BrowserName, // can be Chrome or Edge or Firefox
+    @default("false") String HeadlessMode, // can be true or fallse
+    @default("Normal") String PageLoadStrategy, // can be Normal or Eager
+    @default("True") String PrivateMode, // can be true or false
+    @default("Sandbox") String SandboxMode, // can be Sandbox or NoSandbox
+    @default("True") String WebSecurityMode // can be True or False 
+)
+```
+---
+- **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.
+
+
 ## 📬 Contact
 
-For questions, suggestions, or feedback, feel free to reach out to **Abdelrahman Ellithy** at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).
+- **For questions, suggestions, or feedback, feel free to reach out to **Abdelrahman Ellithy**
+** at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).
 
 ---
