@@ -4,11 +4,14 @@
 *.properties linguist-language=Properties
 *.html linguist-language=HTML
 *.css linguist-language=CSS
-*.rb linguist-language=Java
+*.rb linguist-language=Ruby
+*.py linguist-language=Python
+*.js linguist-language=JavaScript
 
 *.css linguist-detectable=true
 *.java linguist-detectable=true
-*.py linguist-detectable=true 
+*.py linguist-detectable=true
 *.js linguist-detectable=true
-*.html linguist-detectable=true  
+*.html linguist-detectable=true
 *.xml linguist-detectable=true
+*.rb linguist-detectable=true
