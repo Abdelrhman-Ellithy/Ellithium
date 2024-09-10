@@ -6,7 +6,7 @@ import org.testng.annotations.*;
 
 @Listeners({AllureTestNg.class})
 @CucumberOptions(
-        glue = {"stepDefinitions","Ellithium.com", "Ellithium.DriverSetup"},
+        glue = {"Ellithium.com", "Ellithium.DriverSetup"},
         plugin = {
                 "pretty",
                 "html:Test-Output/Reports/Cucumber/cucumber.html",

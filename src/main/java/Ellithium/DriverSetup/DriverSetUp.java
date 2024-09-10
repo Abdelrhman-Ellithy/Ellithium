@@ -39,7 +39,7 @@ public class DriverSetUp {
         if ("true".equalsIgnoreCase(privateMode)) {
             chromeOptions.addArguments("--incognito");
         }
-        if ("false".equalsIgnoreCase(sandboxMode)) {
+        if ("nosandbox".equalsIgnoreCase(sandboxMode)) {
             chromeOptions.addArguments("--no-sandbox");
         }
         if ("false".equalsIgnoreCase(webSecurityMode)) {
