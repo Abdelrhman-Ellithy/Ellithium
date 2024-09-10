@@ -1,5 +1,7 @@
 package Ellithium.DriverSetup;
 
+import Ellithium.Utilities.Colors;
+import Ellithium.Utilities.logsUtils;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -50,6 +52,7 @@ public class DriverSetUp {
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--remote-allow-origins=*");
         chromeOptions.addArguments("--ignore-certificate-errors");
+        logsUtils.info(Colors.GREEN+ "Chrome Options Configured"+Colors.RESET);
         return chromeOptions;
     }
 
@@ -73,6 +76,7 @@ public class DriverSetUp {
         }
         // Other common options
         firefoxOptions.addArguments("--disable-dev-shm-usage");
+        logsUtils.info(Colors.GREEN+ "Firefox Options Configured"+Colors.RESET);
         return firefoxOptions;
     }
 
@@ -97,6 +101,7 @@ public class DriverSetUp {
         }
         // Other common options
         edgeOptions.addArguments("--disable-dev-shm-usage");
+        logsUtils.info(Colors.GREEN+ "Edge Options Configured"+Colors.RESET);
         return edgeOptions;
     }
 }

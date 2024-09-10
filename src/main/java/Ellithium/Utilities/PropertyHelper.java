@@ -2,33 +2,33 @@ package Ellithium.Utilities;
 
 import java.io.*;
 import java.util.Properties;
+
 public class PropertyHelper extends DataUtils {
-    public static String getDataFromProperties(String FilePath,  String key) {
+
+    // Method to get data from a properties file using a key
+    public static String getDataFromProperties(String filePath, String key) {
         Properties prop = new Properties();
         try {
-            prop.load(new FileInputStream(FilePath +".properties"));
+            prop.load(new FileInputStream(filePath + ".properties"));
+            logsUtils.info(Colors.GREEN + "Successfully loaded properties file: " + filePath + Colors.RESET);
         } catch (IOException e) {
+            logsUtils.error(Colors.RED + "Failed to load properties file: " + filePath + Colors.RESET);
+            logsUtils.logException(e);
             throw new RuntimeException(e);
         }
         return prop.getProperty(key);
     }
-    public static void setDataToProperties(String FilePath, String key, String value) {
+
+    // Method to set data into a properties file with a key-value pair
+    public static void setDataToProperties(String filePath, String key, String value) {
         Properties prop = new Properties();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(FilePath + ".properties");
+        try (FileOutputStream out = new FileOutputStream(filePath + ".properties")) {
             prop.setProperty(key, value);
-            try {
-                prop.store(out, null);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            out.close();
+            prop.store(out, null);
+            logsUtils.info(Colors.GREEN + "Successfully updated properties file: " + filePath + Colors.RESET);
         } catch (IOException e) {
+            logsUtils.error(Colors.RED + "Failed to write properties file: " + filePath + Colors.RESET);
+            logsUtils.logException(e);
             throw new RuntimeException(e);
         }
     }
