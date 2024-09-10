@@ -24,6 +24,7 @@ public class AllureHelper {
     public static void allureOpen() {
         String allurePropertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
         String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+
         if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
 
@@ -31,9 +32,24 @@ public class AllureHelper {
                 String generateCommand = allureBinaryPath + "allure generate ." + File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-results --clean -o Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
                 String openCommand = allureBinaryPath + "allure open ." + File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
 
+                // Generate report
                 CommandExecutor.executeCommand(generateCommand);
-                CommandExecutor.executeCommand(openCommand);
-                System.exit(0);
+
+                // Open report and keep the server alive
+                Process allureProcess = CommandExecutor.executeCommandNonBlocking(openCommand);
+
+                // Keep the process alive until user interrupts (e.g., manually close)
+                try {
+                    System.out.println("Allure server is running. Press CTRL+C to stop the server.");
+                    allureProcess.waitFor();  // This will keep the process running until terminated
+                } catch (InterruptedException e) {
+                    System.err.println("Allure server was interrupted.");
+                } finally {
+                    if (allureProcess.isAlive()) {
+                        allureProcess.destroy();
+                        System.out.println("Allure server process terminated.");
+                    }
+                }
             } else {
                 System.err.println("Failed to resolve Allure binary path.");
             }
