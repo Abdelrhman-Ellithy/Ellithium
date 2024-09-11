@@ -6,11 +6,17 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
 
 public class DriverActions {
+    private static int defaultTimeout= 5;
+    private static int defaultPollingTime=500;
+    private static boolean defaultTimeoutGotFlag=false;
+    private static boolean defaultPollingTimeGotFlag=false;
+    private static final String configPath=System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config.properties";
     public static void SendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
                 .pollingEvery(Duration.ofMillis(pollingEvery))
@@ -230,64 +236,106 @@ public class DriverActions {
         SendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
     }
 
-    // Overloaded getText method with pollingEvery 500ms
+    // Overloaded getText method with default timeout and polling time
     public static String getText(WebDriver driver, By locator) {
-        return getText(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        return getText(driver, locator, defaultTimeout, defaultPollingTime); // Timeout 5 seconds, pollingEvery 500ms
     }
 
-    // Overloaded ClickingOnElement method with pollingEvery 500ms
+    // Overloaded ClickingOnElement method with default timeout and polling time
     public static void ClickingOnElement(WebDriver driver, By locator) {
-        ClickingOnElement(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        ClickingOnElement(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForInvisibility method with pollingEvery 500ms
+    // Overloaded waitForInvisibility method with default timeout and polling time
     public static void waitForInvisibility(WebDriver driver, By locator) {
-        waitForInvisibility(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        waitForInvisibility(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded selectDropdownByText method with pollingEvery 500ms
+    // Overloaded selectDropdownByText method with default timeout and polling time
     public static void selectDropdownByText(WebDriver driver, By locator, String option) {
-        selectDropdownByText(driver, locator, option, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        selectDropdownByText(driver, locator, option, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded selectDropdownByValue method with pollingEvery 500ms
+    // Overloaded selectDropdownByValue method with default timeout and polling time
     public static void selectDropdownByValue(WebDriver driver, By locator, String value) {
-        selectDropdownByValue(driver, locator, value, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        selectDropdownByValue(driver, locator, value, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded selectDropdownByIndex method with pollingEvery 500ms
+    // Overloaded selectDropdownByIndex method with default timeout and polling time
     public static void selectDropdownByIndex(WebDriver driver, By locator, int index) {
-        selectDropdownByIndex(driver, locator, index, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        selectDropdownByIndex(driver, locator, index, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForElementToBeClickable method with pollingEvery 500ms
+    // Overloaded waitForElementToBeClickable method with default timeout and polling time
     public static WebElement waitForElementToBeClickable(WebDriver driver, By locator) {
-        return waitForElementToBeClickable(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        return waitForElementToBeClickable(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForElementToBeVisible method with pollingEvery 500ms
+    // Overloaded waitForElementToBeVisible method with default timeout and polling time
     public static WebElement waitForElementToBeVisible(WebDriver driver, By locator) {
-        return waitForElementToBeVisible(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        return waitForElementToBeVisible(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForElementPresence method with pollingEvery 500ms
+    // Overloaded waitForElementPresence method with default timeout and polling time
     public static WebElement waitForElementPresence(WebDriver driver, By locator) {
-        return waitForElementPresence(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        return waitForElementPresence(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForElementToDisappear method with pollingEvery 500ms
+    // Overloaded waitForElementToDisappear method with default timeout and polling time
     public static void waitForElementToDisappear(WebDriver driver, By locator) {
-        waitForElementToDisappear(driver, locator, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        waitForElementToDisappear(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded getAttributeValue method with pollingEvery 500ms
+    // Overloaded getAttributeValue method with default timeout and polling time
     public static String getAttributeValue(WebDriver driver, By locator, String attribute) {
-        return getAttributeValue(driver, locator, attribute, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        return getAttributeValue(driver, locator, attribute, defaultTimeout, defaultPollingTime);
     }
-    // Find an element
+
+    // Find an element (no need for timeout or polling)
     public static WebElement findWebelement(WebDriver driver, By locator) {
         return driver.findElement(locator);
     }
 
+    // Initialize timeout and polling time only once
+    private static void initializeTimeoutAndPolling() {
+        if (!defaultTimeoutGotFlag) {
+            initTimeout();
+            defaultTimeoutGotFlag = true;
+        }
+        if (!defaultPollingTimeGotFlag) {
+            initPolling();
+            defaultPollingTimeGotFlag = true;
+        }
+    }
 
+    // Initialize default timeout from properties file
+    private static void initTimeout() {
+        try {
+            String timeout = PropertyHelper.getDataFromProperties(configPath, "defaultElementWaitTimeout");
+            defaultTimeout = Integer.parseInt(timeout);
+        } catch (Exception e) {
+            logsUtils.logException(e);
+        }
+    }
+
+    // Initialize default polling time from properties file
+    private static void initPolling() {
+        try {
+            String polling = PropertyHelper.getDataFromProperties(configPath, "defaultElementPollingTime");
+            defaultPollingTime = Integer.parseInt(polling);
+        } catch (Exception e) {
+            logsUtils.logException(e);
+        }
+    }
 }

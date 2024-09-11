@@ -81,136 +81,137 @@ Here is the updated **Getting Started** section formatted for your README file:
     <restversion>5.4.0</restversion>
     <Ellithiumversion>1.0.0</Ellithiumversion>
 </properties>
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <dependencies>
+        <dependency>
+            <groupId>io.github</groupId>
+            <artifactId>Ellithium</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <!-- Rest Assured Dependencies -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${restversion}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- Maven Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
 
-<repositories>
-    <repository>
-        <id>github</id>
-        <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
-</repositories>
+            <!-- Maven Surefire Plugin for TestNG Execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>Ellithium.com.CustomTestNGListener</value>
+                        </property>
+                    </properties>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <failIfNoTests>false</failIfNoTests>
+                </configuration>
+            </plugin>
 
-<dependencies>
-    <!-- Ellithium Framework -->
-    <dependency>
-        <groupId>io.github</groupId>
-        <artifactId>Ellithium</artifactId>
-        <version>${Ellithiumversion}</version>
-    </dependency>
-
-    <!-- Rest Assured for API Testing -->
-    <dependency>
-        <groupId>io.rest-assured</groupId>
-        <artifactId>rest-assured</artifactId>
-        <version>${restversion}</version>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
-
-<build>
-    <plugins>
-        <!-- Maven Compiler Plugin -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.11.0</version>
-            <configuration>
-                <source>21</source>
-                <target>21</target>
-            </configuration>
-        </plugin>
-
-        <!-- Maven Surefire Plugin for TestNG Execution -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>3.5.0</version>
-            <configuration>
-                <suiteXmlFiles>
-                    <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
-                </suiteXmlFiles>
-                <properties>
-                    <property>
-                        <name>listener</name>
-                        <value>Ellithium.com.CustomTestNGListener</value>
-                    </property>
-                </properties>
-                <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                <testFailureIgnore>true</testFailureIgnore>
-                <failIfNoTests>false</failIfNoTests>
-            </configuration>
-        </plugin>
-
-        <!-- Maven Clean Plugin -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-clean-plugin</artifactId>
-            <version>3.3.2</version>
-            <configuration>
-                <filesets>
-                    <fileset>
-                        <directory>Test-Output/Reports/Allure/allure-results</directory>
-                    </fileset>
-                    <fileset>
-                        <directory>Test-Output/Logs</directory>
-                    </fileset>
-                </filesets>
-            </configuration>
-        </plugin>
-
-        <!-- Maven Resources Plugin -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <version>3.3.1</version>
-            <executions>
-                <execution>
-                    <id>clear-allure-results</id>
-                    <phase>initialize</phase>
-                    <goals>
-                        <goal>resources</goal>
-                    </goals>
-                    <configuration>
-                        <resources>
-                            <resource>
-                                <directory>Test-Output/Reports/Allure/allure-results</directory>
-                                <includes>
-                                    <include>**/*</include>
-                                </includes>
-                                <excludes>
-                                    <exclude>**/*.gitkeep</exclude>
-                                </excludes>
-                            </resource>
-                        </resources>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-
-        <!-- Exec Maven Plugin -->
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>3.0.0</version>
-            <executions>
-                <execution>
-                    <id>initialize</id>
-                    <phase>initialize</phase>
-                    <goals>
-                        <goal>java</goal>
-                    </goals>
-                    <configuration>
-                        <mainClass>Ellithium.properties.StartUpLoader</mainClass>
-                        <includePluginDependencies>true</includePluginDependencies>
-                        <classpathScope>compile</classpathScope>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
-</build>
+            <!-- Maven Clean Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.3.2</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>Test-Output/Reports/Allure/allure-results</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>Test-Output/Logs</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <!-- Maven Resources Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>clear-allure-results</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>Test-Output/Reports/Allure/allure-results</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*.gitkeep</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Exec Maven Plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>initialize</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>Ellithium.properties.StartUpLoader</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <classpathScope>compile</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources/properties/default</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 ```
 
 ### Step 3: Create a Test Runner Class

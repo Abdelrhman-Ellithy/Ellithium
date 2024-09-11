@@ -7,6 +7,8 @@ import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static Ellithium.Utilities.PropertyHelper.getDataFromProperties;
 import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
@@ -16,38 +18,35 @@ public class AllureHelper {
 
     private static File allureDirectory;
     private static File allureBinaryDirectory;
-
     public static void allureOpen() {
         String allurePropertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
         String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-
+        String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
+        String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
         if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
-
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate ." + File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-results --clean -o Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
-                String openCommand = allureBinaryPath + "allure open ." + File.separator + "Test-Output" + File.separator + "Reports" + File.separator + "Allure" + File.separator + "allure-report";
-
+                String generateCommand = allureBinaryPath + "allure generate ." + File.separator + resultsPath + File.separator + " --clean -o ."+File.separator+reportPath;
+                String openCommand = allureBinaryPath + "allure open ."+File.separator + reportPath;
                 // Generate report
                 CommandExecutor.executeCommand(generateCommand);
-
                 // Open report and keep the server alive
                 Process allureProcess = CommandExecutor.executeCommandNonBlocking(openCommand);
-
                 // Keep the process alive until user interrupts (e.g., manually close)
                 try {
-                    System.out.println("Allure server is running. Press CTRL+C to stop the server.");
+                    logsUtils.info(Colors.GREEN +"Allure server is running. Press CTRL+C to stop the server."+Colors.RESET);
                     allureProcess.waitFor();  // This will keep the process running until terminated
                 } catch (InterruptedException e) {
-                    System.err.println("Allure server was interrupted.");
+                    logsUtils.info(Colors.RED +"Allure server was interrupted."+Colors.RESET);
+                    logsUtils.logException(e);
                 } finally {
                     if (allureProcess.isAlive()) {
                         allureProcess.destroy();
-                        System.out.println("Allure server process terminated.");
+                        logsUtils.info(Colors.GREEN +"Allure server process terminated."+Colors.RESET);
                     }
                 }
             } else {
-                System.err.println("Failed to resolve Allure binary path.");
+                logsUtils.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
             }
         }
     }
@@ -55,7 +54,6 @@ public class AllureHelper {
         String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository" + File.separator + "allure-Ellithium";
         allureDirectory = new File(allurePath);
         String configFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
-
         if (allureDirectory.exists()) {
             logsUtils.info(Colors.GREEN + "Allure folder exists at: " + allurePath + Colors.RESET);
 
@@ -63,17 +61,17 @@ public class AllureHelper {
             if (subDirs != null && subDirs.length > 0) {
                 allureBinaryDirectory = new File(subDirs[0], "bin");
                 if (!allureBinaryDirectory.exists()) {
-                    System.err.println("Binary directory not found in the expected location.");
+                    logsUtils.info(Colors.RED +"Binary directory not found in the expected location.");
                     return null;
                 }
                 logsUtils.info(Colors.GREEN + "Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath() + Colors.RESET);
                 return allureBinaryDirectory.getAbsolutePath() + File.separator;
             } else {
-                System.err.println("No subdirectories found in the Allure directory.");
+                logsUtils.info(Colors.RED +"No subdirectories found in the Allure directory."+ Colors.RESET);
                 return null;
             }
         } else {
-            System.out.println("Allure folder not found. Extracting from JAR...");
+            logsUtils.info(Colors.RED +"Allure folder not found. Extracting from JAR..."+ Colors.RESET);
             String version = getDataFromProperties(configFilePath, "EllithiumVersion");
             String allureJarPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
                     + File.separator + "io" + File.separator + "github" + File.separator + "Ellithium"
@@ -81,7 +79,7 @@ public class AllureHelper {
 
             File jarFile = new File(allureJarPath);
             if (!jarFile.exists()) {
-                System.err.println("JAR file not found: " + allureJarPath);
+                logsUtils.info(Colors.RED +"JAR file not found: " + allureJarPath+ Colors.RESET);
                 return null;
             }
             try {
@@ -96,7 +94,7 @@ public class AllureHelper {
                 extractFileFromJar(jarFile, "logo/styles.css", myStyle);
                 addAllureToSystemPath(allureBinaryDirectory);
             } catch (IOException e) {
-                System.err.println("Failed to extract Allure folder from JAR: ");
+                logsUtils.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
                 logsUtils.logException(e);
                 return null;
             }
@@ -114,7 +112,7 @@ public class AllureHelper {
             if (SystemUtils.IS_OS_WINDOWS) {
                 String command = "setx PATH \"%PATH%;" + allureBinaryPath + "\"";
                 CommandExecutor.executeCommand(command);
-                logsUtils.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows).");
+                logsUtils.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows)."+ Colors.RESET);
             } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
                 String shellConfig = System.getenv("SHELL").contains("zsh") ? "~/.zshrc" : "~/.bashrc";
                 String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
