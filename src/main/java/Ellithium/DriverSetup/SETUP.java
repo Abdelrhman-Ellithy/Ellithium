@@ -38,5 +38,4 @@ public class SETUP extends AbstractTestNGCucumberTests {
         public Object[][] scenarios() {
                 return super.scenarios();
         }
-
 }

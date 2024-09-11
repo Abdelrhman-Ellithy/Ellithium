@@ -23,11 +23,12 @@ import org.openqa.selenium.edge.EdgeDriver;
 
 public class CucumberDefaultHooks {
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
+    private static final String configPath=System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config.properties";
     private String browserName;
-
+    private static boolean defaultTimeoutGotFlag=false;
+    private static int defaultTimeout= 5;
     @Before
     public void setUp(Scenario scenario) {
-
         browserName = System.getProperty("BrowserName", "Chrome").toLowerCase();  // Default to Chrome if not set
         String headlessMode = System.getProperty("HeadlessMode", "false").toLowerCase(); // Default to false if not set
         String PageLoadStrategy=System.getProperty("PageLoadStrategy", "normal").toLowerCase(); // Default to normal if not set
@@ -45,31 +46,20 @@ public class CucumberDefaultHooks {
             switch (browserName.toLowerCase()){
                 case "edge" :
                     devTools=((EdgeDriver)localDriver).getDevTools();
-                    devTools.createSession();
-                    devTools.send(Log.enable());
-                    devTools.addListener(Log.entryAdded(), logEntry -> {
-                        logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+"\n"+RESET);
-                        logsUtils.info(BLUE+"Text: "+logEntry.getText()+"\n"+RESET);
-                        logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+"\n"+RESET);
-                        logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+"\n"+RESET);
-                    });
+                    logDevTools(devTools);
                     break;
                 case "chrome":
                     devTools=((ChromeDriver)localDriver).getDevTools();
-                    devTools.createSession();
-                    devTools.send(Log.enable());
-                    devTools.addListener(Log.entryAdded(), logEntry -> {
-                        logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+"\n"+RESET);
-                        logsUtils.info(BLUE+"Text: "+logEntry.getText()+"\n"+RESET);
-                        logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+"\n"+RESET);
-                        logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+"\n"+RESET);
-                    });
+                    logDevTools(devTools);
                     break;
                 default:
                     break;
             }
         }
-        localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        if(!defaultTimeoutGotFlag){
+            initTimeout();
+        }
+        localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(defaultTimeout));
         driver.set(localDriver);  // Set WebDriver for this thread
     }
     @After
@@ -107,6 +97,24 @@ public class CucumberDefaultHooks {
                 localDriver.quit();
             }
             driver.remove();  // Remove WebDriver instance for this thread
+        }
+    }
+    private static void logDevTools(DevTools devTools){
+        devTools.createSession();
+        devTools.send(Log.enable());
+        devTools.addListener(Log.entryAdded(), logEntry -> {
+            logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+RESET);
+            logsUtils.info(BLUE+"Text: "+logEntry.getText()+RESET);
+            logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+RESET);
+            logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+RESET);
+        });
+    }
+    private static void initTimeout() {
+        try {
+            String timeout = PropertyHelper.getDataFromProperties(configPath, "defaultDriverWaitTimeout");
+            defaultTimeout = Integer.parseInt(timeout);
+        } catch (Exception e) {
+            logsUtils.logException(e);
         }
     }
     public static WebDriver getDriver() {
