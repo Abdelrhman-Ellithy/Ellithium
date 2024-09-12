@@ -7,13 +7,19 @@
     <artifactId>ellithium</artifactId>
     <version>${EllithiumVersion}</version>
     <packaging>jar</packaging>
-    <name>Ellithium</name>
+    <description>
+        Ellithium is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process.
+        Leveraging tools such as TestNG, Cucumber, Rest Assured, and others, it provides an end-to-end solution for automated testing.
+        With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting,
+        Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
+    </description>
+    <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
+    <name>${project.groupId}:${project.artifactId}</name>
     <developers>
         <developer>
             <name>Abdelrahman Ellithy</name>
             <email>abdelarhmanellithy@gmail.com.</email>
-            <organization>Git
-                Hub</organization>
+            <organization>GitHub</organization>
             <organizationUrl>https://github.com/Abdelrhman-Ellithy/Ellithium</organizationUrl>
             <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
         </developer>
@@ -24,6 +30,12 @@
             <url>http://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
+        <developerConnection>scm:git:ssh://github.com/Abdelrhman-Ellithy/Ellithium.git</developerConnection>
+        <url>https://github.com/Abdelrhman-Ellithy/Ellithium/tree/main</url>
+    </scm>
+
     <properties>
         <EllithiumVersion>1.0.0</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
