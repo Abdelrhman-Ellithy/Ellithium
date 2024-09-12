@@ -31,11 +31,10 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
+        <connection>scm:git:https://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
         <developerConnection>scm:git:ssh://github.com/Abdelrhman-Ellithy/Ellithium.git</developerConnection>
-        <url>https://github.com/Abdelrhman-Ellithy/Ellithium/tree/main</url>
+        <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
     </scm>
-
     <properties>
         <EllithiumVersion>1.0.0</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
@@ -59,6 +58,12 @@
         <restversion>5.4.0</restversion>
         <gherkinversion>28.0.0</gherkinversion>
         <hamcrestversion>3.0</hamcrestversion>
+        <surefireArgLine></surefireArgLine>
+        <!-- Build Commands-->
+        <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
+        <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
+        <!-- Deploy Commands -->
+        <deployToMavenCentral>mvn clean deploy -DskipTests</deployToMavenCentral>
     </properties>
     <distributionManagement>
         <repository>
@@ -209,6 +214,47 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.10.0</version>
+                <configuration>
+                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+                    <sourcepath>
+                        ${project.basedir}/src/main/java;${project.basedir}/target/generated-sources/annotations
+                    </sourcepath>
+                    <encoding>UTF-8</encoding>
+                    <failOnError>false</failOnError>
+                    <show>public</show>
+                    <nohelp>true</nohelp>
+                    <header>Ellithium, ${project.version}</header>
+                    <footer>Ellithium, ${project.version}</footer>
+                    <doctitle>Ellithium, ${project.version}</doctitle>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-publish-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <checkoutDirectory>${project.basedir}/../ellithium_apidocs</checkoutDirectory>
+                    <tryUpdate>true</tryUpdate>
+                    <siteOutputEncoding>UTF-8</siteOutputEncoding>
+                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}</checkinComment>
+                    <content>${project.reporting.outputDirectory}</content>
+                    <skipDeletedFiles>true</skipDeletedFiles>
+                    <pubScmUrl>${project.scm.connection}</pubScmUrl>
+                    <scmBranch>gh-pages</scmBranch> <!-- branch with static site -->
+                </configuration>
+            </plugin>
             <!-- Maven Surefire Plugin to run tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
