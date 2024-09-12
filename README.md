@@ -148,9 +148,6 @@ Here is the updated **Getting Started** section formatted for your README file:
                         <fileset>
                             <directory>Test-Output/Reports/Allure/allure-results</directory>
                         </fileset>
-                        <fileset>
-                            <directory>Test-Output/Logs</directory>
-                        </fileset>
                     </filesets>
                 </configuration>
             </plugin>
