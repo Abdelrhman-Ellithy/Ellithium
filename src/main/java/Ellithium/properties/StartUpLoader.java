@@ -2,6 +2,8 @@ package Ellithium.properties;
 
 import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.logsUtils;
+import io.cucumber.java.ja.但し;
+
 import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StartUpLoader {
     private static final String basePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator;
@@ -97,14 +101,22 @@ public class StartUpLoader {
 
     private static File findJarFile() {
         String repoPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
-                + File.separator + "io" + File.separator + "github" + File.separator + "Ellithium";
+                + File.separator + "io" + File.separator + "github" + File.separator + "ellithium";
         File repoDir = new File(repoPath);
         File[] versionDirs = repoDir.listFiles(File::isDirectory);
+
         if (versionDirs != null && versionDirs.length > 0) {
             File versionDir = versionDirs[0]; // Select the first version directory
-            File[] jarFiles = versionDir.listFiles((dir, name) -> name.endsWith(".jar"));
+
+            // Regular expression to match 'ellithium-[version].jar'
+            Pattern jarPattern = Pattern.compile("^ellithium-\\d+(\\.\\d+)*\\.jar$");
+
+            File[] jarFiles = versionDir.listFiles((dir, name) -> {
+                Matcher matcher = jarPattern.matcher(name);
+                return matcher.matches(); // Only accept files that match the pattern
+            });
             if (jarFiles != null && jarFiles.length > 0) {
-                return jarFiles[0]; // Return the first JAR file found
+                return jarFiles[0]; // Return the first matching JAR file
             }
         }
         return null;
@@ -113,8 +125,7 @@ public class StartUpLoader {
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
-
-        try (JarFile jar = new JarFile(jarFile)) {
+         try (JarFile jar = new JarFile(jarFile)) {
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
@@ -130,6 +141,9 @@ public class StartUpLoader {
                     }
                 }
             }
+        }
+        catch (Exception e){
+            System.err.println(e.getMessage());
         }
     }
 }
