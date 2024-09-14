@@ -19,7 +19,7 @@
 - **BDD Support**: Implements Behavior-Driven Development (BDD) using **Cucumber** to create human-readable test scenarios.
 - **Data-Driven Testing**: Read and write data from various formats such as **JSON, CSV, Excel, properties and Jar files**.
 - **Custom Listeners**: Additional listeners for better control and enhanced test reporting.
-- **Logging**: Comprehensive logging using **Log4j2** for debugging and tracking purposes.
+- **Logging**: Comprehensive logging using **Log4j2** and **Dev Tools** for debugging and tracking purposes.
 - **Allure Reporting**: Generate rich and interactive test reports with **Allure**.
 - **Customizable Configurations**: Flexible configuration options for different test environments, browsers, and execution modes.
 - **Modular Design**: A well-structured and modular design that promotes code reusability and easy maintenance.
@@ -274,7 +274,7 @@ public class BaseStepDefinitions {
 
 ```
     @default("Chrome") String BrowserName, // can be Chrome or Edge or Firefox
-    @default("false") String HeadlessMode, // can be true or fallse
+    @default("false") String HeadlessMode, // can be true or false
     @default("Normal") String PageLoadStrategy, // can be Normal or Eager
     @default("True") String PrivateMode, // can be true or false
     @default("Sandbox") String SandboxMode, // can be Sandbox or NoSandbox
