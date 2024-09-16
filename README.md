@@ -36,7 +36,14 @@
 |:------:|:-----------:|:-----------:|
 |✅         |     ✅    |✅    |
 ||
+### 📄 Supported File Formats
 
+Ellithium supports reading and writing data from various file formats, including:
+
+|JSON|CSV|Excel | Logging | Properties| Jar |
+|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|
+|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅
+||
 ## 👨‍💻 Developed using:
 <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" height="50px"></a>
 <a href="https://maven.apache.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/340px-Apache_Maven_logo.svg.png" alt="Maven" height="50px"></a>
@@ -58,15 +65,6 @@ Ensure you have the following installed:
 - **Java Development Kit (JDK)**: Version 21
 - **Maven**: 3.8.1 or higher
 - **Browsers**: Latest versions of **Chrome, Firefox,** and **Edge**
-
-### 📄 Supported File Formats
-
-Ellithium supports reading and writing data from various file formats, including:
-
-|JSON|CSV|Excel | Logging | Properties| Jar |
-|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|
-|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅
-||
 
 ## 🏁 Getting Started
 
