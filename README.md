@@ -241,14 +241,13 @@ public class BaseStepDefinitions {
 
 - **The default values** if you **didn't add the paramaters** to the **TestNGRunner.xml** File are:
 
-```
-    @default("Chrome") String BrowserName, // can be Chrome or Edge or Firefox
-    @default("false") String HeadlessMode, // can be true or false
+```java
+    @default("Chrome") String BrowserName,      // can be Chrome or Edge or Firefox
+    @default("false") String HeadlessMode,      // can be true or false
     @default("Normal") String PageLoadStrategy, // can be Normal or Eager
-    @default("True") String PrivateMode, // can be true or false
-    @default("Sandbox") String SandboxMode, // can be Sandbox or NoSandbox
-    @default("True") String WebSecurityMode // can be True or False 
-)
+    @default("True") String PrivateMode,        // can be true or false
+    @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox
+    @default("True") String WebSecurityMode     // can be True or False 
 ```
 
 - **Edit the number of data-provider-thread-count to the number of Scenarios you to run at a time** 
