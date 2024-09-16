@@ -74,13 +74,13 @@ Here is the updated **Getting Started** section formatted for your README file:
 - **Add the following configuration to your `pom.xml` to set the Java version, include the required dependencies, and configure the plugins.**
 
 ```xml
-<properties>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <restversion>5.4.0</restversion>
-    <Ellithiumversion>1.0.0</Ellithiumversion>
-</properties>
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <restversion>5.4.0</restversion>
+        <Ellithiumversion>1.0.0</Ellithiumversion>
+    </properties>
     <repositories>
         <repository>
             <id>github</id>
@@ -138,47 +138,6 @@ Here is the updated **Getting Started** section formatted for your README file:
                 </configuration>
             </plugin>
 
-            <!-- Maven Clean Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.3.2</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>Test-Output/Reports/Allure/allure-results</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <!-- Maven Resources Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>clear-allure-results</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>resources</goal>
-                        </goals>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>Test-Output/Reports/Allure/allure-results</directory>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                    <excludes>
-                                        <exclude>**/*.gitkeep</exclude>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- Exec Maven Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -186,7 +145,7 @@ Here is the updated **Getting Started** section formatted for your README file:
                 <version>3.0.0</version>
                 <executions>
                     <execution>
-                        <id>initialize</id>
+                        <id>intialize</id>
                         <phase>initialize</phase>
                         <goals>
                             <goal>java</goal>
