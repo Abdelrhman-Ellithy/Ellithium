@@ -27,7 +27,7 @@
 - **Test Data Generation**: Supports dynamic test data generation using **Java Faker** for realistic names, emails, addresses, and more.
 - **Attaching User Stories and Screenshots: Automatically attach relevant user stories and screenshots to test reports for enhanced traceability and visibility, allows seamless linking between test cases and their corresponding requirements or user stories.**
 ***
-|BDD Support|Parallel Execution|Cross-Browser Testing | Logging | ScreenShot| User Stories Linking | Reporting |Command Executer Interface|Test Data Generation|
+|BDD Support|Parallel Execution|Cross-Browser Testing | Logging | Screenshots Attaching upon failure| User Stories Linking | Reporting |Command Executer Interface|Test Data Generation|
 |:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|:-----------:|:------:|:-----------:|
 |✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |✅         |     ✅    |
 ||
