@@ -32,6 +32,7 @@
 |✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |✅         |     ✅    |
 ||
 
+### 📄 Supported OS for OS Command executer Interface
 |windows|Mac|Linux |
 |:------:|:-----------:|:-----------:|
 |✅         |     ✅    |✅    |
