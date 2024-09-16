@@ -32,7 +32,7 @@
 |✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |✅         |     ✅    |
 ||
 
-### 📄 Supported OS for OS Command executer Interface
+### 👨‍💻 Supported OS for OS Command executer Interface
 |windows|Mac|Linux |
 |:------:|:-----------:|:-----------:|
 |✅         |     ✅    |✅    |
