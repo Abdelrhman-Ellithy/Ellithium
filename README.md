@@ -26,6 +26,22 @@
 - **Executing OS Commands** : Provides Command Executer Interface to execute Commands
 - **Test Data Generation**: Supports dynamic test data generation using **Java Faker** for realistic names, emails, addresses, and more.
 - **Attaching User Stories and Screenshots: Automatically attach relevant user stories and screenshots to test reports for enhanced traceability and visibility, allows seamless linking between test cases and their corresponding requirements or user stories.**
+***
+|BDD Support|Parallel Execution|Cross-Browser Testing | Logging | ScreenShot| User Stories Linking | Reporting |
+|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|:-----------:|
+|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |
+||
+
+|Command Executer Interface|Test Data Generation|
+|:------:|:-----------:|
+|✅         |     ✅    |
+||
+
+|windows|Mac|Linux |
+|:------:|:-----------:|:-----------:|
+|✅         |     ✅    |✅    |
+||
+
 ## 👨‍💻 Developed using:
 <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" height="50px"></a>
 <a href="https://maven.apache.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/340px-Apache_Maven_logo.svg.png" alt="Maven" height="50px"></a>
@@ -57,6 +73,11 @@ Ellithium supports reading and writing data from various file formats, including
 - **Excel**
 - **Properties**
 - **Jar**
+
+|JSON|CSV|Excel | Logging | Properties| Jar |
+|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|
+|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅
+||
 
 ## 🏁 Getting Started
 
