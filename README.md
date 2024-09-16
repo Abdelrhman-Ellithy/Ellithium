@@ -41,9 +41,9 @@
 
 Ellithium supports reading and writing data from various file formats, including:
 
-|JSON|CSV|Excel | Logging | Properties| Jar |
-|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|
-|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅
+|JSON|CSV|Excel| Properties| Jar |
+|:------:|:-----------:|:-----------:|:-------:|:-----------:|
+|✅         |     ✅    |         ✅           |       ✅|      ✅   |
 ||
 ## 👨‍💻 Developed using:
 <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" height="50px"></a>
