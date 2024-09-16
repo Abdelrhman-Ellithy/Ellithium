@@ -27,14 +27,9 @@
 - **Test Data Generation**: Supports dynamic test data generation using **Java Faker** for realistic names, emails, addresses, and more.
 - **Attaching User Stories and Screenshots: Automatically attach relevant user stories and screenshots to test reports for enhanced traceability and visibility, allows seamless linking between test cases and their corresponding requirements or user stories.**
 ***
-|BDD Support|Parallel Execution|Cross-Browser Testing | Logging | ScreenShot| User Stories Linking | Reporting |
-|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|:-----------:|
-|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |
-||
-
-|Command Executer Interface|Test Data Generation|
-|:------:|:-----------:|
-|✅         |     ✅    |
+|BDD Support|Parallel Execution|Cross-Browser Testing | Logging | ScreenShot| User Stories Linking | Reporting |Command Executer Interface|Test Data Generation|
+|:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|:-----------:|:------:|:-----------:|
+|✅         |     ✅    |         ✅           |       ✅|      ✅   |✅|      ✅ |✅         |     ✅    |
 ||
 
 |windows|Mac|Linux |
@@ -67,12 +62,6 @@ Ensure you have the following installed:
 ### 📄 Supported File Formats
 
 Ellithium supports reading and writing data from various file formats, including:
-
-- **JSON**
-- **CSV**
-- **Excel**
-- **Properties**
-- **Jar**
 
 |JSON|CSV|Excel | Logging | Properties| Jar |
 |:------:|:-----------:|:-----------:|:-------:|:-----------:|:-----------:|
@@ -196,7 +185,7 @@ Here is the updated **Getting Started** section formatted for your README file:
 - **Create a runner class that extends the `SETUP` class from Ellithium**.
 - **Specify the paths for your feature files and step definitions using the `@CucumberOptions`.**
 
-```
+```java
 package Runner;
 
 import Ellithium.DriverSetup.SETUP;
@@ -212,7 +201,7 @@ public class TestRunner extends SETUP {
 ### Step 4: To Create a BaseStepDefinitions Class.
 
 - **Create a BaseStepDefinitions class that will be used to extend the other StepDefinitions Classes from it**.
-```
+```java
 package Base;
 import Ellithium.DriverSetup.DriverFactory;
 import org.openqa.selenium.WebDriver;
