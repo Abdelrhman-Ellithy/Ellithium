@@ -73,7 +73,6 @@ public class DriverActions {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", findWebelement(driver, locator));
         logsUtils.info(Colors.BLUE+"Scrolling To Element Located: "+locator+Colors.RESET);
     }
-
     // Get a timestamp
     public static String getTimeStamp() {
         return new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
@@ -230,19 +229,20 @@ public class DriverActions {
         driver.switchTo().window(originalWindowHandle);
         logsUtils.info(Colors.BLUE+"Switched To Original Window"+Colors.RESET);
     }
-    // Overloaded sendData method with pollingEvery 500ms
     public static void sendData(WebDriver driver, By locator, String data) {
-        sendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        sendData(driver, locator, data, defaultTimeout, defaultPollingTime);
     }
 
     public static void sendData(WebDriver driver, By locator, Keys data) {
-        sendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+        initializeTimeoutAndPolling();
+        sendData(driver, locator, data, defaultTimeout, defaultPollingTime);
     }
 
     // Overloaded getText method with default timeout and polling time
     public static String getText(WebDriver driver, By locator) {
         initializeTimeoutAndPolling();
-        return getText(driver, locator, defaultTimeout, defaultPollingTime); // Timeout 5 seconds, pollingEvery 500ms
+        return getText(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
     // Overloaded clickingOnElement method with default timeout and polling time
@@ -520,18 +520,6 @@ public class DriverActions {
         return currentValue;
     }
 
-    // Move slider by offset (dragging)
-    public static void moveSliderByOffset(WebDriver driver, By sliderLocator, int xOffset, int yOffset) {
-        WebElement slider = driver.findElement(sliderLocator);
-        Actions action = new Actions(driver);
-
-        action.clickAndHold(slider)
-                .moveByOffset(xOffset, yOffset)
-                .release()
-                .perform();
-        logsUtils.info(Colors.BLUE + "Slider moved by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
-    }
-
     // --- Drag and Drop Methods ---
 
     // Perform drag and drop from source to target element
@@ -552,44 +540,29 @@ public class DriverActions {
     public static void dragAndDropByOffset(WebDriver driver, By sourceLocator, int xOffset, int yOffset) {
         WebElement source = driver.findElement(sourceLocator);
         Actions action = new Actions(driver);
-
         action.clickAndHold(source)
                 .moveByOffset(xOffset, yOffset)
                 .release()
                 .perform();
-
         logsUtils.info(Colors.BLUE + "Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
     }
 
     // --- Hover Methods ---
 
-    // Hover over an element
-    public static void hoverOverElement(WebDriver driver, By locator, int timeout) {
-        WebElement element = new FluentWait<>(driver)
-                .withTimeout(Duration.ofSeconds(timeout))
-                .pollingEvery(Duration.ofMillis(500))
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-
-        Actions action = new Actions(driver);
-        action.moveToElement(element).perform();
-        logsUtils.info(Colors.BLUE + "Hovered over element: " + locator + Colors.RESET);
-    }
 
     // Hover over an element and click
     public static void hoverAndClick(WebDriver driver, By locatorToHover, By locatorToClick, int timeout) {
+        initializeTimeoutAndPolling();
         WebElement elementToHover = new FluentWait<>(driver)
                 .withTimeout(Duration.ofSeconds(timeout))
-                .pollingEvery(Duration.ofMillis(500))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
                 .until(ExpectedConditions.visibilityOfElementLocated(locatorToHover));
-
         WebElement elementToClick = new FluentWait<>(driver)
                 .withTimeout(Duration.ofSeconds(timeout))
-                .pollingEvery(Duration.ofMillis(500))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
                 .until(ExpectedConditions.elementToBeClickable(locatorToClick));
-
         Actions action = new Actions(driver);
         action.moveToElement(elementToHover).click(elementToClick).perform();
-
         logsUtils.info(Colors.BLUE + "Hovered over " + locatorToHover + " and clicked " + locatorToClick + Colors.RESET);
     }
     public static String captureScreenshot(WebDriver driver, String screenshotName) {
@@ -609,6 +582,90 @@ public class DriverActions {
             return null;
         }
     }
+    // Right-click on an element
+    public static void rightClick(WebDriver driver, By locator, int timeout) {
+        initializeTimeoutAndPolling();
+        WebElement element = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+
+        Actions action = new Actions(driver);
+        action.contextClick(element).perform();
+
+        logsUtils.info(Colors.BLUE + "Right-clicked on element: " + locator + Colors.RESET);
+    }
+    // Double-click on an element
+    public static void doubleClick(WebDriver driver, By locator, int timeout) {
+        initializeTimeoutAndPolling();
+        WebElement element = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+
+        Actions action = new Actions(driver);
+        action.doubleClick(element).perform();
+
+        logsUtils.info(Colors.BLUE + "Double-clicked on element: " + locator + Colors.RESET);
+    }
+    // Overload example for moveSliderByOffset with default timeout
+    public static void moveSliderByOffset(WebDriver driver, By sliderLocator, int xOffset, int yOffset) {
+        initializeTimeoutAndPolling();
+        moveSliderByOffset(driver, sliderLocator, xOffset, yOffset, defaultTimeout, defaultPollingTime);
+    }
+
+    public static void moveSliderByOffset(WebDriver driver, By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfElementLocated(sliderLocator));
+
+        WebElement slider = driver.findElement(sliderLocator);
+        Actions action = new Actions(driver);
+        action.clickAndHold(slider)
+                .moveByOffset(xOffset, yOffset)
+                .release()
+                .perform();
+        logsUtils.info(Colors.BLUE + "Slider moved by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
+    }
+
+    // New method: Scroll by offset
+    public static void scrollByOffset(WebDriver driver, int xOffset, int yOffset) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
+        logsUtils.info(Colors.BLUE + "Scrolled by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
+    }
+
+    // Overload example for hoverOverElement with default timeout
+    public static void hoverOverElement(WebDriver driver, By locator) {
+        initializeTimeoutAndPolling();
+        hoverOverElement(driver, locator, defaultTimeout);
+    }
+
+    public static void hoverOverElement(WebDriver driver, By locator, int timeout) {
+        WebElement element = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        Actions action = new Actions(driver);
+        action.moveToElement(element).perform();
+        logsUtils.info(Colors.BLUE + "Hovered over element: " + locator + Colors.RESET);
+    }
+
+    // New method: Scroll to page bottom
+    public static void scrollToPageBottom(WebDriver driver) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
+        logsUtils.info(Colors.BLUE + "Scrolled to page bottom" + Colors.RESET);
+    }
+
+    // New method: JS Executor - Set value using JavaScript
+    public static void setElementValueUsingJS(WebDriver driver, By locator, String value) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        WebElement element = findWebelement(driver, locator);
+        js.executeScript("arguments[0].value = arguments[1];", element, value);
+        logsUtils.info(Colors.BLUE + "Set value using JavaScript: " + value + Colors.RESET);
+    }
     // Initialize timeout and polling time only once
     private static void initializeTimeoutAndPolling() {
         if (!defaultTimeoutGotFlag) {
@@ -620,7 +677,6 @@ public class DriverActions {
             defaultPollingTimeGotFlag = true;
         }
     }
-
     // Initialize default timeout from properties file
     private static void initTimeout() {
         try {
@@ -630,7 +686,6 @@ public class DriverActions {
             logsUtils.logException(e);
         }
     }
-
     // Initialize default polling time from properties file
     private static void initPolling() {
         try {
