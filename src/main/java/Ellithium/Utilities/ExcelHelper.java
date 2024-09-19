@@ -5,16 +5,16 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
 import java.util.*;
 
-public class ExcelHelper extends DataUtils {
+public class ExcelHelper {
 
-    public static List<Map<String, String>> getExcelData(String fileName, String sheetName) {
+    public static List<Map<String, String>> getExcelData(String filePath, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(TEST_DATA_PATH + fileName + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
-                throw new IllegalArgumentException("Sheet " + sheetName + " does not exist in " + fileName);
+                throw new IllegalArgumentException("Sheet " + sheetName + " does not exist in " + filePath);
             }
 
             Iterator<Row> rowIterator = sheet.iterator();
@@ -33,15 +33,16 @@ public class ExcelHelper extends DataUtils {
                     data.add(recordMap);
                 }
             }
+            logsUtils.info(Colors.GREEN + "Successfully read Excel file: " + filePath + Colors.RESET);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to read Excel file: " + fileName + Colors.RESET);
+            logsUtils.error(Colors.RED + "Failed to read Excel file: " + filePath + Colors.RESET);
             logsUtils.logException(e);
         }
         return data;
     }
 
-    public static void setExcelData(String fileName, String sheetName, List<Map<String, String>> data) {
-        try (FileInputStream fis = new FileInputStream(TEST_DATA_PATH + fileName + ".xlsx");
+    public static void setExcelData(String filePath, String sheetName, List<Map<String, String>> data) {
+        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheet(sheetName);
@@ -67,11 +68,12 @@ public class ExcelHelper extends DataUtils {
                     cell.setCellValue(value);
                 }
             }
-            try (FileOutputStream fos = new FileOutputStream(TEST_DATA_PATH + fileName + ".xlsx")) {
+            try (FileOutputStream fos = new FileOutputStream(filePath + ".xlsx")) {
                 workbook.write(fos);
+                logsUtils.info(Colors.GREEN + "Successfully to write Excel file: " + filePath + Colors.RESET);
             }
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to write Excel file: " + fileName + Colors.RESET);
+            logsUtils.error(Colors.RED + "Failed to write Excel file: " + filePath + Colors.RESET);
             logsUtils.logException(e);
         }
     }
