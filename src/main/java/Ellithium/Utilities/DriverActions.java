@@ -124,7 +124,6 @@ public class DriverActions {
         logsUtils.info(Colors.BLUE+"Getting Attribute: "+attribute+" From Element: "+locator+Colors.RESET);
         return driver.findElement(locator).getAttribute(attribute);
     }
-
     // Sleep for a specified number of milliseconds
     public static void sleepMillis(long millis) {
         try {
@@ -134,7 +133,6 @@ public class DriverActions {
             logsUtils.error("Sleep interrupted: "+ e.getMessage());
         }
     }
-
     // Sleep for a specified number of seconds
     public static void sleepSeconds(long seconds) {
         sleepMillis(seconds * 1000);
