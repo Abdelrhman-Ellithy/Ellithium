@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureStepListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PropertyHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PropertyHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2lgtFBZIvL9B0pLcMROv5lKqb0I" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/lenovo/IdeaProjects/Ellithium/src/main/resources&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\main\resources" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\test" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\main\java" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\lenovo\IdeaProjects\AutoEllithiumSphere\src\main\resources" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\main\resources\properties\default" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\main\resources" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\test\resources\features" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\test\resources" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="AutoEllithiumSphere.properties" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="C:/Users/lenovo/IdeaProjects/MyFrameWork/TestNGRunner.xml" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="MyFrameWork" />
+      <option name="SUITE_NAME" value="$PROJECT_DIR$/TestNGRunner.xml" />
+      <option name="TEST_OBJECT" value="SUITE" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="TestNG.C:/Users/lenovo/IdeaProjects/MyFrameWork/TestNGRunner.xml" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="" />
+      <created>1725613440446</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1725613440446</updated>
+    </task>
+    <servers />
+  </component>
+</project>

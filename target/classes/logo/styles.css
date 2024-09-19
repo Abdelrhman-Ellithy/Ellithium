@@ -1,0 +1,9 @@
+.side-nav__brand {
+    background-image: url('https://github.com/Abdelrhman-Ellithy/Ellithium/blob/main/src/main/resources/logo/Ellithium.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: left center !important;
+    background-size: 160px !important;
+    padding-left: 180px !important;
+    margin-left: 10px !important;
+    padding-top: 40px !important;
+}

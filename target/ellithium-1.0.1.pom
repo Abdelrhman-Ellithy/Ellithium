@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github</groupId>
+    <artifactId>ellithium</artifactId>
+    <version>${EllithiumVersion}</version>
+    <packaging>jar</packaging>
+    <description>
+        Ellithium is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process.
+        Leveraging tools such as TestNG, Cucumber, Rest Assured, and others, it provides an end-to-end solution for automated testing.
+        With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting,
+        Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
+    </description>
+    <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <developers>
+        <developer>
+            <name>Abdelrahman Ellithy</name>
+            <email>abdelarhmanellithy@gmail.com.</email>
+            <organization>GitHub</organization>
+            <organizationUrl>https://github.com/Abdelrhman-Ellithy/Ellithium</organizationUrl>
+            <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
+        </developer>
+    </developers>
+        <licenses>
+            <license>
+                <name>Apache License, Version 2.0</name>
+                <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+                <distribution>repo</distribution>
+            </license>
+        </licenses>
+    <scm>
+        <connection>scm:git:https://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
+        <developerConnection>scm:git:ssh://github.com/Abdelrhman-Ellithy/Ellithium.git</developerConnection>
+        <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
+    </scm>
+    <profiles>
+        <profile>
+            <id>github</id>
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <name>GitHub Abdelrahman-Ellithy Apache Maven Packages</name>
+                    <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>ossrh</id>
+            <distributionManagement>
+                <repository>
+                    <id>ossrh</id>
+                    <name>OSSRH Release Repository</name>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <name>OSSRH Snapshot Repository</name>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+<!--            <profile>-->
+<!--                <id>gpg-signing</id>-->
+<!--                <activation>-->
+<!--                    <activeByDefault>true</activeByDefault>-->
+<!--                </activation>-->
+<!--            </profile>-->
+    </profiles>
+    <properties>
+        <EllithiumVersion>1.0.1</EllithiumVersion>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <seleniumVersion>4.24.0</seleniumVersion>
+        <testNG>7.10.2</testNG>
+        <JavaFaker>1.0.2</JavaFaker>
+        <gsonVersion>2.10.1</gsonVersion>
+        <SLF4JAPIVersion>2.0.13</SLF4JAPIVersion>
+        <SLF4JSimpleVersion>2.0.13</SLF4JSimpleVersion>
+        <log4jVersion>2.23.1</log4jVersion>
+        <AllureVersion>2.28.0</AllureVersion>
+        <Commons>2.16.1</Commons>
+        <aspectj.version>1.9.20.1</aspectj.version>
+        <CSV>1.8</CSV>
+        <ApachePOI>5.2.3</ApachePOI>
+        <AddPOI>5.1.1</AddPOI>
+        <Cucumber>7.18.0</Cucumber>
+        <cucumberTsetNG>7.18.0</cucumberTsetNG>
+        <restversion>5.4.0</restversion>
+        <gherkinversion>28.0.0</gherkinversion>
+        <hamcrestversion>3.0</hamcrestversion>
+        <surefireArgLine></surefireArgLine>
+        <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
+        <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
+        <deployToMavenCentral>mvn clean deploy -P ossrh, !github -DskipTests -X</deployToMavenCentral>
+        <deployToGithubPacakge>mvn clean deploy -P github, !ossrh -DskipTests -X</deployToGithubPacakge>
+        <PDFBoxVersion>2.0.27</PDFBoxVersion>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${seleniumVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.javafaker/javafaker -->
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>${JavaFaker}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gsonVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.cucumber/gherkin -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>gherkin</artifactId>
+            <version>${gherkinversion}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${SLF4JAPIVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${SLF4JSimpleVersion}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4jVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4jVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-1.2-api -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <version>${log4jVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${AllureVersion}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${Commons}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.hamcrest/hamcrest -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrestversion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Apache Commons CSV -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${CSV}</version>
+        </dependency>
+
+        <!-- Apache POI for Excel -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${ApachePOI}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${PDFBoxVersion}</version>
+        </dependency>
+        <!-- Additional POI dependencies for handling Excel files -->
+        <dependency>
+            <groupId>org.apache.xmlbeans</groupId>
+            <artifactId>xmlbeans</artifactId>
+            <version>${AddPOI}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${Cucumber}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-testng</artifactId>
+            <version>${cucumberTsetNG}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testNG}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${restversion}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.0.0-M1</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.aeonbits.owner/owner -->
+        <dependency>
+            <groupId>org.aeonbits.owner</groupId>
+            <artifactId>owner-java8</artifactId>
+            <version>1.0.12</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.2</version> <!-- Or check for the latest version -->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.10.0</version>
+                <configuration>
+                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+                    <sourcepath>
+                        ${project.basedir}/src/main/java;${project.basedir}/target/generated-sources/annotations
+                    </sourcepath>
+                    <encoding>UTF-8</encoding>
+                    <failOnError>false</failOnError>
+                    <show>public</show>
+                    <nohelp>true</nohelp>
+                    <header>Ellithium, ${project.version}</header>
+                    <footer>Ellithium, ${project.version}</footer>
+                    <doctitle>Ellithium, ${project.version}</doctitle>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-publish-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <checkoutDirectory>${project.basedir}/../ellithium_apidocs</checkoutDirectory>
+                    <tryUpdate>true</tryUpdate>
+                    <siteOutputEncoding>UTF-8</siteOutputEncoding>
+                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}</checkinComment>
+                    <content>${project.reporting.outputDirectory}</content>
+                    <skipDeletedFiles>true</skipDeletedFiles>
+                    <pubScmUrl>${project.scm.connection}</pubScmUrl>
+                    <scmBranch>gh-pages</scmBranch> <!-- branch with static site -->
+                </configuration>
+            </plugin>
+            <!-- Maven Surefire Plugin to run tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <printSummary>false</printSummary> <!-- Suppresses some output -->
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                    <failIfNoTests>false</failIfNoTests>
+                    <trimStackTrace>false</trimStackTrace>
+                    <useFile>false</useFile>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>Ellithium.com.CustomTestNGListener</value>
+                        </property>
+                    </properties>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.aspectj</groupId>
+                        <artifactId>aspectjweaver</artifactId>
+                        <version>1.9.22.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-testng</artifactId>
+                        <version>3.5.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.13.0</version>
+                <executions>
+                    <execution>
+                        <id>allure-report</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- **Maven Resources Plugin** to clear directories before test -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>clear-allure-results</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>Test-Output/Reports/Allure/allure-results</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*.gitkeep</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version> <!-- Use a stable version -->
+                <configuration>
+                    <!-- Specify the listener here -->
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>Ellithium.com.CustomTestNGListener</value>
+                        </property>
+                    </properties>
+                </configuration>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include> <!-- Include all properties files -->
+                </includes>
+            </resource>
+            <resource>
+                <directory>.allure</directory>
+                <includes>
+                    <include>**/*</include> <!-- Include all properties files -->
+                </includes>
+            </resource>
+        </resources>
+        <!-- Maven Surefire Plugin for Unit Tests -->
+    </build>
+</project>
