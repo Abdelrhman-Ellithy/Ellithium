@@ -17,7 +17,7 @@ public class DriverActions {
     private static boolean defaultTimeoutGotFlag=false;
     private static boolean defaultPollingTimeGotFlag=false;
     private static final String configPath=System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config.properties";
-    public static void SendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
+    public static void sendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
                 .pollingEvery(Duration.ofMillis(pollingEvery))
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -26,7 +26,7 @@ public class DriverActions {
         driver.findElement(locator).sendKeys(data);
     }
 
-    public static void SendData(WebDriver driver, By locator, Keys data, int timeout, int pollingEvery) {
+    public static void sendData(WebDriver driver, By locator, Keys data, int timeout, int pollingEvery) {
         new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
                 .pollingEvery(Duration.ofMillis(pollingEvery))
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -43,7 +43,7 @@ public class DriverActions {
         return driver.findElement(locator).getText();
     }
 
-    public static void ClickingOnElement(WebDriver driver, By locator, int timeout, int pollingEvery) {
+    public static void clickingOnElement(WebDriver driver, By locator, int timeout, int pollingEvery) {
         new FluentWait<>(driver).withTimeout(Duration.ofSeconds(timeout))
                 .pollingEvery(Duration.ofMillis(pollingEvery))
                 .until(ExpectedConditions.elementToBeClickable(locator));
@@ -227,13 +227,13 @@ public class DriverActions {
         driver.switchTo().window(originalWindowHandle);
         logsUtils.info(Colors.BLUE+"Switched To Original Window"+Colors.RESET);
     }
-    // Overloaded SendData method with pollingEvery 500ms
-    public static void SendData(WebDriver driver, By locator, String data) {
-        SendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    // Overloaded sendData method with pollingEvery 500ms
+    public static void sendData(WebDriver driver, By locator, String data) {
+        sendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
     }
 
-    public static void SendData(WebDriver driver, By locator, Keys data) {
-        SendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
+    public static void sendData(WebDriver driver, By locator, Keys data) {
+        sendData(driver, locator, data, 5, 500); // Timeout 5 seconds, pollingEvery 500ms
     }
 
     // Overloaded getText method with default timeout and polling time
@@ -242,10 +242,10 @@ public class DriverActions {
         return getText(driver, locator, defaultTimeout, defaultPollingTime); // Timeout 5 seconds, pollingEvery 500ms
     }
 
-    // Overloaded ClickingOnElement method with default timeout and polling time
-    public static void ClickingOnElement(WebDriver driver, By locator) {
+    // Overloaded clickingOnElement method with default timeout and polling time
+    public static void clickingOnElement(WebDriver driver, By locator) {
         initializeTimeoutAndPolling();
-        ClickingOnElement(driver, locator, defaultTimeout, defaultPollingTime);
+        clickingOnElement(driver, locator, defaultTimeout, defaultPollingTime);
     }
 
     // Overloaded waitForInvisibility method with default timeout and polling time
