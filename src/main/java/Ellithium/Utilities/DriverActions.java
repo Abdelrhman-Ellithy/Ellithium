@@ -1,15 +1,20 @@
 package Ellithium.Utilities;
 
+import com.google.common.io.Files;
 import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class DriverActions {
     private static int defaultTimeout= 5;
@@ -305,6 +310,305 @@ public class DriverActions {
         return driver.findElement(locator);
     }
 
+    // Accept an alert
+    public static void acceptAlert(WebDriver driver, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.alertIsPresent());
+        logsUtils.info(Colors.BLUE + "Alert present. Accepting the alert." + Colors.RESET);
+        driver.switchTo().alert().accept();
+    }
+
+    // Dismiss an alert
+    public static void dismissAlert(WebDriver driver, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.alertIsPresent());
+        logsUtils.info(Colors.BLUE + "Alert present. Dismissing the alert." + Colors.RESET);
+        driver.switchTo().alert().dismiss();
+    }
+
+    // Get alert text
+    public static String getAlertText(WebDriver driver, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.alertIsPresent());
+        logsUtils.info(Colors.BLUE + "Getting alert text." + Colors.RESET);
+        return driver.switchTo().alert().getText();
+    }
+
+    // Send data to alert (for prompt alerts)
+    public static void sendDataToAlert(WebDriver driver, String data, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.alertIsPresent());
+        logsUtils.info(Colors.BLUE + "Sending data to alert: " + data + Colors.RESET);
+        driver.switchTo().alert().sendKeys(data);
+    }
+
+    // --- Methods for interacting with multiple elements ---
+
+    // Get text from multiple elements
+    public static List<String> getTextFromMultipleElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        logsUtils.info(Colors.BLUE + "Getting text from multiple elements located: " + locator + Colors.RESET);
+        List<WebElement> elements = driver.findElements(locator);
+        List<String> texts = new ArrayList<>();
+        for (WebElement element : elements) {
+            texts.add(element.getText());
+        }
+        return texts;
+    }
+
+    // Click on multiple elements
+    public static void clickOnMultipleElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        logsUtils.info(Colors.BLUE + "Clicking on multiple elements located: " + locator + Colors.RESET);
+        List<WebElement> elements = driver.findElements(locator);
+        for (WebElement element : elements) {
+            element.click();
+        }
+    }
+
+    // Send data to multiple elements
+    public static void sendDataToMultipleElements(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        logsUtils.info(Colors.BLUE + "Sending data to multiple elements located: " + locator + Colors.RESET);
+        List<WebElement> elements = driver.findElements(locator);
+        for (WebElement element : elements) {
+            element.clear();
+            element.sendKeys(data);
+        }
+    }
+
+    // Select from dropdowns on multiple elements by visible text
+    public static void selectDropdownByTextForMultipleElements(WebDriver driver, By locator, String option, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        logsUtils.info(Colors.BLUE + "Selecting dropdown option by text for multiple elements: " + option + Colors.RESET);
+        List<WebElement> elements = driver.findElements(locator);
+        for (WebElement element : elements) {
+            new Select(element).selectByVisibleText(option);
+        }
+    }
+
+    // --- Methods for interacting with frames ---
+
+    // Switch to frame by index
+    public static void switchToFrameByIndex(WebDriver driver, int index, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
+        logsUtils.info(Colors.BLUE + "Switched to frame by index: " + index + Colors.RESET);
+    }
+
+    // Switch to frame by name or ID
+    public static void switchToFrameByNameOrID(WebDriver driver, String nameOrID, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrID));
+        logsUtils.info(Colors.BLUE + "Switched to frame by name or ID: " + nameOrID + Colors.RESET);
+    }
+
+    // Switch to frame by WebElement
+    public static void switchToFrameByElement(WebDriver driver, By locator, int timeout) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
+        logsUtils.info(Colors.BLUE + "Switched to frame by element located: " + locator + Colors.RESET);
+    }
+
+    // Switch back to default content from frame
+    public static void switchToDefaultContent(WebDriver driver) {
+        driver.switchTo().defaultContent();
+        logsUtils.info(Colors.BLUE + "Switched back to default content from frame" + Colors.RESET);
+    }
+
+    // --- Popup Handling ---
+
+    // Handle popups or additional windows
+    public static void switchToPopupWindow(WebDriver driver, String expectedPopupTitle, int timeout) {
+        String mainWindow = driver.getWindowHandle();
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(defaultPollingTime))
+                .until(ExpectedConditions.numberOfWindowsToBe(2));
+
+        for (String windowHandle : driver.getWindowHandles()) {
+            if (!windowHandle.equals(mainWindow)) {
+                driver.switchTo().window(windowHandle);
+                if (driver.getTitle().equals(expectedPopupTitle)) {
+                    logsUtils.info(Colors.BLUE + "Switched to popup window with title: " + expectedPopupTitle + Colors.RESET);
+                    return;
+                }
+            }
+        }
+        logsUtils.error(Colors.RED + "Popup window with title " + expectedPopupTitle + " not found" + Colors.RESET);
+        driver.switchTo().window(mainWindow);
+    }
+
+    // Close popup window and switch back to main window
+    public static void closePopupWindow(WebDriver driver) {
+        driver.close();
+        logsUtils.info(Colors.BLUE + "Popup window closed. Switching back to the main window." + Colors.RESET);
+        String mainWindow = driver.getWindowHandles().iterator().next();
+        driver.switchTo().window(mainWindow);
+    }
+
+    // --- Miscellaneous Methods ---
+
+    // Maximize the browser window
+    public static void maximizeWindow(WebDriver driver) {
+        driver.manage().window().maximize();
+        logsUtils.info(Colors.BLUE + "Browser window maximized" + Colors.RESET);
+    }
+
+    // Minimize the browser window
+    public static void minimizeWindow(WebDriver driver) {
+        driver.manage().window().minimize();
+        logsUtils.info(Colors.BLUE + "Browser window minimized" + Colors.RESET);
+    }
+
+    // Get all elements matching the locator
+    public static List<WebElement> getElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(pollingEvery))
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        logsUtils.info(Colors.BLUE + "Getting all elements located: " + locator + Colors.RESET);
+        return driver.findElements(locator);
+    }
+    public static float moveSliderTo(WebDriver driver, By sliderLocator, By rangeLocator, float targetValue, int timeout) {
+        WebElement range = driver.findElement(rangeLocator);
+        WebElement slider = driver.findElement(sliderLocator);
+
+        float currentValue = Float.parseFloat(range.getText());
+        Actions action = new Actions(driver);
+
+        // Move slider to minimum (assumed to be 0)
+        while (currentValue != 0 && timeout > 0) {
+            action.sendKeys(slider, Keys.ARROW_LEFT).perform();
+            currentValue = Float.parseFloat(range.getText());
+            timeout--;
+        }
+        // Now, move slider to the target value
+        while (currentValue != targetValue && timeout > 0) {
+            action.sendKeys(slider, Keys.ARROW_RIGHT).perform();
+            currentValue = Float.parseFloat(range.getText());
+            timeout--;
+        }
+
+        logsUtils.info(Colors.BLUE + "Slider moved to: " + currentValue + Colors.RESET);
+        return currentValue;
+    }
+
+    // Move slider by offset (dragging)
+    public static void moveSliderByOffset(WebDriver driver, By sliderLocator, int xOffset, int yOffset) {
+        WebElement slider = driver.findElement(sliderLocator);
+        Actions action = new Actions(driver);
+
+        action.clickAndHold(slider)
+                .moveByOffset(xOffset, yOffset)
+                .release()
+                .perform();
+        logsUtils.info(Colors.BLUE + "Slider moved by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
+    }
+
+    // --- Drag and Drop Methods ---
+
+    // Perform drag and drop from source to target element
+    public static void dragAndDrop(WebDriver driver, By sourceLocator, By targetLocator) {
+        WebElement source = driver.findElement(sourceLocator);
+        WebElement target = driver.findElement(targetLocator);
+        Actions action = new Actions(driver);
+
+        action.clickAndHold(source)
+                .moveToElement(target)
+                .release()
+                .perform();
+
+        logsUtils.info(Colors.BLUE + "Drag and drop performed from " + sourceLocator + " to " + targetLocator + Colors.RESET);
+    }
+
+    // Perform drag and drop using offsets
+    public static void dragAndDropByOffset(WebDriver driver, By sourceLocator, int xOffset, int yOffset) {
+        WebElement source = driver.findElement(sourceLocator);
+        Actions action = new Actions(driver);
+
+        action.clickAndHold(source)
+                .moveByOffset(xOffset, yOffset)
+                .release()
+                .perform();
+
+        logsUtils.info(Colors.BLUE + "Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
+    }
+
+    // --- Hover Methods ---
+
+    // Hover over an element
+    public static void hoverOverElement(WebDriver driver, By locator, int timeout) {
+        WebElement element = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+
+        Actions action = new Actions(driver);
+        action.moveToElement(element).perform();
+        logsUtils.info(Colors.BLUE + "Hovered over element: " + locator + Colors.RESET);
+    }
+
+    // Hover over an element and click
+    public static void hoverAndClick(WebDriver driver, By locatorToHover, By locatorToClick, int timeout) {
+        WebElement elementToHover = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.visibilityOfElementLocated(locatorToHover));
+
+        WebElement elementToClick = new FluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeout))
+                .pollingEvery(Duration.ofMillis(500))
+                .until(ExpectedConditions.elementToBeClickable(locatorToClick));
+
+        Actions action = new Actions(driver);
+        action.moveToElement(elementToHover).click(elementToClick).perform();
+
+        logsUtils.info(Colors.BLUE + "Hovered over " + locatorToHover + " and clicked " + locatorToClick + Colors.RESET);
+    }
+    public static String captureScreenshot(WebDriver driver, String screenshotName) {
+        try {
+            TakesScreenshot camera = (TakesScreenshot) driver;
+            File screenshot = camera.getScreenshotAs(OutputType.FILE);
+            File screenShotUser = new File("Test-Output"+File.separator+"ScreenShots"+File.separator+"Captured"+File.separator);
+            if(!screenShotUser.exists()){
+                screenShotUser.mkdirs();
+            }
+            File screenShotFile = new File(screenShotUser.getPath() + screenshotName + "_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".png");Files.move(screenshot, screenShotFile);
+            logsUtils.info(Colors.BLUE + "Screenshot captured: " + screenShotFile.getPath() + Colors.RESET);
+            return screenShotFile.getPath();
+        }
+        catch (Exception e){
+            logsUtils.logException(e);
+            return null;
+        }
+    }
     // Initialize timeout and polling time only once
     private static void initializeTimeoutAndPolling() {
         if (!defaultTimeoutGotFlag) {
