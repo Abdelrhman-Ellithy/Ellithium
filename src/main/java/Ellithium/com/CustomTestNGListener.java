@@ -1,6 +1,7 @@
 package Ellithium.com;
 
 import Ellithium.Utilities.logsUtils;
+import io.qameta.allure.Allure;
 import org.testng.*;
 import static Ellithium.Utilities.Colors.*;
 
@@ -46,7 +47,6 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     public void onFinish(ITestContext context) {
         logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase() + RESET);
     }
-
     @Override
     public void onExecutionStart() {
         timeStartMills = System.currentTimeMillis();
@@ -54,7 +54,6 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup  -------------" + RESET);
         logsUtils.info(BLUE + "--------------------------------------------------------" + RESET);
     }
-
     @Override
     public void onExecutionFinish() {
         timeFinishMills = System.currentTimeMillis();
