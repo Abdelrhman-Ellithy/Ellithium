@@ -41,7 +41,7 @@
 ||
 
 
-### 📄 Supported File Formats
+### 📄 Supported File Formats for Reading and Writing
 
 Ellithium supports reading and writing data from various file formats, including:
 
