@@ -1,6 +1,9 @@
 package Ellithium.DriverSetup;
+import Ellithium.com.AllureStepListener;
+import Ellithium.com.CustomTestNGListener;
 import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
+import io.qameta.allure.AllureLifecycle;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.annotations.*;
 
@@ -11,6 +14,7 @@ import org.testng.annotations.*;
                 "pretty",
                 "html:Test-Output/Reports/Cucumber/cucumber.html",
                 "json:Test-Output/Reports/Cucumber/cucumber.json",
+                "Ellithium.com.AllureStepListener"
         }
 )
 public class SETUP extends AbstractTestNGCucumberTests {

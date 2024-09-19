@@ -39,12 +39,12 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
 
     @Override
     public void onStart(ITestContext context) {
-        logsUtils.info(CYAN + "[START] " + context.getName() + " [TESTS STARTED]" + RESET);
+        logsUtils.info(CYAN + "[START] " + context.getName().toUpperCase() + " [TESTS STARTED]" + RESET);
     }
 
     @Override
     public void onFinish(ITestContext context) {
-        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName() + RESET);
+        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase() + RESET);
     }
 
     @Override

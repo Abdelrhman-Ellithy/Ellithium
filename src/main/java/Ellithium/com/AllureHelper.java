@@ -19,13 +19,17 @@ public class AllureHelper {
     private static File allureDirectory;
     private static File allureBinaryDirectory;
     public static void allureOpen() {
-        String allurePropertiesFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
+        String allurePropertiesFilePath = "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "allure";
         String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
         if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
+                File allure_resultsFolder=new File(resultsPath);
+                if(allure_resultsFolder.exists()){
+                    allure_resultsFolder.delete();
+                }
                 String generateCommand = allureBinaryPath + "allure generate ." + File.separator + resultsPath + File.separator + " --clean -o ."+File.separator+reportPath;
                 String openCommand = allureBinaryPath + "allure open ."+File.separator + reportPath;
                 // Generate report
@@ -53,7 +57,7 @@ public class AllureHelper {
     private static String resolveAllureBinaryPath() {
         String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository" + File.separator + "allure-Ellithium";
         allureDirectory = new File(allurePath);
-        String configFilePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
+        String configFilePath ="src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
         if (allureDirectory.exists()) {
             logsUtils.info(Colors.GREEN + "Allure folder exists at: " + allurePath + Colors.RESET);
 

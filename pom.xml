@@ -62,12 +62,12 @@
                 </snapshotRepository>
             </distributionManagement>
         </profile>
-            <profile>
-                <id>gpg-signing</id>
-                <activation>
-                    <activeByDefault>true</activeByDefault>
-                </activation>
-            </profile>
+<!--            <profile>-->
+<!--                <id>gpg-signing</id>-->
+<!--                <activation>-->
+<!--                    <activeByDefault>true</activeByDefault>-->
+<!--                </activation>-->
+<!--            </profile>-->
     </profiles>
     <properties>
         <EllithiumVersion>1.0.0</EllithiumVersion>
@@ -95,8 +95,9 @@
         <surefireArgLine></surefireArgLine>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
-        <deployToMavenCentral>mvn clean deploy -Possrh -DskipTests -X</deployToMavenCentral>
-        <deployToGithubPacakge>mvn clean deploy -Pgithub -DskipTests -X</deployToGithubPacakge>
+        <deployToMavenCentral>mvn clean deploy -P ossrh, !github -DskipTests -X</deployToMavenCentral>
+        <deployToGithubPacakge>mvn clean deploy -P github, !ossrh -DskipTests -X</deployToGithubPacakge>
+        <PDFBoxVersion>2.0.27</PDFBoxVersion>
     </properties>
     <dependencies>
         <dependency>
@@ -187,14 +188,18 @@
             <artifactId>poi-ooxml</artifactId>
             <version>${ApachePOI}</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${PDFBoxVersion}</version>
+        </dependency>
         <!-- Additional POI dependencies for handling Excel files -->
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
             <version>${AddPOI}</version>
         </dependency>
-
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>

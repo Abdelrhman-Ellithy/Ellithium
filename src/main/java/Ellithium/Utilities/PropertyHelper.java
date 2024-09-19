@@ -3,7 +3,7 @@ package Ellithium.Utilities;
 import java.io.*;
 import java.util.Properties;
 
-public class PropertyHelper extends DataUtils {
+public class PropertyHelper {
 
     // Method to get data from a properties file using a key
     public static String getDataFromProperties(String filePath, String key) {
@@ -18,7 +18,6 @@ public class PropertyHelper extends DataUtils {
         }
         return prop.getProperty(key);
     }
-
     // Method to set data into a properties file with a key-value pair
     public static void setDataToProperties(String filePath, String key, String value) {
         Properties prop = new Properties();
