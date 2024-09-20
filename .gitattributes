@@ -8,9 +8,8 @@
 *.py linguist-language=Python
 *.js linguist-language=JavaScript
 
-*.css linguist-detectable=true
+*.css linguist-detectable=false
 *.java linguist-detectable=true
-*.py linguist-detectable=true
 *.js linguist-detectable=true
 *.html linguist-detectable=false
 *.xml linguist-detectable=true
