@@ -77,6 +77,9 @@ Ensure you have the following installed:
 Here is the updated **Getting Started** section formatted for your README file:
 
 ---
+### Option 1: By Seeing a Demo Project, custmize and use it as here **[_Ellithium-DemoProject_](https://github.com/Abdelrhman-Ellithy/Ellithium-Demo-Project)** (Recommended to take a look at)
+
+### Option 2: By creating a New Maven Project (Recommended)
 
 ### Step 1: Create a New Maven Project
 
@@ -259,7 +262,6 @@ public class BaseStepDefinitions {
 - **Note you cannot run the Tests in paralle with diffrent Configurations**
 ---
 - **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.**
-
 
 ## 📬 Contact
 
