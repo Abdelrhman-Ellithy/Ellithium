@@ -6,15 +6,12 @@ import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Status;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
-import io.cucumber.plugin.event.HookTestStep;  // Import HookTestStep to identify hooks
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.StepResult;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 public class AllureStepListener implements EventListener {
-
     private Map<Integer, String> stepUUIDMap = new HashMap<>();
     private int stepIndex = 0;
     @Override

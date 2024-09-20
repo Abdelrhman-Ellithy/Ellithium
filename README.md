@@ -14,7 +14,7 @@
 **📄 _Note_ Ellithium Still Under Development**
 ### 🚀 Key Features
 
-- **Cross-Browser Testing**: Supports automated testing across multiple browsers, including **Chrome**, **Firefox**, and **Edge**.
+- **Cross-Browser Testing**: Supports automated testing across multiple browsers, including **Chrome**, **Firefox**, **Edge** and **Safari**.
 - **Parallel Execution**: Execute tests in parallel to reduce overall test execution time and improve efficiency.
 - **Headless Testing**: Run tests in headless mode for faster execution and to save resources.
 - **BDD Support**: Implements Behavior-Driven Development (BDD) using **Cucumber** to create human-readable test scenarios.
@@ -245,12 +245,12 @@ public class BaseStepDefinitions {
 - **The default values** if you **didn't add the paramaters** to the **TestNGRunner.xml** File are:
 
 ```java
-    @default("Chrome") String BrowserName,      // can be Chrome or Edge or Firefox
-    @default("false") String HeadlessMode,      // can be true or false
+    @default("Chrome") String BrowserName,      // can be Chrome or Edge or Firefox or Safari
+    @default("false") String HeadlessMode,      // can be true or false (Not Supported with Safari)
     @default("Normal") String PageLoadStrategy, // can be Normal or Eager
     @default("True") String PrivateMode,        // can be true or false
-    @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox
-    @default("True") String WebSecurityMode     // can be True or False 
+    @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox (Not Supported with Safari)
+    @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
 ```
 
 - **Edit the number of data-provider-thread-count to the number of Scenarios you to run at a time** 
