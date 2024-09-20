@@ -3,12 +3,14 @@ import static Ellithium.Utilities.Colors.*;
 import static io.qameta.allure.model.Status.*;
 
 import Ellithium.DriverSetup.DriverSetUp;
+import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import io.cucumber.java.*;
 import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.TestStep;
 import io.qameta.allure.Allure;
+import io.qameta.allure.model.Status;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -77,8 +79,11 @@ public class CucumberDefaultHooks {
                         try (FileInputStream fis = new FileInputStream(screenShotFile)) {
                             Allure.addAttachment(browserName.toUpperCase() + "- Scenario " + scenario.getName(), "image/png", fis, ".png");
                         }
+                        logsUtils.info(Colors.BLUE + "Screenshot captured: " + screenShotFile.getPath() + Colors.RESET);
+                        Allure.step("Screenshot captured: " + screenShotFile.getPath(), Status.PASSED);
                     } catch (IOException e) {
                         logsUtils.logException(e);
+                        Allure.step("Failed to capture screenshot: " + e.getMessage(), Status.FAILED);
                     }
                     break;
                 case PASSED:

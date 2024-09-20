@@ -9,14 +9,12 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     private long timeFinishMills;
-
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
             logsUtils.info(BLUE + "[START] Test " + result.getName() + " [STARTED]" + RESET);
         }
     }
-
     @Override
     public void onTestSuccess(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
@@ -40,26 +38,26 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
 
     @Override
     public void onStart(ITestContext context) {
-        logsUtils.info(CYAN + "[START] " + context.getName().toUpperCase() + " [TESTS STARTED]" + RESET);
+        logsUtils.info(CYAN + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
     }
 
     @Override
     public void onFinish(ITestContext context) {
-        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase() + RESET);
+        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
     }
     @Override
     public void onExecutionStart() {
         timeStartMills = System.currentTimeMillis();
-        logsUtils.info(BLUE + "--------------------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "----------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup  -------------" + RESET);
-        logsUtils.info(BLUE + "--------------------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "----------------------------------------------" + RESET);
     }
     @Override
     public void onExecutionFinish() {
         timeFinishMills = System.currentTimeMillis();
-        logsUtils.info(BLUE + "-----------------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "-------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine TearDown  -------" + RESET);
-        logsUtils.info(BLUE + "-----------------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "-------------------------------------------" + RESET);
         long totalMills, totalSeconds, totalMinutes, totalExecutionTime;
         totalExecutionTime = (timeFinishMills - timeStartMills);
         totalMills = totalExecutionTime % 1000;

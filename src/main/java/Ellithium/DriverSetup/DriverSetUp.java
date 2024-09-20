@@ -10,8 +10,11 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.safari.SafariDriver;
+import org.openqa.selenium.safari.SafariOptions;
 
 public class DriverSetUp {
+
     // Private method to configure browser options and return the WebDriver instance
     public static WebDriver setupLocalDriver(String browserName, String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
         switch (browserName.toLowerCase()) {
@@ -24,6 +27,9 @@ public class DriverSetUp {
             case "edge":
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new EdgeDriver(edgeOptions);
+            case "safari":
+                SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
+                return new SafariDriver(safariOptions);
             default:
                 throw new IllegalArgumentException("Invalid browser: " + browserName);
         }
@@ -52,7 +58,7 @@ public class DriverSetUp {
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--remote-allow-origins=*");
         chromeOptions.addArguments("--ignore-certificate-errors");
-        logsUtils.info(Colors.GREEN+ "Chrome Options Configured"+Colors.RESET);
+        logsUtils.info(Colors.GREEN + "Chrome Options Configured" + Colors.RESET);
         return chromeOptions;
     }
 
@@ -76,7 +82,7 @@ public class DriverSetUp {
         }
         // Other common options
         firefoxOptions.addArguments("--disable-dev-shm-usage");
-        logsUtils.info(Colors.GREEN+ "Firefox Options Configured"+Colors.RESET);
+        logsUtils.info(Colors.GREEN + "Firefox Options Configured" + Colors.RESET);
         return firefoxOptions;
     }
 
@@ -101,7 +107,20 @@ public class DriverSetUp {
         }
         // Other common options
         edgeOptions.addArguments("--disable-dev-shm-usage");
-        logsUtils.info(Colors.GREEN+ "Edge Options Configured"+Colors.RESET);
+        logsUtils.info(Colors.GREEN + "Edge Options Configured" + Colors.RESET);
         return edgeOptions;
+    }
+
+    // Configure Safari options
+    private static SafariOptions configureSafariOptions(String pageLoadStrategy, String privateMode) {
+        SafariOptions safariOptions = new SafariOptions();
+        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
+            safariOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+        }
+        if ("true".equalsIgnoreCase(privateMode)) {
+            safariOptions.setUseTechnologyPreview(true); // Safari doesn't have "private" mode via arguments, but this simulates it
+        }
+        logsUtils.info(Colors.GREEN + "Safari Options Configured" + Colors.RESET);
+        return safariOptions;
     }
 }
