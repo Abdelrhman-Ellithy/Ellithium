@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/DriverSetup/DriverSetUp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/DriverSetup/DriverSetUp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/DriverActions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/DriverActions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureStepListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureStepListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/CustomTestNGListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/CustomTestNGListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar.asc" beforeDir="false" afterPath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar.asc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/ellithium-1.0.1.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.jar.asc" beforeDir="false" afterPath="$PROJECT_DIR$/target/ellithium-1.0.1.jar.asc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.pom.asc" beforeDir="false" afterPath="$PROJECT_DIR$/target/ellithium-1.0.1.pom.asc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-javadoc-plugin-stale-data.txt" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-javadoc-plugin-stale-data.txt" afterDir="false" />
-    </list>
+    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
