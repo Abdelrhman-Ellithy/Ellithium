@@ -69,7 +69,7 @@ Ensure you have the following installed:
 
 - **Java Development Kit (JDK)**: Version 21
 - **Maven**: 3.8.1 or higher
-- **Browsers**: Latest versions of **Chrome, Firefox,** and **Edge**
+- **Browsers**: Latest versions of **Chrome, Firefox, Safari, Edge**
 
 ## 🏁 Getting Started
 
