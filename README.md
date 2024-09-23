@@ -2,7 +2,7 @@
 <table border="0" align="center">
  <tr>
   <td colspan="3" align="center">
-   <a href="https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/" target="_blank"><img width="600" alt="SHAFT_ENGINE" src="src\main\resources\logo\Ellithium.png"></a>
+   <a href="https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/" target="_blank"><img width="600" alt="Ellithium" src="src\main\resources\logo\Ellithium.png"></a>
   </td>
  </tr>
 </table>
