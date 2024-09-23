@@ -4,7 +4,145 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="" />
+    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.allure/allure-2.30.0/config/allure.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.allure/allure-2.30.0/config/allure.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/allure-plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/allure-plugin.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/static/Ellithium.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/static/custom-logo.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/static/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/.allure/allure-2.30.0/plugins/custom-logo-plugin/static/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/DriverSetup/SETUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/DriverSetup/SETUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/AssertionExecutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/AssertionExecutor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/CSVHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/CSVHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/CommandExecutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/CommandExecutor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/DriverActions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/DriverActions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/ExcelHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/ExcelHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/JsonHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/JsonHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PDFHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PDFHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PropertyHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/PropertyHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/TestDataGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/TestDataGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/logsUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/Utilities/logsUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/AllureStepListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/CucumberDefaultHooks.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/com/CustomTestNGListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/com/CustomTestNGListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/properties/StartUpLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/properties/StartUpLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/logo/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/logo/styles.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/properties/default/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/properties/default/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/properties/default/log4j2.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/properties/default/log4j2.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/DriverSetup/DriverSetUp.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/DriverSetup/DriverSetUp.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/DriverSetup/SETUP.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/DriverSetup/SETUP.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/AssertionUtility$HardAssertionUtility.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/AssertionUtility$SoftAssertionUtility.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/AssertionUtility.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/CSVHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/CSVHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/CommandExecutor.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/CommandExecutor.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/DriverActions.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/DriverActions.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/ExcelHelper$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/ExcelHelper$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/ExcelHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/ExcelHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/JsonHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/JsonHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/PDFHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/PDFHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/PropertyHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/PropertyHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/TestDataGenerator.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/TestDataGenerator.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/logsUtils.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/Utilities/logsUtils.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/AllureHelper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/com/AllureHelper.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/AllureStepListener$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/AllureStepListener.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/CucumberDefaultHooks$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/com/CucumberDefaultHooks$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/CucumberDefaultHooks.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/com/CucumberDefaultHooks.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/com/CustomTestNGListener.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/com/CustomTestNGListener.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Ellithium/properties/StartUpLoader.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Ellithium/properties/StartUpLoader.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/allure-2.30.0/config/allure.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/allure-2.30.0/config/allure.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/allure-plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/allure-plugin.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/static/Ellithium.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/static/custom-logo.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/static/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/allure-2.30.0/plugins/custom-logo-plugin/static/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/logo/styles.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/properties/default/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/properties/default/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/properties/default/log4j2.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/properties/default/log4j2.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1-javadoc.jar.asc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.jar.asc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.pom" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/ellithium-1.0.1.pom.asc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-archiver/pom.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-javadoc-plugin-stale-data.txt" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-javadoc-plugin-stale-data.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/DriverFactory.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/DriverFactory.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/DriverSetUp.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/DriverSetUp.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/SETUP.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/SETUP.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/DriverFactory.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/DriverFactory.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/DriverSetUp.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/DriverSetUp.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/SETUP.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/class-use/SETUP.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-summary.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-summary.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-tree.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-tree.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-use.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/DriverSetup/package-use.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/AssertionUtility.HardAssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/AssertionUtility.SoftAssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/AssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/CSVHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/CSVHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/Colors.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/Colors.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/CommandExecutor.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/CommandExecutor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/DriverActions.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/DriverActions.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/ExcelHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/ExcelHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/JarExtractor.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/JarExtractor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/JsonHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/JsonHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/PDFHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/PDFHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/PropertyHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/PropertyHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/TestDataGenerator.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/TestDataGenerator.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/AssertionUtility.HardAssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/AssertionUtility.SoftAssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/AssertionUtility.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/CSVHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/CSVHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/Colors.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/Colors.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/CommandExecutor.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/CommandExecutor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/DriverActions.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/DriverActions.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/ExcelHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/ExcelHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/JarExtractor.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/JarExtractor.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/JsonHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/JsonHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/PDFHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/PDFHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/PropertyHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/PropertyHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/TestDataGenerator.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/TestDataGenerator.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/logsUtils.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/class-use/logsUtils.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/logsUtils.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/logsUtils.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-summary.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-summary.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-tree.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-tree.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-use.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/Utilities/package-use.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/AllureHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/AllureHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/AllureStepListener.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/CucumberDefaultHooks.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/CucumberDefaultHooks.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/CustomTestNGListener.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/CustomTestNGListener.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/AllureHelper.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/AllureHelper.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/AllureStepListener.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/CucumberDefaultHooks.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/CucumberDefaultHooks.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/CustomTestNGListener.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/class-use/CustomTestNGListener.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-summary.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-summary.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-tree.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-tree.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-use.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/com/package-use.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/StartUpLoader.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/StartUpLoader.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/class-use/StartUpLoader.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/class-use/StartUpLoader.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-summary.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-summary.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-tree.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-tree.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-use.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/Ellithium/properties/package-use.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/allclasses-index.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/allclasses-index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/allpackages-index.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/allpackages-index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/argfile" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/argfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/constant-values.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/constant-values.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/index-all.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/index-all.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/member-search-index.js" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/member-search-index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/options" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/options" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/overview-summary.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/overview-summary.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/overview-tree.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/overview-tree.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/search.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/search.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/reports/apidocs/type-search-index.js" beforeDir="false" afterPath="$PROJECT_DIR$/target/reports/apidocs/type-search-index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/site/allure-maven-plugin/allure-maven.html" beforeDir="false" afterPath="$PROJECT_DIR$/target/site/allure-maven-plugin/allure-maven.html" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -34,7 +172,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/lenovo/IdeaProjects/Ellithium/src/main/resources&quot;
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/lenovo/IdeaProjects/Ellithium-Demo-Project&quot;
   }
 }</component>
   <component name="RecentsManager">

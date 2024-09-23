@@ -8,3 +8,5 @@ plugins:
   - xctest-plugin
   - jira-plugin
   - xray-plugin
+  - custom-logo-plugin
+  

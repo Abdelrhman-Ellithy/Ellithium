@@ -3,3 +3,5 @@ name: Custom logo aggregator
 description: The aggregator replaces default Allure logo with a custom one
 cssFiles:
   - styles.css
+jsFiles:
+  - index.js   # Add the JS file to the configuration

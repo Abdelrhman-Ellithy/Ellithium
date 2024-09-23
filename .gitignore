@@ -9,8 +9,7 @@ Test-Output/Reports/
 Test-Output/Logs/
 Test-Output/ScreenShots/
 Ellithium.pptx
-# Allure report
-/allure-report/
+
 
 ### IntelliJ IDEA ###
 .idea/
