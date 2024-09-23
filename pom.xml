@@ -18,19 +18,19 @@
     <developers>
         <developer>
             <name>Abdelrahman Ellithy</name>
-            <email>abdelarhmanellithy@gmail.com.</email>
+            <email>abdelarhmanellithy@gmail.com</email>
             <organization>GitHub</organization>
             <organizationUrl>https://github.com/Abdelrhman-Ellithy/Ellithium</organizationUrl>
             <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
         </developer>
     </developers>
-        <licenses>
-            <license>
-                <name>Apache License, Version 2.0</name>
-                <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-                <distribution>repo</distribution>
-            </license>
-        </licenses>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <scm>
         <connection>scm:git:https://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
         <developerConnection>scm:git:ssh://github.com/Abdelrhman-Ellithy/Ellithium.git</developerConnection>
@@ -62,19 +62,13 @@
                 </snapshotRepository>
             </distributionManagement>
         </profile>
-<!--            <profile>-->
-<!--                <id>gpg-signing</id>-->
-<!--                <activation>-->
-<!--                    <activeByDefault>true</activeByDefault>-->
-<!--                </activation>-->
-<!--            </profile>-->
     </profiles>
     <properties>
-        <EllithiumVersion>1.0.1</EllithiumVersion>
+        <EllithiumVersion>1.0.2</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <seleniumVersion>4.24.0</seleniumVersion>
+        <seleniumVersion>4.25.0</seleniumVersion>
         <testNG>7.10.2</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.10.1</gsonVersion>
@@ -87,17 +81,21 @@
         <CSV>1.8</CSV>
         <ApachePOI>5.2.3</ApachePOI>
         <AddPOI>5.1.1</AddPOI>
-        <Cucumber>7.18.0</Cucumber>
-        <cucumberTsetNG>7.18.0</cucumberTsetNG>
-        <restversion>5.4.0</restversion>
-        <gherkinversion>28.0.0</gherkinversion>
+        <Cucumber>7.19.0</Cucumber>
+        <cucumberTsetNG>7.19.0</cucumberTsetNG>
+        <restversion>5.5.0</restversion>
+        <gherkinversion>29.0.0</gherkinversion>
         <hamcrestversion>3.0</hamcrestversion>
-        <surefireArgLine></surefireArgLine>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
-        <deployToMavenCentral>mvn clean deploy -P ossrh, !github -DskipTests -X</deployToMavenCentral>
-        <deployToGithubPacakge>mvn clean deploy -P github, !ossrh -DskipTests -X</deployToGithubPacakge>
+        <deployToMavenCentral>mvn clean deploy -P ossrh,!github -DskipTests -X</deployToMavenCentral>
+        <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
+        <mavenSurefirePluginVersion>3.5.0</mavenSurefirePluginVersion>
+        <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
+        <mavenDeployPluginVersion>3.1.2</mavenDeployPluginVersion>
+        <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
+        <AllureJVMVersion>2.29.0</AllureJVMVersion>
     </properties>
     <dependencies>
         <dependency>
@@ -224,6 +222,11 @@
             <version>${restversion}</version>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.qameta.allure</groupId>-->
+<!--            <artifactId>allure-cucumber7-jvm</artifactId>-->
+<!--            <version>${AllureJVMVersion}</version> &lt;!&ndash; Or latest version &ndash;&gt;-->
+<!--        </dependency>-->
         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
@@ -262,7 +265,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.1.2</version> <!-- Or check for the latest version -->
+                <version>${mavenDeployPluginVersion}</version> <!-- Or check for the latest version -->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -293,7 +296,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-publish-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>${mavenPublishPluginVersion}</version>
                 <configuration>
                     <checkoutDirectory>${project.basedir}/../ellithium_apidocs</checkoutDirectory>
                     <tryUpdate>true</tryUpdate>
@@ -309,7 +312,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>${mavenSurefirePluginVersion}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
@@ -366,7 +369,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>${mavenResourcesfirePluginVersion}</version>
                 <executions>
                     <execution>
                         <id>clear-allure-results</id>
