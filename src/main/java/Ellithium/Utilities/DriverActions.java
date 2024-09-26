@@ -21,26 +21,25 @@ public class DriverActions {
     private static boolean defaultPollingTimeGotFlag=false;
     private static final Map<Keys, String> keyMap;
     static {
-        Map<Keys, String> tempMap = new HashMap<>();
-        tempMap.put(Keys.ENTER, "ENTER");
-        tempMap.put(Keys.TAB, "TAB");
-        tempMap.put(Keys.ESCAPE, "ESCAPE");
-        tempMap.put(Keys.BACK_SPACE, "BACKSPACE");
-        tempMap.put(Keys.SPACE, "SPACE");
-        tempMap.put(Keys.ARROW_UP, "UP ARROW");
-        tempMap.put(Keys.ARROW_DOWN, "DOWN ARROW");
-        tempMap.put(Keys.ARROW_LEFT, "LEFT ARROW");
-        tempMap.put(Keys.ARROW_RIGHT, "RIGHT ARROW");
-        tempMap.put(Keys.DELETE, "DELETE");
-        tempMap.put(Keys.HOME, "HOME");
-        tempMap.put(Keys.END, "END");
-        tempMap.put(Keys.PAGE_UP, "PAGE UP");
-        tempMap.put(Keys.PAGE_DOWN, "PAGE DOWN");
-        tempMap.put(Keys.SHIFT, "SHIFT");
-        tempMap.put(Keys.CONTROL, "CONTROL");
-        tempMap.put(Keys.ALT, "ALT");
         // Add more mappings as needed
-        keyMap = Collections.unmodifiableMap(tempMap); // Make the map unmodifiable
+        keyMap = Map.ofEntries(
+                Map.entry(Keys.ENTER, "ENTER"),
+                Map.entry(Keys.TAB, "TAB"),
+                Map.entry(Keys.ESCAPE, "ESCAPE"),
+                Map.entry(Keys.BACK_SPACE, "BACKSPACE"),
+                Map.entry(Keys.SPACE, "SPACE"),
+                Map.entry(Keys.ARROW_UP, "UP ARROW"),
+                Map.entry(Keys.ARROW_DOWN, "DOWN ARROW"),
+                Map.entry(Keys.ARROW_LEFT, "LEFT ARROW"),
+                Map.entry(Keys.ARROW_RIGHT, "RIGHT ARROW"),
+                Map.entry(Keys.DELETE, "DELETE"),
+                Map.entry(Keys.HOME, "HOME"),
+                Map.entry(Keys.END, "END"),
+                Map.entry(Keys.PAGE_UP, "PAGE UP"),
+                Map.entry(Keys.PAGE_DOWN, "PAGE DOWN"),
+                Map.entry(Keys.SHIFT, "SHIFT"),
+                Map.entry(Keys.CONTROL, "CONTROL"),
+                Map.entry(Keys.ALT, "ALT"));
     }
     private static String getKeyName(Keys key) {
         return keyMap.getOrDefault(key, key.toString()); // Efficient lookup
@@ -476,7 +475,6 @@ public class DriverActions {
         logsUtils.info(Colors.BLUE + "Switched to frame by name or ID: " + nameOrID + Colors.RESET);
         Allure.step("Switched To Frame By Name/ID: " + nameOrID, Status.PASSED);
     }
-
     // Switch to frame by WebElement
     public static void switchToFrameByElement(WebDriver driver, By locator, int timeout,int pollingTime) {
         getFluentWait(driver,timeout,pollingTime)
@@ -693,7 +691,6 @@ public class DriverActions {
         logsUtils.info(Colors.BLUE + "Navigated Back In Browser History" + Colors.RESET);
         Allure.step("Navigating back in browser history", Status.PASSED);
     }
-
     public static void navigateForward(WebDriver driver) {
         driver.navigate().forward();
         logsUtils.info(Colors.BLUE + "Navigated Forward In Browser History" + Colors.RESET);
@@ -703,7 +700,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return waitForElementToBeSelected(driver, locator, defaultTimeout, defaultPollingTime);
     }
-
     public static boolean waitForElementToBeSelected(WebDriver driver, By locator, int timeout) {
         initializeTimeoutAndPolling();
         return waitForElementToBeSelected(driver, locator, timeout, defaultPollingTime);
@@ -712,7 +708,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return waitForElementAttributeToBe(driver, locator, attribute, value, defaultTimeout, defaultPollingTime);
     }
-
     public static boolean waitForElementAttributeToBe(WebDriver driver, By locator, String attribute, String value, int timeout) {
         initializeTimeoutAndPolling();
         return waitForElementAttributeToBe(driver, locator, attribute, value, timeout, defaultPollingTime);
@@ -721,7 +716,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return waitForElementAttributeContains(driver, locator, attribute, value, defaultTimeout, defaultPollingTime);
     }
-
     public static boolean waitForElementAttributeContains(WebDriver driver, By locator, String attribute, String value, int timeout) {
         initializeTimeoutAndPolling();
         return waitForElementAttributeContains(driver, locator, attribute, value, timeout, defaultPollingTime);
@@ -730,7 +724,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return waitForElementStaleness(driver, element, defaultTimeout, defaultPollingTime);
     }
-
     public static boolean waitForElementStaleness(WebDriver driver, WebElement element, int timeout) {
         initializeTimeoutAndPolling();
         return waitForElementStaleness(driver, element, timeout, defaultPollingTime);
@@ -739,7 +732,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return waitForTitleContains(driver, titlePart, defaultTimeout, defaultPollingTime);
     }
-
     public static boolean waitForTitleContains(WebDriver driver, String titlePart, int timeout) {
         initializeTimeoutAndPolling();
         return waitForTitleContains(driver, titlePart, timeout, defaultPollingTime);
@@ -752,7 +744,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return getTextFromMultipleElements(driver, locator, defaultTimeout, defaultPollingTime);
     }
-
     public static List<String> getTextFromMultipleElements(WebDriver driver, By locator, int timeout) {
         initializeTimeoutAndPolling();
         return getTextFromMultipleElements(driver, locator, timeout, defaultPollingTime);
@@ -761,7 +752,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return getAttributeFromMultipleElements(driver, locator, attribute, defaultTimeout, defaultPollingTime);
     }
-
     public static List<String> getAttributeFromMultipleElements(WebDriver driver, By locator, String attribute, int timeout) {
         initializeTimeoutAndPolling();
         return getAttributeFromMultipleElements(driver, locator, attribute, timeout, defaultPollingTime);
@@ -770,7 +760,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         clickOnMultipleElements(driver, locator, defaultTimeout, defaultPollingTime);
     }
-
     public static void clickOnMultipleElements(WebDriver driver, By locator, int timeout) {
         initializeTimeoutAndPolling();
         clickOnMultipleElements(driver, locator, timeout, defaultPollingTime);
@@ -779,7 +768,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         sendDataToMultipleElements(driver, locator, data, defaultTimeout, defaultPollingTime);
     }
-
     public static void sendDataToMultipleElements(WebDriver driver, By locator, String data, int timeout) {
         initializeTimeoutAndPolling();
         sendDataToMultipleElements(driver, locator, data, timeout, defaultPollingTime);
@@ -788,7 +776,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         selectDropdownByTextForMultipleElements(driver, locator, option, defaultTimeout, defaultPollingTime);
     }
-
     public static void selectDropdownByTextForMultipleElements(WebDriver driver, By locator, String option, int timeout) {
         initializeTimeoutAndPolling();
         selectDropdownByTextForMultipleElements(driver, locator, option, timeout, defaultPollingTime);
@@ -797,7 +784,6 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         switchToFrameByIndex(driver, index, defaultTimeout, defaultPollingTime);
     }
-
     public static void switchToFrameByIndex(WebDriver driver, int index, int timeout) {
         initializeTimeoutAndPolling();
         switchToFrameByIndex(driver, index, timeout, defaultPollingTime);
@@ -992,11 +978,25 @@ public class DriverActions {
         initializeTimeoutAndPolling();
         return getText(driver, locator, defaultTimeout, defaultPollingTime);
     }
-
     // Overloaded clickOnElement method with default timeout and polling time
     public static void clickOnElement(WebDriver driver, By locator) {
         initializeTimeoutAndPolling();
         clickOnElement(driver, locator, defaultTimeout, defaultPollingTime);
+    }
+    public static void sendData(WebDriver driver, By locator, String data, int timout) {
+        initializeTimeoutAndPolling();
+        sendData(driver, locator, data, timout, defaultPollingTime);
+    }
+
+    public static void sendData(WebDriver driver, By locator, Keys data, int timout) {
+        initializeTimeoutAndPolling();
+        sendData(driver, locator, data, defaultTimeout, defaultPollingTime);
+    }
+
+    // Overloaded getText method with default timeout and polling time
+    public static String getText(WebDriver driver, By locator, int timout) {
+        initializeTimeoutAndPolling();
+        return getText(driver, locator, timout, defaultPollingTime);
     }
     public static void acceptAlert(WebDriver driver, int timeout) {
         initializeTimeoutAndPolling();
@@ -1135,22 +1135,34 @@ public class DriverActions {
             Allure.step("Initialize default Polling Time for Element ", Status.PASSED);
         }
     }
+    private static int parseProperty(String value, int defaultValue, String propertyName) {
+        if (value != null && !value.isEmpty()) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                logsUtils.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
+            }
+        }
+        return defaultValue;
+    }
     // Initialize default timeout from properties file
     private static void initTimeout() {
         try {
             String timeout = PropertyHelper.getDataFromProperties(configPath, "defaultElementWaitTimeout");
-            defaultTimeout = Integer.parseInt(timeout);
+            defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
             logsUtils.logException(e);
+            defaultTimeout = 5;  // Assign default if exception occurs
         }
     }
     // Initialize default polling time from properties file
     private static void initPolling() {
         try {
             String polling = PropertyHelper.getDataFromProperties(configPath, "defaultElementPollingTime");
-            defaultPollingTime = Integer.parseInt(polling);
+            defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
             logsUtils.logException(e);
+            defaultPollingTime = 5;  // Assign default if exception occurs
         }
     }
     // Sleep for a specified number of milliseconds
