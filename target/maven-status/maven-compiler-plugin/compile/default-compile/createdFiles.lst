@@ -18,6 +18,7 @@ Ellithium\Utilities\DriverActions.class
 Ellithium\DriverSetup\DriverSetUp.class
 Ellithium\com\CustomTestNGListener.class
 Ellithium\com\CucumberDefaultHooks.class
+Ellithium\com\GeneralHandler.class
 Ellithium\DriverSetup\DriverFactory.class
 Ellithium\Utilities\ExcelHelper$1.class
 Ellithium\Utilities\AssertionExecutor.class

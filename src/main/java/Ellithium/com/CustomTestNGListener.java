@@ -1,9 +1,11 @@
 package Ellithium.com;
 
+import Ellithium.DriverSetup.DriverFactory;
 import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import io.qameta.allure.Allure;
+import io.qameta.allure.model.Attachment;
 import io.qameta.allure.model.Status;
 import io.qameta.allure.model.TestResult;
 import org.testng.*;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import static Ellithium.Utilities.Colors.*;
+import static Ellithium.com.GeneralHandler.testFailed;
 
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
@@ -32,14 +35,12 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
             logsUtils.info(GREEN + "[PASSED] Test " + result.getName() + " [PASSED]" + RESET);
         }
     }
-
     @Override
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(RED + "[FAILED] Test " + result.getName() + " [FAILED]" + RESET);
+            logsUtils.info(RED + "[FAILED] TestCase " + result.getName() + " [FAILED]" + RESET);
         }
     }
-
     @Override
     public void onTestSkipped(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
@@ -91,7 +92,6 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
                         "property.fileName"
                 )
         );
-
         // Check if the log file exists before attaching it
         File logFile = new File(logFilePath);
         if (!logFile.exists()) {
@@ -100,16 +100,17 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
             return;
         }
         // Attach the log file to Allure report
+// Attach the log file to Allure report
         try (FileInputStream fis = new FileInputStream(logFile)) {
             // Generate a UUID for the custom test result
             String uuid = UUID.randomUUID().toString();
-
             // Create a custom TestResult for the whole test execution
+            Attachment attachment=new Attachment();
             TestResult result = new TestResult()
                     .setUuid(uuid)  // Set the generated UUID
                     .setName("Full Execution Log")
-                    .setStatus(Status.PASSED)
-                    .setDescription("This is the execution log for the entire test run.");
+                    .setDescription("This is the execution log for the entire test run.")
+                    .setStatus(Status.PASSED);
             Allure.getLifecycle().scheduleTestCase(result);  // Start this "virtual" test case
             Allure.getLifecycle().startTestCase(uuid);
             // Attach the log file
