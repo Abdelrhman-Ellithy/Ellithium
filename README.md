@@ -214,7 +214,7 @@ import org.openqa.selenium.WebDriver;
 public class BaseStepDefinitions {
     protected WebDriver driver;
     public BaseStepDefinitions(){
-        driver= DriverFactory.getDriver();
+        driver= DriverFactory.getNewDriver();
     }
 }
 ```
@@ -222,7 +222,7 @@ public class BaseStepDefinitions {
 ### 🗒️ Note:
 
 - **To Create a WebDriver Instance use 'DriverFactory.getDriver()' class from Ellithium.DriverSetup**
-- **like 'WebDriver driver= DriverFactory.getDriver();'**
+- **like 'WebDriver driver= DriverFactory.getNewDriver();'**
 
 ### Step 5: Create a `TestNGRunner.xml` File
 
