@@ -1,24 +1,8 @@
 package Ellithium.com;
-
-import Ellithium.DriverSetup.DriverFactory;
-import Ellithium.Utilities.Colors;
-import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Attachment;
-import io.qameta.allure.model.Status;
-import io.qameta.allure.model.TestResult;
 import org.testng.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.UUID;
-
 import static Ellithium.Utilities.Colors.*;
-import static Ellithium.com.GeneralHandler.testFailed;
-
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
@@ -77,52 +61,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
-
         logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
-        // Construct the log file path
-        String logFilePath = PropertyHelper.getDataFromProperties(
-                "src" + File.separator + "main" + File.separator + "resources" + File.separator +
-                        "properties" + File.separator + "default" + File.separator + "log4j2",
-                "property.basePath"
-        );
-        logFilePath = logFilePath.concat(File.separator).concat(
-                PropertyHelper.getDataFromProperties(
-                        "src" + File.separator + "main" + File.separator + "resources" + File.separator +
-                                "properties" + File.separator + "default" + File.separator + "log4j2",
-                        "property.fileName"
-                )
-        );
-        // Check if the log file exists before attaching it
-        File logFile = new File(logFilePath);
-        if (!logFile.exists()) {
-            logsUtils.error("Log file not found at: " + logFilePath);
-            Allure.step("Log file not found: " + logFilePath, Status.FAILED);
-            return;
-        }
-        // Attach the log file to Allure report
-// Attach the log file to Allure report
-        try (FileInputStream fis = new FileInputStream(logFile)) {
-            // Generate a UUID for the custom test result
-            String uuid = UUID.randomUUID().toString();
-            // Create a custom TestResult for the whole test execution
-            Attachment attachment=new Attachment();
-            TestResult result = new TestResult()
-                    .setUuid(uuid)  // Set the generated UUID
-                    .setName("Full Execution Log")
-                    .setDescription("This is the execution log for the entire test run.")
-                    .setStatus(Status.PASSED);
-            Allure.getLifecycle().scheduleTestCase(result);  // Start this "virtual" test case
-            Allure.getLifecycle().startTestCase(uuid);
-            // Attach the log file
-            Allure.addAttachment("Execution Log File", "text/plain", fis, ".log");
-            Allure.getLifecycle().stopTestCase(uuid);
-            Allure.getLifecycle().writeTestCase(uuid);  // Write the test case in the Allure report
-            logsUtils.info("Log file successfully attached to the Allure report.");
-        } catch (IOException e) {
-            logsUtils.logException(e);
-            Allure.step("Failed to attach log file: " + e.getMessage(), Status.FAILED);
-        }
-        // Optionally, perform additional Allure-related actions after the execution
-        AllureHelper.allureOpen();
+        GeneralHandler.attachAndOpen();
     }
 }
