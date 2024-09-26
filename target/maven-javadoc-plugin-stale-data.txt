@@ -34,6 +34,7 @@
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/com/AllureHelper.java'
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/com/CucumberDefaultHooks.java'
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/com/CustomTestNGListener.java'
+'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/com/GeneralHandler.java'
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/DriverSetup/DriverFactory.java'
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/DriverSetup/DriverSetUp.java'
 'C:/Users/lenovo/IdeaProjects/Ellithium/src/main/java/Ellithium/DriverSetup/SETUP.java'
@@ -168,25 +169,25 @@ C:\Users\lenovo\.m2\repository\org\codehaus\plexus\plexus-utils\3.1.0\plexus-uti
 C:\Users\lenovo\.m2\repository\org\aeonbits\owner\owner-java8\1.0.12\owner-java8-1.0.12.jar = 1725006199588
 C:\Users\lenovo\.m2\repository\org\aeonbits\owner\owner\1.0.12\owner-1.0.12.jar = 1725006199910
 C:\Users\lenovo\IdeaProjects\Ellithium\src\main\java = 1725900677731
-C:\Users\lenovo\IdeaProjects\Ellithium\target\generated-sources\annotations = 1727129097123
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\allclasses-index.html = 1727129104371
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\allpackages-index.html = 1727129104373
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\constant-values.html = 1727129104217
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\copy.svg = 1727129104439
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\element-list = 1727129104164
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\index-all.html = 1727129104427
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\index.html = 1727129104315
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\javadoc.bat = 1727129102208
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\link.svg = 1727129104440
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\member-search-index.js = 1727129104378
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\module-search-index.js = 1727129104374
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\overview-summary.html = 1727129104432
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\overview-tree.html = 1727129104311
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\package-search-index.js = 1727129104375
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\script.js = 1727129104437
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search-page.js = 1727129104444
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search.html = 1727129104430
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search.js = 1727129104443
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\stylesheet.css = 1727129104435
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\tag-search-index.js = 1727129104381
-C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\type-search-index.js = 1727129104376
+C:\Users\lenovo\IdeaProjects\Ellithium\target\generated-sources\annotations = 1727367960692
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\allclasses-index.html = 1727367967201
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\allpackages-index.html = 1727367967203
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\constant-values.html = 1727367967040
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\copy.svg = 1727367967253
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\element-list = 1727367966980
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\index-all.html = 1727367967243
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\index.html = 1727367967168
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\javadoc.bat = 1727367965049
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\link.svg = 1727367967255
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\member-search-index.js = 1727367967210
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\module-search-index.js = 1727367967204
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\overview-summary.html = 1727367967247
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\overview-tree.html = 1727367967163
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\package-search-index.js = 1727367967204
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\script.js = 1727367967251
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search-page.js = 1727367967259
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search.html = 1727367967245
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\search.js = 1727367967257
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\stylesheet.css = 1727367967250
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\tag-search-index.js = 1727367967211
+C:\Users\lenovo\IdeaProjects\Ellithium\target\reports\apidocs\type-search-index.js = 1727367967208
