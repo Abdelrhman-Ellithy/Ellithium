@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="UI Cross Browser Testing and API" verbose="1" data-provider-thread-count="3" >
+                   <test name="UI Cross Browser Chrome">
+                       <parameter name="BrowserName" value="Chrome"/>
+                       <parameter name="HeadlessMode" value="false"/>
+                       <parameter name="PageLoadStrategy" value="Eager"/>
+                       <parameter name="PrivateMode" value="True"></parameter>
+                       <parameter name="SandboxMode" value="Sandbox"></parameter>
+                       <parameter name="WebSecurityMode" value="True"></parameter>
+                       <classes>
+                           <class name="Runner.TestRunner"/>
+                       </classes>
+                   </test>
+
+</suite>
