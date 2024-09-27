@@ -4,12 +4,12 @@ import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
-import io.qameta.allure.model.Attachment;
 import io.qameta.allure.model.Status;
 import io.qameta.allure.model.TestResult;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.testng.annotations.Optional;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,5 +69,13 @@ public class GeneralHandler {
             Allure.step("Failed to attach log file: " + e.getMessage(), Status.FAILED);
         }
         AllureHelper.allureOpen();
+    }
+    public static void propertySetter(String BrowserName, String HeadlessMode, String PageLoadStrategy, String PrivateMode, String SandboxMode, String WebSecurityMode) {
+        System.setProperty("BrowserName", BrowserName.toLowerCase());
+        System.setProperty("HeadlessMode", HeadlessMode.toLowerCase());
+        System.setProperty("PageLoadStrategy", PageLoadStrategy.toLowerCase());
+        System.setProperty("PrivateMode", PrivateMode.toLowerCase());
+        System.setProperty("SandboxMode", SandboxMode.toLowerCase());
+        System.setProperty("WebSecurityMode", WebSecurityMode.toLowerCase());
     }
 }

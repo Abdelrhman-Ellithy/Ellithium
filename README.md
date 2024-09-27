@@ -90,100 +90,95 @@ Here is the updated **Getting Started** section formatted for your README file:
 - **Add the following configuration to your `pom.xml` to set the Java version, include the required dependencies, and configure the plugins.**
 
 ```xml
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <restversion>5.4.0</restversion>
-        <Ellithiumversion>1.0.1</Ellithiumversion>
-    </properties>
-    <repositories>
-        <repository>
-            <id>github</id>
-            <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-    <dependencies>
-        <dependency>
-            <groupId>io.github</groupId>
-            <artifactId>Ellithium</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <!-- Rest Assured Dependencies -->
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>${restversion}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-    <build>
-        <plugins>
-            <!-- Maven Compiler Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                </configuration>
-            </plugin>
 
-            <!-- Maven Surefire Plugin for TestNG Execution -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <suiteXmlFiles>
-                        <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
-                    </suiteXmlFiles>
-                    <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>Ellithium.com.CustomTestNGListener</value>
-                        </property>
-                    </properties>
-                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <testFailureIgnore>true</testFailureIgnore>
-                    <failIfNoTests>false</failIfNoTests>
-                </configuration>
-            </plugin>
+<properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <restversion>5.4.0</restversion>
+    <Ellithiumversion>1.0.2</Ellithiumversion>
+</properties>
+<repositories>
+<repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
+    <snapshots>
+        <enabled>true</enabled>
+    </snapshots>
+</repository>
+</repositories>
+<dependencies>
+<dependency>
+    <groupId>io.github</groupId>
+    <artifactId>Ellithium</artifactId>
+    <version>${Ellithiumversion}</version>
+</dependency>
+<!-- Rest Assured Dependencies -->
+<dependency>
+    <groupId>io.rest-assured</groupId>
+    <artifactId>rest-assured</artifactId>
+    <version>${restversion}</version>
+    <scope>test</scope>
+</dependency>
+</dependencies>
+<build>
+<plugins>
+    <!-- Maven Compiler Plugin -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+            <source>21</source>
+            <target>21</target>
+        </configuration>
+    </plugin>
 
-            <!-- Exec Maven Plugin -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>intialize</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>Ellithium.properties.StartUpLoader</mainClass>
-                            <includePluginDependencies>true</includePluginDependencies>
-                            <classpathScope>compile</classpathScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources/properties/default</directory>
-                <includes>
-                    <include>**/*.properties</include>
-                </includes>
-            </resource>
-        </resources>
-    </build>
+    <!-- Maven Surefire Plugin for TestNG Execution -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.0</version>
+        <configuration>
+            <suiteXmlFiles>
+                <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
+            </suiteXmlFiles>
+            <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+            <testFailureIgnore>true</testFailureIgnore>
+            <failIfNoTests>false</failIfNoTests>
+        </configuration>
+    </plugin>
+
+    <!-- Exec Maven Plugin -->
+    <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+            <execution>
+                <id>intialize</id>
+                <phase>initialize</phase>
+                <goals>
+                    <goal>java</goal>
+                </goals>
+                <configuration>
+                    <mainClass>Ellithium.Internal.StartUpLoader</mainClass>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <classpathScope>compile</classpathScope>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+</plugins>
+<resources>
+    <resource>
+        <directory>src/main/resources/properties/default</directory>
+        <includes>
+            <include>**/*.properties</include>
+        </includes>
+    </resource>
+</resources>
+</build>
 ```
 
 ### Step 3: Create a Test Runner Class
@@ -201,7 +196,7 @@ import io.cucumber.testng.CucumberOptions;
         glue = "stepDefinitions", // path to your stepDefinitions package, note you should use . instead of /
         features="src/test/resources/features" // path to your features folder
 )
-public class TestRunner extends SETUP {
+public class TestRunner extends BDDSetup {
 }
 ```
 ### Step 4: To Create a BaseStepDefinitions Class.

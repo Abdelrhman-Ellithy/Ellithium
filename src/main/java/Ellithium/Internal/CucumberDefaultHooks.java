@@ -46,8 +46,7 @@ public class CucumberDefaultHooks {
                 logsUtils.info(YELLOW + ' ' + browserName + "[SKIPPED] Scenario " + scenario.getName() + " [SKIPPED]" + RESET);
                 break;
         }
-        String closeFlag= PropertyHelper.getDataFromProperties(configPath,
-                "closeDriverAfterScenario");
+        String closeFlag= PropertyHelper.getDataFromProperties(configPath, "closeDriverAfterScenario");
         if(closeFlag.equalsIgnoreCase("true")){
             DriverFactory.quitDriver();
         }else {
