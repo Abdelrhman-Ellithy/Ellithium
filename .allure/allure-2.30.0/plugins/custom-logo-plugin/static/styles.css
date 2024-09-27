@@ -1,0 +1,21 @@
+.side-nav__brand {
+    background-image: url('https://github.com/Abdelrhman-Ellithy/Ellithium/blob/main/src/main/resources/logo/Ellithium.png?raw=true') !important;
+    background-repeat: no-repeat !important;
+    background-position: left center !important;
+    
+    /* Set the logo to fit within a 200px by 200px box, preserving the aspect ratio */
+    background-size: contain !important; /* Or use '200px 200px' to specify exact dimensions */
+    
+    width: 200px;   /* Set the width */
+    height: 180px;  /* Set the height */
+    
+    padding: 0 !important;  /* Ensure no padding */
+    margin: 0 !important;   /* Ensure no margin */
+}
+
+span.side-nav__brand-text {
+    opacity: 0 !important;  /* This will hide the Allure text while keeping the span visible */
+    height: 0;              /* Optionally set height to 0 to remove spacing */
+    overflow: hidden;       /* Prevent any overflow */
+    visibility: hidden;     /* Prevent any interaction */
+}

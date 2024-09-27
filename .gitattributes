@@ -1,0 +1,16 @@
+*.java linguist-language=Java
+*.sh linguist-language=Shell
+*.xml linguist-language=XML
+*.properties linguist-language=Properties
+*.html linguist-language=HTML
+*.css linguist-language=CSS
+*.rb linguist-language=Ruby
+*.py linguist-language=Python
+*.js linguist-language=JavaScript
+
+*.css linguist-detectable=false
+*.java linguist-detectable=true
+*.js linguist-detectable=true
+*.html linguist-detectable=false
+*.xml linguist-detectable=true
+*.rb linguist-detectable=true
