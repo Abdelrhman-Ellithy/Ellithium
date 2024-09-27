@@ -1,1 +1,0 @@
-cmd.exe /X /C "C:\Users\lenovo\.jdks\openjdk-21+35_windows-x64_bin\jdk-21\bin\javadoc.exe -J-Duser.language= -J-Duser.country= @options @argfile"
