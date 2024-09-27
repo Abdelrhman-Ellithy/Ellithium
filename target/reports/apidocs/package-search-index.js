@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"Ellithium.com"},{"l":"Ellithium.DriverSetup"},{"l":"Ellithium.properties"},{"l":"Ellithium.Utilities"}];updateSearchResults();
