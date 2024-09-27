@@ -1,8 +1,6 @@
 package Ellithium.properties;
 
-import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.PropertyHelper;
-import Ellithium.Utilities.logsUtils;
 import static Ellithium.Utilities.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +10,6 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StartUpLoader {
@@ -31,11 +28,9 @@ public class StartUpLoader {
         configPath = basePath + "config.properties";
         logPath = basePath + "log4j2.properties";
         System.out.println("Application started with properties initialized.");
-        // Initialize each property file
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
-        // Check if TestData directory exists or create it
         TestOutputSolver();
     }
     private static void initializePropertyFiles(String propertyFileType) throws IOException {
@@ -85,26 +80,16 @@ public class StartUpLoader {
                 + File.separator + "io" + File.separator + "github" + File.separator + "ellithium";
         File repoDir = new File(repoPath);
         File[] versionDirs = repoDir.listFiles(File::isDirectory);
-
         if (versionDirs != null && versionDirs.length > 0) {
-            // Sort the version directories by version using a custom comparator
             Arrays.sort(versionDirs, (dir1, dir2) -> compareVersions(dir1.getName(), dir2.getName()));
-
-            // Get the directory with the highest version (last after sorting)
             File highestVersionDir = versionDirs[versionDirs.length - 1];
-            // Regular expression to match 'ellithium-[version].jar'
             Pattern jarPattern = Pattern.compile("^ellithium-\\d+(\\.\\d+)*\\.jar$");
-
-            // List JAR files in the highest version directory
             File[] jarFiles = highestVersionDir.listFiles((dir, name) -> jarPattern.matcher(name).matches());
-
-            // Return the first matching JAR file if found
             if (jarFiles != null && jarFiles.length > 0) {
-                return jarFiles[0]; // Return the first matching JAR file
+                return jarFiles[0];
             }
         }
-
-        return null; // Return null if no matching JAR file is found
+        return null;
     }
 
     /**
@@ -184,12 +169,10 @@ public class StartUpLoader {
                         "resources" + File.separator + "properties" +
                         File.separator + "default" + File.separator +
                         "log4j2", "property.fileName"));
-
         if (!checkFileExists(logFolderPath)) {
             File logDirectory = new File(logFolderPath);
             logDirectory.mkdirs();
         }
-
         if (!checkFileExists(logFilePath)) {
             File logFile = new File(logFilePath);
             try {
