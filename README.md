@@ -91,8 +91,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <restversion>5.4.0</restversion>
-    <Ellithiumversion>1.0.2</Ellithiumversion>
+    <Ellithiumversion>1.0.3</Ellithiumversion>
 </properties>
 <repositories>
 <repository>
@@ -108,13 +107,6 @@ Here is the updated **Getting Started** section formatted for your README file:
     <groupId>io.github</groupId>
     <artifactId>Ellithium</artifactId>
     <version>${Ellithiumversion}</version>
-</dependency>
-<!-- Rest Assured Dependencies -->
-<dependency>
-    <groupId>io.rest-assured</groupId>
-    <artifactId>rest-assured</artifactId>
-    <version>${restversion}</version>
-    <scope>test</scope>
 </dependency>
 </dependencies>
 <build>
