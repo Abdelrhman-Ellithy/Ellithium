@@ -222,7 +222,7 @@ Here is the updated **Getting Started** section formatted for your README file:
      ```
 
 ### Option 1: BDD Mode
-- **[Demo-Project](https://github.com/Abdelrhman-Ellithy/Ellithium-Demo-Project) for setup use after follow the following steps**
+- **[Demo-Project](https://github.com/Abdelrhman-Ellithy/Noon-Shopping-Website-Manual-Automation-) for setup use after follow the following steps**
 ### Step 1: Create a Test Runner Class
 
 - **Create a Runner Package then create a new class named TestRunner that extends the `BDDSetup` class from Ellithium**.
