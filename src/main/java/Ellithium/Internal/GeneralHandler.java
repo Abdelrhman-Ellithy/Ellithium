@@ -1,10 +1,14 @@
 package Ellithium.Internal;
 
+import Ellithium.DriverSetup.DriverFactory;
 import Ellithium.Utilities.PropertyHelper;
+import Ellithium.Utilities.TestDataGenerator;
 import Ellithium.Utilities.logsUtils;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
+import io.qameta.allure.listener.TestLifecycleListener;
 import io.qameta.allure.model.Status;
+import io.qameta.allure.model.StepResult;
 import io.qameta.allure.model.TestResult;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -15,18 +19,26 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-public class GeneralHandler {
-    public static void testFailed(WebDriver localDriver, String browserName, String testName){
+public class GeneralHandler implements TestLifecycleListener {
+    private static Boolean BDDMode,flagReaded=false;
+    public static File testFailed(WebDriver localDriver, String browserName, String testName)  {
         try {
             TakesScreenshot camera = (TakesScreenshot) localDriver;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-            File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + browserName + testName + ".png");
+            String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
+            File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + name + ".png");
             Files.move(screenshot, screenShotFile);
-            try (FileInputStream fis = new FileInputStream(screenShotFile)) {
-                Allure.description(browserName.toUpperCase()+ "-" + testName+ " FAILED");
-                Allure.addAttachment(browserName.toUpperCase() + "-" + testName, "image/png", fis, ".png");
-            }
+            return screenShotFile;
         } catch (IOException e) {
+            logsUtils.logException(e);
+            return null;
+        }
+    }
+    public static void attachScreenshotToReport(File screenshot,String name, String browserName, String testName){
+        try (FileInputStream fis = new FileInputStream(screenshot)) {
+            Allure.description(browserName.toUpperCase() + "-" + testName + " FAILED");
+            Allure.addAttachment(name, "image/png", fis, ".png");
+        }catch (IOException e) {
             logsUtils.logException(e);
         }
     }
@@ -68,5 +80,15 @@ public class GeneralHandler {
             Allure.step("Failed to attach log file: " + e.getMessage(), Status.FAILED);
         }
         AllureHelper.allureOpen();
+    }
+    public static boolean getBDDMode(){
+        if(flagReaded.equals(false)){
+            String configFilePath ="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+                    "properties" + File.separator + "default" + File.separator + "config";
+            String mode=PropertyHelper.getDataFromProperties(configFilePath,"runMode");
+            BDDMode=mode.equalsIgnoreCase("BDD");
+            flagReaded=true;
+        }
+        return BDDMode;
     }
 }
