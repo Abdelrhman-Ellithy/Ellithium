@@ -77,10 +77,6 @@ Ensure you have the following installed:
 Here is the updated **Getting Started** section formatted for your README file:
 
 ---
-### Option 1: By Seeing a Demo Project, custmize and use it as here **[_Ellithium-DemoProject_](https://github.com/Abdelrhman-Ellithy/Ellithium-Demo-Project)** (Recommended to take a look at)
-
-### Option 2: By creating a New Maven Project (Recommended)
-
 ### Step 1: Create a New Maven Project
 
 - **Create a new Maven project using your preferred IDE (e.g., IntelliJ IDEA).**
@@ -181,25 +177,79 @@ Here is the updated **Getting Started** section formatted for your README file:
 </build>
 ```
 
-### Step 3: Create a Test Runner Class
+### Step 3: Create a `TestNGRunner.xml` File
 
-- **Create a runner class that extends the `SETUP` class from Ellithium**.
+- **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.**
+
+```xml
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="UI Chrome Browser Testing" verbose="1" data-provider-thread-count="1">
+    <test name="UI Chrome">
+        <parameter name="BrowserName" value="Chrome"/>
+        <parameter name="HeadlessMode" value="false"/>
+        <parameter name="PageLoadStrategy" value="Eager"/>
+        <parameter name="PrivateMode" value="True"/>
+        <parameter name="SandboxMode" value="Sandbox"/>
+        <parameter name="WebSecurityMode" value="True"/>
+        <classes>
+            <class name=""/>
+        </classes>
+    </test>
+</suite>
+```
+- **The default values** if you **didn't add the paramaters** to the **TestNGRunner.xml** File are:
+
+```java
+    @default("Chrome") String BrowserName,      // can be Chrome or Edge or Firefox or Safari
+    @default("false") String HeadlessMode,      // can be true or false (Not Supported with Safari)
+    @default("Normal") String PageLoadStrategy, // can be Normal or Eager
+    @default("True") String PrivateMode,        // can be true or false
+    @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox (Not Supported with Safari)
+    @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
+```
+
+- **Edit the number of data-provider-thread-count to the number of Scenarios you to run at a time** 
+- **For parallel execution make it 2 or above**
+ 
+- **Note you cannot run the Tests in parallel with diffrent Configurations**
+
+### Step 4: Open the Termenal in the Project directory then run this command
+   ```bash
+   mvn clean test
+   ```
+### Step 5: Select The Running Mode # BDD, NonBDD
+
+#### you find a new config file created here src/main/resources/properties/default/config.properties at your project
+- **BDD Mode** (for running with Cucumber): 
+    ```properties
+    runMode=BDD
+     ```
+ - **Non-BDD Mode** (for running without Cucumber):
+     ```properties
+     runMode=NonBDD
+     ```
+
+### Option 1: BDD Mode
+- **[Demo-Project](https://github.com/Abdelrhman-Ellithy/Ellithium-Demo-Project) for setup use after follow the following steps**
+### Step 1: Create a Test Runner Class
+
+- **Create a Runner Package then create a new class named TestRunner that extends the `BDDSetup` class from Ellithium**.
 - **Specify the paths for your feature files and step definitions using the `@CucumberOptions`.**
 
 ```java
 package Runner;
-
-import Ellithium.DriverSetup.SETUP;
+import Ellithium.DriverSetup.BDDSetup;
 import io.cucumber.testng.CucumberOptions;
-
 @CucumberOptions(
         glue = "stepDefinitions", // path to your stepDefinitions package, note you should use . instead of /
-        features="src/test/resources/features" // path to your features folder
+        features="src/main/resources/features" // path to your features folder
+        ,tags = "@Run"
 )
 public class TestRunner extends BDDSetup {
 }
 ```
-### Step 4: To Create a BaseStepDefinitions Class.
+
+### Step 2: To Create a BaseStepDefinitions Class.
 
 - **Create a BaseStepDefinitions class that will be used to extend the other StepDefinitions Classes from it**.
 ```java
@@ -213,16 +263,21 @@ public class BaseStepDefinitions {
     }
 }
 ```
-
 ### 🗒️ Note:
 
 - **To Create a WebDriver Instance use 'DriverFactory.getDriver()' class from Ellithium.DriverSetup**
 - **like 'WebDriver driver= DriverFactory.getNewDriver();'**
+- **To Quit a WebDriver Instance use 'DriverFactory.quitDriver()' class from Ellithium.DriverSetup**
+- **like 'DriverFactory.quitDriver();'**
 
-### Step 5: Create a `TestNGRunner.xml` File
-
-- **Next to your `pom.xml`, create a `TestNGRunner.xml` file for TestNG execution. You can modify the parameters as needed.**
-
+### Step 3: Return to the TestNGRunner.xml file
+#### add the TestRunner Class to the xml file
+```xml
+        <classes>
+            <class name="Runner.TestRunner"/>
+        </classes>
+```
+- **So it should be like**
 ```xml
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="UI Chrome Browser Testing" verbose="1" data-provider-thread-count="1">
@@ -239,6 +294,135 @@ public class BaseStepDefinitions {
     </test>
 </suite>
 ```
+### Option 2: NonBDD Mode
+- **[Demo-Project](https://github.com/Abdelrhman-Ellithy/The-Internet-Herokuapp) for setup use after follow the following steps**
+### Step 1: Create a BaseTest Class
+
+- **Create a Tests Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
+```java
+package Tests;
+import Ellithium.DriverSetup.DriverFactory;
+import Ellithium.DriverSetup.NonBDDSetup;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.*;
+
+public class BaseTests extends NonBDDSetup {
+    WebDriver driver;
+    @BeforeClass
+    public void Setup(){
+        driver= DriverFactory.getNewDriver();
+    }
+    @AfterClass
+    public void tareDown(){
+        DriverFactory.quitDriver();
+    }
+}
+```
+
+- **Complete your logic as you like here after that**
+- **this class will be used to extend the other classes from it**
+- **as here in step 2**
+### Step 2: Create a another Test Class and extend from the BaseTests class
+
+```java
+package Tests;
+
+import Ellithium.DriverSetup.DriverFactory;
+import Ellithium.DriverSetup.NonBDDSetup;
+import Pages.HomPage;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.*;
+
+public class BaseTests extends NonBDDSetup {
+    WebDriver driver;
+    HomPage home;
+    @BeforeClass
+    public void Setup(){
+        driver= DriverFactory.getNewDriver();
+        home=new HomPage(driver);
+    }
+    @AfterClass
+    public void tareDown(){
+        DriverFactory.quitDriver();
+    }
+}
+```
+### 🗒️ Note:
+
+- **To Create a WebDriver Instance use 'DriverFactory.getDriver()' class from Ellithium.DriverSetup**
+- **like 'WebDriver driver= DriverFactory.getNewDriver();'**
+- **To Quit a WebDriver Instance use 'DriverFactory.quitDriver()' class from Ellithium.DriverSetup**
+- **like 'DriverFactory.quitDriver();'**
+
+```java
+package Tests;
+
+import Ellithium.Utilities.AssertionExecutor;
+import Pages.LoginPage;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+public class loginTests extends BaseTests {
+    @DataProvider(name= "invalidLoginData")
+            Object[][] getInvalidTestData(){
+        return new Object[][]{
+                {"tomsmith","hamada","Your password is invalid!"},
+                {"hamada","SuperSecretPassword!","Your username is invalid!"}
+        };
+    }
+    LoginPage login;
+    @Test(priority = 1, dataProvider = "invalidLoginData")
+    public void invalidLogin(String username, String password, String expectedMessage){
+        login =home.clickFormAuthentication();
+        login.setUserName(username);
+        login.setPassword(password);
+        var secureAreaPage=login.clickLoginBtn();
+        String actualMessage=secureAreaPage.getLoginMassega();
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+    }
+    @Test(priority = 2)
+    public void validLogin() {
+        login = home.clickFormAuthentication();
+        login.setPassword("SuperSecretPassword!");
+        login.setUserName("tomsmith");
+        var secureAreaPage=login.clickLoginBtn();
+        String actualMessage=secureAreaPage.getLoginMassega();
+        String expectedMessage="You logged into a secure area!";
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+    }
+}
+```
+### Step 3: Return to the TestNGRunner.xml file
+#### add your Test Classes to the xml file
+```xml
+        <classes>
+            <class name="Tests.loginTests"/>
+        </classes>
+```
+
+- **So it should be like**
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="UI Chrome Browser Testing" verbose="1" data-provider-thread-count="1">
+    <test name="UI Chrome">
+        <parameter name="BrowserName" value="Chrome"></parameter>
+        <parameter name="HeadlessMode" value="false"/>
+        <parameter name="PageLoadStrategy" value="Eager"/>
+        <parameter name="PrivateMode" value="True"/>
+        <parameter name="SandboxMode" value="Sandbox"/>
+        <parameter name="WebSecurityMode" value="True"/>
+        <classes>
+            <class name="Tests.loginTests"/>
+        </classes>
+    </test>
+</suite>
+
+### 🗒️ Note:
+
+- **To Create a WebDriver Instance use 'DriverFactory.getDriver()' class from Ellithium.DriverSetup**
+- **like 'WebDriver driver= DriverFactory.getNewDriver();'**
+- **To Quit a WebDriver Instance use 'DriverFactory.quitDriver()' class from Ellithium.DriverSetup**
+- **like 'DriverFactory.quitDriver();'**
+
 
 - **The default values** if you **didn't add the paramaters** to the **TestNGRunner.xml** File are:
 
@@ -254,9 +438,11 @@ public class BaseStepDefinitions {
 - **Edit the number of data-provider-thread-count to the number of Scenarios you to run at a time** 
 - **For parallel execution make it 2 or above**
  
-- **Note you cannot run the Tests in paralle with diffrent Configurations**
----
-- **This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.**
+- **Note you cannot run the Tests in parallel with diffrent Configurations**
+
+
+
+### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
 ## 📬 Contact
 

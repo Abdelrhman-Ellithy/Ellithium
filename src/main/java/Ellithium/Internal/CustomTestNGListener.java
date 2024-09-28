@@ -1,34 +1,67 @@
 package Ellithium.Internal;
+import Ellithium.DriverSetup.DriverFactory;
 import Ellithium.Utilities.logsUtils;
+import org.openqa.selenium.WebDriver;
 import org.testng.*;
-
 import static Ellithium.Utilities.Colors.*;
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     private long timeFinishMills;
+
+
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(BLUE + "[START] Test " + result.getName() + " [STARTED]" + RESET);
-        }
-    }
-    @Override
-    public void onTestSuccess(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(GREEN + "[PASSED] Test " + result.getName() + " [PASSED]" + RESET);
+            String name = result.getName();
+            WebDriver driver = DriverFactory.getCurrentDriver();
+            if (driver != null) {
+                String browserName = ConfigContext.getBrowserName().toUpperCase();
+                logsUtils.info(BLUE + "[START] TESTCASE " + browserName + "-" + name + " [STARTED]" + RESET);
+            } else {
+                logsUtils.info(BLUE + "[START] TESTCASE " + name + " [STARTED]" + RESET);
+            }
         }
     }
     @Override
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(RED + "[FAILED] TestCase " + result.getName() + " [FAILED]" + RESET);
+            String name = result.getName();
+            WebDriver driver = DriverFactory.getCurrentDriver();
+            if (driver != null) {
+                String browserName = ConfigContext.getBrowserName().toUpperCase();
+                logsUtils.info(RED + "[FAILED] TESTCASE " + browserName + "-" + name + " [FAILED]" + RESET);
+                ConfigContext.setLastScreenShot(GeneralHandler.testFailed(driver,browserName,name));
+                ConfigContext.setLastUIFailed(true);
+            } else {
+                logsUtils.info(RED + "[FAILED] TESTCASE " + name + " [FAILED]" + RESET);
+            }
+        }
+    }
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        if (!(result.getName().equals("runScenario"))) {
+            String name=result.getName();
+            if(DriverFactory.getCurrentDriver()!=null){
+                String browserName=ConfigContext.getBrowserName().toUpperCase();
+                logsUtils.info(GREEN + "[PASSED] TESTCASE "+browserName+"-"+name+" [PASSED]" + RESET);
+            }
+            else{
+                logsUtils.info(BLUE + "[PASSED] TESTCASE " +name+" [PASSED]" + RESET);
+            }
         }
     }
     @Override
     public void onTestSkipped(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            logsUtils.info(YELLOW + "[SKIPPED] Test " + result.getName() + " [SKIPPED]" + RESET);
+            String name=result.getName();
+            if(DriverFactory.getCurrentDriver()!=null){
+                String browserName=ConfigContext.getBrowserName().toUpperCase();
+                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +browserName+"-"+name+" [SKIPPED]" + RESET);
+            }
+            else{
+                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +name+" [SKIPPED]" + RESET);
+            }
         }
     }
 
@@ -56,7 +89,6 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
         logsUtils.info(BLUE + "-------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine TearDown  -------" + RESET);
         logsUtils.info(BLUE + "-------------------------------------------" + RESET);
-
         long totalExecutionTime = (timeFinishMills - timeStartMills);
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;

@@ -74,8 +74,8 @@ public class DriverFactory {
         devTools.send(Log.enable());
         devTools.addListener(Log.entryAdded(), logEntry -> {
             logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+RESET);
-            logsUtils.info(BLUE+"Text: "+logEntry.getText()+RESET);
-            logsUtils.info((YELLOW+"URL: "+logEntry.getUrl())+RESET);
+            logsUtils.info(PINK+"Text: "+logEntry.getText()+RESET);
+            logsUtils.info((BROWN+"URL: "+logEntry.getUrl())+RESET);
             logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+RESET);
         });
     }

@@ -1,4 +1,7 @@
 package Ellithium.Internal;
+
+import java.io.File;
+
 public class ConfigContext {
 
     // Static fields to store the configuration
@@ -8,6 +11,23 @@ public class ConfigContext {
     private static String privateMode;
     private static String sandboxMode;
     private static String webSecurityMode;
+    private static boolean lastUIFailed=false;
+    private static File lastScreenShot;
+    public static boolean isLastUIFailed() {
+        return lastUIFailed;
+    }
+
+    public static void setLastUIFailed(boolean lastUIFailed) {
+        ConfigContext.lastUIFailed = lastUIFailed;
+    }
+
+    public static File getLastScreenShot() {
+        return lastScreenShot;
+    }
+
+    public static void setLastScreenShot(File lastScreenShot) {
+        ConfigContext.lastScreenShot = lastScreenShot;
+    }
 
     // Static method to set configuration
     public static void setConfig(String browserName, String headlessMode, String pageLoadStrategy,
