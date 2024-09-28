@@ -1,5 +1,6 @@
 package Ellithium.Internal;
 
+import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.TestDataGenerator;
 import Ellithium.Utilities.logsUtils;
@@ -90,10 +91,23 @@ public class GeneralHandler implements TestLifecycleListener {
         }
         return BDDMode;
     }
-    public static String getversion(){
+    public static String getLatestVersion(){
         return RestAssured.given().
                 baseUri("https://api.github.com/").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
                 .when().get("latest")
                 .thenReturn().body().jsonPath().getString("name");
+    }
+    public static void solveVersion(){
+        String latestVersion=getLatestVersion();
+        String configFilePath ="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+                "properties" + File.separator + "default" + File.separator + "config";
+        String currentVersion=PropertyHelper.getDataFromProperties(configFilePath,"EllithiumVersion");
+        if(latestVersion.equalsIgnoreCase(currentVersion)){
+            logsUtils.info(Colors.GREEN+"You Are Using the Latest version of Ellithium Version: "+latestVersion);
+        }
+        else {
+            logsUtils.info(Colors.RED+"You Are Using Old Version of Ellithium Version: "+currentVersion +
+                    " You Need To update to the latest Version: "+latestVersion);
+        }
     }
 }
