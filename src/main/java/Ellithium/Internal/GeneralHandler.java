@@ -1,6 +1,5 @@
 package Ellithium.Internal;
 
-import Ellithium.DriverSetup.DriverFactory;
 import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.TestDataGenerator;
 import Ellithium.Utilities.logsUtils;
@@ -8,7 +7,6 @@ import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.listener.TestLifecycleListener;
 import io.qameta.allure.model.Status;
-import io.qameta.allure.model.StepResult;
 import io.qameta.allure.model.TestResult;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -18,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.UUID;
+import io.restassured.RestAssured;
 
 public class GeneralHandler implements TestLifecycleListener {
     private static Boolean BDDMode,flagReaded=false;
@@ -90,5 +89,11 @@ public class GeneralHandler implements TestLifecycleListener {
             flagReaded=true;
         }
         return BDDMode;
+    }
+    public static String getversion(){
+        return RestAssured.given().
+                baseUri("https://api.github.com/").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
+                .when().get("latest")
+                .thenReturn().body().jsonPath().getString("name");
     }
 }
