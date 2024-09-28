@@ -1,5 +1,6 @@
 package Ellithium.Internal;
 import Ellithium.DriverSetup.DriverFactory;
+import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import org.openqa.selenium.WebDriver;
 import org.testng.*;
@@ -76,6 +77,7 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     }
     @Override
     public void onExecutionStart() {
+        GeneralHandler.solveVersion();
         timeStartMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "----------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup  -------------" + RESET);
