@@ -89,10 +89,10 @@
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
-            gpg -ab target/ellithium-1.0.3.jar
-            gpg -ab target/ellithium-1.0.3-javadoc.jar
-            gpg -ab target/ellithium-1.0.3-sources.jar
-            gpg -ab target/ellithium-1.0.3.pom
+            gpg -ab target/ellithium-1.0.4.jar
+            gpg -ab target/ellithium-1.0.4-javadoc.jar
+            gpg -ab target/ellithium-1.0.4-sources.jar
+            gpg -ab target/ellithium-1.0.4.pom
             mvn clean deploy -P ossrh,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
