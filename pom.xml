@@ -13,7 +13,7 @@
         With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting,
         Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
 
-        !! Note it won't work without copying exec plugin from the user guide !!
+        !! Note !! it won't work without copying exec plugin from the user guide !!
     </description>
     <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
     <name>${project.groupId}:${project.artifactId}</name>
@@ -64,7 +64,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>1.0.3</EllithiumVersion>
+        <EllithiumVersion>1.0.4</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
