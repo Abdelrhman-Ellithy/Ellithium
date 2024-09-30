@@ -74,14 +74,9 @@ public class AllureHelper {
             }
         } else {
             logsUtils.info(Colors.RED +"Allure folder not found. Extracting from JAR..."+ Colors.RESET);
-            String version = getDataFromProperties(configFilePath, "EllithiumVersion");
-            String allureJarPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
-                    + File.separator + "io" + File.separator + "github" + File.separator + "Ellithium"
-                    + File.separator + version + File.separator + "Ellithium-" + version + ".jar";
-
-            File jarFile = new File(allureJarPath);
+            File jarFile = StartUpLoader.findJarFile();
             if (!jarFile.exists()) {
-                logsUtils.info(Colors.RED +"JAR file not found: " + allureJarPath+ Colors.RESET);
+                logsUtils.info(Colors.RED +"Ellithium JAR file not found"+ Colors.RESET);
                 return null;
             }
             try {

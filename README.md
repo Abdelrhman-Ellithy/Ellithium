@@ -94,11 +94,11 @@ Here is the updated **Getting Started** section formatted for your README file:
     <Ellithiumversion>1.0.3</Ellithiumversion>
 </properties>
 <dependencies>
-<dependency>
-    <groupId>io.github</groupId>
-    <artifactId>Ellithium</artifactId>
-    <version>${Ellithiumversion}</version>
-</dependency>
+        <dependency>
+            <groupId>io.github.abdelrhman-ellithy</groupId>
+            <artifactId>ellithium</artifactId>
+            <version>${Ellithiumversion}</version>
+        </dependency>
 </dependencies>
 <build>
 <plugins>

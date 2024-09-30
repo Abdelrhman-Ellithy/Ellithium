@@ -102,10 +102,7 @@ public class GeneralHandler implements TestLifecycleListener {
         String configFilePath ="src" + File.separator + "main" + File.separator + "resources" + File.separator +
                 "properties" + File.separator + "default" + File.separator + "config";
         String currentVersion=PropertyHelper.getDataFromProperties(configFilePath,"EllithiumVersion");
-        if(latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
-            logsUtils.info(Colors.GREEN+"You Are Using the Latest version of Ellithium Version: "+latestVersion);
-        }
-        else {
+        if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
             logsUtils.info(Colors.RED+"You Are Using Old Version of Ellithium Version: "+currentVersion +
                     " You Need To update to the latest Version: "+latestVersion);
         }

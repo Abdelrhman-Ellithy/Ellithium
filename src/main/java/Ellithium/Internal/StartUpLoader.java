@@ -75,9 +75,9 @@ public class StartUpLoader {
         return file.exists();
     }
 
-    private static File findJarFile() {
+    public static File findJarFile() {
         String repoPath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
-                + File.separator + "io" + File.separator + "github" + File.separator + "ellithium";
+                + File.separator + "io" + File.separator + "github" + File.separator+"abdelrhman-ellithy"+ File.separator + "ellithium";
         File repoDir = new File(repoPath);
         File[] versionDirs = repoDir.listFiles(File::isDirectory);
         if (versionDirs != null && versionDirs.length > 0) {
