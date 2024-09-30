@@ -4,13 +4,14 @@ import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import org.openqa.selenium.WebDriver;
 import org.testng.*;
+
+import java.io.IOException;
+
 import static Ellithium.Utilities.Colors.*;
 public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     private long timeFinishMills;
-
-
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {

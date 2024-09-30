@@ -3,7 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.github</groupId>
+    <groupId>io.github.abdelrhman-ellithy</groupId>
     <artifactId>ellithium</artifactId>
     <version>${EllithiumVersion}</version>
     <packaging>jar</packaging>
@@ -12,6 +12,8 @@
         Leveraging tools such as TestNG, Cucumber, Rest Assured, and others, it provides an end-to-end solution for automated testing.
         With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting,
         Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
+
+        !! Note it won't work without copying exec plugin from the user guide !!
     </description>
     <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
     <name>${project.groupId}:${project.artifactId}</name>
@@ -19,8 +21,6 @@
         <developer>
             <name>Abdelrahman Ellithy</name>
             <email>abdelarhmanellithy@gmail.com</email>
-            <organization>GitHub</organization>
-            <organizationUrl>https://github.com/Abdelrhman-Ellithy/Ellithium</organizationUrl>
             <url>https://www.linkedin.com/in/abdelrahman-ellithy-3841a7270/</url>
         </developer>
     </developers>
@@ -32,7 +32,7 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
+        <connection>scm:git:git://github.com/Abdelrhman-Ellithy/Ellithium.git</connection>
         <developerConnection>scm:git:ssh://github.com/Abdelrhman-Ellithy/Ellithium.git</developerConnection>
         <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
     </scm>
@@ -51,12 +51,12 @@
             <id>ossrh</id>
             <distributionManagement>
                 <repository>
-                    <id>ossrh</id>
+                    <id>central</id>
                     <name>OSSRH Release Repository</name>
                     <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                 </repository>
                 <snapshotRepository>
-                    <id>ossrh</id>
+                    <id>central</id>
                     <name>OSSRH Snapshot Repository</name>
                     <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
                 </snapshotRepository>
@@ -88,7 +88,12 @@
         <hamcrestversion>3.0</hamcrestversion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
-        <deployToMavenCentral>mvn clean deploy -P ossrh,!github -DskipTests -X</deployToMavenCentral>
+        <deployToMavenCentral>
+            gpg -ab target/ellithium-1.0.3.jar
+            gpg -ab target/ellithium-1.0.3-javadoc.jar
+            gpg -ab target/ellithium-1.0.3-sources.jar
+            gpg -ab target/ellithium-1.0.3.pom
+            mvn clean deploy -P ossrh,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.0</mavenSurefirePluginVersion>
@@ -102,111 +107,116 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
             <version>${seleniumVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.github.javafaker/javafaker -->
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${JavaFaker}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gsonVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.cucumber/gherkin -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>gherkin</artifactId>
             <version>${gherkinversion}</version>
+            <scope>compile</scope>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${SLF4JAPIVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${SLF4JSimpleVersion}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4jVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
             <version>${log4jVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-1.2-api -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
             <version>${log4jVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-testng</artifactId>
             <version>${AllureVersion}</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${Commons}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.hamcrest/hamcrest -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
             <version>${hamcrestversion}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
-
         <!-- Apache Commons CSV -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>${CSV}</version>
+            <scope>compile</scope>
         </dependency>
-
         <!-- Apache POI for Excel -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${ApachePOI}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${PDFBoxVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <!-- Additional POI dependencies for handling Excel files -->
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
             <version>${AddPOI}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
             <version>${Cucumber}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-testng</artifactId>
             <version>${cucumberTsetNG}</version>
+             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>
@@ -214,35 +224,16 @@
             <version>${testNG}</version>
             <scope>compile</scope>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>${restversion}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.qameta.allure</groupId>-->
-<!--            <artifactId>allure-cucumber7-jvm</artifactId>-->
-<!--            <version>${AllureJVMVersion}</version> &lt;!&ndash; Or latest version &ndash;&gt;-->
-<!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
         <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <version>3.0.0-M1</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.aeonbits.owner/owner -->
-        <dependency>
-            <groupId>org.aeonbits.owner</groupId>
-            <artifactId>owner-java8</artifactId>
-            <version>1.0.12</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.6.0</version>
         </dependency>
     </dependencies>
     <build>
@@ -268,6 +259,19 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version> <!-- You can check for the latest version -->
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.10.0</version>
                 <configuration>
@@ -279,9 +283,9 @@
                     <failOnError>false</failOnError>
                     <show>public</show>
                     <nohelp>true</nohelp>
-                    <header>Ellithium, ${project.version}</header>
-                    <footer>Ellithium, ${project.version}</footer>
-                    <doctitle>Ellithium, ${project.version}</doctitle>
+                    <header>Ellithium,${project.version}</header>
+                    <footer>Ellithium,${project.version}</footer>
+                    <doctitle>Ellithium,${project.version}</doctitle>
                 </configuration>
                 <executions>
                     <execution>
@@ -293,18 +297,16 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-scm-publish-plugin</artifactId>
-                <version>${mavenPublishPluginVersion}</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.6.0</version>
+                <extensions>true</extensions>
                 <configuration>
-                    <checkoutDirectory>${project.basedir}/../ellithium_apidocs</checkoutDirectory>
-                    <tryUpdate>true</tryUpdate>
-                    <siteOutputEncoding>UTF-8</siteOutputEncoding>
-                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}</checkinComment>
-                    <content>${project.reporting.outputDirectory}</content>
-                    <skipDeletedFiles>true</skipDeletedFiles>
-                    <pubScmUrl>${project.scm.connection}</pubScmUrl>
-                    <scmBranch>gh-pages</scmBranch> <!-- branch with static site -->
+                    <publishingServerId>central</publishingServerId>
+                    <centralBaseUrl>https://central.sonatype.com</centralBaseUrl>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>published</waitUntil>
+                    <waitMaxTime>3600</waitMaxTime> <!-- one hour -->
                 </configuration>
             </plugin>
             <!-- Maven Surefire Plugin to run tests -->
