@@ -93,15 +93,6 @@ Here is the updated **Getting Started** section formatted for your README file:
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <Ellithiumversion>1.0.3</Ellithiumversion>
 </properties>
-<repositories>
-<repository>
-    <id>github</id>
-    <url>https://maven.pkg.github.com/Abdelrhman-Ellithy/Ellithium/</url>
-    <snapshots>
-        <enabled>true</enabled>
-    </snapshots>
-</repository>
-</repositories>
 <dependencies>
 <dependency>
     <groupId>io.github</groupId>
