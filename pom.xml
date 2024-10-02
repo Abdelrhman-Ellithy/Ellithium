@@ -76,7 +76,6 @@
         <SLF4JSimpleVersion>2.0.13</SLF4JSimpleVersion>
         <log4jVersion>2.23.1</log4jVersion>
         <AllureVersion>2.28.0</AllureVersion>
-        <Commons>2.16.1</Commons>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.8</CSV>
         <ApachePOI>5.2.3</ApachePOI>
@@ -102,6 +101,12 @@
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>2.29.0</AllureJVMVersion>
     </properties>
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -121,13 +126,6 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gsonVersion}</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/io.cucumber/gherkin -->
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>gherkin</artifactId>
-            <version>${gherkinversion}</version>
             <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
@@ -216,7 +214,7 @@
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-testng</artifactId>
             <version>${cucumberTsetNG}</version>
-             <scope>compile</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

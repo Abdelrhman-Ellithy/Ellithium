@@ -15,7 +15,6 @@ public class TestDataGenerator {
     public static String getTimeStamp() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
         logsUtils.info(Colors.BLUE+"Getting Timestamp: " + timestamp+Colors.RESET);
-        Allure.step("Getting Timestamp: " + timestamp, Status.PASSED);
         return timestamp;
     }
     public static String getRandomFirstName() {

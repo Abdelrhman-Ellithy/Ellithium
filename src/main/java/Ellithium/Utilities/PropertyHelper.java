@@ -1,8 +1,7 @@
 package Ellithium.Utilities;
 
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
-
+import Ellithium.Internal.LogLevel;
+import static Ellithium.Internal.Reporter.log;
 import java.io.*;
 import java.util.Properties;
 
@@ -13,24 +12,23 @@ public class PropertyHelper {
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream(filePath + ".properties"));
-            logsUtils.info(Colors.GREEN + "Successfully loaded properties file: " + filePath + Colors.RESET);
+            log("Successfully loaded properties file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to load properties file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
+            log("Failed to load properties file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
         return prop.getProperty(key);
     }
+
     // Method to set data into a properties file with a key-value pair
     public static void setDataToProperties(String filePath, String key, String value) {
         Properties prop = new Properties();
         try (FileOutputStream out = new FileOutputStream(filePath + ".properties")) {
             prop.setProperty(key, value);
             prop.store(out, null);
-            logsUtils.info(Colors.GREEN + "Successfully updated properties file: " + filePath + Colors.RESET);
+            log("Successfully updated properties file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to write properties file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
+            log("Failed to write properties file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
     }

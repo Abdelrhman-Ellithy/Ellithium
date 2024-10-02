@@ -3,6 +3,7 @@ package Ellithium.DriverSetup;
 import Ellithium.Internal.ConfigContext;
 import Ellithium.Internal.CustomTestNGListener;
 import Ellithium.Internal.GeneralHandler;
+import Ellithium.Internal.SeleniumListener;
 import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.logsUtils;
 import io.qameta.allure.testng.AllureTestNg;

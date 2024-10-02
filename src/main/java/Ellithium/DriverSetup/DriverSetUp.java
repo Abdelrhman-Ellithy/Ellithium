@@ -1,5 +1,6 @@
 package Ellithium.DriverSetup;
 
+import Ellithium.Internal.SeleniumListener;
 import Ellithium.Utilities.Colors;
 import Ellithium.Utilities.logsUtils;
 import org.openqa.selenium.PageLoadStrategy;
@@ -12,6 +13,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
+import org.openqa.selenium.support.events.EventFiringDecorator;
+
 public class DriverSetUp {
 
     // Private method to configure browser options and return the WebDriver instance
@@ -33,7 +36,6 @@ public class DriverSetUp {
                 throw new IllegalArgumentException("Invalid browser: " + browserName);
         }
     }
-
     // Configure Chrome options
     private static ChromeOptions configureChromeOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
         ChromeOptions chromeOptions = new ChromeOptions();
@@ -54,9 +56,60 @@ public class DriverSetUp {
             chromeOptions.addArguments("--allow-running-insecure-content");
         }
         // Other common options
-        chromeOptions.addArguments("--disable-dev-shm-usage");
-        chromeOptions.addArguments("--remote-allow-origins=*");
-        chromeOptions.addArguments("--ignore-certificate-errors");
+        chromeOptions.addArguments(
+                  "--disable-dev-shm-usage"
+                , "--disable-search-engine-choice-screen"
+                , "--remote-allow-origins=*"
+                , "--enable-automation"
+                , "--disable-background-timer-throttling"
+                , "--disable-backgrounding-occluded-windows"
+                , "--disable-features=OptimizationGuideModelDownloading,OptimizationHintsFetching,OptimizationTargetPrediction,OptimizationHints,CalculateNativeWinOcclusion,AutofillServerCommunication,MediaRouter,Translate,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,OptimizationHints,DialMediaRouteProvider,GlobalMediaControls,ImprovedCookieControls,LazyFrameLoading,InterestFeedContentSuggestions"
+                , "--disable-hang-monitor"
+                , "--disable-domain-reliability"
+                , "--disable-renderer-backgrounding"
+                , "--metrics-recording-only"
+                , "--no-first-run"
+                , "--no-default-browser-check"
+               // , "--silent-debugger-extension-api"
+              //  , "--disable-extensions"
+                , "--disable-component-extensions-with-background-pages"
+                , "--disable-ipc-flooding-protection"
+                , "--disable-background-networking"
+                , "--mute-audio"
+                , "--disable-breakpad"
+                , "--ignore-certificate-errors"
+                , "--disable-device-discovery-notifications"
+                , "--force-color-profile=srgb"
+                , "--hide-scrollbars"
+                , "--host-resolver-rules"
+                , "--no-pings"
+                , "--disable-sync"
+                , "--disable-field-trial-config"
+                , "--enable-features=NetworkService"
+                , "--enable-features=NetworkServiceInProcess"
+                , "--enable-use-zoom-for-dsf"
+                , "--log-net-log"
+                , "--net-log-capture-mode"
+                , "--disable-client-side-phishing-detection"
+                , "--disable-default-apps"
+                ,"--disable-software-rasterizer"
+               // ,"--single-process"
+                ,"--disable-infobars"
+                ,"--window-size=1920,1080"
+                ,"--disable-notifications"
+                ,"--disable-background-networking"
+                ,"--disable-translate"
+                ,"--disable-sync-preferences"
+                ,"--dns-prefetch-disable"
+                ,"--disable-blink-features=AutomationControlled"
+                ,"--disable-pinch"
+                ,"--disable-background-tasks"
+                ,"--disable-component-update"
+                ,"--enable-logging"
+                ,"--disable-plugins"
+                ,"--ash-disable-system-sounds"
+
+        );
         logsUtils.info(Colors.GREEN + "Chrome Options Configured" + Colors.RESET);
         return chromeOptions;
     }
@@ -80,7 +133,30 @@ public class DriverSetUp {
             firefoxOptions.addPreference("security.mixed_content.block_active_content", false);
         }
         // Other common options
-        firefoxOptions.addArguments("--disable-dev-shm-usage");
+        firefoxOptions.addArguments(
+                "--disable-dev-shm-usage",  // Reduce memory usage in environments with low shared memory
+                "--enable-automation",  // Enable automation control
+                "--disable-background-timer-throttling",  // Disable throttling for background tabs
+                "--disable-backgrounding-occluded-windows",  // Prevent backgrounding of occluded windows
+                "--disable-hang-monitor",  // Disable hang monitor
+                "--disable-domain-reliability",  // Disable domain reliability monitoring
+                "--metrics-recording-only",  // Record metrics only (for debugging)
+                "--no-first-run",  // Skip first run setup
+                "--no-default-browser-check",  // Avoid default browser prompt
+              //  "--disable-extensions",  // Disable all extensions
+                "--disable-background-networking",  // Disable background networking
+                "--mute-audio",  // Mute audio
+                "--ignore-certificate-errors",  // Ignore SSL certificate errors
+                "--force-color-profile=srgb",  // Use sRGB color profile
+                "--hide-scrollbars",  // Hide scrollbars
+                "--disable-sync",  // Disable Firefox sync
+                "--disable-client-side-phishing-detection",  // Disable phishing detection (specific to Chrome but similar behavior in Firefox)
+                "--disable-default-apps",  // Prevent loading of default apps (not entirely applicable to Firefox, but similar logic)
+                "--disable-notifications",  // Disable notifications
+                "--window-size=1920,1080",  // Set window size
+                "--disable-plugins",  // Disable plugins (extensions can be disabled with similar options)
+               // "--single-process"  // Use single-process mode
+        );
         logsUtils.info(Colors.GREEN + "Firefox Options Configured" + Colors.RESET);
         return firefoxOptions;
     }
@@ -105,7 +181,52 @@ public class DriverSetUp {
             edgeOptions.addArguments("--allow-running-insecure-content");
         }
         // Other common options
-        edgeOptions.addArguments("--disable-dev-shm-usage");
+        edgeOptions.addArguments(
+                "--disable-dev-shm-usage",  // Reduce memory usage
+                "--disable-search-engine-choice-screen",  // Edge equivalent to Chrome's search engine choice
+                "--remote-allow-origins=*",  // Allow cross-origin requests
+                "--enable-automation",  // Enable automation control
+                "--disable-background-timer-throttling",  // Optimize background tab performance
+                "--disable-backgrounding-occluded-windows",  // Avoid backgrounding windows not in focus
+                "--disable-hang-monitor",  // Disable hang monitor
+                "--disable-domain-reliability",  // Disable domain reliability checks
+                "--disable-renderer-backgrounding",  // Prevent renderer from backgrounding
+                "--metrics-recording-only",  // Only record metrics
+                "--no-first-run",  // Skip the first run experience
+                "--no-default-browser-check",  // Prevent the default browser check
+               // "--silent-debugger-extension-api",  // Silent extensions for debugging
+              //  "--disable-extensions",  // Disable all extensions
+                "--disable-component-extensions-with-background-pages",  // Disable extensions with background pages
+                "--disable-ipc-flooding-protection",  // Disable IPC flooding protection
+                "--disable-background-networking",  // Disable background network connections
+                "--mute-audio",  // Mute audio
+                "--disable-breakpad",  // Disable crash reporting
+                "--ignore-certificate-errors",  // Ignore SSL certificate errors
+                "--disable-device-discovery-notifications",  // Disable device discovery notifications
+                "--force-color-profile=srgb",  // Force sRGB color profile
+                "--hide-scrollbars",  // Hide scrollbars
+                "--no-pings",  // Disable ping requests
+                "--disable-sync",  // Disable syncing with Microsoft account
+                "--disable-features=Translate",  // Disable the translate feature
+                "--enable-features=NetworkService",  // Enable network service feature
+                "--enable-features=NetworkServiceInProcess",  // Enable network service in process
+                "--enable-use-zoom-for-dsf",  // Enable zooming for display scaling
+                "--disable-client-side-phishing-detection",  // Disable phishing detection
+                "--disable-default-apps",  // Disable default apps
+                "--disable-software-rasterizer",  // Disable software-based rendering
+               // "--single-process",  // Use single process for the browser
+                "--disable-infobars",  // Disable infobars
+                "--window-size=1920,1080",  // Set window size
+                "--disable-notifications",  // Disable notifications
+                "--dns-prefetch-disable",  // Disable DNS prefetching
+                "--disable-blink-features=AutomationControlled",  // Hide automation control features
+                "--disable-pinch",  // Disable pinch to zoom
+                "--disable-background-tasks",  // Disable background tasks
+                "--disable-component-update",  // Disable component updates
+                "--enable-logging",  // Enable logging
+                "--disable-plugins",  // Disable plugins
+                "--ash-disable-system-sounds"  // Disable system sounds
+        );
         logsUtils.info(Colors.GREEN + "Edge Options Configured" + Colors.RESET);
         return edgeOptions;
     }
@@ -121,4 +242,5 @@ public class DriverSetUp {
         logsUtils.info(Colors.GREEN + "Safari Options Configured" + Colors.RESET);
         return safariOptions;
     }
+
 }

@@ -1,7 +1,7 @@
 package Ellithium.Utilities;
 
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
+import Ellithium.Internal.LogLevel;
+import Ellithium.Internal.Reporter;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.IOException;
@@ -10,40 +10,28 @@ public class CommandExecutor {
 
     // Method to execute command and wait for completion
     public static void executeCommand(String command) {
-        Allure.step("Executing command: " + command, Status.PASSED);
-
+        Reporter.log("Attempting to execute command: ", LogLevel.INFO_GREEN, command);
         try {
             ProcessBuilder builder = getProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
             int exitCode = process.waitFor();
-            logsUtils.info(Colors.GREEN + "Command exited with code: " + exitCode + Colors.RESET);
-            Allure.step("Command executed successfully with exit code: " + exitCode, Status.PASSED);
+            Reporter.log("Command executed successfully. Exit code: ", LogLevel.INFO_GREEN, String.valueOf(exitCode));
         } catch (IOException | InterruptedException e) {
-            logsUtils.error(Colors.RED + "Failed to execute command: " + command + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Command execution failed: " + command, Status.FAILED);
+            Reporter.log("Failed to execute command: ", LogLevel.ERROR, command);
         }
     }
-
     // Method to execute command in non-blocking manner and return the process object
     public static Process executeCommandNonBlocking(String command) {
-        Allure.step("Executing command in non-blocking mode: " + command, Status.PASSED);
-
+        Reporter.log("Attempting to execute command in non-blocking mode: ", LogLevel.INFO_GREEN, command);
         try {
             ProcessBuilder builder = getProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
-
-            logsUtils.info(Colors.GREEN + "Non-blocking command executed: " + command + Colors.RESET);
-            Allure.step("Non-blocking command started: " + command, Status.PASSED);
-
+            Reporter.log("Non-blocking command executed: ", LogLevel.INFO_GREEN, command);
             return process;  // Return the running process
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to execute non-blocking command: " + command + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Non-blocking command execution failed: " + command, Status.FAILED);
-
+            Reporter.log("Failed to execute non-blocking command: ", LogLevel.ERROR, command);
             return null;
         }
     }

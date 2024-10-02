@@ -1,5 +1,7 @@
 package Ellithium.Utilities;
 
+import Ellithium.Internal.LogLevel;
+import Ellithium.Internal.Reporter;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.apache.poi.ss.usermodel.*;
@@ -13,11 +15,9 @@ public class ExcelHelper {
     // Method to get Excel data
     public static List<Map<String, String>> getExcelData(String filePath, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
-        Allure.step("Attempting to read Excel data from file: " + filePath + ", sheet: " + sheetName, Status.PASSED);
-
+        Reporter.log("Attempting to read Excel data from file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
              Workbook workbook = new XSSFWorkbook(fis)) {
-
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
                 throw new IllegalArgumentException("Sheet " + sheetName + " does not exist in " + filePath);
@@ -28,7 +28,6 @@ public class ExcelHelper {
                 Row headerRow = rowIterator.next();
                 List<String> headers = new ArrayList<>();
                 headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
-
                 while (rowIterator.hasNext()) {
                     Row row = rowIterator.next();
                     Map<String, String> recordMap = new HashMap<>();
@@ -39,19 +38,16 @@ public class ExcelHelper {
                     data.add(recordMap);
                 }
             }
-            logsUtils.info(Colors.GREEN + "Successfully read Excel file: " + filePath + Colors.RESET);
-            Allure.step("Successfully read Excel data from file: " + filePath + ", sheet: " + sheetName, Status.PASSED);
+            Reporter.log("Successfully read Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to read Excel file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to read Excel data from file: " + filePath + ", sheet: " + sheetName, Status.FAILED);
+            Reporter.log("Failed to read Excel data from file: ",LogLevel.ERROR,filePath + ", sheet: " + sheetName);
         }
         return data;
     }
 
     // Method to set Excel data and create the file if it doesn't exist
     public static void setExcelData(String filePath, String sheetName, List<Map<String, String>> data) {
-        Allure.step("Attempting to write data to Excel file: " + filePath + ", sheet: " + sheetName, Status.PASSED);
+        Reporter.log("Attempting to write data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath + ".xlsx");
         Workbook workbook = null;
         try {
@@ -62,8 +58,7 @@ public class ExcelHelper {
                 }
             } else {
                 workbook = new XSSFWorkbook();  // Create new workbook
-                logsUtils.info(Colors.GREEN + "Creating new Excel file: " + filePath + Colors.RESET);
-                Allure.step("Creating new Excel file: " + filePath + ", sheet: " + sheetName, Status.PASSED);
+                Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
             }
 
             // Check if the sheet exists, if not create a new one
@@ -97,20 +92,17 @@ public class ExcelHelper {
             // Write to the file
             try (FileOutputStream fos = new FileOutputStream(excelFile)) {
                 workbook.write(fos);
-                logsUtils.info(Colors.GREEN + "Successfully wrote data to Excel file: " + filePath + Colors.RESET);
-                Allure.step("Successfully wrote data to Excel file: " + filePath + ", sheet: " + sheetName, Status.PASSED);
+                Reporter.log("Successfully wrote data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
             }
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to write data to Excel file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to write data to Excel file: " + filePath + ", sheet: " + sheetName, Status.FAILED);
+            Reporter.log("Failed to write data to Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         } finally {
             // Close the workbook resource
             if (workbook != null) {
                 try {
                     workbook.close();
                 } catch (IOException e) {
-                    logsUtils.error(Colors.RED + "Failed to close workbook: " + Colors.RESET);
+                    Reporter.log("Failed to close workbook: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
                 }
             }
         }

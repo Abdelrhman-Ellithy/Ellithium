@@ -13,7 +13,6 @@ public class JarExtractor {
             if (!targetDirectory.exists()) {
                 Files.createDirectories(targetDirectory.toPath());
             }
-
             try (JarFile jar = new JarFile(jarFile)) {
                 Enumeration<JarEntry> entries = jar.entries();
                 while (entries.hasMoreElements()) {
