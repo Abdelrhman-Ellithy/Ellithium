@@ -1,5 +1,7 @@
 package Ellithium.Utilities;
 
+import Ellithium.Internal.LogLevel;
+import Ellithium.Internal.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
@@ -19,311 +21,247 @@ public class DriverActions {
     private static int defaultPollingTime=500;
     private static boolean defaultTimeoutGotFlag=false;
     private static boolean defaultPollingTimeGotFlag=false;
-    private static final Map<Keys, String> keyMap;
-    static {
-        // Add more mappings as needed
-        keyMap = Map.ofEntries(
-                Map.entry(Keys.ENTER, "ENTER"),
-                Map.entry(Keys.TAB, "TAB"),
-                Map.entry(Keys.ESCAPE, "ESCAPE"),
-                Map.entry(Keys.BACK_SPACE, "BACKSPACE"),
-                Map.entry(Keys.SPACE, "SPACE"),
-                Map.entry(Keys.ARROW_UP, "UP ARROW"),
-                Map.entry(Keys.ARROW_DOWN, "DOWN ARROW"),
-                Map.entry(Keys.ARROW_LEFT, "LEFT ARROW"),
-                Map.entry(Keys.ARROW_RIGHT, "RIGHT ARROW"),
-                Map.entry(Keys.DELETE, "DELETE"),
-                Map.entry(Keys.HOME, "HOME"),
-                Map.entry(Keys.END, "END"),
-                Map.entry(Keys.PAGE_UP, "PAGE UP"),
-                Map.entry(Keys.PAGE_DOWN, "PAGE DOWN"),
-                Map.entry(Keys.SHIFT, "SHIFT"),
-                Map.entry(Keys.CONTROL, "CONTROL"),
-                Map.entry(Keys.ALT, "ALT"));
-    }
-    private static String getKeyName(Keys key) {
-        return keyMap.getOrDefault(key, key.toString()); // Efficient lookup
-    }
     private static final String configPath="src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
     public static void sendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(driver,locator).clear();
-        logsUtils.info(Colors.BLUE+"Sending Data \""+ data+"\" To Element: "+locator+Colors.RESET);
         findWebElement(driver,locator).sendKeys(data);
-        Allure.step("Sending Data \""+ data+"\" To Element: "+locator, Status.PASSED);
     }
     public static void sendData(WebDriver driver, By locator, Keys data, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(driver,locator).clear();
-        String keyName=getKeyName(data);
-        logsUtils.info(Colors.BLUE+"Sending Data \""+ keyName+"\" To Element: "+locator+Colors.RESET);
         findWebElement(driver,locator).sendKeys(data);
-        Allure.step("Sending Data \""+ keyName+"\" To Element: "+locator, Status.PASSED);
     }
     public static String getText(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Get Text From Element: "+locator+Colors.RESET);
         String text = findWebElement(driver,locator).getText();
-        Allure.step("Getting Text From Element: "+locator, Status.PASSED);
         return text;
     }
     public static void clickOnElement(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.elementToBeClickable(locator));
         findWebElement(driver,locator).click();
-        logsUtils.info(Colors.BLUE+"Click On Element: "+locator+Colors.RESET);
-        Allure.step("Clicking On Element: "+locator, Status.PASSED);
     }
     public static WebDriverWait generalWait(WebDriver driver, int timeout) {
-        Allure.step("General Wait For " + timeout + " seconds", Status.PASSED);
+        Reporter.log("Getting general Wait For "+ timeout + " seconds",LogLevel.INFO_BLUE);
         return new WebDriverWait(driver, Duration.ofSeconds(timeout));
     }
     public static void scrollToElement(WebDriver driver, By locator) {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", findWebElement(driver, locator));
-        logsUtils.info(Colors.BLUE+"Scrolling To Element Located: "+locator+Colors.RESET);
-        Allure.step("Scrolling To Element: "+locator, Status.PASSED);
+        Reporter.log("Scrolling To Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
     public static void selectDropdownByText(WebDriver driver, By locator, String option, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Select Dropdown Option By Text: "+option+" From Element: "+locator+Colors.RESET);
         new Select(findWebElement(driver, locator)).selectByVisibleText(option);
-        Allure.step("Selecting Dropdown Option By Text: " + option + " From Element: " + locator, Status.PASSED);
+        Reporter.log("Selecting Dropdown Option By Text: " + option + " From Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
     public static void selectDropdownByValue(WebDriver driver, By locator, String value, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Select Dropdown Option By Value: "+value+" From Element: "+locator+Colors.RESET);
         new Select(findWebElement(driver, locator)).selectByValue(value);
-        Allure.step("Selecting Dropdown Option By Value: " + value + " From Element: " + locator, Status.PASSED);
+        Reporter.log("Selecting Dropdown Option By Value: " + value + " From Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
 
     public static void selectDropdownByIndex(WebDriver driver, By locator, int index, int timeout, int pollingEvery) {
+        Reporter.log("Selecting Dropdown Option By Index: " + index + " From Element: " ,LogLevel.INFO_BLUE,locator.toString());
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Select Dropdown Option By Index: "+index+" From Element: "+locator+Colors.RESET);
         new Select(findWebElement(driver, locator)).selectByIndex(index);
-        Allure.step("Selecting Dropdown Option By Index: " + index + " From Element: " + locator, Status.PASSED);
     }
     public static void setImplicitWait(WebDriver driver, int timeout) {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(timeout));
-        logsUtils.info(Colors.BLUE + "Set Implicit Wait To: " + timeout + " seconds" + Colors.RESET);
-        Allure.step("Setting Implicit Wait to " + timeout + " seconds", Status.PASSED);
     }
 
     public static void javascriptClick(WebDriver driver, By locator) {
         WebElement element = findWebElement(driver, locator);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
-        logsUtils.info(Colors.BLUE+"JavaScript Click On Element: "+locator+Colors.RESET);
-        Allure.step("JavaScript Click On Element: " + locator, Status.PASSED);
+        Reporter.log("JavaScript Click On Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
 
     public static void waitForElementToDisappear(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.invisibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Waiting for Element To Disappear: "+locator+Colors.RESET);
-        Allure.step("Waiting For Element To Disappear: " + locator, Status.PASSED);
+        Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
     }
     public static WebElement waitForElementToBeClickable(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.elementToBeClickable(locator));
-        logsUtils.info(Colors.BLUE + "Wait For Element To Be Clickable: " + locator + Colors.RESET);
-        Allure.step("Waiting for Element To Be Clickable: " + locator, Status.PASSED);
+        Reporter.log("Wait For Element To Be Clickable: ",LogLevel.INFO_BLUE,locator.toString());
         return findWebElement(driver,locator);
     }
     public static WebElement waitForElementToBeVisible(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE + "Wait For Element To Be Visible: " + locator + Colors.RESET);
-        Allure.step("Waiting for Element To Be Visible: " + locator, Status.PASSED);
+        Reporter.log("Wait For Element To Be Visible: ",LogLevel.INFO_BLUE,locator.toString());
         return findWebElement(driver, locator);
     }
 
     public static WebElement waitForElementPresence(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Presence: " + locator.toString(), LogLevel.INFO_BLUE);
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.presenceOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE + "Wait For Element Presence: " + locator + Colors.RESET);
-        Allure.step("Waiting for Element Presence: " + locator, Status.PASSED);
-        return findWebElement(driver,locator);
+        return findWebElement(driver, locator);
     }
-    public static WebElement waitForTextToBePresentInElement(WebDriver driver, By locator,String text, int timeout, int pollingEvery) {
+
+    public static WebElement waitForTextToBePresentInElement(WebDriver driver, By locator, String text, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Text: '" + text + "' to be present in Element: " + locator.toString(), LogLevel.INFO_BLUE);
         getFluentWait(driver,timeout,pollingEvery)
-                .until(ExpectedConditions.textToBePresentInElementLocated(locator,text));
-        logsUtils.info(Colors.BLUE + "Wait For Element Presence: " + locator + Colors.RESET);
-        Allure.step("Waiting for Element Presence: " + locator, Status.PASSED);
-        return findWebElement(driver,locator);
+                .until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
+        return findWebElement(driver, locator);
     }
+
     public static String getAttributeValue(WebDriver driver, By locator, String attribute, int timeout, int pollingEvery) {
+        Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        logsUtils.info(Colors.BLUE+"Getting Attribute: "+attribute+" From Element: "+locator+Colors.RESET);
-        String attributeValue = findWebElement(driver,locator).getAttribute(attribute);
-        Allure.step("Getting Attribute: " + attribute + " From Element: " + locator, Status.PASSED);
+        String attributeValue = findWebElement(driver, locator).getAttribute(attribute);
         return attributeValue;
     }
+
     public static boolean waitForElementToBeSelected(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element to be Selected: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean isSelected = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.elementToBeSelected(locator));
-        logsUtils.info(Colors.BLUE + "Wait for element to be selected: " + locator + Colors.RESET);
-        Allure.step("Waiting for element to be selected: " + locator, Status.PASSED);
         return isSelected;
     }
+
     public static boolean waitForElementAttributeToBe(WebDriver driver, By locator, String attribute, String value, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.attributeToBe(locator, attribute, value));
-        logsUtils.info(Colors.BLUE + "Wait for element attribute to be: " + attribute + " = " + value + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for element attribute to be: " + attribute + " = " + value + " for " + locator, Status.PASSED);
         return result;
     }
+
     public static boolean waitForElementAttributeContains(WebDriver driver, By locator, String attribute, String value, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.attributeContains(locator, attribute, value));
-        logsUtils.info(Colors.BLUE + "Wait for element attribute to contain: " + attribute + " = " + value + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for element attribute to contain: " + attribute + " = " + value + " for " + locator, Status.PASSED);
         return result;
     }
     public static boolean waitForElementStaleness(WebDriver driver, WebElement element, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Staleness: " + element.toString(), LogLevel.INFO_BLUE);
         boolean isStale = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.stalenessOf(element));
-        logsUtils.info(Colors.BLUE + "Wait for element staleness: " + element + Colors.RESET);
-        Allure.step("Waiting for element staleness: " + element, Status.PASSED);
         return isStale;
     }
     public static boolean waitForTitleContains(WebDriver driver, String titlePart, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Title to Contain: '" + titlePart + "'", LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.titleContains(titlePart));
-        logsUtils.info(Colors.BLUE + "Wait for title to contain: " + titlePart + Colors.RESET);
-        Allure.step("Waiting for title to contain: " + titlePart, Status.PASSED);
         return result;
     }
     public static boolean waitForUrlContains(WebDriver driver, String urlPart, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for URL to Contain: '" + urlPart + "'", LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.urlContains(urlPart));
-        logsUtils.info(Colors.BLUE + "Wait for URL to contain: " + urlPart + Colors.RESET);
-        Allure.step("Waiting for URL to contain: " + urlPart, Status.PASSED);
         return result;
     }
     public static WebDriver waitForFrameToBeAvailableAndSwitchToIt(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString(), LogLevel.INFO_BLUE);
         WebDriver frame = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
-        logsUtils.info(Colors.BLUE + "Wait for frame to be available and switch to it: " + locator + Colors.RESET);
-        Allure.step("Waiting for frame to be available and switch to it: " + locator, Status.PASSED);
         return frame;
     }
     public static WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(WebDriver driver, String nameOrId, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Frame to be Available by Name or ID: '" + nameOrId + "'", LogLevel.INFO_BLUE);
         WebDriver frame = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
-        logsUtils.info(Colors.BLUE + "Wait for frame to be available by name or id: " + nameOrId + Colors.RESET);
-        Allure.step("Waiting for frame to be available by name or id: " + nameOrId, Status.PASSED);
         return frame;
     }
     public static WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt(WebDriver driver, int index, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Frame to be Available by Index: " + index, LogLevel.INFO_BLUE);
         WebDriver frame = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
-        logsUtils.info(Colors.BLUE + "Wait for frame to be available by index: " + index + Colors.RESET);
-        Allure.step("Waiting for frame to be available by index: " + index, Status.PASSED);
         return frame;
     }
     public static boolean waitForElementToBeEnabled(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean isEnabled = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.elementToBeClickable(locator)).isEnabled();
-        logsUtils.info(Colors.BLUE + "Wait for element to be enabled: " + locator + Colors.RESET);
-        Allure.step("Waiting for element to be enabled: " + locator, Status.PASSED);
         return isEnabled;
     }
     public static boolean waitForTitleIs(WebDriver driver, String title, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Title to be: '" + title + "'", LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.titleIs(title));
-        logsUtils.info(Colors.BLUE + "Wait for title to be: " + title + Colors.RESET);
-        Allure.step("Waiting for title to be: " + title, Status.PASSED);
         return result;
     }
     public static boolean waitForUrlToBe(WebDriver driver, String url, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for URL to be: '" + url + "'", LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.urlToBe(url));
-        logsUtils.info(Colors.BLUE + "Wait for URL to be: " + url + Colors.RESET);
-        Allure.step("Waiting for URL to be: " + url, Status.PASSED);
         return result;
     }
     public static boolean waitForElementSelectionStateToBe(WebDriver driver, By locator, boolean selected, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
-        logsUtils.info(Colors.BLUE + "Wait for element selection state to be: " + selected + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for element selection state to be: " + selected + " for " + locator, Status.PASSED);
         return result;
     }
     public static boolean waitForTextToBePresentInElementValue(WebDriver driver, By locator, String text, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean result = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
-        logsUtils.info(Colors.BLUE + "Wait for text to be present in element value: " + text + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for text to be present in element value: " + text + " for " + locator, Status.PASSED);
         return result;
-    }
-    public static boolean waitForNumberOfWindowsToBe(WebDriver driver, int numberOfWindows, int timeout, int pollingEvery) {
-        boolean result = getFluentWait(driver, timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfWindowsToBe(numberOfWindows));
-        logsUtils.info(Colors.BLUE + "Wait for number of windows to be: " + numberOfWindows + Colors.RESET);
-        Allure.step("Waiting for number of windows to be: " + numberOfWindows, Status.PASSED);
-        return result;
-    }
-    public static boolean waitForNumberOfElementsToBeMoreThan(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
-        int size = getFluentWait(driver, timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
-        logsUtils.info(Colors.BLUE + "Wait for number of elements to be more than: " + number + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for number of elements to be more than: " + number + " for " + locator, Status.PASSED);
-        return size>number;
-    }
-    public static boolean waitForNumberOfElementsToBeLessThan(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
-        int size = getFluentWait(driver, timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
-        logsUtils.info(Colors.BLUE + "Wait for number of elements to be less than: " + number + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for number of elements to be less than: " + number + " for " + locator, Status.PASSED);
-        return size<number;
-    }
-    public static List<WebElement> waitForVisibilityOfAllElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
-        List<WebElement> elements = getFluentWait(driver, timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        logsUtils.info(Colors.BLUE + "Wait for visibility of all elements: " + locator + Colors.RESET);
-        Allure.step("Waiting for visibility of all elements: " + locator, Status.PASSED);
-        return elements;
-    }
-    public static boolean waitForNumberOfElementsToBe(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
-        int size = getFluentWait(driver, timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
-        logsUtils.info(Colors.BLUE + "Wait for number of elements to be: " + number + " for " + locator + Colors.RESET);
-        Allure.step("Waiting for number of elements to be: " + number + " for " + locator, Status.PASSED);
-        return size==number;
     }
 
+
+    public static boolean waitForNumberOfWindowsToBe(WebDriver driver, int numberOfWindows, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Number of Windows to be: " + numberOfWindows, LogLevel.INFO_BLUE);
+        boolean result = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.numberOfWindowsToBe(numberOfWindows));
+        return result;
+    }
+
+    public static boolean waitForNumberOfElementsToBeMoreThan(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        int size = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
+        return size > number;
+    }
+
+    public static boolean waitForNumberOfElementsToBeLessThan(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        int size = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
+        return size < number;
+    }
+
+    public static List<WebElement> waitForVisibilityOfAllElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
+        List<WebElement> elements = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        return elements;
+    }
+
+    public static boolean waitForNumberOfElementsToBe(WebDriver driver, By locator, int number, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        int size = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
+        return size == number;
+    }
     public static void switchToNewWindow(WebDriver driver, String windowTitle) {
         String originalWindow = driver.getWindowHandle();
         for (String windowHandle : driver.getWindowHandles()) {
             driver.switchTo().window(windowHandle);
             if (driver.getTitle().equals(windowTitle)) {
-                logsUtils.info(Colors.BLUE + "Switched To New Window: " + windowTitle + Colors.RESET);
-                Allure.step("Switched to new window with title: " + windowTitle, Status.PASSED);
                 return;
             }
         }
         driver.switchTo().window(originalWindow);
-        logsUtils.info(Colors.RED + "Window with title " + windowTitle + " not found. Switched back to original window." + Colors.RESET);
-        Allure.step("Failed to find window with title: " + windowTitle, Status.FAILED);
     }
     // Close the current window or tab
     public static void closeCurrentWindow(WebDriver driver) {
         driver.close();
-        logsUtils.info(Colors.BLUE + "Closed Current Window" + Colors.RESET);
-        Allure.step("Closing current window", Status.PASSED);
     }
 
     // Switch to the original window
     public static void switchToOriginalWindow(WebDriver driver, String originalWindowHandle) {
         driver.switchTo().window(originalWindowHandle);
-        logsUtils.info(Colors.BLUE + "Switched To Original Window" + Colors.RESET);
-        Allure.step("Switched to original window", Status.PASSED);
     }
     // Find an element (no need for timeout or polling)
     public static WebElement findWebElement(WebDriver driver, By locator) {
@@ -337,37 +275,28 @@ public class DriverActions {
     public static void acceptAlert(WebDriver driver, int timeout, int pollingEvery) {
         getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        logsUtils.info(Colors.BLUE + "Alert present. Accepting the alert." + Colors.RESET);
-        Allure.step("Accepting the alert", Status.PASSED);
         driver.switchTo().alert().accept();
     }
     public static void dismissAlert(WebDriver driver, int timeout, int pollingEvery) {
        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        logsUtils.info(Colors.BLUE + "Alert present. Dismissing the alert." + Colors.RESET);
-        Allure.step("Dismissing the alert", Status.PASSED);
         driver.switchTo().alert().dismiss();
     }
     public static String getAlertText(WebDriver driver, int timeout, int pollingEvery) {
        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        logsUtils.info(Colors.BLUE + "Getting alert text." + Colors.RESET);
-        Allure.step("Getting alert text", Status.PASSED);
         String alertText = driver.switchTo().alert().getText();
         return alertText;
     }
     public static void sendDataToAlert(WebDriver driver, String data, int timeout, int pollingEvery) {
        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        logsUtils.info(Colors.BLUE + "Sending data to alert: " + data + Colors.RESET);
-        Allure.step("Sending data to alert: " + data, Status.PASSED);
         driver.switchTo().alert().sendKeys(data);
     }
     // Get text from multiple elements
     public static List<String> getTextFromMultipleElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery).until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        logsUtils.info(Colors.BLUE + "Getting text from multiple elements located: " + locator + Colors.RESET);
-        Allure.step("Getting text from multiple elements located: " + locator, Status.PASSED);
+        Reporter.log("Getting text from multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
         List<WebElement> elements = findWebElements(driver,locator);
         List<String> texts = new ArrayList<>();
         for (WebElement element : elements) {
@@ -383,10 +312,9 @@ public class DriverActions {
     }
     // Get text from multiple elements
     public static List<String> getAttributeFromMultipleElements(WebDriver driver, By locator,String Attribute, int timeout, int pollingEvery) {
-       getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Getting Attribute from multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
+        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        logsUtils.info(Colors.BLUE + "Getting Attribute from multiple elements located: " + locator + Colors.RESET);
-        Allure.step("Getting Attribute from multiple elements located: " + locator, Status.PASSED);
         List<WebElement> elements = findWebElements(driver,locator);
         List<String> texts = new ArrayList<>();
         for (WebElement element : elements) {
@@ -398,8 +326,6 @@ public class DriverActions {
     public static void clickOnMultipleElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        logsUtils.info(Colors.BLUE + "Clicking on multiple elements located: " + locator + Colors.RESET);
-        Allure.step("Clicking on multiple elements located: " + locator, Status.PASSED);
         List<WebElement> elements = findWebElements(driver,locator);
         for (WebElement element : elements) {
             element.click();
@@ -409,54 +335,45 @@ public class DriverActions {
     public static void sendDataToMultipleElements(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
        getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-
-        logsUtils.info(Colors.BLUE + "Sending data to multiple elements located: " + locator + Colors.RESET);
+        Reporter.log("Sending data to multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
         List<WebElement> elements = findWebElements(driver,locator);
         for (WebElement element : elements) {
             element.clear();
             element.sendKeys(data);
         }
-        Allure.step("Sending Data \"" + data + "\" To Multiple Elements: " + locator, Status.PASSED);
     }
     // Select from dropdowns on multiple elements by visible text
     public static void selectDropdownByTextForMultipleElements(WebDriver driver, By locator, String option, int timeout, int pollingEvery) {
-       getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Selecting dropdown option by text for multiple elements: " + option + " for locator: " + locator.toString(), LogLevel.INFO_BLUE);
+        getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
 
-        logsUtils.info(Colors.BLUE + "Selecting dropdown option by text for multiple elements: " + option + Colors.RESET);
-        List<WebElement> elements = findWebElements(driver,locator);
+        List<WebElement> elements = findWebElements(driver, locator);
         for (WebElement element : elements) {
             new Select(element).selectByVisibleText(option);
         }
-        Allure.step("Selecting Dropdown Option \"" + option + "\" For Multiple Elements: " + locator, Status.PASSED);
     }
 
     // Switch to frame by index
     public static void switchToFrameByIndex(WebDriver driver, int index, int timeout,int pollingTime) {
         getFluentWait(driver,timeout,pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
-
-        logsUtils.info(Colors.BLUE + "Switched to frame by index: " + index + Colors.RESET);
-        Allure.step("Switched To Frame By Index: " + index, Status.PASSED);
     }
     // Hover over an element with specified timeout
     public static void hoverOverElement(WebDriver driver, By locator, int timeout) {
-        WebElement element =getFluentWait(driver,timeout,defaultPollingTime)
+        Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
+        WebElement element = getFluentWait(driver, timeout, defaultPollingTime)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-
         Actions action = new Actions(driver);
         action.moveToElement(element).perform();
-
-        logsUtils.info(Colors.BLUE + "Hovered over element: " + locator + Colors.RESET);
-        Allure.step("Hovered over element: " + locator, Status.PASSED);
     }
+
 
     // New method: Scroll to page bottom
     public static void scrollToPageBottom(WebDriver driver) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
-        logsUtils.info(Colors.BLUE + "Scrolled to page bottom" + Colors.RESET);
-        Allure.step("Scrolled to page bottom", Status.PASSED);
+        Reporter.log("Scrolled to page bottom", LogLevel.INFO_BLUE);
     }
 
     // New method: JS Executor - Set value using JavaScript
@@ -464,123 +381,92 @@ public class DriverActions {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         WebElement element = findWebElement(driver, locator);
         js.executeScript("arguments[0].value = arguments[1];", element, value);
-        logsUtils.info(Colors.BLUE + "Set value using JavaScript: " + value + Colors.RESET);
-        Allure.step("Set value using JavaScript: " + value + " on element: " + locator, Status.PASSED);
+        Reporter.log("Set value using JavaScript: " + value + " on element: " + locator.toString(), LogLevel.INFO_BLUE);
     }
+
     // Switch to frame by name or ID
     public static void switchToFrameByNameOrID(WebDriver driver, String nameOrID, int timeout,int pollingTime) {
         getFluentWait(driver,timeout,pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrID));
-        logsUtils.info(Colors.BLUE + "Switched to frame by name or ID: " + nameOrID + Colors.RESET);
-        Allure.step("Switched To Frame By Name/ID: " + nameOrID, Status.PASSED);
     }
     // Switch to frame by WebElement
     public static void switchToFrameByElement(WebDriver driver, By locator, int timeout,int pollingTime) {
         getFluentWait(driver,timeout,pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
-        logsUtils.info(Colors.BLUE + "Switched to frame by element located: " + locator + Colors.RESET);
-        Allure.step("Switched To Frame By Element Located: " + locator, Status.PASSED);
     }
 
     // Switch back to default content from frame
     public static void switchToDefaultContent(WebDriver driver) {
         driver.switchTo().defaultContent();
-        logsUtils.info(Colors.BLUE + "Switched back to default content from frame" + Colors.RESET);
-        Allure.step("Switched Back To Default Content From Frame", Status.PASSED);
     }
-
-    // Handle popups or additional windows
-    public static void switchToPopupWindow(WebDriver driver, String expectedPopupTitle, int timeout,int pollingTime) {
+    public static void switchToPopupWindow(WebDriver driver, String expectedPopupTitle, int timeout, int pollingTime) {
         String mainWindow = driver.getWindowHandle();
-        getFluentWait(driver,timeout,pollingTime)
+        Reporter.log("Waiting for popup window to appear.", LogLevel.INFO_BLUE);
+
+        boolean windowsAppeared = getFluentWait(driver, timeout, pollingTime)
                 .until(ExpectedConditions.numberOfWindowsToBe(2));
-        for (String windowHandle : driver.getWindowHandles()) {
-            if (!windowHandle.equals(mainWindow)) {
-                driver.switchTo().window(windowHandle);
-                if (driver.getTitle().equals(expectedPopupTitle)) {
-                    logsUtils.info(Colors.BLUE + "Switched to popup window with title: " + expectedPopupTitle + Colors.RESET);
-                    Allure.step("Switched To Popup Window With Title: " + expectedPopupTitle, Status.PASSED);
-                    return;
+
+        if (windowsAppeared) {
+            for (String windowHandle : driver.getWindowHandles()) {
+                if (!windowHandle.equals(mainWindow)) {
+                    driver.switchTo().window(windowHandle);
+                    if (driver.getTitle().equals(expectedPopupTitle)) {
+                        Reporter.log("Switched to popup window with title: " + expectedPopupTitle, LogLevel.INFO_BLUE);
+                        return;
+                    }
                 }
             }
+            Reporter.log("Popup window with title " + expectedPopupTitle + " not found", LogLevel.ERROR);
+            driver.switchTo().window(mainWindow);
+        } else {
+            Reporter.log("Popup window did not appear within the timeout.", LogLevel.ERROR);
         }
-        logsUtils.error(Colors.RED + "Popup window with title " + expectedPopupTitle + " not found" + Colors.RESET);
-        driver.switchTo().window(mainWindow);
-        Allure.step("Failed To Switch To Popup Window With Title: " + expectedPopupTitle, Status.FAILED);
     }
-
-    // Close popup window and switch back to main window
     public static void closePopupWindow(WebDriver driver) {
         driver.close();
-        logsUtils.info(Colors.BLUE + "Popup window closed. Switching back to the main window." + Colors.RESET);
-        Allure.step("Closing popup window and switching back to the main window", Status.PASSED);
+        Reporter.log("Popup window closed. Switching back to the main window.", LogLevel.INFO_BLUE);
         String mainWindow = driver.getWindowHandles().iterator().next();
         driver.switchTo().window(mainWindow);
     }
-
-    // Maximize the browser window
-    public static void maximizeWindow(WebDriver driver) {
-        driver.manage().window().maximize();
-        logsUtils.info(Colors.BLUE + "Browser window maximized" + Colors.RESET);
-        Allure.step("Maximizing browser window", Status.PASSED);
-    }
-
-    // Minimize the browser window
-    public static void minimizeWindow(WebDriver driver) {
-        driver.manage().window().minimize();
-        logsUtils.info(Colors.BLUE + "Browser window minimized" + Colors.RESET);
-        Allure.step("Minimizing browser window", Status.PASSED);
-    }
-    // Get all elements matching the locator
-    public static List<WebElement> getElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
-       getFluentWait(driver,timeout,pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        logsUtils.info(Colors.BLUE + "Getting all elements located: " + locator + Colors.RESET);
-        Allure.step("Getting all elements located by: " + locator, Status.PASSED);
-        return findWebElements(driver,locator);
-    }
-
-    // Move slider to a target value
     public static float moveSliderTo(WebDriver driver, By sliderLocator, By rangeLocator, float targetValue) {
-        WebElement range = findWebElement(driver,rangeLocator);
-        WebElement slider =  findWebElement(driver,sliderLocator);
+        WebElement range = findWebElement(driver, rangeLocator);
+        WebElement slider = findWebElement(driver, sliderLocator);
         float currentValue = Float.parseFloat(range.getText());
         Actions action = new Actions(driver);
+
         // Move slider to minimum (assumed to be 0)
-        int timeout=0;
-        while ((currentValue != 0) && (timeout<3000)) {
+        int timeout = 0;
+        while ((currentValue != 0) && (timeout < 3000)) {
             action.sendKeys(slider, Keys.ARROW_LEFT).perform();
             currentValue = Float.parseFloat(range.getText());
             timeout++;
         }
-        timeout=0;
+
+        timeout = 0;
         // Now, move slider to the target value
-        while ( (currentValue != targetValue) && (timeout<3000) ) {
+        while ((currentValue != targetValue) && (timeout < 3000)) {
             action.sendKeys(slider, Keys.ARROW_RIGHT).perform();
             currentValue = Float.parseFloat(range.getText());
             timeout++;
         }
-        logsUtils.info(Colors.BLUE + "Slider moved to: " + currentValue + Colors.RESET);
-        Allure.step("Slider moved to target value: " + currentValue, Status.PASSED);
+
+        Reporter.log("Slider moved to: " + currentValue, LogLevel.INFO_BLUE);
         return currentValue;
     }
-    // Drag and drop from source to target element
     public static void dragAndDrop(WebDriver driver, By sourceLocator, By targetLocator) {
-        WebElement source =  findWebElement(driver,sourceLocator);
-        WebElement target =  findWebElement(driver,targetLocator);
+        WebElement source = findWebElement(driver, sourceLocator);
+        WebElement target = findWebElement(driver, targetLocator);
         Actions action = new Actions(driver);
 
         action.clickAndHold(source)
                 .moveToElement(target)
                 .release()
                 .perform();
-        logsUtils.info(Colors.BLUE + "Drag and drop performed from " + sourceLocator + " to " + targetLocator + Colors.RESET);
-        Allure.step("Drag and drop from " + sourceLocator + " to " + targetLocator, Status.PASSED);
-    }
 
-    // Drag and drop using offsets
+        Reporter.log("Drag and drop performed from " + sourceLocator + " to " + targetLocator, LogLevel.INFO_BLUE);
+    }
     public static void dragAndDropByOffset(WebDriver driver, By sourceLocator, int xOffset, int yOffset) {
-        WebElement source =  findWebElement(driver,sourceLocator);
+        WebElement source = findWebElement(driver, sourceLocator);
         Actions action = new Actions(driver);
 
         action.clickAndHold(source)
@@ -588,26 +474,22 @@ public class DriverActions {
                 .release()
                 .perform();
 
-        logsUtils.info(Colors.BLUE + "Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
-        Allure.step("Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset, Status.PASSED);
+        Reporter.log("Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
-
-    // Hover over an element and click another
     public static void hoverAndClick(WebDriver driver, By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
-        WebElement elementToHover =getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
+        WebElement elementToHover = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locatorToHover));
 
-        WebElement elementToClick =getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Waiting for element to click: " + locatorToClick.toString(), LogLevel.INFO_BLUE);
+        WebElement elementToClick = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.elementToBeClickable(locatorToClick));
 
         Actions action = new Actions(driver);
         action.moveToElement(elementToHover).click(elementToClick).perform();
 
-        logsUtils.info(Colors.BLUE + "Hovered over " + locatorToHover + " and clicked " + locatorToClick + Colors.RESET);
-        Allure.step("Hovered over " + locatorToHover + " and clicked " + locatorToClick, Status.PASSED);
+        Reporter.log("Hovered over " + locatorToHover + " and clicked " + locatorToClick, LogLevel.INFO_BLUE);
     }
-
-    // Capture screenshot
     public static String captureScreenshot(WebDriver driver, String screenshotName) {
         try {
             TakesScreenshot camera = (TakesScreenshot) driver;
@@ -618,83 +500,94 @@ public class DriverActions {
                 screenShotUser.mkdirs();
             }
 
-            File screenShotFile = new File(screenShotUser.getPath() + screenshotName + "_" + TestDataGenerator.getTimeStamp()+ ".png");
+            File screenShotFile = new File(screenShotUser.getPath() + screenshotName + "_" + TestDataGenerator.getTimeStamp() + ".png");
             Files.move(screenshot, screenShotFile);
 
-            logsUtils.info(Colors.BLUE + "Screenshot captured: " + screenShotFile.getPath() + Colors.RESET);
-            Allure.step("Screenshot captured: " + screenShotFile.getPath(), Status.PASSED);
+            Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_BLUE);
             return screenShotFile.getPath();
         } catch (Exception e) {
-            logsUtils.logException(e);
-            Allure.step("Failed to capture screenshot: " + e.getMessage(), Status.FAILED);
+            Reporter.log("Failed to capture screenshot: " + e.getMessage(), LogLevel.ERROR);
             return null;
         }
     }
-    // Move slider by offset with timeout and pollingEvery
     public static void moveSliderByOffset(WebDriver driver, By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
-        getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Waiting for slider to be visible: " + sliderLocator.toString(), LogLevel.INFO_BLUE);
+        getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(sliderLocator));
 
-        WebElement slider = findWebElement(driver,sliderLocator);
+        WebElement slider = findWebElement(driver, sliderLocator);
         Actions action = new Actions(driver);
         action.clickAndHold(slider)
                 .moveByOffset(xOffset, yOffset)
                 .release()
                 .perform();
+        Reporter.log("Slider moved by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
 
-        logsUtils.info(Colors.BLUE + "Slider moved by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
-        Allure.step("Slider moved by offset: X=" + xOffset + ", Y=" + yOffset, Status.PASSED);
     }
-
-    // New method: Scroll by offset
     public static void scrollByOffset(WebDriver driver, int xOffset, int yOffset) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
 
-        logsUtils.info(Colors.BLUE + "Scrolled by offset: X=" + xOffset + ", Y=" + yOffset + Colors.RESET);
-        Allure.step("Scrolled by offset: X=" + xOffset + ", Y=" + yOffset, Status.PASSED);
+        Reporter.log("Scrolled by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
-    // Right-click on an element
     public static void rightClick(WebDriver driver, By locator, int timeout, int pollingEvery) {
-        WebElement element =getFluentWait(driver,timeout,pollingEvery)
+        Reporter.log("Waiting for element to right-click: " + locator.toString(), LogLevel.INFO_BLUE);
+        WebElement element = getFluentWait(driver, timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
+
         Actions action = new Actions(driver);
         action.contextClick(element).perform();
-        logsUtils.info(Colors.BLUE + "Right-clicked on element: " + locator + Colors.RESET);
-        Allure.step("Right-clicked on element: " + locator, Status.PASSED);
-    }
-    // Double-click on an element with timeout and pollingEvery
-    public static void doubleClick(WebDriver driver, By locator, int timeout, int pollingEvery) {
-        WebElement element =getFluentWait(driver,timeout,pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
 
+        Reporter.log("Right-clicked on element: " + locator, LogLevel.INFO_BLUE);
+    }
+    public static void doubleClick(WebDriver driver, By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
+        WebElement element = getFluentWait(driver, timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
         Actions action = new Actions(driver);
         action.doubleClick(element).perform();
-
-        logsUtils.info(Colors.BLUE + "Double-clicked on element: " + locator + Colors.RESET);
-        Allure.step("Double-clicked on element: " + locator, Status.PASSED);
+        Reporter.log("Double-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
+
+
+    // Maximize the browser window
+    public static void maximizeWindow(WebDriver driver) {
+        driver.manage().window().maximize();
+    }
+
+    // Minimize the browser window
+    public static void minimizeWindow(WebDriver driver) {
+        driver.manage().window().minimize();
+    }
+    // Get all elements matching the locator
+    public static List<WebElement> getElements(WebDriver driver, By locator, int timeout, int pollingEvery) {
+       getFluentWait(driver,timeout,pollingEvery)
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        return findWebElements(driver,locator);
+    }
+
     public static void navigateToUrl(WebDriver driver, String url) {
         driver.get(url);
-        logsUtils.info(Colors.BLUE + "Navigated To URL: " + url + Colors.RESET);
-        Allure.step("Navigating to URL: " + url, Status.PASSED);
     }
     // Refresh the current page
     public static void refreshPage(WebDriver driver) {
         driver.navigate().refresh();
-        logsUtils.info(Colors.BLUE + "Page Refreshed" + Colors.RESET);
-        Allure.step("Refreshing the current page", Status.PASSED);
     }
     public static void navigateBack(WebDriver driver) {
         driver.navigate().back();
-        logsUtils.info(Colors.BLUE + "Navigated Back In Browser History" + Colors.RESET);
-        Allure.step("Navigating back in browser history", Status.PASSED);
     }
     public static void navigateForward(WebDriver driver) {
         driver.navigate().forward();
-        logsUtils.info(Colors.BLUE + "Navigated Forward In Browser History" + Colors.RESET);
-        Allure.step("Navigating forward in browser history", Status.PASSED);
     }
+
+
+
+
+
+
+
+
+
     public static boolean waitForElementToBeSelected(WebDriver driver, By locator) {
         initializeTimeoutAndPolling();
         return waitForElementToBeSelected(driver, locator, defaultTimeout, defaultPollingTime);

@@ -1,5 +1,8 @@
 package Ellithium.DriverSetup;
 import Ellithium.Internal.ConfigContext;
+import Ellithium.Internal.LogLevel;
+import Ellithium.Internal.Reporter;
+import Ellithium.Internal.SeleniumListener;
 import Ellithium.Utilities.PropertyHelper;
 import Ellithium.Utilities.logsUtils;
 import Ellithium.Utilities.Colors;
@@ -8,6 +11,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.v85.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.support.events.EventFiringDecorator;
+
 import java.io.File;
 import java.time.Duration;
 import static Ellithium.Utilities.Colors.*;
@@ -53,13 +58,16 @@ public class DriverFactory {
             initTimeout();
         }
         localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(defaultTimeout));
-        driver.set(localDriver);  // Set WebDriver for this thread
+        driver.set(getDecoratedDriver(localDriver));  // Set WebDriver for this thread
         if(driver!=null){
-            logsUtils.info(Colors.GREEN+ "WebDriver Created"+Colors.RESET);
+            Reporter.log("WebDriver Created", LogLevel.INFO_GREEN);
         }
         else {
-            logsUtils.error(Colors.RED+ "WebDriver Creation Failed"+Colors.RESET);
+            Reporter.log("WebDriver Creation Failed",LogLevel.INFO_RED);
         }
+    }
+    private static WebDriver getDecoratedDriver(WebDriver driver){
+        return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new SeleniumListener()).decorate(driver);
     }
     private static void initTimeout() {
         try {

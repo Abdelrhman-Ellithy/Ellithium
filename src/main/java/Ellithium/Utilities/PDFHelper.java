@@ -1,5 +1,7 @@
 package Ellithium.Utilities;
 
+import Ellithium.Internal.LogLevel;
+import Ellithium.Internal.Reporter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -7,7 +9,6 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.text.PDFTextStripper;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -23,12 +24,9 @@ public class PDFHelper {
         try (PDDocument document = PDDocument.load(file)) {
             PDFTextStripper stripper = new PDFTextStripper();
             textContent = stripper.getText(document);
-            logsUtils.info(Colors.GREEN + "Successfully read PDF file: " + filePath + Colors.RESET);
-            Allure.step("Successfully read PDF file: " + filePath, Status.PASSED);
+            Reporter.log("Successfully read PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to read PDF file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to read PDF file: " + filePath, Status.FAILED);
+            Reporter.log("Failed to read PDF file: ",LogLevel.ERROR,filePath);
             throw new RuntimeException(e);
         }
         return textContent;
@@ -57,12 +55,9 @@ public class PDFHelper {
             }
 
             document.save(file);
-            logsUtils.info(Colors.GREEN + "Successfully wrote content to PDF file: " + filePath + Colors.RESET);
-            Allure.step("Successfully wrote content to PDF file: " + filePath, Status.PASSED);
+            Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to write PDF file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to write PDF file: " + filePath, Status.FAILED);
+            Reporter.log("Failed to write PDF file: ",LogLevel.ERROR,filePath);
             throw new RuntimeException(e);
         }
     }
@@ -86,14 +81,10 @@ public class PDFHelper {
             }
             contentStream.endText();
             contentStream.close();
-
             document.save(file);
-            logsUtils.info(Colors.GREEN + "Successfully appended content to PDF file: " + filePath + Colors.RESET);
-            Allure.step("Successfully appended content to PDF file: " + filePath, Status.PASSED);
+            Reporter.log("Successfully appended content to PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to append to PDF file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to append to PDF file: " + filePath, Status.FAILED);
+            Reporter.log("Failed to append to PDF file: ",LogLevel.ERROR,filePath);
             throw new RuntimeException(e);
         }
     }

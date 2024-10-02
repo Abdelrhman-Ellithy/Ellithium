@@ -1,9 +1,8 @@
 package Ellithium.Utilities;
 
+import Ellithium.Internal.LogLevel;
+import static Ellithium.Internal.Reporter.log;
 import com.google.gson.*;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
-
 import java.io.*;
 import java.util.*;
 
@@ -15,12 +14,11 @@ public class JsonHelper {
         File jsonFile = new File(filePath + ".json");
 
         if (!jsonFile.exists()) {
-            logsUtils.error(Colors.RED + "JSON file does not exist: " + filePath + Colors.RESET);
-            Allure.step("JSON file does not exist: " + filePath, Status.FAILED);
+            log("JSON file does not exist: ", LogLevel.ERROR, filePath);
             throw new RuntimeException("JSON file not found: " + filePath);
         }
 
-        Allure.step("Attempting to read JSON data from file: " + filePath, Status.PASSED);
+        log("Attempting to read JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonElement jsonElement = JsonParser.parseReader(reader);
@@ -40,18 +38,14 @@ public class JsonHelper {
 
                 data.add(recordMap);
             }
-            logsUtils.info(Colors.GREEN + "Successfully read JSON file: " + filePath + Colors.RESET);
-            Allure.step("Successfully read JSON data from file: " + filePath, Status.PASSED);
+
+            log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
 
         } catch (FileNotFoundException e) {
-            logsUtils.error(Colors.RED + "Failed to find JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to find JSON file: " + filePath, Status.FAILED);
+            log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         } catch (IOException | JsonSyntaxException e) {
-            logsUtils.error(Colors.RED + "Failed to read JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to read JSON data from file: " + filePath, Status.FAILED);
+            log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
 
@@ -60,20 +54,16 @@ public class JsonHelper {
 
     // Method to write a list of maps as JSON data
     public static void setJsonData(String filePath, List<Map<String, String>> data) {
-        Allure.step("Attempting to write JSON data to file: " + filePath, Status.PASSED);
+        log("Attempting to write JSON data to file: ", LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath + ".json");
 
-        // If the file doesn't exist, create it
         if (!jsonFile.exists()) {
             try {
                 if (jsonFile.createNewFile()) {
-                    logsUtils.info(Colors.GREEN + "Created new JSON file: " + filePath + Colors.RESET);
-                    Allure.step("Created new JSON file: " + filePath, Status.PASSED);
+                    log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
                 }
             } catch (IOException e) {
-                logsUtils.error(Colors.RED + "Failed to create JSON file: " + filePath + Colors.RESET);
-                logsUtils.logException(e);
-                Allure.step("Failed to create JSON file: " + filePath, Status.FAILED);
+                log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
                 throw new RuntimeException(e);
             }
         }
@@ -89,13 +79,10 @@ public class JsonHelper {
 
         try (FileWriter writer = new FileWriter(jsonFile)) {
             writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
-            logsUtils.info(Colors.GREEN + "Successfully wrote data to JSON file: " + filePath + Colors.RESET);
-            Allure.step("Successfully wrote JSON data to file: " + filePath, Status.PASSED);
+            log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
 
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to write JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to write JSON data to file: " + filePath, Status.FAILED);
+            log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
     }
@@ -105,29 +92,23 @@ public class JsonHelper {
         File jsonFile = new File(filePath + ".json");
 
         if (!jsonFile.exists()) {
-            logsUtils.error(Colors.RED + "JSON file does not exist: " + filePath + Colors.RESET);
-            Allure.step("JSON file does not exist: " + filePath, Status.FAILED);
+            log("JSON file does not exist: ", LogLevel.ERROR, filePath);
             throw new RuntimeException("JSON file not found: " + filePath);
         }
 
-        Allure.step("Reading value for key: " + key + " from JSON file: " + filePath, Status.PASSED);
+        log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
 
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-            logsUtils.info(Colors.GREEN + "Successfully read JSON file: " + filePath + Colors.RESET);
-            Allure.step("Successfully read value for key: " + key + " from JSON file: " + filePath, Status.PASSED);
+            log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
 
             return jsonObject.get(key).getAsString();
 
         } catch (FileNotFoundException e) {
-            logsUtils.error(Colors.RED + "Failed to find JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to find JSON file: " + filePath, Status.FAILED);
+            log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         } catch (IOException | JsonSyntaxException e) {
-            logsUtils.error(Colors.RED + "Failed to read JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to read JSON file: " + filePath, Status.FAILED);
+            log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
     }
@@ -136,22 +117,18 @@ public class JsonHelper {
     public static void setJsonKeyValue(String filePath, String key, String value) {
         File jsonFile = new File(filePath + ".json");
 
-        // If the file doesn't exist, create it
         if (!jsonFile.exists()) {
             try {
                 if (jsonFile.createNewFile()) {
-                    logsUtils.info(Colors.GREEN + "Created new JSON file: " + filePath + Colors.RESET);
-                    Allure.step("Created new JSON file: " + filePath, Status.PASSED);
+                    log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
                 }
             } catch (IOException e) {
-                logsUtils.error(Colors.RED + "Failed to create JSON file: " + filePath + Colors.RESET);
-                logsUtils.logException(e);
-                Allure.step("Failed to create JSON file: " + filePath, Status.FAILED);
+                log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
                 throw new RuntimeException(e);
             }
         }
 
-        Allure.step("Setting value for key: " + key + " in JSON file: " + filePath, Status.PASSED);
+        log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
 
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
@@ -159,14 +136,11 @@ public class JsonHelper {
 
             try (FileWriter writer = new FileWriter(jsonFile)) {
                 writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
-                logsUtils.info(Colors.GREEN + "Successfully updated JSON file: " + filePath + Colors.RESET);
-                Allure.step("Successfully updated key-value pair in JSON file: " + filePath, Status.PASSED);
+                log("Successfully updated JSON file: ", LogLevel.INFO_GREEN, filePath);
             }
 
         } catch (IOException e) {
-            logsUtils.error(Colors.RED + "Failed to update JSON file: " + filePath + Colors.RESET);
-            logsUtils.logException(e);
-            Allure.step("Failed to update JSON file: " + filePath, Status.FAILED);
+            log("Failed to update JSON file: ", LogLevel.ERROR, filePath);
             throw new RuntimeException(e);
         }
     }

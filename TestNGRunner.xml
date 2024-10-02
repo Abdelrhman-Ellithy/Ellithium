@@ -8,7 +8,7 @@
                        <parameter name="SandboxMode" value="Sandbox"></parameter>
                        <parameter name="WebSecurityMode" value="True"></parameter>
                        <classes>
-                           <class name="Runner.TestRunner"/>
+                           <class name=""/>
                        </classes>
                    </test>
 
