@@ -324,7 +324,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>Ellithium.Internal.CustomTestNGListener</value>
+                            <value>Ellithium.core.execution.listener.CustomTestNGListener</value>
                         </property>
                     </properties>
                 </configuration>
@@ -402,7 +402,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>Ellithium.Internal.CustomTestNGListener</value>
+                            <value>Ellithium.core.execution.listener.CustomTestNGListener</value>
                         </property>
                     </properties>
                 </configuration>

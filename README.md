@@ -94,11 +94,11 @@ Here is the updated **Getting Started** section formatted for your README file:
     <Ellithiumversion>1.0.4</Ellithiumversion>
 </properties>
 <dependencies>
-        <dependency>
-            <groupId>io.github.abdelrhman-ellithy</groupId>
-            <artifactId>ellithium</artifactId>
-            <version>${Ellithiumversion}</version>
-        </dependency>
+<dependency>
+    <groupId>io.github.abdelrhman-ellithy</groupId>
+    <artifactId>ellithium</artifactId>
+    <version>${Ellithiumversion}</version>
+</dependency>
 </dependencies>
 <build>
 <plugins>
@@ -141,7 +141,7 @@ Here is the updated **Getting Started** section formatted for your README file:
                     <goal>java</goal>
                 </goals>
                 <configuration>
-                    <mainClass>Ellithium.Internal.StartUpLoader</mainClass>
+                    <mainClass>Ellithium.core.execution.Internal.Loader.StartUpLoader</mainClass>
                     <includePluginDependencies>true</includePluginDependencies>
                     <classpathScope>compile</classpathScope>
                 </configuration>
@@ -221,12 +221,14 @@ Here is the updated **Getting Started** section formatted for your README file:
 
 ```java
 package Runner;
-import Ellithium.DriverSetup.BDDSetup;
+
+import Ellithium.core.base.BDDSetup;
 import io.cucumber.testng.CucumberOptions;
+
 @CucumberOptions(
         glue = "stepDefinitions", // path to your stepDefinitions package, note you should use . instead of /
-        features="src/main/resources/features" // path to your features folder
-        ,tags = "@Run"
+        features = "src/main/resources/features" // path to your features folder
+        , tags = "@Run"
 )
 public class TestRunner extends BDDSetup {
 }
@@ -235,14 +237,18 @@ public class TestRunner extends BDDSetup {
 ### Step 2: To Create a BaseStepDefinitions Class.
 
 - **Create a BaseStepDefinitions class that will be used to extend the other StepDefinitions Classes from it**.
+
 ```java
 package Base;
-import Ellithium.DriverSetup.DriverFactory;
+
+import Ellithium.core.driver.DriverFactory;
 import org.openqa.selenium.WebDriver;
+
 public class BaseStepDefinitions {
     protected WebDriver driver;
-    public BaseStepDefinitions(){
-        driver= DriverFactory.getNewDriver();
+
+    public BaseStepDefinitions() {
+        driver = DriverFactory.getNewDriver();
     }
 }
 ```
@@ -282,21 +288,25 @@ public class BaseStepDefinitions {
 ### Step 1: Create a BaseTest Class
 
 - **Create a Tests Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
+
 ```java
 package Tests;
-import Ellithium.DriverSetup.DriverFactory;
-import Ellithium.DriverSetup.NonBDDSetup;
+
+import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.base.NonBDDSetup;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.*;
 
 public class BaseTests extends NonBDDSetup {
     WebDriver driver;
+
     @BeforeClass
-    public void Setup(){
-        driver= DriverFactory.getNewDriver();
+    public void Setup() {
+        driver = DriverFactory.getNewDriver();
     }
+
     @AfterClass
-    public void tareDown(){
+    public void tareDown() {
         DriverFactory.quitDriver();
     }
 }
@@ -310,8 +320,8 @@ public class BaseTests extends NonBDDSetup {
 ```java
 package Tests;
 
-import Ellithium.DriverSetup.DriverFactory;
-import Ellithium.DriverSetup.NonBDDSetup;
+import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.base.NonBDDSetup;
 import Pages.HomPage;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.*;
@@ -319,13 +329,15 @@ import org.testng.annotations.*;
 public class BaseTests extends NonBDDSetup {
     WebDriver driver;
     HomPage home;
+
     @BeforeClass
-    public void Setup(){
-        driver= DriverFactory.getNewDriver();
-        home=new HomPage(driver);
+    public void Setup() {
+        driver = DriverFactory.getNewDriver();
+        home = new HomPage(driver);
     }
+
     @AfterClass
-    public void tareDown(){
+    public void tareDown() {
         DriverFactory.quitDriver();
     }
 }
@@ -340,37 +352,40 @@ public class BaseTests extends NonBDDSetup {
 ```java
 package Tests;
 
-import Ellithium.Utilities.AssertionExecutor;
+import Ellithium.Utilities.assertion.AssertionExecutor;
 import Pages.LoginPage;
-import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
 public class loginTests extends BaseTests {
-    @DataProvider(name= "invalidLoginData")
-            Object[][] getInvalidTestData(){
+    @DataProvider(name = "invalidLoginData")
+    Object[][] getInvalidTestData() {
         return new Object[][]{
-                {"tomsmith","hamada","Your password is invalid!"},
-                {"hamada","SuperSecretPassword!","Your username is invalid!"}
+                {"tomsmith", "hamada", "Your password is invalid!"},
+                {"hamada", "SuperSecretPassword!", "Your username is invalid!"}
         };
     }
+
     LoginPage login;
+
     @Test(priority = 1, dataProvider = "invalidLoginData")
-    public void invalidLogin(String username, String password, String expectedMessage){
-        login =home.clickFormAuthentication();
+    public void invalidLogin(String username, String password, String expectedMessage) {
+        login = home.clickFormAuthentication();
         login.setUserName(username);
         login.setPassword(password);
-        var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
+        var secureAreaPage = login.clickLoginBtn();
+        String actualMessage = secureAreaPage.getLoginMassega();
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
+
     @Test(priority = 2)
     public void validLogin() {
         login = home.clickFormAuthentication();
         login.setPassword("SuperSecretPassword!");
         login.setUserName("tomsmith");
-        var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
-        String expectedMessage="You logged into a secure area!";
+        var secureAreaPage = login.clickLoginBtn();
+        String actualMessage = secureAreaPage.getLoginMassega();
+        String expectedMessage = "You logged into a secure area!";
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
 }
