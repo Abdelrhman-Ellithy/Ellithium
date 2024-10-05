@@ -8,7 +8,7 @@ import org.openqa.selenium.WebDriver;
 import org.testng.*;
 
 import static Ellithium.core.reporting.internal.Colors.*;
-public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTransformer,
+public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     private long timeFinishMills;
@@ -78,22 +78,23 @@ public class CustomTestNGListener implements IAlterSuiteListener, IAnnotationTra
     public void onExecutionStart() {
         GeneralHandler.solveVersion();
         timeStartMills = System.currentTimeMillis();
-        logsUtils.info(BLUE + "----------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- Ellithium  Engine Setup  -------------" + RESET);
-        logsUtils.info(BLUE + "----------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "---------------------------------------------" + RESET);
+        logsUtils.info(CYAN + "------- Ellithium  Engine Setup -------------" + RESET);
+        logsUtils.info(BLUE + "---------------------------------------------" + RESET);
         AllureHelper.deleteAllureResultsDir();
     }
     @Override
     public void onExecutionFinish() {
         timeFinishMills = System.currentTimeMillis();
-        logsUtils.info(BLUE + "-------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- Ellithium  Engine TearDown  -------" + RESET);
-        logsUtils.info(BLUE + "-------------------------------------------" + RESET);
+        logsUtils.info(BLUE + "------------------------------------------" + RESET);
+        logsUtils.info(CYAN + "------- Ellithium  Engine TearDown -------" + RESET);
+        logsUtils.info(BLUE + "------------------------------------------" + RESET);
         long totalExecutionTime = (timeFinishMills - timeStartMills);
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
         GeneralHandler.attachAndOpen();
+        GeneralHandler.sendReportAfterExecution();
     }
 }

@@ -11,14 +11,19 @@ public class ConfigContext {
     private static String privateMode;
     private static String sandboxMode;
     private static String webSecurityMode;
+    private static String reportPath;
     private static final String logFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties" + File.separator + "default" + File.separator + "log4j2";
+            "properties"  + File.separator + "log4j2";
 
     private static final String configFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties" + File.separator + "default" + File.separator + "config";
+            "properties"  + File.separator + "config";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties" + File.separator + "default" + File.separator + "allure";
+            "properties"  + File.separator + "allure";
+    private static final String emailFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+            "properties" + File.separator + "email";
 
+    private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+            "properties" + File.separator;
     public static String getEllithiumRepoPath() {
         return System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
                 + File.separator + "io" + File.separator + "github" + File.separator+"abdelrhman-ellithy"+ File.separator + "ellithium";
@@ -26,8 +31,6 @@ public class ConfigContext {
     public static String getBasePropertyFolderPath() {
         return basePropertyFolderPath;
     }
-    private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties" + File.separator + "default" + File.separator;
     public static String getConfigFilePath() {
         return configFilePath;
     }
@@ -36,6 +39,9 @@ public class ConfigContext {
     }
     public static String getLogFilePath() {
         return logFilePath;
+    }
+    public static String getEmailFilePath() {
+        return emailFilePath;
     }
     private static boolean lastUIFailed=false;
     private static File lastScreenShot;
@@ -89,5 +95,11 @@ public class ConfigContext {
 
     public static String getWebSecurityMode() {
         return webSecurityMode;
+    }
+    public static String getReportPath() {
+        return reportPath;
+    }
+    public static void setReportPath(String reportPath) {
+        ConfigContext.reportPath = reportPath;
     }
 }

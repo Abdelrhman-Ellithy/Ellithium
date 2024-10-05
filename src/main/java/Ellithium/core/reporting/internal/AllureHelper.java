@@ -29,7 +29,9 @@ public class AllureHelper {
                 String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator;
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
-                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
+                String reportName="Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp();
+                File renamedFile = new File(reportPath.concat(File.separator + reportName + ".html"));
+                ConfigContext.setReportPath(renamedFile.getPath());
                 String fileName=renamedFile.getPath();
                 if (indexFile.exists()) {
                     indexFile.renameTo(renamedFile);
