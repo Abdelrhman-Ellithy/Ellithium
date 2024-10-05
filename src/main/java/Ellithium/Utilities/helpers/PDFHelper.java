@@ -7,8 +7,6 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.text.PDFTextStripper;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -17,7 +15,6 @@ public class PDFHelper {
 
     // Method to read text from a PDF file
     public static String readPdf(String filePath) {
-        Allure.step("Reading PDF file: " + filePath, Status.PASSED);
         File file = new File(filePath + ".pdf");
         String textContent = "";
 
@@ -34,9 +31,7 @@ public class PDFHelper {
 
     // Method to write a list of strings into a PDF file
     public static void writePdf(String filePath, List<String> content) {
-        Allure.step("Writing content to PDF file: " + filePath, Status.PASSED);
         File file = new File(filePath + ".pdf");
-
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
             document.addPage(page);
@@ -64,7 +59,6 @@ public class PDFHelper {
 
     // Method to append text to an existing PDF file
     public static void appendToPdf(String filePath, List<String> content) {
-        Allure.step("Appending content to PDF file: " + filePath, Status.PASSED);
         File file = new File(filePath + ".pdf");
 
         try (PDDocument document = PDDocument.load(file)) {

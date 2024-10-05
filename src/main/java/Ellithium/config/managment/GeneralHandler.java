@@ -4,6 +4,7 @@ import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
+import Ellithium.core.reporting.EmailReporter;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
@@ -57,8 +58,7 @@ public class GeneralHandler implements TestLifecycleListener {
         );
         File logFile = new File(logFilePath);
         if (!logFile.exists()) {
-            logsUtils.error("Log file not found at: " + logFilePath);
-            Allure.step("Log file not found: " + logFilePath, Status.FAILED);
+            Reporter.log("Log file not found at: ",LogLevel.ERROR, logFilePath);
             return;
         }
         try (FileInputStream fis = new FileInputStream(logFile)) {
@@ -76,8 +76,7 @@ public class GeneralHandler implements TestLifecycleListener {
             Allure.getLifecycle().writeTestCase(uuid);  // Write the test case in the Allure report
             logsUtils.info("Log file successfully attached to the Allure report.");
         } catch (IOException e) {
-            logsUtils.logException(e);
-            Allure.step("Failed to attach log file: " + e.getMessage(), Status.FAILED);
+            Reporter.log("Failed to attach log file: ",LogLevel.ERROR, e.getMessage());
         }
         AllureHelper.allureOpen();
     }
@@ -102,6 +101,19 @@ public class GeneralHandler implements TestLifecycleListener {
             Reporter.log("You Are Using Old Version of Ellithium Version: "+currentVersion,
                             LogLevel.INFO_RED,
                     " You Need To update to the latest Version: "+latestVersion);
+        }
+    }
+    public static void sendReportAfterExecution(){
+        String openFlag=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"sendEmailAfterExecution");
+        if(openFlag.equalsIgnoreCase("true")){
+            String username=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.username");
+            String password=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.password");
+            String host=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"smtp.host");
+            String port=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"smtp.port");
+            String subject=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.subject");
+            String recipientEmail=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"recipient.email");
+            EmailReporter emailReporter=new EmailReporter(host,port,username,password,recipientEmail,subject,ConfigContext.getReportPath());
+            emailReporter.sendReport();
         }
     }
 }

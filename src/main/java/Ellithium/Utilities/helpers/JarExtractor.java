@@ -33,7 +33,7 @@ public class JarExtractor {
         }
     }
 
-    public static void extractFileFromJar(File jarFile, String filePathInJar, File outputFile) throws IOException {
+    public static void extractFileFromJar(File jarFile, String filePathInJar, File outputFile) {
         try (JarFile jar = new JarFile(jarFile)) {
             JarEntry entry = jar.getJarEntry(filePathInJar);
             if (entry != null) {

@@ -2,6 +2,7 @@ package Ellithium.Utilities.browser;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
+import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.Reporter;
@@ -24,7 +25,6 @@ public class DriverActions {
     private static int defaultPollingTime=500;
     private static boolean defaultTimeoutGotFlag=false;
     private static boolean defaultPollingTimeGotFlag=false;
-    private static final String configPath="src" + File.separator + "main" + File.separator + "resources" + File.separator + "properties" + File.separator + "default" + File.separator + "config";
     public static void sendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -1043,7 +1043,7 @@ public class DriverActions {
     // Initialize default timeout from properties file
     private static void initTimeout() {
         try {
-            String timeout = PropertyHelper.getDataFromProperties(configPath, "defaultElementWaitTimeout");
+            String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementWaitTimeout");
             defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
             logsUtils.logException(e);
@@ -1053,7 +1053,7 @@ public class DriverActions {
     // Initialize default polling time from properties file
     private static void initPolling() {
         try {
-            String polling = PropertyHelper.getDataFromProperties(configPath, "defaultElementPollingTime");
+            String polling = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementPollingTime");
             defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
             logsUtils.logException(e);

@@ -1,4 +1,5 @@
 package Ellithium.core.driver;
+
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -11,7 +12,6 @@ import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.v85.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
-
 import java.time.Duration;
 import static Ellithium.core.reporting.internal.Colors.*;
 
@@ -19,7 +19,6 @@ public class DriverFactory {
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     private static boolean defaultTimeoutGotFlag=false;
     private static int defaultTimeout= 5;
-
     public static WebDriver getNewDriver() {
         setUp();
         return driver.get();  // Get WebDriver for the current thread
@@ -47,8 +46,7 @@ public class DriverFactory {
                     devTools=((ChromeDriver)localDriver).getDevTools();
                     logDevTools(devTools);
                     break;
-                default:
-                    break;
+                default: break;
             }
         }
         if(!defaultTimeoutGotFlag){

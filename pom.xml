@@ -10,9 +10,7 @@
     <description>
         Ellithium is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process.
         Leveraging tools such as TestNG, Cucumber, Rest Assured, and others, it provides an end-to-end solution for automated testing.
-        With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting,
-        Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
-
+        With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reportingز
         !! Note !! it won't work without copying exec plugin from the user guide !!
     </description>
     <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
@@ -100,6 +98,7 @@
         <mavenDeployPluginVersion>3.1.2</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>2.29.0</AllureJVMVersion>
+        <mailVersion>1.6.2</mailVersion>
     </properties>
     <repositories>
         <repository>
@@ -233,6 +232,17 @@
             <artifactId>central-publishing-maven-plugin</artifactId>
             <version>0.6.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>${mailVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -363,49 +373,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <!-- **Maven Resources Plugin** to clear directories before test -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${mavenResourcesfirePluginVersion}</version>
-                <executions>
-                    <execution>
-                        <id>clear-allure-results</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>resources</goal>
-                        </goals>
-                        <configuration>
-                            <overwrite>true</overwrite>
-                            <resources>
-                                <resource>
-                                    <directory>Test-Output/Reports/Allure/allure-results</directory>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                    <excludes>
-                                        <exclude>**/*.gitkeep</exclude>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version> <!-- Use a stable version -->
-                <configuration>
-                    <!-- Specify the listener here -->
-                    <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>Ellithium.core.execution.listener.CustomTestNGListener</value>
-                        </property>
-                    </properties>
-                </configuration>
             </plugin>
         </plugins>
         <resources>

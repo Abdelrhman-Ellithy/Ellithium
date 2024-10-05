@@ -20,7 +20,10 @@ public class StartUpLoader {
                         ScreenShotPath,
                         allurePath,
                         configPath,
-                        logPath ;
+                        logPath,
+                        allureListenerPath,
+                        emailFilePath
+    ;
 
     public static void main(String[] args) throws IOException {
         basePath=ConfigContext.getBasePropertyFolderPath();
@@ -29,19 +32,21 @@ public class StartUpLoader {
         allurePath = ConfigContext.getAllureFilePath()+ ".properties";
         configPath = ConfigContext.getConfigFilePath()+ ".properties";
         logPath = ConfigContext.getLogFilePath()+ ".properties";
+        emailFilePath=ConfigContext.getEmailFilePath()+ ".properties";
         System.out.println("Application started with properties initialized.");
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
+        initializePropertyFiles("email");
         TestOutputSolver();
     }
-    private static void initializePropertyFiles(String propertyFileType) throws IOException {
+    private static void initializePropertyFiles(String propertyFileType) {
         switch (propertyFileType) {
             case "allure":
                 if (!checkFileExists(allurePath)) {
                     File jarFile = findJarFile();
                     if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/default/allure.properties", new File(allurePath));
+                        extractFileFromJar(jarFile, "properties/allure.properties", new File(allurePath));
                     } else {
                         System.err.println("JAR file not found.");
                     }
@@ -51,7 +56,7 @@ public class StartUpLoader {
                 if (!checkFileExists(configPath)) {
                     File jarFile = findJarFile();
                     if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/default/config.properties", new File(configPath));
+                        extractFileFromJar(jarFile, "properties/config.properties", new File(configPath));
                     } else {
                         System.err.println("JAR file not found.");
                     }
@@ -61,7 +66,18 @@ public class StartUpLoader {
                 if (!checkFileExists(logPath)) {
                     File jarFile = findJarFile();
                     if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/default/log4j2.properties", new File(logPath));
+                        extractFileFromJar(jarFile, "properties/log4j2.properties", new File(logPath));
+                    } else {
+                        System.err.println("JAR file not found.");
+                    }
+                }
+                break;
+            case "email":
+                if (!checkFileExists(emailFilePath)) {
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        System.err.println(jarFile.getPath());
+                        extractFileFromJar(jarFile, "properties/email.properties", new File(emailFilePath));
                     } else {
                         System.err.println("JAR file not found.");
                     }
