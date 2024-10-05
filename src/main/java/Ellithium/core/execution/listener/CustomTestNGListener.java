@@ -76,12 +76,12 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onExecutionStart() {
+        AllureHelper.deleteAllureResultsDir();
         GeneralHandler.solveVersion();
-        timeStartMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup -------------" + RESET);
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);
-        AllureHelper.deleteAllureResultsDir();
+        timeStartMills = System.currentTimeMillis();
     }
     @Override
     public void onExecutionFinish() {
@@ -95,6 +95,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
         GeneralHandler.attachAndOpen();
-        GeneralHandler.sendReportAfterExecution();
+        //GeneralHandler.sendReportAfterExecution();
     }
 }

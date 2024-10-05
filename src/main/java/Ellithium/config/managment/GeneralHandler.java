@@ -76,7 +76,7 @@ public class GeneralHandler implements TestLifecycleListener {
             Allure.getLifecycle().writeTestCase(uuid);  // Write the test case in the Allure report
             logsUtils.info("Log file successfully attached to the Allure report.");
         } catch (IOException e) {
-            Reporter.log("Failed to attach log file: ",LogLevel.ERROR, e.getMessage());
+            logsUtils.error("Failed to attach log file: ");
         }
         AllureHelper.allureOpen();
     }

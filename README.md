@@ -151,9 +151,9 @@ Here is the updated **Getting Started** section formatted for your README file:
 </plugins>
 <resources>
     <resource>
-        <directory>src/main/resources/properties/default</directory>
+        <directory>src/main/resources/properties</directory>
         <includes>
-            <include>**/*.properties</include>
+            <include>**/*</include>
         </includes>
     </resource>
 </resources>
