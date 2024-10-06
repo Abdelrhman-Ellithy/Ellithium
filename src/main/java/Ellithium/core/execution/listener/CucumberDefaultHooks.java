@@ -26,7 +26,7 @@ public class CucumberDefaultHooks {
     public void ScenarioEnd(Scenario scenario) {
         switch (scenario.getStatus()) {
             case FAILED:
-                File screenShot=testFailed(DriverFactory.getCurrentDriver(),browserName,scenario.getName());
+                File screenShot=testFailed(browserName,scenario.getName());
                 attachScreenshotToReport(screenShot,screenShot.getName(),browserName,scenario.getName());
                 logsUtils.info(RED + ' ' + browserName.toUpperCase() + "[FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
                 break;

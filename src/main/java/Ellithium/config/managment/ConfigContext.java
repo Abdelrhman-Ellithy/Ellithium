@@ -43,24 +43,14 @@ public class ConfigContext {
     public static String getEmailFilePath() {
         return emailFilePath;
     }
-    private static boolean lastUIFailed=false;
-    private static File lastScreenShot;
-    public static boolean isLastUIFailed() {
-        return lastUIFailed;
-    }
 
-    public static void setLastUIFailed(boolean lastUIFailed) {
-        ConfigContext.lastUIFailed = lastUIFailed;
+    private static boolean onExecution=false;
+    public static boolean isOnExecution() {
+        return onExecution;
     }
-
-    public static File getLastScreenShot() {
-        return lastScreenShot;
+    public static void setOnExecution(boolean onExecution) {
+        ConfigContext.onExecution = onExecution;
     }
-
-    public static void setLastScreenShot(File lastScreenShot) {
-        ConfigContext.lastScreenShot = lastScreenShot;
-    }
-
     // Static method to set configuration
     public static void setConfig(String browserName, String headlessMode, String pageLoadStrategy,
                                  String privateMode, String sandboxMode, String webSecurityMode)

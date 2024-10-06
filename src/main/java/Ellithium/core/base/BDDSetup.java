@@ -20,8 +20,8 @@ import org.testng.annotations.*;
 )
 public class BDDSetup extends AbstractTestNGCucumberTests {
         @Parameters({"BrowserName","HeadlessMode","PageLoadStrategy","PrivateMode","SandboxMode", "WebSecurityMode" })
-        @BeforeTest(alwaysRun = true)
-        protected void BrowserConfig(@Optional("Chrome") String BrowserName, @Optional("false") String HeadlessMode,@Optional("Normal") String PageLoadStrategy,@Optional("True") String PrivateMode,@Optional("Sandbox") String SandboxMode,@Optional("True") String WebSecurityMode) {
+        @BeforeTest(alwaysRun = true, description = "Test Engine start")
+        protected void setUp(@Optional("Chrome") String BrowserName, @Optional("false") String HeadlessMode,@Optional("Normal") String PageLoadStrategy,@Optional("True") String PrivateMode,@Optional("Sandbox") String SandboxMode,@Optional("True") String WebSecurityMode) {
                 if(GeneralHandler.getBDDMode()){
                         ConfigContext.setConfig(BrowserName,HeadlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
                 }
@@ -39,5 +39,9 @@ public class BDDSetup extends AbstractTestNGCucumberTests {
                         Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
                         return null;
                 }
+        }
+        @AfterTest(alwaysRun = true, description = "Test Engine Finish")
+        protected void testEnd(){
+                GeneralHandler.AttachLogs();
         }
 }

@@ -360,35 +360,6 @@
                     <target>21</target>
                 </configuration>
             </plugin>
-            <!-- **Maven Resources Plugin** to clear directories before test -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${mavenResourcesfirePluginVersion}</version>
-                <executions>
-                    <execution>
-                        <id>clear-allure-results</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>resources</goal>
-                        </goals>
-                        <configuration>
-                            <overwrite>true</overwrite>
-                            <resources>
-                                <resource>
-                                    <directory>Test-Output/Reports/Allure/allure-results</directory>
-                                    <includes>
-                                        <include>**/*</include>
-                                    </includes>
-                                    <excludes>
-                                        <exclude>**/*.gitkeep</exclude>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>
@@ -409,6 +380,12 @@
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>**/*.properties</include> <!-- Include all properties files -->
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources/properties</directory>
+                <includes>
+                    <include>**/*</include> <!-- Include all properties files -->
                 </includes>
             </resource>
             <resource>

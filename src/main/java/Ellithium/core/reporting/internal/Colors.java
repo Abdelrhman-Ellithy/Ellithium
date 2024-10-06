@@ -2,7 +2,6 @@ package Ellithium.core.reporting.internal;
 
 public class Colors {
     public static final String RESET = "\u001B[0m";  // Reset to default color
-
     public static final String BLACK = "\u001B[90m";
     public static final String RED = "\u001B[91m";
     public static final String GREEN = "\u001B[92m";
