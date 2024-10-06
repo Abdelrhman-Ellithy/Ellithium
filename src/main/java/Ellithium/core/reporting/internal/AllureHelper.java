@@ -22,36 +22,30 @@ public class AllureHelper {
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
+        String lastReportPath="LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +reportPath + File.separator +" ."+ File.separator + resultsPath+File.separator;
+                String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
                 executeCommand(generateCommand);
-                File indexFile = new File(reportPath.concat(File.separator + "index.html"));
-                String reportName="Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp();
-                File renamedFile = new File(reportPath.concat(File.separator + reportName + ".html"));
-                ConfigContext.setReportPath(renamedFile.getPath());
+                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
+                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
                 String fileName=renamedFile.getPath();
                 if (indexFile.exists()) {
-                    boolean flag=false;
-                    byte cnt=0;
-                    while ((!flag)&& (cnt<5)) {
-                        flag=indexFile.renameTo(renamedFile);
-                        cnt++;
-                    }
+                    indexFile.renameTo(renamedFile);
                 }
-                else{
-                    System.err.println("index File not found");
+                File lastReportDir = new File(lastReportPath);
+                if (lastReportDir.exists()) {
+                    lastReportDir.delete();
                 }
                 String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
                 if (openFlag != null && openFlag.equalsIgnoreCase("true")){
                     String openCommand;
                     if (SystemUtils.IS_OS_WINDOWS) {
-                        openCommand = "start \"".concat(fileName).concat("\"");
-
+                        openCommand = "start ".concat(fileName);
                     } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
                         openCommand = SystemUtils.IS_OS_MAC ? "open " : "xdg-open ";
-                        openCommand.concat(" \"").concat(fileName).concat("\"");
+                        openCommand.concat(fileName);
                     } else {
                         openCommand=null;
                         logsUtils.error("Unsupported operating system.");
