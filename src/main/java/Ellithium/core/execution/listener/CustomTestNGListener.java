@@ -4,10 +4,13 @@ import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.logging.logsUtils;
-import org.openqa.selenium.WebDriver;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.Label;
 import org.testng.*;
-
+import java.io.File;
 import static Ellithium.core.reporting.internal.Colors.*;
+import static org.testng.ITestResult.FAILURE;
+
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
@@ -16,10 +19,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
             String name = result.getName();
-            WebDriver driver = DriverFactory.getCurrentDriver();
-            if (driver != null) {
-                String browserName = ConfigContext.getBrowserName().toUpperCase();
-                logsUtils.info(BLUE + "[START] TESTCASE " + browserName + "-" + name + " [STARTED]" + RESET);
+            if (DriverFactory.getCurrentDriver() != null) {
+                logsUtils.info(BLUE + "[START] TESTCASE " + ConfigContext.getBrowserName().toUpperCase() + "-" + name + " [STARTED]" + RESET);
             } else {
                 logsUtils.info(BLUE + "[START] TESTCASE " + name + " [STARTED]" + RESET);
             }
@@ -29,12 +30,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
             String name = result.getName();
-            WebDriver driver = DriverFactory.getCurrentDriver();
-            if (driver != null) {
-                String browserName = ConfigContext.getBrowserName().toUpperCase();
-                logsUtils.info(RED + "[FAILED] TESTCASE " + browserName + "-" + name + " [FAILED]" + RESET);
-                ConfigContext.setLastScreenShot(GeneralHandler.testFailed(driver,browserName,name));
-                ConfigContext.setLastUIFailed(true);
+            if (DriverFactory.getCurrentDriver() != null) {
+                logsUtils.info(RED + "[FAILED] TESTCASE " + ConfigContext.getBrowserName().toUpperCase() + "-" + name + " [FAILED]" + RESET);
             } else {
                 logsUtils.info(RED + "[FAILED] TESTCASE " + name + " [FAILED]" + RESET);
             }
@@ -68,23 +65,33 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onStart(ITestContext context) {
-        logsUtils.info(CYAN + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
+        logsUtils.info(PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
     }
     @Override
     public void onFinish(ITestContext context) {
         logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
     }
     @Override
+    public void onStart(ISuite suite) {
+        logsUtils.info(PINK + "[ SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
+    }
+    @Override
+    public void onFinish(ISuite suite) {
+        logsUtils.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
+    }
+    @Override
     public void onExecutionStart() {
-        AllureHelper.deleteAllureResultsDir();
         GeneralHandler.solveVersion();
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup -------------" + RESET);
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);
+        AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
+        ConfigContext.setOnExecution(true);
     }
     @Override
     public void onExecutionFinish() {
+        ConfigContext.setOnExecution(false);
         timeFinishMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine TearDown -------" + RESET);
@@ -94,7 +101,17 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
-        GeneralHandler.attachAndOpen();
+        AllureHelper.allureOpen();
         //GeneralHandler.sendReportAfterExecution();
+    }
+    @Override
+    public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+        if(testResult.getStatus()==FAILURE){
+        if(method.isTestMethod() && (!testResult.getName().equals("runScenario")) && (DriverFactory.getCurrentDriver()!=null)){
+                File screenShot=GeneralHandler.testFailed(ConfigContext.getBrowserName(),testResult.getName());
+                GeneralHandler.attachScreenshotToReport(screenShot, screenShot.getName(),
+                        ConfigContext.getBrowserName(),testResult.getName());
+            }
+        }
     }
 }

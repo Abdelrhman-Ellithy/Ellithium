@@ -1,12 +1,12 @@
 package Ellithium.core.reporting;
 
 import Ellithium.core.logging.LogLevel;
-
 import java.util.Properties;
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 public class EmailReporter {
     private final String smtpHost;
     private final String smtpPort;
@@ -26,40 +26,43 @@ public class EmailReporter {
         this.subject = subject;
         this.reportFilePath = reportFilePath;
     }
-    public void sendReport(){
 
+    public void sendReport() {
         Properties props = new Properties();
-        props.put("mail.smtp.host", smtpHost);
-        props.put("mail.smtp.port", smtpPort);
+        props.put("mail.smtp.host", smtpHost);  // Set SMTP server
+        props.put("mail.smtp.port", smtpPort);  // e.g., "587"
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-
+        props.put("mail.smtp.starttls.enable", "true");  // Use STARTTLS
+        props.put("mail.debug", "true");  // Enable debug output
         Session session = Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(username, password);
             }
         });
-        Message message = new MimeMessage(session);
+
         try {
+            Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
             message.setSubject(subject);
 
             MimeBodyPart messageBodyPart = new MimeBodyPart();
 
+            // Read HTML content from file
             String htmlReportContent = new String(Files.readAllBytes(Paths.get(reportFilePath)));
-
-            // Set the HTML content
-            messageBodyPart.setContent(htmlReportContent, "text/html");
+            messageBodyPart.setContent(htmlReportContent, "text/html; charset=UTF-8");
 
             Multipart multipart = new MimeMultipart();
             multipart.addBodyPart(messageBodyPart);
 
             message.setContent(multipart);
+
             Transport.send(message);
             Reporter.log("HTML Report Sent Successfully to ", LogLevel.INFO_GREEN, recipientEmail);
-        }catch (Exception e){
-            Reporter.log("Failed to Send HTML Report via Email to: ", LogLevel.ERROR, recipientEmail);
+
+        } catch (Exception e) {
+            Reporter.log("Failed to Send HTML Report via Email to: " + recipientEmail, LogLevel.ERROR);
+            Reporter.log(e.getCause().toString(), LogLevel.ERROR);
         }
     }
 }

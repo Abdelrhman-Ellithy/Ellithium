@@ -7,7 +7,6 @@ import java.util.Properties;
 
 public class PropertyHelper {
 
-    // Method to get data from a properties file using a key
     public static String getDataFromProperties(String filePath, String key) {
         Properties prop = new Properties();
         try {

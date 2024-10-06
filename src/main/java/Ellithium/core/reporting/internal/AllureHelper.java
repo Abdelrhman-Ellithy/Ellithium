@@ -19,40 +19,45 @@ public class AllureHelper {
     private static File allureBinaryDirectory;
     public static void allureOpen() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
-        String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+        String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
-        String lastReportPath="LastReport";
-        if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
+        if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator;
+                String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +reportPath + File.separator +" ."+ File.separator + resultsPath+File.separator;
                 executeCommand(generateCommand);
-                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
+                File indexFile = new File(reportPath.concat(File.separator + "index.html"));
                 String reportName="Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp();
                 File renamedFile = new File(reportPath.concat(File.separator + reportName + ".html"));
                 ConfigContext.setReportPath(renamedFile.getPath());
                 String fileName=renamedFile.getPath();
                 if (indexFile.exists()) {
-                    indexFile.renameTo(renamedFile);
+                    boolean flag=false;
+                    byte cnt=0;
+                    while ((!flag)&& (cnt<5)) {
+                        flag=indexFile.renameTo(renamedFile);
+                        cnt++;
+                    }
                 }
-                // Delete the lastReportPath folder after renaming the report
-                File lastReportDir = new File(lastReportPath);
-                if (lastReportDir.exists()) {
-                    lastReportDir.delete();
+                else{
+                    System.err.println("index File not found");
                 }
-                String openCommand;
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    openCommand = "start ".concat(fileName);
-                } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
-                    // Unix-based systems use 'mv' for renaming and 'open' or 'xdg-open' for opening files
-                    openCommand = SystemUtils.IS_OS_MAC ? "open " : "xdg-open ";
-                    openCommand.concat(fileName);
-                } else {
-                    openCommand=null;
-                    logsUtils.error("Unsupported operating system.");
+                String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+                if (openFlag != null && openFlag.equalsIgnoreCase("true")){
+                    String openCommand;
+                    if (SystemUtils.IS_OS_WINDOWS) {
+                        openCommand = "start \"".concat(fileName).concat("\"");
+
+                    } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
+                        openCommand = SystemUtils.IS_OS_MAC ? "open " : "xdg-open ";
+                        openCommand.concat(" \"").concat(fileName).concat("\"");
+                    } else {
+                        openCommand=null;
+                        logsUtils.error("Unsupported operating system.");
+                    }
+                    executeCommand(openCommand);
                 }
-                executeCommand(openCommand);
             } else {
                 logsUtils.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
             }
