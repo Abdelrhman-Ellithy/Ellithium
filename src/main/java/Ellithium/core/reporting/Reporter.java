@@ -1,10 +1,15 @@
 package Ellithium.core.reporting;
 import Ellithium.config.managment.ConfigContext;
+import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.internal.Colors;
 import Ellithium.core.logging.LogLevel;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.apache.xmlbeans.impl.xb.xsdschema.All;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 import static Ellithium.core.logging.logsUtils.*;
 
@@ -65,4 +70,12 @@ public class Reporter {
             log(message,logLevel,"");
     }
 
+    public static void attachScreenshotToReport(File screenshot, String name, String browserName, String testName){
+        try (FileInputStream fis = new FileInputStream(screenshot)) {
+            Allure.description(browserName.toUpperCase() + "-" + testName + " FAILED");
+            Allure.addAttachment(name, "image/png", fis, ".png");
+        }catch (IOException e) {
+            logsUtils.logException(e);
+        }
+    }
 }

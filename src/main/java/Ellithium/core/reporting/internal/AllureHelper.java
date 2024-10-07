@@ -26,7 +26,7 @@ public class AllureHelper {
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate --single-file -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
+                String generateCommand = allureBinaryPath + "allure generate --single-file --name \"Test Report\" -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
@@ -126,13 +126,10 @@ public class AllureHelper {
         File allureResultsFolder = new File(resultsPath);
         if (allureResultsFolder.exists()) {
             try {
-                // List all files in the directory and delete them
                 File[] files = allureResultsFolder.listFiles();
                 if (files != null) {
                     for (File file : files) {
-                        // Use delete to remove files or directories
                         if (file.isDirectory()) {
-                            // Recursively delete subdirectories
                             deleteDirectory(file);
                         } else {
                             Files.deleteIfExists(file.toPath());

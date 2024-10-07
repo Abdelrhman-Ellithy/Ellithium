@@ -398,6 +398,5 @@
                 </includes>
             </resource>
         </resources>
-        <!-- Maven Surefire Plugin for Unit Tests -->
     </build>
 </project>

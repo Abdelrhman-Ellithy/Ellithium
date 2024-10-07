@@ -18,6 +18,11 @@ public class TestDataGenerator {
         logsUtils.info(Colors.BLUE+"Getting Timestamp: " + timestamp+Colors.RESET);
         return timestamp;
     }
+    public static String getDayDateStamp() {
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        logsUtils.info(Colors.BLUE+"Getting Timestamp: " + timestamp+Colors.RESET);
+        return timestamp;
+    }
     public static String getRandomFirstName() {
         logsUtils.info(Colors.PURPLE + "Generating random FirstName" + Colors.RESET);
         return faker.name().firstName();

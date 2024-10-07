@@ -169,7 +169,7 @@ public class DriverSetUp {
             edgeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
         if ("true".equalsIgnoreCase(privateMode)) {
-            edgeOptions.addArguments("--inprivate");
+            edgeOptions.addArguments("--inPrivate");
         }
         if ("false".equalsIgnoreCase(sandboxMode)) {
             edgeOptions.addArguments("--no-sandbox");
