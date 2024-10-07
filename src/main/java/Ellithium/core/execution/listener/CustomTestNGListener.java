@@ -1,5 +1,6 @@
 package Ellithium.core.execution.listener;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
@@ -101,7 +102,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
-        logsUtils.info(CYAN + "\nTotal Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills\n" + RESET);
+        logsUtils.info(CYAN + "Total Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills" + RESET);
         AllureHelper.allureOpen();
         //GeneralHandler.sendReportAfterExecution();
     }
@@ -110,7 +111,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         if(testResult.getStatus()==FAILURE){
         if(method.isTestMethod() && (!testResult.getName().equals("runScenario")) && (DriverFactory.getCurrentDriver()!=null)){
                 File screenShot=GeneralHandler.testFailed(ConfigContext.getBrowserName(),testResult.getName());
-                GeneralHandler.attachScreenshotToReport(screenShot, screenShot.getName(),
+                Reporter.attachScreenshotToReport(screenShot, screenShot.getName(),
                         ConfigContext.getBrowserName(),testResult.getName());
             }
         }

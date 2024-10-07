@@ -24,6 +24,16 @@ public class ConfigContext {
 
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
+
+    private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker";
+    private static final String checkerFolderPath="Test-Output" + File.separator + "UpdateChecker";
+    public static String getCheckerFilePath() {
+        return checkerFilePath;
+    }
+    public static String getCheckerFolderPath() {
+        return checkerFolderPath;
+    }
+
     public static String getEllithiumRepoPath() {
         return System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
                 + File.separator + "io" + File.separator + "github" + File.separator+"abdelrhman-ellithy"+ File.separator + "ellithium";

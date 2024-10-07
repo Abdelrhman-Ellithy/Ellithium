@@ -1,5 +1,4 @@
 package Ellithium.core.execution.listener;
-import static Ellithium.config.managment.GeneralHandler.attachScreenshotToReport;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static Ellithium.config.managment.GeneralHandler.testFailed;
 
@@ -7,6 +6,7 @@ import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.logsUtils;
+import Ellithium.core.reporting.Reporter;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
@@ -27,7 +27,7 @@ public class CucumberDefaultHooks {
         switch (scenario.getStatus()) {
             case FAILED:
                 File screenShot=testFailed(browserName,scenario.getName());
-                attachScreenshotToReport(screenShot,screenShot.getName(),browserName,scenario.getName());
+                Reporter.attachScreenshotToReport(screenShot,screenShot.getName(),browserName,scenario.getName());
                 logsUtils.info(RED + ' ' + browserName.toUpperCase() + "[FAILED] Scenario " + scenario.getName() + " [FAILED]" + RESET);
                 break;
             case PASSED:

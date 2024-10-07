@@ -1,5 +1,6 @@
 package Ellithium.config.managment;
 
+import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.core.driver.DriverFactory;
@@ -15,6 +16,8 @@ import org.openqa.selenium.TakesScreenshot;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import io.restassured.RestAssured;
 
 public class GeneralHandler implements TestLifecycleListener {
@@ -32,14 +35,7 @@ public class GeneralHandler implements TestLifecycleListener {
             return null;
         }
     }
-    public static void attachScreenshotToReport(File screenshot,String name, String browserName, String testName){
-        try (FileInputStream fis = new FileInputStream(screenshot)) {
-            Allure.description(browserName.toUpperCase() + "-" + testName + " FAILED");
-            Allure.addAttachment(name, "image/png", fis, ".png");
-        }catch (IOException e) {
-            logsUtils.logException(e);
-        }
-    }
+
     public static void AttachLogs(){
         String logFilePath = PropertyHelper.getDataFromProperties(
                 ConfigContext.getLogFilePath(),
@@ -71,6 +67,14 @@ public class GeneralHandler implements TestLifecycleListener {
         }
         return BDDMode;
     }
+    public static boolean getNonBDDMode(){
+        if(flagReaded.equals(false)){
+            String mode=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"runMode");
+            BDDMode=mode.equalsIgnoreCase("NonBDD");
+            flagReaded=true;
+        }
+        return BDDMode;
+    }
     public static String getLatestVersion(){
         return RestAssured.given().
                 baseUri("https://api.github.com/").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
@@ -78,12 +82,18 @@ public class GeneralHandler implements TestLifecycleListener {
                 .thenReturn().body().jsonPath().getString("name");
     }
     public static void solveVersion(){
-        String latestVersion=getLatestVersion();
-        String currentVersion=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"EllithiumVersion");
-        if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
-            Reporter.log("You Are Using Old Version of Ellithium Version: "+currentVersion,
-                            LogLevel.INFO_RED,
-                    " You Need To update to the latest Version: "+latestVersion);
+        String path=ConfigContext.getCheckerFilePath();
+        String Date=TestDataGenerator.getDayDateStamp();
+        String currentDate= JsonHelper.getJsonKeyValue(path,"LastRunDate");
+        if(currentDate==null||!(currentDate.equalsIgnoreCase(Date))) {
+            JsonHelper.setJsonKeyValue(path,"LastRunDate",Date);
+            String latestVersion=getLatestVersion();
+            String currentVersion=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"EllithiumVersion");
+            if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
+                Reporter.log("You Are Using Old Version of Ellithium Version: "+currentVersion,
+                        LogLevel.INFO_RED,
+                        " You Need To update to the latest Version: "+latestVersion);
+            }
         }
     }
     public static void sendReportAfterExecution(){

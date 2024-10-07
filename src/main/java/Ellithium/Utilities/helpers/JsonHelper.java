@@ -38,7 +38,6 @@ public class JsonHelper {
 
                 data.add(recordMap);
             }
-
             log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
 
         } catch (FileNotFoundException e) {
@@ -46,9 +45,7 @@ public class JsonHelper {
             throw new RuntimeException(e);
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
         }
-
         return data;
     }
 
@@ -64,7 +61,6 @@ public class JsonHelper {
                 }
             } catch (IOException e) {
                 log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                throw new RuntimeException(e);
             }
         }
 
@@ -83,36 +79,34 @@ public class JsonHelper {
 
         } catch (IOException e) {
             log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
         }
     }
 
     // Method to get a value for a specific key from JSON file
     public static String getJsonKeyValue(String filePath, String key) {
         File jsonFile = new File(filePath + ".json");
-
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException("JSON file not found: " + filePath);
         }
-
         log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
-
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
             log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
-
-            return jsonObject.get(key).getAsString();
-
+            var value= jsonObject.get(key);
+            if(value!=null) {
+                return value.getAsString();
+            }
+            else {
+                return null;
+            }
         } catch (FileNotFoundException e) {
             log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
+            return null;
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
+            return null;
         }
     }
-
     // Method to set or update a specific key-value pair in JSON file
     public static void setJsonKeyValue(String filePath, String key, String value) {
         File jsonFile = new File(filePath + ".json");
@@ -124,12 +118,9 @@ public class JsonHelper {
                 }
             } catch (IOException e) {
                 log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                throw new RuntimeException(e);
             }
         }
-
         log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
-
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
             jsonObject.addProperty(key, value);
@@ -141,7 +132,6 @@ public class JsonHelper {
 
         } catch (IOException e) {
             log("Failed to update JSON file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
         }
     }
 }

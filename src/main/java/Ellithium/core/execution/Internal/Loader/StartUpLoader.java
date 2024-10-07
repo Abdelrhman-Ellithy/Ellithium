@@ -2,7 +2,6 @@ package Ellithium.core.execution.Internal.Loader;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
-
 import static Ellithium.Utilities.helpers.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;
@@ -21,13 +20,15 @@ public class StartUpLoader {
                         allurePath,
                         configPath,
                         logPath,
-                        allureListenerPath,
+                        checkerFilePath,
+                        checkerFolderPath,
                         emailFilePath
     ;
-
     public static void main(String[] args) throws IOException {
         basePath=ConfigContext.getBasePropertyFolderPath();
         testPath = "src" + File.separator + "test" + File.separator + "resources" + File.separator + "TestData";
+        checkerFilePath=ConfigContext.getCheckerFilePath()+".json";
+        checkerFolderPath=ConfigContext.getCheckerFolderPath();
         ScreenShotPath =  "Test-Output" + File.separator + "ScreenShots" + File.separator + "Failed" ;
         allurePath = ConfigContext.getAllureFilePath()+ ".properties";
         configPath = ConfigContext.getConfigFilePath()+ ".properties";
@@ -92,7 +93,6 @@ public class StartUpLoader {
         File file = new File(filePath);
         return file.exists();
     }
-
     public static File findJarFile() {
         String repoPath = ConfigContext.getEllithiumRepoPath();
         File repoDir = new File(repoPath);
@@ -108,7 +108,6 @@ public class StartUpLoader {
         }
         return null;
     }
-
     /**
      * Compare two version strings in the format 'X.X.X' or similar.
      * This method returns a negative integer, zero, or a positive integer
@@ -174,6 +173,21 @@ public class StartUpLoader {
         if (!checkFileExists(testPath)) {
             File testDataDirectory = new File(testPath);
             testDataDirectory.mkdirs();
+        }
+        if(!checkFileExists(checkerFolderPath)){
+            File checkerDirectory = new File(checkerFolderPath);
+            checkerDirectory.mkdirs();
+        }
+        if (!checkFileExists(checkerFilePath)) {
+            File checkerFile = new File(checkerFilePath);
+            try {
+                checkerFile.createNewFile();
+                Files.write(checkerFile.toPath(), ("{\n" +
+                        "  \"LastDateRun\": null\n }"
+                        ).getBytes());
+            }catch (Exception e){
+                System.err.println(e.getMessage());
+            }
         }
         String logFolderPath = PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.basePath");
         String logFilePath = logFolderPath.concat(File.separator)
