@@ -10,13 +10,13 @@ import org.testng.annotations.BeforeClass;
 public class BaseTests extends NonBDDSetup {
    protected WebDriver driver;
    protected HomPage home;
-//    @BeforeClass
-//    public void Setup(){
-//        driver= DriverFactory.getNewDriver();
-//        home=new HomPage(driver);
-//    }
-//    @AfterClass
-//    public void tareDown(){
-//        DriverFactory.quitDriver();
-//    }
+    @BeforeClass
+    public void Setup(){
+        driver= DriverFactory.getNewDriver();
+        home=new HomPage(driver);
+    }
+    @AfterClass
+    public void tareDown(){
+        DriverFactory.quitDriver();
+    }
 }

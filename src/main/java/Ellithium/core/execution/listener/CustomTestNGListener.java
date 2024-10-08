@@ -20,49 +20,25 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            String name = result.getName();
-            if (DriverFactory.getCurrentDriver() != null) {
-                logsUtils.info(BLUE + "[START] TESTCASE " + ConfigContext.getBrowserName().toUpperCase() + "-" + name + " [STARTED]" + RESET);
-            } else {
-                logsUtils.info(BLUE + "[START] TESTCASE " + name + " [STARTED]" + RESET);
-            }
+                logsUtils.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }
     @Override
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            String name = result.getName();
-            if (DriverFactory.getCurrentDriver() != null) {
-                logsUtils.info(RED + "[FAILED] TESTCASE " + ConfigContext.getBrowserName().toUpperCase() + "-" + name + " [FAILED]" + RESET);
-            } else {
-                logsUtils.info(RED + "[FAILED] TESTCASE " + name + " [FAILED]" + RESET);
-            }
+                logsUtils.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
     @Override
     public void onTestSuccess(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            String name=result.getName();
-            if(DriverFactory.getCurrentDriver()!=null){
-                String browserName=ConfigContext.getBrowserName().toUpperCase();
-                logsUtils.info(GREEN + "[PASSED] TESTCASE "+browserName+"-"+name+" [PASSED]" + RESET);
+                logsUtils.info(BLUE + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
             }
-            else{
-                logsUtils.info(BLUE + "[PASSED] TESTCASE " +name+" [PASSED]" + RESET);
-            }
-        }
     }
     @Override
     public void onTestSkipped(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-            String name=result.getName();
-            if(DriverFactory.getCurrentDriver()!=null){
-                String browserName=ConfigContext.getBrowserName().toUpperCase();
-                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +browserName+"-"+name+" [SKIPPED]" + RESET);
-            }
-            else{
-                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +name+" [SKIPPED]" + RESET);
-            }
+                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
         }
     }
     @Override

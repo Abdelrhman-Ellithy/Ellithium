@@ -19,8 +19,6 @@ public class ConfigContext {
             "properties"  + File.separator + "config";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "allure";
-    private static final String emailFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties" + File.separator + "email";
 
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
@@ -50,10 +48,6 @@ public class ConfigContext {
     public static String getLogFilePath() {
         return logFilePath;
     }
-    public static String getEmailFilePath() {
-        return emailFilePath;
-    }
-
     private static boolean onExecution=false;
     public static boolean isOnExecution() {
         return onExecution;

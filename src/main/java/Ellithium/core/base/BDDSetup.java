@@ -8,14 +8,14 @@ import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.annotations.*;
-
 @Listeners({CustomTestNGListener.class, AllureTestNg.class})
 @CucumberOptions(
         glue = {"Ellithium.core.execution.listener"},
         plugin = {
                 "pretty",
                 "html:Test-Output/Reports/Cucumber/cucumber.html",
-                "json:Test-Output/Reports/Cucumber/cucumber.json"
+                "json:Test-Output/Reports/Cucumber/cucumber.json",
+                "Ellithium.core.execution.listener.CucumberListener"
         }
 )
 public class BDDSetup extends AbstractTestNGCucumberTests {
@@ -39,9 +39,5 @@ public class BDDSetup extends AbstractTestNGCucumberTests {
                         Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
                         return null;
                 }
-        }
-        @AfterTest(alwaysRun = true, description = "Test Engine Finish")
-        protected void testEnd(){
-                GeneralHandler.AttachLogs();
         }
 }
