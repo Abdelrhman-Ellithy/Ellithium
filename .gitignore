@@ -5,9 +5,14 @@ target/*
 
 # Test output directories
 TestNGRunner.xml
-Test-Output/Reports/
-Test-Output/Logs/
-Test-Output/ScreenShots/
+
+Test-Output/Reports/Allure/allure-report/*
+Test-Output/Reports/Allure/allure-results/*
+Test-Output/Reports/Cucumber/*
+Test-Output/Logs/*
+Test-Output/ScreenShots/Failed/*
+Test-Output/UpdateChecker/*
+
 Ellithium.pptx
 
 
