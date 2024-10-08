@@ -80,7 +80,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         logsUtils.info(CYAN + "Total Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills" + RESET);
         AllureHelper.allureOpen();
-        //GeneralHandler.sendReportAfterExecution();
     }
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
