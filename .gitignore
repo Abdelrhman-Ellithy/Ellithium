@@ -6,15 +6,21 @@ target/*
 # Test output directories
 TestNGRunner.xml
 
-Test-Output/Reports/Allure/allure-report/
-Test-Output/Reports/Allure/allure-results/
-Test-Output/Reports/Cucumber/
-Test-Output/Logs/
-Test-Output/ScreenShots/Failed/
-Test-Output/UpdateChecker/
+Test-Output/Reports/Allure/allure-report/*
+Test-Output/Reports/Allure/allure-results/*
+Test-Output/Reports/Cucumber/*
+Test-Output/Logs/*
+Test-Output/ScreenShots/Failed/*
+Test-Output/UpdateChecker/*
 Ellithium.pptx
 
-
+# Allow the folders to be tracked
+!Test-Output/Reports/Allure/allure-report/.gitkeep
+!Test-Output/Reports/Allure/allure-results/.gitkeep
+!Test-Output/Reports/Cucumber/.gitkeep
+!Test-Output/Logs/.gitkeep
+!Test-Output/ScreenShots/Failed/.gitkeep
+!Test-Output/UpdateChecker/.gitkeep
 ### IntelliJ IDEA ###
 .idea/
 *.iml
