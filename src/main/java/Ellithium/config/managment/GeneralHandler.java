@@ -99,20 +99,6 @@ public class GeneralHandler implements TestLifecycleListener {
             }
         }
     }
-    public static void sendReportAfterExecution(){
-        String openFlag=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"sendEmailAfterExecution");
-        if(openFlag.equalsIgnoreCase("true")){
-            String username=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.username");
-            String password=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.password");
-            String host=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"smtp.host");
-            String port=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"smtp.port");
-            String subject=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"email.subject");
-            String recipientEmail=PropertyHelper.getDataFromProperties(ConfigContext.getEmailFilePath(),"recipient.email");
-            EmailReporter emailReporter=new EmailReporter(host,port,username,password,recipientEmail,subject,ConfigContext.getReportPath());
-            Reporter.log("Report Path", LogLevel.INFO_BLUE,ConfigContext.getReportPath());
-            emailReporter.sendReport();
-        }
-    }
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
         parameters.add(new io.qameta.allure.model.Parameter().setName("BrowserName").setValue(ConfigContext.getBrowserName()));
