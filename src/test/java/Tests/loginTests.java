@@ -14,23 +14,23 @@ public class loginTests extends BaseTests {
         };
     }
     LoginPage login;
-//    @Test(priority = 1, dataProvider = "invalidLoginData")
-//    public void invalidLogin(String username, String password, String expectedMessage){
-//        login =home.clickFormAuthentication();
-//        login.setUserName(username);
-//        login.setPassword(password);
-//        var secureAreaPage=login.clickLoginBtn();
-//        String actualMessage=secureAreaPage.getLoginMassega();
-//        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
-//    }
-//    @Test(priority = 2)
-//    public void validLogin() {
-//        login = home.clickFormAuthentication();
-//        login.setPassword("SuperSecretPassword!");
-//        login.setUserName("tomsmith");
-//        var secureAreaPage=login.clickLoginBtn();
-//        String actualMessage=secureAreaPage.getLoginMassega();
-//        String expectedMessage="You logged into a secure area!";
-//        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
-//    }
+    @Test(priority = 1, dataProvider = "invalidLoginData")
+    public void invalidLogin(String username, String password, String expectedMessage){
+        login =home.clickFormAuthentication();
+        login.setUserName(username);
+        login.setPassword(password);
+        var secureAreaPage=login.clickLoginBtn();
+        String actualMessage=secureAreaPage.getLoginMassega();
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+    }
+    @Test(priority = 2)
+    public void validLogin() {
+        login = home.clickFormAuthentication();
+        login.setPassword("SuperSecretPassword!");
+        login.setUserName("tomsmith");
+        var secureAreaPage=login.clickLoginBtn();
+        String actualMessage=secureAreaPage.getLoginMassega();
+        String expectedMessage="You logged into a secure area!";
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+    }
 }

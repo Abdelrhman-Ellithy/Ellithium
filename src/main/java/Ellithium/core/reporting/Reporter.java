@@ -4,12 +4,14 @@ import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.internal.Colors;
 import Ellithium.core.logging.LogLevel;
 import io.qameta.allure.Allure;
+import io.qameta.allure.model.Parameter;
 import io.qameta.allure.model.Status;
 import org.apache.xmlbeans.impl.xb.xsdschema.All;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 
 import static Ellithium.core.logging.logsUtils.*;
 
@@ -77,5 +79,25 @@ public class Reporter {
         }catch (IOException e) {
             logsUtils.logException(e);
         }
+    }
+    public static void setTestCaseName(String Name) {
+        Allure.getLifecycle().updateTestCase(testResult -> testResult.setName(Name));
+    }
+    public static void setTestCaseDescription(String description) {
+        Allure.getLifecycle().updateTestCase(testResult -> testResult.setDescriptionHtml(description));
+    }
+    public static void setStepStatus(String uuid,Status status) {
+        Allure.getLifecycle().updateStep(uuid, stepResult -> stepResult.setStatus(status));
+    }
+    public static void setStepName(String name) {
+        Allure.getLifecycle().updateStep(stepResult -> stepResult.setName(name));
+    }
+    public static void setHookName(String name) {
+        Allure.getLifecycle().updateFixture(fixtureResult -> fixtureResult.setName(name));
+    }
+    public static void addParams(List<Parameter>parameters) {
+        Allure.getLifecycle().updateTestCase(testResult ->{
+            testResult.setParameters(parameters);
+        });
     }
 }

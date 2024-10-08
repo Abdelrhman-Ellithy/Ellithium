@@ -21,8 +21,7 @@ public class StartUpLoader {
                         configPath,
                         logPath,
                         checkerFilePath,
-                        checkerFolderPath,
-                        emailFilePath
+                        checkerFolderPath
     ;
     public static void main(String[] args) throws IOException {
         basePath=ConfigContext.getBasePropertyFolderPath();
@@ -33,12 +32,10 @@ public class StartUpLoader {
         allurePath = ConfigContext.getAllureFilePath()+ ".properties";
         configPath = ConfigContext.getConfigFilePath()+ ".properties";
         logPath = ConfigContext.getLogFilePath()+ ".properties";
-        emailFilePath=ConfigContext.getEmailFilePath()+ ".properties";
         System.out.println("Application started with properties initialized.");
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
-        initializePropertyFiles("email");
         TestOutputSolver();
     }
     private static void initializePropertyFiles(String propertyFileType) {
@@ -68,17 +65,6 @@ public class StartUpLoader {
                     File jarFile = findJarFile();
                     if (jarFile != null) {
                         extractFileFromJar(jarFile, "properties/log4j2.properties", new File(logPath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            case "email":
-                if (!checkFileExists(emailFilePath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        System.err.println(jarFile.getPath());
-                        extractFileFromJar(jarFile, "properties/email.properties", new File(emailFilePath));
                     } else {
                         System.err.println("JAR file not found.");
                     }

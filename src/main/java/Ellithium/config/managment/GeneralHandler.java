@@ -11,12 +11,15 @@ import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.listener.TestLifecycleListener;
+import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.restassured.RestAssured;
 
@@ -109,5 +112,15 @@ public class GeneralHandler implements TestLifecycleListener {
             Reporter.log("Report Path", LogLevel.INFO_BLUE,ConfigContext.getReportPath());
             emailReporter.sendReport();
         }
+    }
+    public static List<Parameter> getParameters(){
+        List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
+        parameters.add(new io.qameta.allure.model.Parameter().setName("BrowserName").setValue(ConfigContext.getBrowserName()));
+        parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(ConfigContext.getHeadlessMode()));
+        parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategy").setValue(ConfigContext.getPageLoadStrategy()));
+        parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(ConfigContext.getPrivateMode()));
+        parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(ConfigContext.getSandboxMode()));
+        parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue( ConfigContext.getWebSecurityMode()));
+        return parameters;
     }
 }
