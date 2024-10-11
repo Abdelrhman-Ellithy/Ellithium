@@ -26,7 +26,7 @@ public class BDDSetup extends AbstractTestNGCucumberTests {
                         ConfigContext.setConfig(BrowserName,HeadlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
                 }
                 else{
-                        Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
+                        Reporter.log("Invalid runMode Selection Go to src/main/resources/properties/config.properties and edit the mode ", LogLevel.ERROR);
                 }
         }
         @Override
@@ -36,7 +36,7 @@ public class BDDSetup extends AbstractTestNGCucumberTests {
                         return super.scenarios();
                 }
                 else{
-                        Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
+                        Reporter.log("Invalid runMode Selection Go to src/main/resources/properties/config.properties and edit the mode ", LogLevel.ERROR);
                         return null;
                 }
         }

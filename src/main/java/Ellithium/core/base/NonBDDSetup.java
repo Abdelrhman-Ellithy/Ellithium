@@ -4,10 +4,8 @@ import Ellithium.core.execution.listener.CustomTestNGListener;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Allure;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.annotations.*;
-
 @Listeners({CustomTestNGListener.class, AllureTestNg.class})
 public class NonBDDSetup {
     @Parameters({"BrowserName","HeadlessMode","PageLoadStrategy","PrivateMode","SandboxMode", "WebSecurityMode" })
@@ -17,7 +15,7 @@ public class NonBDDSetup {
             ConfigContext.setConfig(BrowserName,HeadlessMode,PageLoadStrategy,PrivateMode,SandboxMode,WebSecurityMode);
         }
         else{
-            Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
+            Reporter.log("Invalid runMode Selection Go to src/main/resources/properties/config.properties and edit the mode ", LogLevel.ERROR);
         }
     }
     @AfterTest(alwaysRun = true, description = "Test Engine Finish")
