@@ -11,7 +11,6 @@ public class ConfigContext {
     private static String privateMode;
     private static String sandboxMode;
     private static String webSecurityMode;
-    private static String reportPath;
     private static final String logFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "log4j2";
 
@@ -89,11 +88,5 @@ public class ConfigContext {
 
     public static String getWebSecurityMode() {
         return webSecurityMode;
-    }
-    public static String getReportPath() {
-        return reportPath;
-    }
-    public static void setReportPath(String reportPath) {
-        ConfigContext.reportPath = reportPath;
     }
 }

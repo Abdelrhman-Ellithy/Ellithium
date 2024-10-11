@@ -7,11 +7,10 @@
  </tr>
 </table>
 
-## 🌀 Enhanced Test Automation Framework for UI, API Tests 
+## 🌀 Enhanced Test Automation Framework for UI, API Tests **🚀
 
-**Ellithium** is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process. Leveraging tools such as **TestNG**, **Cucumber**, **Rest Assured**, and others, it provides an end-to-end solution for automated testing. With support for **BDD**, **cross-browser testing**, **parallel execution**, **headless testing**, and detailed **Allure reporting**, Ellithium aims to make your test automation faster, more reliable, and easier to maintain.
+**Ellithium** is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process. Leveraging tools such as **TestNG**, **Cucumber**, **Rest Assured**, and others, it provides an end-to-end solution for automated testing. With support for **BDD**, **cross-browser testing**, **parallel execution**, **headless testing**, and detailed **Allure reporting**, Ellithium aims to make your test automation faster, more reliable, and easier to maintain.  
 
-**📄 _Note_ Ellithium Still Under Development**
 ### 🚀 Key Features
 
 - **Cross-Browser Testing**: Supports automated testing across multiple browsers, including **Chrome**, **Firefox**, **Edge** and **Safari**.
@@ -60,7 +59,7 @@ Ellithium supports reading and writing data from various file formats, including
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://rest-assured.io/" target="_blank"><img src="https://avatars.githubusercontent.com/u/19369327?s=280&v=4" alt="REST Assured" height="50px"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://cucumber.io/tools/cucumber-open/" target="_blank"><img src="https://raw.githubusercontent.com/cucumber/cucumber-ruby/main/docs/img/cucumber-open-logo.png" alt="Cucumber.io" height="50px"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://testng.org/doc/" target="_blank"><img src="https://545767148-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MdBdUMSCcMYTyNwZf80%2Fuploads%2Fgit-blob-7e5b23257dbb5cc3262c56840d5cf9fa85b27dce%2Ftestng.png?alt=media" alt="TestNG" height="50px"></a>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://docs.qameta.io/allure/" target="_blank"><img src="https://avatars.githubusercontent.com/u/5879127?s=200&v=4" alt="Allure Reports" height="50px"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://docs.qameta.io/allure/" target="_blank"><img src="https://avatars.githubusercontent.com/u/5879127?s=200&v=4" alt="Allure Reports" height="50px"></a> <a href="https://central.sonatype.com/artifact/io.github.abdelrhman-ellithy/ellithium" target="_blank"><img src="https://central.sonatype.com/maven-central-logo.svg" alt="Allure Reports" height="50px"></a>  
 <br/><br/>
 
 ### Prerequisites

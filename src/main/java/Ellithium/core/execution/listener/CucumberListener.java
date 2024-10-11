@@ -8,10 +8,7 @@ import Ellithium.core.reporting.Reporter;
 import io.cucumber.plugin.event.*;
 import io.qameta.allure.Allure;
 import io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm;
-import io.qameta.allure.model.Parameter;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static Ellithium.config.managment.GeneralHandler.testFailed;
