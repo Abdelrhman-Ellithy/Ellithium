@@ -24,7 +24,7 @@ public class PDFHelper {
             Reporter.log("Successfully read PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
             Reporter.log("Failed to read PDF file: ",LogLevel.ERROR,filePath);
-            throw new RuntimeException(e);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
         return textContent;
     }
@@ -53,7 +53,7 @@ public class PDFHelper {
             Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
             Reporter.log("Failed to write PDF file: ",LogLevel.ERROR,filePath);
-            throw new RuntimeException(e);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
 
@@ -79,7 +79,7 @@ public class PDFHelper {
             Reporter.log("Successfully appended content to PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
             Reporter.log("Failed to append to PDF file: ",LogLevel.ERROR,filePath);
-            throw new RuntimeException(e);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
 }

@@ -44,8 +44,7 @@ public class AllureHelper {
                     if (SystemUtils.IS_OS_WINDOWS) {
                         openCommand = "start ".concat(fileName);
                     } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
-                        openCommand = SystemUtils.IS_OS_MAC ? "open " : "xdg-open ";
-                        openCommand.concat(fileName);
+                        openCommand = SystemUtils.IS_OS_MAC ? "open ".concat(fileName) : "xdg-open ".concat(fileName);
                     } else {
                         openCommand=null;
                         logsUtils.error("Unsupported operating system.");

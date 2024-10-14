@@ -46,7 +46,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
         }
         String closeFlag= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "closeDriverAfterBDDScenario");
         if(closeFlag.equalsIgnoreCase("true")){
-            uuid=UUID.randomUUID().toString();
             Allure.getLifecycle().startStep(uuid, new io.qameta.allure.model.StepResult().setName("Automatic Driver Quit "));
             Allure.getLifecycle().updateStep(uuid, stepResult -> {
                 stepResult.setStatus(io.qameta.allure.model.Status.PASSED);
@@ -82,10 +81,8 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
     private void stepFinishedHandler( TestStepFinished event) {
         var result=event.getResult().getStatus();
-        if (event.getTestStep() instanceof PickleStepTestStep){
-            if (result== Status.FAILED){
+        if ((event.getTestStep() instanceof PickleStepTestStep) &&(result== Status.FAILED)){
                 Reporter.setStepStatus(event.getTestStep().getId().toString(),io.qameta.allure.model.Status.FAILED);
-            }
         }
     }
 }
