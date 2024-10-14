@@ -14,7 +14,7 @@ public class PropertyHelper {
             log("Successfully loaded properties file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to load properties file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
+            log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
         return prop.getProperty(key);
     }
@@ -28,7 +28,7 @@ public class PropertyHelper {
             log("Successfully updated properties file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to write properties file: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException(e);
+            log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
 }

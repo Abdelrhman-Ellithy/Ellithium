@@ -6,7 +6,6 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
-import Ellithium.core.reporting.EmailReporter;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;

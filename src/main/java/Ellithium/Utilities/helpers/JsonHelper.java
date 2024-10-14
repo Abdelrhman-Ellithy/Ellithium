@@ -2,6 +2,8 @@ package Ellithium.Utilities.helpers;
 
 import Ellithium.core.logging.LogLevel;
 import static Ellithium.core.reporting.Reporter.log;
+
+import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;
 import java.io.*;
 import java.util.*;
@@ -15,7 +17,6 @@ public class JsonHelper {
 
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
-            throw new RuntimeException("JSON file not found: " + filePath);
         }
 
         log("Attempting to read JSON data from file: ", LogLevel.INFO_BLUE, filePath);
@@ -24,7 +25,7 @@ public class JsonHelper {
             JsonElement jsonElement = JsonParser.parseReader(reader);
 
             if (!jsonElement.isJsonArray()) {
-                throw new IllegalArgumentException("JSON data in file " + filePath + " is not an array");
+                Reporter.log("JSON data in file ",LogLevel.ERROR,filePath + " is not an array");
             }
 
             JsonArray jsonArray = jsonElement.getAsJsonArray();
@@ -35,16 +36,17 @@ public class JsonHelper {
                 for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
                     recordMap.put(entry.getKey(), entry.getValue().getAsString());
                 }
-
                 data.add(recordMap);
             }
             log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
 
         } catch (FileNotFoundException e) {
             log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
             throw new RuntimeException(e);
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
         return data;
     }
@@ -61,6 +63,7 @@ public class JsonHelper {
                 }
             } catch (IOException e) {
                 log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
             }
         }
 
@@ -79,6 +82,7 @@ public class JsonHelper {
 
         } catch (IOException e) {
             log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
 
@@ -101,9 +105,11 @@ public class JsonHelper {
             }
         } catch (FileNotFoundException e) {
             log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
             return null;
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
             return null;
         }
     }
@@ -118,6 +124,7 @@ public class JsonHelper {
                 }
             } catch (IOException e) {
                 log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
             }
         }
         log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
@@ -132,6 +139,7 @@ public class JsonHelper {
 
         } catch (IOException e) {
             log("Failed to update JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
 }

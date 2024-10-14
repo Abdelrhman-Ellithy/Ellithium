@@ -18,7 +18,7 @@ public class ExcelHelper {
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
-                throw new IllegalArgumentException("Sheet " + sheetName + " does not exist in " + filePath);
+                Reporter.log("Sheet " + sheetName,LogLevel.ERROR, " does not exist in " + filePath);
             }
 
             Iterator<Row> rowIterator = sheet.iterator();

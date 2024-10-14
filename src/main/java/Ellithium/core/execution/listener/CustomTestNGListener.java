@@ -16,7 +16,6 @@ import static org.testng.ITestResult.FAILURE;
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener, IAnnotationTransformer,
         IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
-    private long timeFinishMills;
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
@@ -69,6 +68,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onExecutionFinish() {
+        long timeFinishMills;
         ConfigContext.setOnExecution(false);
         timeFinishMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "------------------------------------------" + RESET);

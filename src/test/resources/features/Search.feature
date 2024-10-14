@@ -27,7 +27,7 @@ Feature: Search
       Then a "No Results Found" message should be displayed
 
   Scenario: Verify that user can search with product Company name
-      Given the user enters Company  name in the search field
+      Given the user enters Company name in the search field
       When they click the Search button or press Enter key
       Then company products should be displayed
 @Run
