@@ -67,10 +67,10 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onExecutionFinish() {
         long timeFinishMills;
         ConfigContext.setOnExecution(false);
-        timeFinishMills = System.currentTimeMillis();
         logsUtils.info(BLUE + "------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine TearDown -------" + RESET);
         logsUtils.info(BLUE + "------------------------------------------" + RESET);
+        timeFinishMills = System.currentTimeMillis();
         long totalExecutionTime = (timeFinishMills - timeStartMills);
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;

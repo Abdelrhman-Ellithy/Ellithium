@@ -15,7 +15,6 @@ import org.openqa.selenium.support.events.WebDriverListener;
 public class SeleniumListener implements WebDriverListener {
     private static final Map<Keys, String> keyMap;
     static {
-        // Add more mappings as needed
         keyMap = Map.ofEntries(
                 Map.entry(Keys.ENTER, "ENTER"),
                 Map.entry(Keys.TAB, "TAB"),
@@ -41,13 +40,10 @@ public class SeleniumListener implements WebDriverListener {
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
-        // Loop through each CharSequence in the keysToSend array
         for (CharSequence charSequence : keysToSend) {
             if (charSequence instanceof Keys) {
-                // If it's a Keys object, map it to a readable key name
                 stringBuilder.append(getKeyName((Keys) charSequence));
             } else {
-                // If it's a regular string, just append it as is
                 stringBuilder.append(charSequence);
             }
         }
