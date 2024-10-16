@@ -5,9 +5,6 @@ import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.logging.logsUtils;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Label;
-import org.apache.xmlbeans.impl.xb.xsdschema.All;
 import org.testng.*;
 import java.io.File;
 import static Ellithium.core.reporting.internal.Colors.*;
@@ -50,7 +47,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onStart(ISuite suite) {
-        logsUtils.info(PINK + "[ SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
+        logsUtils.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
     }
     @Override
     public void onFinish(ISuite suite) {
@@ -58,7 +55,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onExecutionStart() {
-        GeneralHandler.solveVersion();
+        GeneralHandler.StartRoutine();
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);
         logsUtils.info(CYAN + "------- Ellithium  Engine Setup -------------" + RESET);
         logsUtils.info(BLUE + "---------------------------------------------" + RESET);

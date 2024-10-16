@@ -3,6 +3,8 @@ package Ellithium.config.managment;
 import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
+import Ellithium.config.managment.Internal.APIFilterHelper;
+import Ellithium.config.managment.Internal.VersionChecker;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
@@ -77,26 +79,9 @@ public class GeneralHandler implements TestLifecycleListener {
         }
         return BDDMode;
     }
-    public static String getLatestVersion(){
-        return RestAssured.given().
-                baseUri("https://api.github.com/").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
-                .when().get("latest")
-                .thenReturn().body().jsonPath().getString("name");
-    }
-    public static void solveVersion(){
-        String path=ConfigContext.getCheckerFilePath();
-        String Date=TestDataGenerator.getDayDateStamp();
-        String currentDate= JsonHelper.getJsonKeyValue(path,"LastRunDate");
-        if(currentDate==null||!(currentDate.equalsIgnoreCase(Date))) {
-            JsonHelper.setJsonKeyValue(path,"LastRunDate",Date);
-            String latestVersion=getLatestVersion();
-            String currentVersion=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"EllithiumVersion");
-            if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
-                Reporter.log("You Are Using Old Version of Ellithium Version: "+currentVersion,
-                        LogLevel.INFO_RED,
-                        " You Need To update to the latest Version: "+latestVersion);
-            }
-        }
+    public static void StartRoutine(){
+        APIFilterHelper.applyFilter();
+        VersionChecker.solveVersion();
     }
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
