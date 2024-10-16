@@ -68,6 +68,26 @@ public class Reporter {
             default: break;
         }
     }
+    public static void logReportOnly(String message, LogLevel logLevel, String additionalParameter){
+        if (ConfigContext.isOnExecution()) {
+            switch (logLevel) {
+                case INFO_BLUE, INFO_GREEN, TRACE, WARN, DEBUG:
+                    Allure.step(message + additionalParameter, Status.PASSED);
+                    break;
+                case INFO_RED, ERROR:
+                        Allure.step(message + additionalParameter, Status.FAILED);
+                    break;
+                case INFO_YELLOW:
+                        Allure.step(message + additionalParameter, Status.SKIPPED);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    public static void logReportOnly(String message, LogLevel logLevel){
+        logReportOnly(message,logLevel,"");
+    }
     public static void log(String message, LogLevel logLevel){
             log(message,logLevel,"");
     }

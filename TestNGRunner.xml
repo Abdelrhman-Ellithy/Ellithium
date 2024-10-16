@@ -9,7 +9,8 @@
         <parameter name="WebSecurityMode" value="True"></parameter>
         <classes>
 <!--            <class name="Tests.loginTests"/>-->
-            <class name="Runner.TestRunner"></class>
+<!--            <class name="Runner.TestRunner"></class>-->
+            <class name="Tests.DetailsTests"></class>
         </classes>
     </test>
 </suite>
