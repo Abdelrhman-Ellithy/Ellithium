@@ -451,8 +451,9 @@ public class loginTests extends BaseTests {
 - **Note you cannot run the Tests in parallel with diffrent Configurations**
 
 ### 🗒️ Note: When Running in CI/CD pipeline
-- **You need to to change Allure open after execution to false here in src/main/resources/properties/default/allure.properties at your project**
+- **You need to to change Allure generate report and open after execution to false here in src/main/resources/properties/allure.properties at your project**
     ```properties
+    allure.generate.report=false
     allure.open.afterExecution=false
     ```
 ### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
