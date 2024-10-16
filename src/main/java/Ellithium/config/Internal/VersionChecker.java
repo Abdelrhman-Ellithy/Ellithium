@@ -1,4 +1,4 @@
-package Ellithium.config.managment.Internal;
+package Ellithium.config.Internal;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.JsonHelper;

@@ -1,10 +1,9 @@
 package Ellithium.config.managment;
 
-import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.config.managment.Internal.APIFilterHelper;
-import Ellithium.config.managment.Internal.VersionChecker;
+import Ellithium.config.Internal.APIFilterHelper;
+import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
@@ -18,11 +17,8 @@ import org.openqa.selenium.TakesScreenshot;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.restassured.RestAssured;
 
 public class GeneralHandler implements TestLifecycleListener {
     private static Boolean BDDMode, flagReaded=false;
