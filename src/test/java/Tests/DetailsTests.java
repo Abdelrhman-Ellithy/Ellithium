@@ -3,7 +3,6 @@ package Tests;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.testng.annotations.Test;
-
 import static io.restassured.RestAssured.given;
 public class DetailsTests {
     @Test
