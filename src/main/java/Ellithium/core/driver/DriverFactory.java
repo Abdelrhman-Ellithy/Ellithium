@@ -3,7 +3,7 @@ package Ellithium.core.driver;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.execution.listener.SeleniumListener;
+import Ellithium.core.execution.listener.DriverListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.logsUtils;
 import org.openqa.selenium.WebDriver;
@@ -21,15 +21,15 @@ public class DriverFactory {
     private static int defaultTimeout= 5;
     public static WebDriver getNewDriver() {
         setUp();
-        return driver.get();  // Get WebDriver for the current thread
+        return driver.get();
     }
     public static WebDriver getCurrentDriver() {
-        return driver.get();  // Get WebDriver for the current thread
+        return driver.get();
     }
     private static void setUp() {
-        String browserName = ConfigContext.getBrowserName();  // Default to Chrome if not set
-        String headlessMode = ConfigContext.getHeadlessMode(); // Default to false if not set
-        String PageLoadStrategy=ConfigContext.getPageLoadStrategy(); // Default to normal if not set
+        String browserName = ConfigContext.getBrowserName();
+        String headlessMode = ConfigContext.getHeadlessMode();
+        String PageLoadStrategy=ConfigContext.getPageLoadStrategy();
         String PrivateMode=ConfigContext.getPrivateMode();
         String SandboxMode=ConfigContext.getSandboxMode();
         String WebSecurityMode=ConfigContext.getWebSecurityMode();
@@ -53,7 +53,7 @@ public class DriverFactory {
             initTimeout();
         }
         localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(defaultTimeout));
-        driver.set(getDecoratedDriver(localDriver));  // Set WebDriver for this thread
+        driver.set(getDecoratedDriver(localDriver));
         if(driver!=null){
             Reporter.log("WebDriver Created", LogLevel.INFO_GREEN);
         }
@@ -62,7 +62,7 @@ public class DriverFactory {
         }
     }
     private static WebDriver getDecoratedDriver(WebDriver driver){
-        return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new SeleniumListener()).decorate(driver);
+        return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new DriverListener()).decorate(driver);
     }
     private static void initTimeout() {
         try {

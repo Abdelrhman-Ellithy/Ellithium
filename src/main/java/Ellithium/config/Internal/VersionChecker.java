@@ -24,7 +24,7 @@ public class VersionChecker {
             String latestVersion=getLatestVersion();
             String currentVersion= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"EllithiumVersion");
             if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
-                Reporter.log("You Are Using Old Version of Ellithium Version: "+currentVersion,
+                Reporter.log("You Are Using Old Version of Ellithium, Version: "+currentVersion,
                         LogLevel.INFO_RED,
                         " You Need To update to the latest Version: "+latestVersion);
             }

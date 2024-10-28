@@ -2,7 +2,6 @@ package Ellithium.core.execution.listener;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import org.apache.fontbox.cff.CharStringCommand;
 import org.openqa.selenium.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -12,7 +11,7 @@ import java.util.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.events.WebDriverListener;
 
-public class SeleniumListener implements WebDriverListener {
+public class DriverListener implements WebDriverListener {
     private static final Map<Keys, String> keyMap;
     static {
         keyMap = Map.ofEntries(

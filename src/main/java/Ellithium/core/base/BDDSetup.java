@@ -30,7 +30,7 @@ public class BDDSetup extends AbstractTestNGCucumberTests {
                 }
         }
         @Override
-        @DataProvider(parallel = true) // always false
+        @DataProvider(parallel = true)
         public Object[][] scenarios() {
                 if(GeneralHandler.getBDDMode()){
                         return super.scenarios();
