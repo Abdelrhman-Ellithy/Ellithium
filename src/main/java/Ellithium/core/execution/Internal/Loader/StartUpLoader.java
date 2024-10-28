@@ -168,9 +168,8 @@ public class StartUpLoader {
             File checkerFile = new File(checkerFilePath);
             try {
                 checkerFile.createNewFile();
-                Files.write(checkerFile.toPath(), ("{\n" +
-                        "  \"LastDateRun\": null\n }"
-                        ).getBytes());
+                Files.write(checkerFile.toPath(), (
+                        "{\n LastDateRun\": null\n } ").getBytes());
             }catch (Exception e){
                 System.err.println(e.getMessage());
             }

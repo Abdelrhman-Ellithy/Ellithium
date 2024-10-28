@@ -1,10 +1,11 @@
 package Tests;
 
+import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.testng.annotations.Test;
 import static io.restassured.RestAssured.given;
-public class DetailsTests {
+public class DetailsTests extends NonBDDSetup {
     @Test
     public void TestVersion(){
         String latest=given().
