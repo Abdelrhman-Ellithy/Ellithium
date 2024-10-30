@@ -1,6 +1,7 @@
 package Ellithium.core.driver;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import org.jetbrains.annotations.NotNull;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;

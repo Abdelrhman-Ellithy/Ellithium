@@ -214,7 +214,7 @@ Here is the updated **Getting Started** section formatted for your README file:
    ```
 ### Step 5: Select The Running Mode # BDD, NonBDD
 
-#### you find a new config file created here src/main/resources/properties/default/config.properties at your project
+#### you find a new config file created here src/main/resources/properties/config.properties at your project
 - **BDD Mode** (for running with Cucumber): 
     ```properties
     runMode=BDD
