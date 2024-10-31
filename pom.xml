@@ -99,6 +99,15 @@
         <mavenDeployPluginVersion>3.1.2</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>2.29.0</AllureJVMVersion>
+        <HikariCPVersion>6.0.0</HikariCPVersion>
+        <caffineVersion>3.1.8</caffineVersion>
+        <mysqlVersion>9.1.0</mysqlVersion>
+        <postgresqlVersion>42.7.4</postgresqlVersion>
+        <mssqlVersion>12.8.1.jre11</mssqlVersion>
+        <oracleDBVersion>23.5.0.24.07</oracleDBVersion>
+        <mongoDBVersion>3.12.14</mongoDBVersion>
+        <redisDBVersion>5.2.0</redisDBVersion>
+        <couchBaseVersion>3.7.4</couchBaseVersion>
     </properties>
     <repositories>
         <repository>
@@ -127,20 +136,6 @@
             <version>${gsonVersion}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-<!--        <dependency>-->
-<!--            <groupId>org.slf4j</groupId>-->
-<!--            <artifactId>slf4j-api</artifactId>-->
-<!--            <version>${SLF4JAPIVersion}</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.slf4j/slf4j-simple &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.slf4j</groupId>-->
-<!--            <artifactId>slf4j-simple</artifactId>-->
-<!--            <version>${SLF4JSimpleVersion}</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -252,13 +247,62 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>6.0.0</version>
+            <version>${HikariCPVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffineVersion}</version>
+        </dependency>
+        <!-- MySQL JDBC Driver -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysqlVersion}</version>
+        </dependency>
+
+        <!-- PostgreSQL JDBC Driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresqlVersion}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>${mssqlVersion}</version>
+        </dependency>
+
+        <!-- Oracle JDBC Driver -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>${oracleDBVersion}</version>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <version>24.1.0</version>
-            <scope>compile</scope>
+            <groupId>com.ibm.db2.jcc</groupId>
+            <artifactId>db2jcc</artifactId>
+            <version>db2jcc4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>${mongoDBVersion}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/redis.clients/jedis -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${redisDBVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.couchbase.client</groupId>
+            <artifactId>java-client</artifactId>
+            <version>${couchBaseVersion}</version>
         </dependency>
     </dependencies>
     <build>
