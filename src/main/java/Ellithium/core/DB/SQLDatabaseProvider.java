@@ -36,7 +36,7 @@ public class SQLDatabaseProvider {
         dbTypeConnectionMap.put(DBType.MY_SQL, "jdbc:mysql://");
         dbTypeConnectionMap.put(DBType.SQL_SERVER, "jdbc:sqlserver://");
         dbTypeConnectionMap.put(DBType.POSTGRES_SQL, "jdbc:postgresql://");
-        dbTypeConnectionMap.put(DBType.ORACLE, "jdbc:oracle:thin:@");
+        dbTypeConnectionMap.put(DBType.ORACLE_SID, "jdbc:oracle:thin:@");
         dbTypeConnectionMap.put(DBType.ORACLE_SERVICE_NAME, "jdbc:oracle:thin:@//");
         dbTypeConnectionMap.put(DBType.IBM_DB2, "jdbc:db2://");
     }
