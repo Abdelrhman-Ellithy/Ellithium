@@ -8,26 +8,6 @@ TestNGRunner.xml
 
 Ellithium.pptx
 
-# Ignore content of specific directories but keep the folder structure with .gitkeep
-Test-Output/Logs/*
-!Test-Output/Logs/.gitkeep
-
-Test-Output/Reports/Allure/allure-report/*
-!Test-Output/Reports/Allure/allure-report/.gitkeep
-
-Test-Output/Reports/Allure/allure-results/*
-!Test-Output/Reports/Allure/allure-results/.gitkeep
-
-Test-Output/Reports/Cucumber/*
-!Test-Output/Reports/Cucumber/.gitkeep
-
-Test-Output/ScreenShots/Failed/*
-!Test-Output/ScreenShots/Failed/.gitkeep
-
-# Include UpdateChecker folder but keep checker.json
-Test-Output/UpdateChecker/*
-!Test-Output/UpdateChecker/checker.json
-
 ### IntelliJ IDEA ###
 .idea/
 *.iml
