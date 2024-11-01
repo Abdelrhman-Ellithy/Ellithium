@@ -12,17 +12,11 @@ Ellithium.pptx
 Test-Output/Reports/Allure/allure-report/*
 Test-Output/Reports/Allure/allure-results/*
 Test-Output/Reports/Cucumber/*
-Test-Output/Logs/*
 Test-Output/ScreenShots/Failed/*
-Test-Output/UpdateChecker/*
 
-# Don't ignore the folder itself
-!Test-Output/Reports/Allure/allure-report/.gitkeep
-!Test-Output/Reports/Allure/allure-results/.gitkeep
-!Test-Output/Reports/Cucumber/.gitkeep
-!Test-Output/Logs/.gitkeep
-!Test-Output/ScreenShots/Failed/.gitkeep
-!Test-Output/UpdateChecker/.gitkeep
+
+Test-Output/UpdateChecker/*
+!Test-Output/UpdateChecker/checker.json
 
 ### IntelliJ IDEA ###
 .idea/
