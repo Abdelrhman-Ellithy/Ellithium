@@ -268,14 +268,12 @@
             <artifactId>postgresql</artifactId>
             <version>${postgresqlVersion}</version>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssqlVersion}</version>
         </dependency>
-
         <!-- Oracle JDBC Driver -->
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
