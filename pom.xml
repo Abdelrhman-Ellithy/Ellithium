@@ -93,7 +93,7 @@
             gpg -ab target/ellithium-1.0.6.pom
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
-        <PDFBoxVersion>2.0.27</PDFBoxVersion>
+        <PDFBoxVersion>3.0.3</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.0</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.3</mavenDeployPluginVersion>
