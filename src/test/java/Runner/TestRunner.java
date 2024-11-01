@@ -5,7 +5,7 @@ import io.cucumber.testng.CucumberOptions;
 @CucumberOptions(
         glue = "Tests", // path to your stepDefinitions package, note you should use . instead of /
         features="src/test/resources/features" // path to your features folder
-        ,tags = "@Run"
+       // ,tags = "@Run"
 )
 public class TestRunner extends BDDSetup {
 }
