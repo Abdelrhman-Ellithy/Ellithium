@@ -7,11 +7,52 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  test-ubuntu:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        java-version: [21]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'zulu' 
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests -Dgpg.skip
+
+      - name: Run Tests
+        run: mvn test -Dgpg.skip
+
+  test-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        java-version: [21]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'zulu' 
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests -Dgpg.skip
+
+      - name: Run Tests
+        run: mvn test -Dgpg.skip
+
+  test-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
         java-version: [21]
     steps:
       - name: Check out code
