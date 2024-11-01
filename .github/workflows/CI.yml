@@ -79,7 +79,7 @@ jobs:
           distribution: 'zulu' 
           
       - name: Build with Maven
-        run: mvn clean install -DskipTests -Dgpg.skip
+        run: mvn clean install -DskipTests -Dgpgskip
 
       - name: Run Tests
-        run: mvn test -Dgpg.skip
+        run: mvn test -Dgpgskip
