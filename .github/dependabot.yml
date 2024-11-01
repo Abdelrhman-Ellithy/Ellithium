@@ -4,7 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "01:00"
+      time: "00:00"
+      timezone: "Africa/Cairo"
     open-pull-requests-limit: 5
     target-branch: "main"
 
@@ -12,6 +13,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "01:00"
+      time: "00:00"
+      timezone: "Africa/Cairo"
     open-pull-requests-limit: 5
     target-branch: "main"
+    
