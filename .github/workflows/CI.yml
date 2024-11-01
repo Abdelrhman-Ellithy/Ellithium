@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
+          distribution: 'zulu' # Specify the JDK distribution (e.g., 'zulu' or 'adopt')
 
       - name: Build with Maven
         run: mvn clean install -DskipTests=true
