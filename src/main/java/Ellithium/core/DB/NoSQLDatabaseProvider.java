@@ -37,7 +37,6 @@ public class NoSQLDatabaseProvider {
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .maximumSize(100)
                 .build();
-
         initializeConnection(connectionString, dbName, username, password);
     }
 
