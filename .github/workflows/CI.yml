@@ -63,7 +63,10 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 
-
+          
+      - name: List files in Test-Output/UpdateChecker
+        run: ls -R Test-Output/UpdateChecker
+        
       - name: Build with Maven
         run: mvn clean install -DskipTests -Dgpg.skip
 
