@@ -80,10 +80,10 @@ jobs:
           
       - name: Clean up previous test output
         run: |
-          rm -rf Test-Output/Reports/*
-          rm -rf Test-Output/Logs/*
-          rm -rf Test-Output/ScreenShots/Failed/*
-          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
+          del Test-Output\Reports\* /Q
+          del Test-Output\Logs\* /Q
+          del Test-Output\ScreenShots\Failed\* /Q
+          forfiles /p Test-Output\UpdateChecker /s /m *.* /c "cmd /c if @isdir==FALSE if not @file==checker.json del @path"
 
       - name: Build with Maven
         run: mvn clean install -DskipTests -Dgpg.skip
