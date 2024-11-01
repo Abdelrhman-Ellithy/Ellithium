@@ -78,20 +78,6 @@ jobs:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 
           
-      - name: Clean up previous test output
-        run: |
-          if (Test-Path Test-Output\Reports\*) { Remove-Item Test-Output\Reports\* -Force }
-          else { Write-Host "No files to delete in Reports" }
-
-          if (Test-Path Test-Output\Logs\*) { Remove-Item Test-Output\Logs\* -Force }
-          else { Write-Host "No files to delete in Logs" }
-
-          if (Test-Path Test-Output\ScreenShots\Failed\*) { Remove-Item Test-Output\ScreenShots\Failed\* -Force }
-          else { Write-Host "No files to delete in ScreenShots" }
-
-          # Remove all files in UpdateChecker except for checker.json
-          Get-ChildItem Test-Output\UpdateChecker\* -Recurse | Where-Object { $_.Name -ne 'checker.json' } | Remove-Item -Force
-
       - name: Build with Maven
         run: mvn clean install -DskipTests -Dgpg.skip
 
