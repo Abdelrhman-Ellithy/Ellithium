@@ -108,7 +108,13 @@ public class AllureHelper {
                 executeCommand(command);
                 logsUtils.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows)."+ Colors.RESET);
             } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
-                String shellConfig = System.getenv("SHELL").contains("zsh") ? "~/.zshrc" : "~/.bashrc";
+                String shell = System.getenv("SHELL");
+                String shellConfig;
+                if (shell != null && shell.contains("zsh")) {
+                    shellConfig = "~/.zshrc";
+                } else {
+                    shellConfig = "~/.bashrc"; // Fallback to bashrc if SHELL is null or not zsh
+                }
                 String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
                 executeCommand(command);
                 logsUtils.info(Colors.GREEN + "Allure binary path added to " + shellConfig + " (Unix-based)." + Colors.RESET);
