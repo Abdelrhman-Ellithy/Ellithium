@@ -80,9 +80,9 @@ jobs:
           
       - name: Clean up previous test output
         run: |
-          del Test-Output\Reports\* /Q
-          del Test-Output\Logs\* /Q
-          del Test-Output\ScreenShots\Failed\* /Q
+          del Test-Output\Reports\* || echo "No files to delete"
+          del Test-Output\Logs\* || echo "No files to delete"
+          del Test-Output\ScreenShots\Failed\* || echo "No files to delete"
           forfiles /p Test-Output\UpdateChecker /s /m *.* /c "cmd /c if @isdir==FALSE if not @file==checker.json del @path"
 
       - name: Build with Maven
