@@ -1,5 +1,4 @@
 package Ellithium.core.DB;
-
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -41,7 +40,7 @@ public class SQLDatabaseProvider {
         dbTypeConnectionMap.put(DBType.IBM_DB2, "jdbc:db2://");
     }
 
-    public SQLDatabaseProvider(String userName, String password, String port, String dataBaseName, String serverIP, DBType dbType) {
+    public SQLDatabaseProvider( DBType dbType,String userName, String password,String serverIP, String port, String dataBaseName) {
         this.userName = userName;
         this.password = password;
         this.port = port;
@@ -57,10 +56,8 @@ public class SQLDatabaseProvider {
         config.setConnectionTimeout(30000);
         config.setIdleTimeout(600000);
         config.setMaxLifetime(1800000);
-
         this.dataSource = new HikariDataSource(config);
         Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
-
         columnNamesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
         rowCountCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
         columnDataTypesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
@@ -71,10 +68,8 @@ public class SQLDatabaseProvider {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
-
             CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
             rowSet.populate(resultSet);
-
             Reporter.log("Executed query successfully: " + query, LogLevel.INFO_BLUE, "Success");
             return rowSet;
 
