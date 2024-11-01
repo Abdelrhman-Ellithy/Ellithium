@@ -6,7 +6,7 @@ updates:
       interval: "daily"
       time: "00:00"
       timezone: "Africa/Cairo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     target-branch: "main"
 
   - package-ecosystem: "github-actions"
@@ -15,6 +15,6 @@ updates:
       interval: "daily"
       time: "00:00"
       timezone: "Africa/Cairo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     target-branch: "main"
     
