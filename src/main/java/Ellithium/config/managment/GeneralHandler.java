@@ -91,7 +91,9 @@ public class GeneralHandler implements TestLifecycleListener {
         return parameters;
     }
     public static void initRetryCount(){
-        int count =Integer.getInteger(PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure"));
+        String countStr=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
+        System.out.println(countStr);
+        int count =Integer.parseInt(countStr);
         ConfigContext.setRetryCount(count);
     }
 }
