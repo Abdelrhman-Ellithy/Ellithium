@@ -1,17 +1,23 @@
 package Ellithium.core.execution.listener;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.logging.logsUtils;
 import org.testng.*;
+import org.testng.annotations.ITestAnnotation;
+
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.FAILURE;
 
-public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener, IAnnotationTransformer,
-        IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
+public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
+        IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     @Override
     public void onTestStart(ITestResult result) {
@@ -87,5 +93,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                         ConfigContext.getBrowserName(),testResult.getName());
             }
         }
+    }
+    @Override
+    public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
+        annotation.setRetryAnalyzer(RetryAnalyzer.class);
     }
 }

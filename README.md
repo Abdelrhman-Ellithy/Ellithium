@@ -56,9 +56,9 @@
 
 Ellithium supports reading and writing data from various file formats, including:
 
-|JSON|CSV|Excel|Properties|Jar|PDF|
-|:---:|:--:|:---:|:-------:|:--:|:--:|
-|✅   |✅  |✅   |✅       |✅  |✅  |
+|JSON|CSV|Excel|Properties|Jar|PDF|Text|
+|:---:|:--:|:---:|:-----:|:--:|:--:|:--:|
+|✅   |✅  |✅   |    ✅     |✅  |✅  |✅  |
 
 
 ## 👨‍💻 Developed using:
