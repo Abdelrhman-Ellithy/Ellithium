@@ -47,7 +47,7 @@ public class JarExtractor {
             }
         }
         catch (IOException e) {
-            System.err.println("Extracted file from JAR:: " + e.getMessage());
+            System.err.println("Extracted file from JAR: " + e.getMessage());
         }
     }
 }

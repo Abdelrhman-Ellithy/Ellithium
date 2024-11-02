@@ -78,6 +78,7 @@ public class GeneralHandler implements TestLifecycleListener {
     public static void StartRoutine(){
         APIFilterHelper.applyFilter();
         VersionChecker.solveVersion();
+        initRetryCount();
     }
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
@@ -88,5 +89,9 @@ public class GeneralHandler implements TestLifecycleListener {
         parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(ConfigContext.getSandboxMode()));
         parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue( ConfigContext.getWebSecurityMode()));
         return parameters;
+    }
+    public static void initRetryCount(){
+        int count =Integer.getInteger(PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure"));
+        ConfigContext.setRetryCount(count);
     }
 }

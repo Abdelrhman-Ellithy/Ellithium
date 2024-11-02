@@ -46,7 +46,7 @@ public class SearchStepDefinitions extends BaseStepDefinitions {
     public void the_search_results_page_should_display_items_matching_the_search_query() {
         List<String>names=searchPage.getResultsNames();
         for (String name:names){
-            AssertionExecutor.hard.assertTrue(name.toLowerCase().contains("laptop"));
+            AssertionExecutor.hard.assertTrue(name.toLowerCase().contains("test"));
         }
     }
 

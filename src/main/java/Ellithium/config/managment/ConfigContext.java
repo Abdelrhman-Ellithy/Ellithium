@@ -11,6 +11,16 @@ public class ConfigContext {
     private static String privateMode;
     private static String sandboxMode;
     private static String webSecurityMode;
+
+    public static int getRetryCount() {
+        return retryCount;
+    }
+
+    public static void setRetryCount(int retryCount) {
+        ConfigContext.retryCount = retryCount;
+    }
+
+    private static int retryCount;
     private static final String logFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "log4j2";
 
