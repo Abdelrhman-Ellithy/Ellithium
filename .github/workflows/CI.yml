@@ -29,11 +29,8 @@ jobs:
           rm -rf Test-Output/ScreenShots/Failed/*
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
-      - name: Build with Maven
-        run: mvn clean install -DskipTests -Dgpg.skip
-
-      - name: Run Tests
-        run: mvn test -Dgpg.skip
+      - name: Build and Run with Maven
+        run: mvn clean install test
 
   test-macos:
     runs-on: macos-latest
@@ -57,11 +54,8 @@ jobs:
           rm -rf Test-Output/ScreenShots/Failed/*
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
-      - name: Build with Maven
-        run: mvn clean install -DskipTests -Dgpg.skip
-
-      - name: Run Tests
-        run: mvn test -Dgpg.skip
+      - name: Build and Run with Maven
+        run: mvn clean install test
 
   test-windows:
     runs-on: windows-latest
@@ -78,8 +72,5 @@ jobs:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 
           
-      - name: Build with Maven
-        run: mvn clean install -DskipTests -Dgpgskip
-
-      - name: Run Tests
-        run: mvn test -Dgpgskip
+      - name: Build and Run with Maven
+        run: mvn clean install test
