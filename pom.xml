@@ -94,7 +94,7 @@
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
-        <mavenSurefirePluginVersion>3.5.0</mavenSurefirePluginVersion>
+        <mavenSurefirePluginVersion>3.5.2</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.3</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
