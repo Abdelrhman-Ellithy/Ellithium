@@ -30,7 +30,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Build and Run with Maven
-        run: mvn clean install test
+        run: mvn clean install test -Dgpgskip
 
   test-macos:
     runs-on: macos-latest
@@ -55,7 +55,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Build and Run with Maven
-        run: mvn clean install test
+        run: mvn clean install test -Dgpgskip
 
   test-windows:
     runs-on: windows-latest
@@ -73,4 +73,4 @@ jobs:
           distribution: 'zulu' 
           
       - name: Build and Run with Maven
-        run: mvn clean install test
+        run: mvn clean install test -Dgpgskip
