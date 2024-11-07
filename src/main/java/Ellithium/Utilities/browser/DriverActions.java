@@ -584,13 +584,6 @@ public class DriverActions {
     }
 
 
-
-
-
-
-
-
-
     public static boolean waitForElementToBeSelected(WebDriver driver, By locator) {
         initializeTimeoutAndPolling();
         return waitForElementToBeSelected(driver, locator, defaultTimeout, defaultPollingTime);

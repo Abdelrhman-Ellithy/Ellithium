@@ -38,9 +38,7 @@
 - **API Testing**: Full support for API testing with **Rest Assured** for RESTful services.
 - **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
-- **Custom Hooks**: Extensible hooks for integrating pre- and post-execution logic in tests.
 - **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
-
 
 | Synchronization Handling | CI/CD integration   |Test Data Generation|
 | :---: |:---: |:---: |

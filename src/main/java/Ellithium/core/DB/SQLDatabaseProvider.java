@@ -21,26 +21,25 @@ public class SQLDatabaseProvider {
     private String port;
     private String dataBaseName;
     private String serverIP;
-    private DBType dbType;
-
+    private SQLDBType dbType;
     private final Cache<String, List<String>> columnNamesCache;
     private final Cache<String, Integer> rowCountCache;
     private final Cache<String, Map<String, String>> columnDataTypesCache;
     private final Cache<String, List<String>> primaryKeysCache;
     private final Cache<String, Map<String, String>> foreignKeysCache;
 
-    private static final Map<DBType, String> dbTypeConnectionMap = new HashMap<>();
+    private static final Map<SQLDBType, String> dbTypeConnectionMap = new HashMap<>();
 
     static {
-        dbTypeConnectionMap.put(DBType.MY_SQL, "jdbc:mysql://");
-        dbTypeConnectionMap.put(DBType.SQL_SERVER, "jdbc:sqlserver://");
-        dbTypeConnectionMap.put(DBType.POSTGRES_SQL, "jdbc:postgresql://");
-        dbTypeConnectionMap.put(DBType.ORACLE_SID, "jdbc:oracle:thin:@");
-        dbTypeConnectionMap.put(DBType.ORACLE_SERVICE_NAME, "jdbc:oracle:thin:@//");
-        dbTypeConnectionMap.put(DBType.IBM_DB2, "jdbc:db2://");
+        dbTypeConnectionMap.put(SQLDBType.MY_SQL, "jdbc:mysql://");
+        dbTypeConnectionMap.put(SQLDBType.SQL_SERVER, "jdbc:sqlserver://");
+        dbTypeConnectionMap.put(SQLDBType.POSTGRES_SQL, "jdbc:postgresql://");
+        dbTypeConnectionMap.put(SQLDBType.ORACLE_SID, "jdbc:oracle:thin:@");
+        dbTypeConnectionMap.put(SQLDBType.ORACLE_SERVICE_NAME, "jdbc:oracle:thin:@//");
+        dbTypeConnectionMap.put(SQLDBType.IBM_DB2, "jdbc:db2://");
     }
 
-    public SQLDatabaseProvider( DBType dbType,String userName, String password,String serverIP, String port, String dataBaseName) {
+    public SQLDatabaseProvider( SQLDBType dbType,String userName, String password,String serverIP, String port, String dataBaseName) {
         this.userName = userName;
         this.password = password;
         this.port = port;
