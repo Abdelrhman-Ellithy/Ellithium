@@ -7,7 +7,9 @@ target/*
 TestNGRunner.xml
 
 Ellithium.pptx
-src/test/resources/TestData/DB-Info.json
+DB-Info.json
+
+
 # Ignore content of specific directories but include .gitkeep for empty folders
 Test-Output/Logs/*
 !Test-Output/Logs/.gitkeep
