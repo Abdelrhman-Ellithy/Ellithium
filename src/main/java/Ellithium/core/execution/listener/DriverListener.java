@@ -3,7 +3,7 @@ package Ellithium.core.execution.listener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
-
+import io.appium.java_client.proxy.MethodCallListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -11,7 +11,7 @@ import java.util.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.events.WebDriverListener;
 
-public class DriverListener implements WebDriverListener {
+public class DriverListener implements WebDriverListener,MethodCallListener {
     private static final Map<Keys, String> keyMap;
     static {
         keyMap = Map.ofEntries(
@@ -33,6 +33,22 @@ public class DriverListener implements WebDriverListener {
                 Map.entry(Keys.CONTROL, "CONTROL"),
                 Map.entry(Keys.ALT, "ALT"));
     }
+    @Override
+    public void afterAnyCall(Object target, Method method, Object[] args, Object result) {
+        Reporter.log("Method: "+ method.getName(), LogLevel.INFO_BLUE," Executed");
+    }
+
+    @Override
+    public Object onError(Object obj, Method method, Object[] args, Throwable e) {
+        Reporter.log("Error in call: " + method.getName(), LogLevel.ERROR, formatArgs(args));
+        Reporter.log("Exception: " + e.getCause().getMessage(), LogLevel.ERROR, e.toString());
+        return UNSET;
+    }
+    @Override
+    public void onError(Object target, Method method, Object[] args, InvocationTargetException e) {
+        Reporter.log("Method: "+ method.getName(), LogLevel.ERROR," Failed");
+        Reporter.log(e.getMessage(),LogLevel.ERROR);
+    }
     private static String getKeyName(Keys key) {
         return keyMap.getOrDefault(key, key.toString()); // Efficient lookup
     }
@@ -48,11 +64,6 @@ public class DriverListener implements WebDriverListener {
         }
         Reporter.log("Sent Data: \"" + stringBuilder + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
     }
-   @Override
-   public void onError(Object target, Method method, Object[] args, InvocationTargetException e) {
-       Reporter.log("Error in call: " + method.getName(), LogLevel.ERROR, formatArgs(args));
-       Reporter.log("Exception: " + e.getCause().getMessage(), LogLevel.ERROR, e.toString());
-   }
    @Override
    public void beforeGet(WebDriver driver, String url) {
        Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url);

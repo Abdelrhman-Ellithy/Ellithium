@@ -8,9 +8,10 @@
         <parameter name="SandboxMode" value="Sandbox"></parameter>
         <parameter name="WebSecurityMode" value="True"></parameter>
         <classes>
-            <class name="Tests.loginTests"/>
+<!--            <class name="Tests.loginTests"/>-->
 <!--            <class name="Runner.TestRunner"></class>-->
 <!--            <class name="Tests.DetailsTests"></class>-->
+            <class name="Tests.AppiumTest"></class>
         </classes>
     </test>
 </suite>
