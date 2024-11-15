@@ -7,8 +7,6 @@ target/*
 TestNGRunner.xml
 
 Ellithium.pptx
-DB-Info
-
 
 # Ignore content of specific directories but include .gitkeep for empty folders
 Test-Output/Logs/*
