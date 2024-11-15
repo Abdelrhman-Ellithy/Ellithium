@@ -1,0 +1,7 @@
+{
+  "userName": "remote_user",
+  "password": "Appy@innovate",
+  "serverIp": "10.147.17.34",
+  "port": "3306",
+  "dbName": "webinvoice_bigdata"
+}

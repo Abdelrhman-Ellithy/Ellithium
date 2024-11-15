@@ -6,12 +6,18 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.DriverListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.logsUtils;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.v85.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
+
+import java.net.URL;
 import java.time.Duration;
 import static Ellithium.core.reporting.internal.Colors.*;
 
@@ -63,6 +69,15 @@ public class DriverFactory {
     }
     private static WebDriver getDecoratedDriver(WebDriver driver){
         return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new DriverListener()).decorate(driver);
+    }
+    public static AndroidDriver getAndroidDriver(URL remoteAddress, Capabilities capabilities){
+        return getDecoratedDriver(new AndroidDriver(remoteAddress,capabilities));
+    }
+    private static IOSDriver getDecoratedDriver(IOSDriver driver){
+        return new EventFiringDecorator<>(IOSDriver.class, new DriverListener()).decorate(driver);
+    }
+    private static AndroidDriver getDecoratedDriver(AndroidDriver driver){
+        return new EventFiringDecorator<>(AndroidDriver.class, new DriverListener()).decorate(driver);
     }
     private static void initTimeout() {
         try {

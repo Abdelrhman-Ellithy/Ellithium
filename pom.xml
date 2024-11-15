@@ -302,6 +302,12 @@
             <artifactId>java-client</artifactId>
             <version>${couchBaseVersion}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.appium/java-client -->
+        <dependency>
+            <groupId>io.appium</groupId>
+            <artifactId>java-client</artifactId>
+            <version>9.3.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -425,7 +431,7 @@
             <plugin>
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>
-                <version>2.15.1</version>
+                <version>2.14.0</version>
                 <executions>
                     <execution>
                         <id>allure-report</id>
