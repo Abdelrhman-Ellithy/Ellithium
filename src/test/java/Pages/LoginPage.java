@@ -3,8 +3,8 @@ package Pages;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static Ellithium.Utilities.browser.DriverActions.clickOnElement;
-import static Ellithium.Utilities.browser.DriverActions.sendData;
+import static Ellithium.Utilities.interactions.actions.clickOnElement;
+import static Ellithium.Utilities.interactions.actions.sendData;
 
 public class LoginPage {
     WebDriver driver;

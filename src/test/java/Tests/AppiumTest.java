@@ -1,6 +1,6 @@
 package Tests;
 
-import Ellithium.Utilities.browser.DriverActions;
+import Ellithium.Utilities.interactions.actions;
 import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
@@ -32,7 +32,7 @@ public class AppiumTest extends NonBDDSetup {
     }
     @Test(description = "Just testing the Ability to run tests on mobile, I made it fails to check the Attached Screenshot")
     public void SmokeMobileTest() {
-        DriverActions.clickOnElement(androidDriver,AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
+        actions.clickOnElement(androidDriver,AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
         Assert.assertTrue(false);
     }
     @AfterClass

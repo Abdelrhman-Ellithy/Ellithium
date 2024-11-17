@@ -1,4 +1,4 @@
-package Ellithium.Utilities.browser;
+package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
@@ -19,15 +19,13 @@ import java.io.File;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 
-public class DriverActions {
+public class actions {
     private static int defaultTimeout= 5;
     private static int defaultPollingTime=500;
     private static boolean defaultTimeoutGotFlag=false;
     private static boolean defaultPollingTimeGotFlag=false;
-
     public static void sendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));

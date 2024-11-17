@@ -6,7 +6,7 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
-import static Ellithium.Utilities.browser.DriverActions.*;
+import static Ellithium.Utilities.interactions.actions.*;
 
 public class SearchPage {
     WebDriver driver;
