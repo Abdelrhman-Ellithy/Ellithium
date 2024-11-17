@@ -37,7 +37,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             }
             case FAILED -> {
                 flagFailed=true;
-                screenShot = testFailed(ConfigContext.getBrowserName(), ScenarioName);
+                screenShot = testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
                 logsUtils.info(RED + "[FAILED] Scenario " + ScenarioName + " [FAILED]" + RESET);
             }
             case SKIPPED -> {
@@ -65,7 +65,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         if(flagFailed && screenShot!=null ) {
             File finalScreenShot = screenShot;
             Allure.getLifecycle().updateStep(uuid, stepResult -> {
-                Reporter.attachScreenshotToReport(finalScreenShot, finalScreenShot.getName(), ConfigContext.getBrowserName(), ScenarioName);
+                Reporter.attachScreenshotToReport(finalScreenShot, finalScreenShot.getName(), ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
                 GeneralHandler.AttachLogs();
                 stepResult.setStatus(io.qameta.allure.model.Status.PASSED);
             });

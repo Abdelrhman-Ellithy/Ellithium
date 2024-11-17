@@ -9,49 +9,45 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
-import org.openqa.selenium.logging.LogType;
-import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 
-public class DriverSetUp {
+public class BrowserSetUp {
 
     // Private method to configure browser options and return the WebDriver instance
-    public static WebDriver setupLocalDriver(String browserName, String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
-        switch (browserName.toLowerCase()) {
-            case "chrome":
+    public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+        switch (driverType) {
+            case Chrome:
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new ChromeDriver(chromeOptions);
-            case "firefox":
+            case FireFox:
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new FirefoxDriver(firefoxOptions);
-            case "edge":
+            case Edge:
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new EdgeDriver(edgeOptions);
-            case "safari":
+            case Safari:
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
                 return new SafariDriver(safariOptions);
             default:
-                throw new IllegalArgumentException("Invalid browser: " + browserName);
+                return null;
         }
     }
-    // Configure Chrome options
-    // The Options commented to enable Developer tools
-    private static ChromeOptions configureChromeOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
+    private static ChromeOptions configureChromeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         ChromeOptions chromeOptions = new ChromeOptions();
-        if ("true".equalsIgnoreCase(headlessMode)) {
+        if (headlessMode==HeadlessMode.True) {
             chromeOptions.addArguments("--headless");
         }
-        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
+        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
             chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if ("true".equalsIgnoreCase(privateMode)) {
+        if (privateMode==PrivateMode.True) {
             chromeOptions.addArguments("--incognito");
         }
-        if ("nosandbox".equalsIgnoreCase(sandboxMode)) {
+        if (sandboxMode==SandboxMode.NoSandboxMode) {
             chromeOptions.addArguments("--no-sandbox");
         }
-        if ("false".equalsIgnoreCase(webSecurityMode)) {
+        if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
             chromeOptions.addArguments("--disable-web-security");
             chromeOptions.addArguments("--allow-running-insecure-content");
         }
@@ -115,21 +111,21 @@ public class DriverSetUp {
     }
 
     // Configure Firefox options
-    private static FirefoxOptions configureFirefoxOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
+    private static FirefoxOptions configureFirefoxOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
-        if ("true".equalsIgnoreCase(headlessMode)) {
+        if (headlessMode==HeadlessMode.True) {
             firefoxOptions.addArguments("--headless");
         }
-        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
+        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
             firefoxOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if ("true".equalsIgnoreCase(privateMode)) {
+        if (privateMode==PrivateMode.True) {
             firefoxOptions.addArguments("--private");
         }
-        if ("false".equalsIgnoreCase(sandboxMode)) {
+        if (sandboxMode==SandboxMode.NoSandboxMode) {
             firefoxOptions.addArguments("--no-sandbox");
         }
-        if ("false".equalsIgnoreCase(webSecurityMode)) {
+        if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
             firefoxOptions.addPreference("security.mixed_content.block_active_content", false);
         }
         // Other common options
@@ -162,21 +158,21 @@ public class DriverSetUp {
     }
 
     // Configure Edge options
-    private static EdgeOptions configureEdgeOptions(String headlessMode, String pageLoadStrategy, String privateMode, String sandboxMode, String webSecurityMode) {
+    private static EdgeOptions configureEdgeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         EdgeOptions edgeOptions = new EdgeOptions();
-        if ("true".equalsIgnoreCase(headlessMode)) {
+        if (headlessMode==HeadlessMode.True) {
             edgeOptions.addArguments("--headless");
         }
-        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
+        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
             edgeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if ("true".equalsIgnoreCase(privateMode)) {
+        if (privateMode==PrivateMode.True) {
             edgeOptions.addArguments("--inPrivate");
         }
-        if ("false".equalsIgnoreCase(sandboxMode)) {
+        if (sandboxMode==SandboxMode.NoSandboxMode) {
             edgeOptions.addArguments("--no-sandbox");
         }
-        if ("false".equalsIgnoreCase(webSecurityMode)) {
+        if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
             edgeOptions.addArguments("--disable-web-security");
             edgeOptions.addArguments("--allow-running-insecure-content");
         }
@@ -231,12 +227,12 @@ public class DriverSetUp {
         return edgeOptions;
     }
     // Configure Safari options
-    private static SafariOptions configureSafariOptions(String pageLoadStrategy, String privateMode) {
+    private static SafariOptions configureSafariOptions(PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode) {
         SafariOptions safariOptions = new SafariOptions();
-        if ("eager".equalsIgnoreCase(pageLoadStrategy)) {
+        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
             safariOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if ("true".equalsIgnoreCase(privateMode)) {
+        if (privateMode==PrivateMode.True) {
             safariOptions.setUseTechnologyPreview(true); // Safari doesn't have "private" mode via arguments, but this simulates it
         }
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);

@@ -1,57 +1,14 @@
 package Ellithium.core.execution.listener;
-
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
-import io.appium.java_client.proxy.MethodCallListener;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.events.WebDriverListener;
 
-public class DriverListener implements WebDriverListener,MethodCallListener {
-    private static final Map<Keys, String> keyMap;
-    static {
-        keyMap = Map.ofEntries(
-                Map.entry(Keys.ENTER, "ENTER"),
-                Map.entry(Keys.TAB, "TAB"),
-                Map.entry(Keys.ESCAPE, "ESCAPE"),
-                Map.entry(Keys.BACK_SPACE, "BACKSPACE"),
-                Map.entry(Keys.SPACE, "SPACE"),
-                Map.entry(Keys.ARROW_UP, "UP ARROW"),
-                Map.entry(Keys.ARROW_DOWN, "DOWN ARROW"),
-                Map.entry(Keys.ARROW_LEFT, "LEFT ARROW"),
-                Map.entry(Keys.ARROW_RIGHT, "RIGHT ARROW"),
-                Map.entry(Keys.DELETE, "DELETE"),
-                Map.entry(Keys.HOME, "HOME"),
-                Map.entry(Keys.END, "END"),
-                Map.entry(Keys.PAGE_UP, "PAGE UP"),
-                Map.entry(Keys.PAGE_DOWN, "PAGE DOWN"),
-                Map.entry(Keys.SHIFT, "SHIFT"),
-                Map.entry(Keys.CONTROL, "CONTROL"),
-                Map.entry(Keys.ALT, "ALT"));
-    }
-    @Override
-    public void afterAnyCall(Object target, Method method, Object[] args, Object result) {
-        Reporter.log("Method: "+ method.getName(), LogLevel.INFO_BLUE," Executed");
-    }
+public class seleniumListener implements WebDriverListener {
 
-    @Override
-    public Object onError(Object obj, Method method, Object[] args, Throwable e) {
-        Reporter.log("Error in call: " + method.getName(), LogLevel.ERROR, formatArgs(args));
-        Reporter.log("Exception: " + e.getCause().getMessage(), LogLevel.ERROR, e.toString());
-        return UNSET;
-    }
-    @Override
-    public void onError(Object target, Method method, Object[] args, InvocationTargetException e) {
-        Reporter.log("Method: "+ method.getName(), LogLevel.ERROR," Failed");
-        Reporter.log(e.getMessage(),LogLevel.ERROR);
-    }
-    private static String getKeyName(Keys key) {
-        return keyMap.getOrDefault(key, key.toString()); // Efficient lookup
-    }
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -314,17 +271,6 @@ public class DriverListener implements WebDriverListener,MethodCallListener {
    public void beforeAlert(WebDriver.TargetLocator targetLocator) {
        Reporter.log("Handling alert", LogLevel.INFO_BLUE);
    }
-   // Helper method to format the arguments for logging
-   private String formatArgs(Object[] args) {
-       if (args == null || args.length == 0) {
-           return "No arguments";
-       }
-       StringBuilder formattedArgs = new StringBuilder();
-       for (Object arg : args) {
-           formattedArgs.append(arg).append(", ");
-       }
-       return formattedArgs.toString().replaceAll(", $", "");  // Remove the last comma and space
-   }
    private String nameOf(WebElement element){
        try {
            return element.getAccessibleName();
@@ -332,4 +278,28 @@ public class DriverListener implements WebDriverListener,MethodCallListener {
            return "";
        }
    }
+    private static final Map<Keys, String> keyMap;
+    static {
+        keyMap = Map.ofEntries(
+                Map.entry(Keys.ENTER, "ENTER"),
+                Map.entry(Keys.TAB, "TAB"),
+                Map.entry(Keys.ESCAPE, "ESCAPE"),
+                Map.entry(Keys.BACK_SPACE, "BACKSPACE"),
+                Map.entry(Keys.SPACE, "SPACE"),
+                Map.entry(Keys.ARROW_UP, "UP ARROW"),
+                Map.entry(Keys.ARROW_DOWN, "DOWN ARROW"),
+                Map.entry(Keys.ARROW_LEFT, "LEFT ARROW"),
+                Map.entry(Keys.ARROW_RIGHT, "RIGHT ARROW"),
+                Map.entry(Keys.DELETE, "DELETE"),
+                Map.entry(Keys.HOME, "HOME"),
+                Map.entry(Keys.END, "END"),
+                Map.entry(Keys.PAGE_UP, "PAGE UP"),
+                Map.entry(Keys.PAGE_DOWN, "PAGE DOWN"),
+                Map.entry(Keys.SHIFT, "SHIFT"),
+                Map.entry(Keys.CONTROL, "CONTROL"),
+                Map.entry(Keys.ALT, "ALT"));
+    }
+    private static String getKeyName(Keys key) {
+        return keyMap.getOrDefault(key, key.toString()); // Efficient lookup
+    }
 }
