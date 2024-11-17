@@ -27,6 +27,7 @@ public class DBTEst extends NonBDDSetup {
         String serverIp=JsonHelper.getJsonKeyValue("../DB-Info","serverIp");
         String port=JsonHelper.getJsonKeyValue("../DB-Info","port");
         String dbName=JsonHelper.getJsonKeyValue("../DB-Info","dbName");
+        System.out.println(username+"\n"+password+"\n"+serverIp+"\n"+port+"\n"+dbName);
         db=new SQLDatabaseProvider(
                 SQLDBType.MY_SQL,
                 username,

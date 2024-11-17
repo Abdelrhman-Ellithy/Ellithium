@@ -16,13 +16,13 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 public class AppiumTest extends NonBDDSetup {
     AndroidDriver androidDriver;
+    AppiumDriverLocalService serviceBuilder;
     @BeforeClass
     public void setup() throws MalformedURLException {
         String appiumMainJsPath=System.getProperty("user.home").concat("\\AppData\\Roaming\\npm\\node_modules\\appium\\build\\lib\\main.js");
-        AppiumDriverLocalService serviceBuilder=new AppiumServiceBuilder().
+        serviceBuilder=new AppiumServiceBuilder().
                 withAppiumJS(new File(appiumMainJsPath)).withIPAddress("0.0.0.0").usingPort(4723).build();
         //serviceBuilder.start();
         UiAutomator2Options options=new UiAutomator2Options();
@@ -38,5 +38,7 @@ public class AppiumTest extends NonBDDSetup {
     @AfterClass
     public void tareDown(){
         androidDriver.quit();
+       // serviceBuilder.stop();
+       // serviceBuilder.close();
     }
 }
