@@ -19,12 +19,15 @@ import java.io.File;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
 
 public class DriverActions {
     private static int defaultTimeout= 5;
     private static int defaultPollingTime=500;
     private static boolean defaultTimeoutGotFlag=false;
     private static boolean defaultPollingTimeGotFlag=false;
+
     public static void sendData(WebDriver driver, By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(driver,timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -311,7 +314,8 @@ public class DriverActions {
     public static FluentWait<WebDriver> getFluentWait(WebDriver driver, int timeoutInSeconds, int pollingEveryInMillis) {
         return new FluentWait<>(driver)
                 .withTimeout(Duration.ofSeconds(timeoutInSeconds))
-                .pollingEvery(Duration.ofMillis(pollingEveryInMillis));
+                .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                .ignoreAll(expectedExceptions);
     }
     // Get text from multiple elements
     public static List<String> getAttributeFromMultipleElements(WebDriver driver, By locator,String Attribute, int timeout, int pollingEvery) {
@@ -1071,5 +1075,20 @@ public class DriverActions {
     public static void sleepMinutes(long minutes) {
         Allure.step("Sleeping for " + minutes + " minutes", Status.PASSED);
         sleepMillis(minutes * 60 * 1000);
+    }
+    private static ArrayList<Class<? extends Exception>> expectedExceptions;
+    static {
+        expectedExceptions = new ArrayList<>();
+        expectedExceptions.add(java.lang.ClassCastException.class);
+        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
+        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
+        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
+        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
+        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
+        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
+        expectedExceptions.add(ExecutionException.class);
+        expectedExceptions.add(InterruptedException.class);
     }
 }
