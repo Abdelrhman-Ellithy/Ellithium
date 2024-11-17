@@ -1,108 +1,175 @@
-2024-11-17 20:00:07 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
-2024-11-17 20:00:07 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17[0m
-2024-11-17 20:00:07 INFO  logsUtils - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2024-11-17 20:00:07 INFO  logsUtils - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2024-11-17 20:00:07 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2024-11-17 20:00:07 INFO  logsUtils - [94m---------------------------------------------[0m
-2024-11-17 20:00:07 INFO  logsUtils - [96m------- Ellithium  Engine Setup -------------[0m
-2024-11-17 20:00:07 INFO  logsUtils - [94m---------------------------------------------[0m
-2024-11-17 20:00:07 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:null] -1847264985
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:null] 1041438139
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE AppiumTest.setup()[pri:0, instance:null] 137274305
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE AppiumTest.tareDown()[pri:0, instance:null] -338196452
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:Tests.AppiumTest@359b650b] -531263292
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE AppiumTest.SmokeMobileTest()[pri:0, instance:Tests.AppiumTest@359b650b] -1445075600
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:Tests.AppiumTest@359b650b] -1175779664
-2024-11-17 20:00:07 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:07 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:07 INFO  logsUtils - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
-2024-11-17 20:00:07 INFO  logsUtils - [95m[ALL TESTS STARTED]: ِMOBILE ANDROID TEST [ALL TESTS STARTED][0m
-2024-11-17 20:00:08 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2024-11-17 20:00:08 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2024-11-17 20:00:18 INFO  logsUtils - [94mMethod: manage executed[0m
-2024-11-17 20:00:18 INFO  logsUtils - [92mDriver Created[0m
-2024-11-17 20:00:18 INFO  logsUtils - [94m[START] TESTCASE SmokeMobileTest [STARTED][0m
-2024-11-17 20:00:19 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:19 INFO  logsUtils - [94mMethod: getCapabilities executed[0m
-2024-11-17 20:00:19 INFO  logsUtils - [94mMethod: getSessionId executed[0m
-2024-11-17 20:00:19 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:19 INFO  logsUtils - [94mElement found using locator: AppiumBy.accessibilityId: English - الإنجليزية [0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getCapabilities executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getSessionId executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mElement found using locator: AppiumBy.accessibilityId: English - الإنجليزية [0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mClicked on element: Unknown element[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getScreenshotAs executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17-8-0-20PM[0m
-2024-11-17 20:00:20 ERROR logsUtils - [91mRetry #1 for test: SmokeMobileTest, on thread: main[0m
-2024-11-17 20:00:20 INFO  logsUtils - [93m[SKIPPED] TESTCASE SmokeMobileTest [SKIPPED][0m
-2024-11-17 20:00:20 INFO  logsUtils - [94m[START] TESTCASE SmokeMobileTest [STARTED][0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getCapabilities executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getSessionId executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:20 INFO  logsUtils - [94mElement found using locator: AppiumBy.accessibilityId: English - الإنجليزية [0m
-2024-11-17 20:00:21 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:21 INFO  logsUtils - [94mMethod: getCapabilities executed[0m
-2024-11-17 20:00:21 INFO  logsUtils - [94mMethod: getSessionId executed[0m
-2024-11-17 20:00:21 INFO  logsUtils - [94mMethod: getFileDetector executed[0m
-2024-11-17 20:00:21 INFO  logsUtils - [94mElement found using locator: AppiumBy.accessibilityId: English - الإنجليزية [0m
-2024-11-17 20:00:22 INFO  logsUtils - [94mClicked on element: Unknown element[0m
-2024-11-17 20:00:22 INFO  logsUtils - [94mMethod: getScreenshotAs executed[0m
-2024-11-17 20:00:22 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17-8-0-22PM[0m
-2024-11-17 20:00:22 INFO  logsUtils - [91m[FAILED] TESTCASE SmokeMobileTest [FAILED][0m
-2024-11-17 20:00:23 INFO  logsUtils - [94mClicked on element: Unknown element[0m
-2024-11-17 20:00:23 INFO  logsUtils - [94mDriver quit[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2024-11-17 20:00:23 INFO  logsUtils - Log file successfully attached to the Allure report.
-2024-11-17 20:00:23 INFO  logsUtils - [95m[ALL TESTS COMPLETED]: ِMOBILE ANDROID TEST [ALL TESTS COMPLETED][0m
-2024-11-17 20:00:23 INFO  logsUtils - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
-2024-11-17 20:00:23 TRACE Graph - [Graph] ADDING NODE AppiumTest.SmokeMobileTest()[pri:0, instance:Tests.AppiumTest@359b650b] -1445075600
-2024-11-17 20:00:23 TRACE Graph - [Graph] ================ SORTING
-2024-11-17 20:00:23 TRACE Graph - [Graph] =============== DONE SORTING
-2024-11-17 20:00:23 TRACE Graph - [Graph] ====== SORTED NODES
-2024-11-17 20:00:23 TRACE Graph - [Graph] ====== END SORTED NODES
-2024-11-17 20:00:23 INFO  logsUtils - [94m------------------------------------------[0m
-2024-11-17 20:00:23 INFO  logsUtils - [96m------- Ellithium  Engine TearDown -------[0m
-2024-11-17 20:00:23 INFO  logsUtils - [94m------------------------------------------[0m
-2024-11-17 20:00:23 INFO  logsUtils - [96mTotal Execution Time is: 0 Min 15 Sec 587 Mills[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
-2024-11-17 20:00:23 INFO  logsUtils - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
-2024-11-17 20:00:26 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m
-2024-11-17 20:00:26 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17-8-0-26PM[0m
-2024-11-17 20:00:26 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2024-11-17 20:00:26 INFO  logsUtils - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2024-11-17-8-0-26PM.html[0m
-2024-11-17 20:00:26 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m
+2024-11-17 20:29:31 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
+2024-11-17 20:29:32 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94m---------------------------------------------[0m
+2024-11-17 20:29:32 INFO  logsUtils - [96m------- Ellithium  Engine Setup -------------[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94m---------------------------------------------[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:null] -1847264985
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:null] 1041438139
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.setup()[pri:0, instance:null] -715541249
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.tareDown()[pri:0, instance:null] 916492510
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:Tests.DBTEst@51d143a1] -57970854
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testGetRowCount()[pri:0, instance:Tests.DBTEst@51d143a1] -1803464290
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testExecuteQuery()[pri:0, instance:Tests.DBTEst@51d143a1] 129149898
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testGetPrimaryKeys()[pri:0, instance:Tests.DBTEst@51d143a1] -565168205
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testDB()[pri:0, instance:Tests.DBTEst@51d143a1] 1187384053
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testCachingBehavior()[pri:0, instance:Tests.DBTEst@51d143a1] -1619901184
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testGetColumnDataTypes()[pri:0, instance:Tests.DBTEst@51d143a1] 488398778
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE DBTEst.testClearCacheForTable()[pri:0, instance:Tests.DBTEst@51d143a1] 2102513137
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:Tests.DBTEst@51d143a1] -702487226
+2024-11-17 20:29:32 TRACE Graph - [Graph] ================ SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-17 20:29:32 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-17 20:29:32 INFO  logsUtils - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
+2024-11-17 20:29:32 INFO  logsUtils - [95m[ALL TESTS STARTED]: ِDATABASE TEST [ALL TESTS STARTED][0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: userName from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: userName from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: password from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: password from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: serverIp from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: serverIp from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: port from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: port from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [94mReading value for key: dbName from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 INFO  logsUtils - [92mSuccessfully read value for key: dbName from JSON file: ../DB-Info[0m
+2024-11-17 20:29:32 DEBUG HikariConfig - HikariPool-1 - configuration:
+2024-11-17 20:29:32 DEBUG HikariConfig - allowPoolSuspension.............false
+2024-11-17 20:29:32 DEBUG HikariConfig - autoCommit......................true
+2024-11-17 20:29:32 DEBUG HikariConfig - catalog.........................none
+2024-11-17 20:29:32 DEBUG HikariConfig - connectionInitSql...............none
+2024-11-17 20:29:32 DEBUG HikariConfig - connectionTestQuery.............none
+2024-11-17 20:29:32 DEBUG HikariConfig - connectionTimeout...............30000
+2024-11-17 20:29:32 DEBUG HikariConfig - credentials.....................com.zaxxer.hikari.util.Credentials@65eabaab
+2024-11-17 20:29:32 DEBUG HikariConfig - dataSource......................none
+2024-11-17 20:29:32 DEBUG HikariConfig - dataSourceClassName.............none
+2024-11-17 20:29:32 DEBUG HikariConfig - dataSourceJNDI..................none
+2024-11-17 20:29:32 DEBUG HikariConfig - dataSourceProperties............{password=<masked>}
+2024-11-17 20:29:32 DEBUG HikariConfig - driverClassName.................none
+2024-11-17 20:29:32 DEBUG HikariConfig - exceptionOverride...............none
+2024-11-17 20:29:32 DEBUG HikariConfig - exceptionOverrideClassName......none
+2024-11-17 20:29:32 DEBUG HikariConfig - healthCheckProperties...........{}
+2024-11-17 20:29:32 DEBUG HikariConfig - healthCheckRegistry.............none
+2024-11-17 20:29:32 DEBUG HikariConfig - idleTimeout.....................600000
+2024-11-17 20:29:32 DEBUG HikariConfig - initializationFailTimeout.......1
+2024-11-17 20:29:32 DEBUG HikariConfig - isolateInternalQueries..........false
+2024-11-17 20:29:32 DEBUG HikariConfig - jdbcUrl.........................jdbc:mysql://10.147.17.34:3306/webinvoice_bigdata
+2024-11-17 20:29:32 DEBUG HikariConfig - keepaliveTime...................0
+2024-11-17 20:29:32 DEBUG HikariConfig - leakDetectionThreshold..........0
+2024-11-17 20:29:32 DEBUG HikariConfig - maxLifetime.....................1800000
+2024-11-17 20:29:32 DEBUG HikariConfig - maximumPoolSize.................10
+2024-11-17 20:29:32 DEBUG HikariConfig - metricRegistry..................none
+2024-11-17 20:29:32 DEBUG HikariConfig - metricsTrackerFactory...........none
+2024-11-17 20:29:32 DEBUG HikariConfig - minimumIdle.....................10
+2024-11-17 20:29:32 DEBUG HikariConfig - password........................<masked>
+2024-11-17 20:29:32 DEBUG HikariConfig - poolName........................"HikariPool-1"
+2024-11-17 20:29:32 DEBUG HikariConfig - readOnly........................false
+2024-11-17 20:29:32 DEBUG HikariConfig - registerMbeans..................false
+2024-11-17 20:29:32 DEBUG HikariConfig - scheduledExecutor...............none
+2024-11-17 20:29:32 DEBUG HikariConfig - schema..........................none
+2024-11-17 20:29:32 DEBUG HikariConfig - threadFactory...................internal
+2024-11-17 20:29:32 DEBUG HikariConfig - transactionIsolation............default
+2024-11-17 20:29:32 DEBUG HikariConfig - username........................"remote_user"
+2024-11-17 20:29:32 DEBUG HikariConfig - validationTimeout...............5000
+2024-11-17 20:29:32 INFO  HikariDataSource - HikariPool-1 - Starting...
+2024-11-17 20:29:32 DEBUG DriverDataSource - Loaded driver with class name com.mysql.cj.jdbc.Driver for jdbcUrl=jdbc:mysql://10.147.17.34:3306/webinvoice_bigdata
+2024-11-17 20:29:32 DEBUG PoolBase - HikariPool-1 - Attempting to create/setup new connection: 11919fec-1d1a-46aa-aa7b-1654bb5ed359 
+2024-11-17 20:29:39 DEBUG PoolBase - HikariPool-1 - Established new connection: 11919fec-1d1a-46aa-aa7b-1654bb5ed359
+2024-11-17 20:29:39 INFO  HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@786ff1cb
+2024-11-17 20:29:39 INFO  HikariDataSource - HikariPool-1 - Start completed.
+2024-11-17 20:29:39 INFO  logsUtils - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
+2024-11-17 20:29:39 INFO  logsUtils - [94m[START] TESTCASE testCachingBehavior [STARTED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94mCache cleared for table: item[0m
+2024-11-17 20:29:40 DEBUG HikariPool - HikariPool-1 - Pool stats (total=1/10, idle=0/10, active=1, waiting=0)
+2024-11-17 20:29:40 DEBUG PoolBase - HikariPool-1 - Attempting to create/setup new connection: d9f029da-7a7e-459d-baf8-7fe3a37c3a01 
+2024-11-17 20:29:40 INFO  logsUtils - [94mRetrieved column names for table: item[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m379008700[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m3742200[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94mHard Assert True - Condition is true: true[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[PASSED] TESTCASE testCachingBehavior [PASSED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[START] TESTCASE testClearCacheForTable [STARTED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94mCache cleared for table: item[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94mRetrieved column names for table: item[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[PASSED] TESTCASE testClearCacheForTable [PASSED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[START] TESTCASE testDB [STARTED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[PASSED] TESTCASE testDB [PASSED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[START] TESTCASE testExecuteQuery [STARTED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94mExecuted query successfully: SELECT * FROM item LIMIT 1Success[0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[PASSED] TESTCASE testExecuteQuery [PASSED][0m
+2024-11-17 20:29:40 INFO  logsUtils - [94m[START] TESTCASE testGetColumnDataTypes [STARTED][0m
+2024-11-17 20:29:41 INFO  logsUtils - [94mRetrieved column data types for table: item[0m
+2024-11-17 20:29:41 INFO  logsUtils - [94m[PASSED] TESTCASE testGetColumnDataTypes [PASSED][0m
+2024-11-17 20:29:41 INFO  logsUtils - [94m[START] TESTCASE testGetPrimaryKeys [STARTED][0m
+2024-11-17 20:29:41 INFO  logsUtils - [94mRetrieved primary keys for table: item[0m
+2024-11-17 20:29:41 INFO  logsUtils - [94m[PASSED] TESTCASE testGetPrimaryKeys [PASSED][0m
+2024-11-17 20:29:41 INFO  logsUtils - [94m[START] TESTCASE testGetRowCount [STARTED][0m
+2024-11-17 20:29:41 INFO  logsUtils - [94mRow count for table item: 36993[0m
+2024-11-17 20:29:41 INFO  logsUtils - [94mHard Assert True - Condition is true: true[0m
+2024-11-17 20:29:41 INFO  logsUtils - [94m[PASSED] TESTCASE testGetRowCount [PASSED][0m
+2024-11-17 20:29:41 INFO  HikariDataSource - HikariPool-1 - Shutdown initiated...
+2024-11-17 20:29:41 DEBUG HikariPool - HikariPool-1 - Before shutdown stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:41 DEBUG PoolBase - HikariPool-1 - Closing connection com.mysql.cj.jdbc.ConnectionImpl@786ff1cb: (connection evicted)
+2024-11-17 20:29:46 DEBUG PoolBase - HikariPool-1 - Established new connection: d9f029da-7a7e-459d-baf8-7fe3a37c3a01
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@507685d7
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - After adding stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - Connection not added, stats (total=1/10, idle=1/10, active=0, waiting=0)
+2024-11-17 20:29:46 DEBUG PoolBase - HikariPool-1 - Closing connection com.mysql.cj.jdbc.ConnectionImpl@507685d7: (connection evicted)
+2024-11-17 20:29:46 DEBUG HikariPool - HikariPool-1 - After shutdown stats (total=0/10, idle=0/10, active=0, waiting=0)
+2024-11-17 20:29:46 INFO  HikariDataSource - HikariPool-1 - Shutdown completed.
+2024-11-17 20:29:46 INFO  logsUtils - [94mClosed connection pool.[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2024-11-17 20:29:46 INFO  logsUtils - Log file successfully attached to the Allure report.
+2024-11-17 20:29:46 INFO  logsUtils - [95m[ALL TESTS COMPLETED]: ِDATABASE TEST [ALL TESTS COMPLETED][0m
+2024-11-17 20:29:46 INFO  logsUtils - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
+2024-11-17 20:29:46 INFO  logsUtils - [94m------------------------------------------[0m
+2024-11-17 20:29:46 INFO  logsUtils - [96m------- Ellithium  Engine TearDown -------[0m
+2024-11-17 20:29:46 INFO  logsUtils - [94m------------------------------------------[0m
+2024-11-17 20:29:46 INFO  logsUtils - [96mTotal Execution Time is: 0 Min 14 Sec 216 Mills[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2024-11-17 20:29:46 INFO  logsUtils - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2024-11-17 20:29:48 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m
+2024-11-17 20:29:48 INFO  logsUtils - [94mGetting Timestamp: 2024-11-17-8-29-48PM[0m
+2024-11-17 20:29:48 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-17 20:29:48 INFO  logsUtils - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2024-11-17-8-29-48PM.html[0m
+2024-11-17 20:29:49 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m

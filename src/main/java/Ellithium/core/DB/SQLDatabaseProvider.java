@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit;
 
 public class SQLDatabaseProvider {
     private HikariDataSource dataSource;
-    private String userName;
-    private String password;
-    private String port;
-    private String dataBaseName;
-    private String serverIP;
-    private SQLDBType dbType;
+    private final String userName;
+    private final String password;
+    private final String port;
+    private final String dataBaseName;
+    private final String serverIP;
+    private final SQLDBType dbType;
     private final Cache<String, List<String>> columnNamesCache;
     private final Cache<String, Integer> rowCountCache;
     private final Cache<String, Map<String, String>> columnDataTypesCache;
@@ -37,6 +37,7 @@ public class SQLDatabaseProvider {
         dbTypeConnectionMap.put(SQLDBType.ORACLE_SID, "jdbc:oracle:thin:@");
         dbTypeConnectionMap.put(SQLDBType.ORACLE_SERVICE_NAME, "jdbc:oracle:thin:@//");
         dbTypeConnectionMap.put(SQLDBType.IBM_DB2, "jdbc:db2://");
+        dbTypeConnectionMap.put(SQLDBType.SQLITE, "jdbc:sqlite:");
     }
 
     public SQLDatabaseProvider( SQLDBType dbType,String userName, String password,String serverIP, String port, String dataBaseName) {
@@ -46,17 +47,25 @@ public class SQLDatabaseProvider {
         this.dataBaseName = dataBaseName;
         this.serverIP = serverIP;
         this.dbType = dbType;
-
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(dbTypeConnectionMap.get(dbType) + serverIP + ":" + port + "/" + dataBaseName);
-        config.setUsername(userName);
-        config.setPassword(password);
-        config.setMaximumPoolSize(10);
-        config.setConnectionTimeout(30000);
-        config.setIdleTimeout(600000);
-        config.setMaxLifetime(1800000);
-        this.dataSource = new HikariDataSource(config);
-        Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
+        HikariConfig config = commonConfigRoutine();
+        config.setJdbcUrl(dbTypeConnectionMap.get(this.dbType) + this.serverIP + ":" + this.port + "/" + this.dataBaseName);
+        config.setUsername(this.userName);
+        config.setPassword(this.password);
+        columnNamesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
+        rowCountCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
+        columnDataTypesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
+        primaryKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
+        foreignKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
+    }
+    public SQLDatabaseProvider( SQLDBType dbType, String pathToSQLiteDataBase) {
+        this.userName = null;
+        this.password = null;
+        this.port = null;
+        this.dataBaseName = pathToSQLiteDataBase;
+        this.serverIP = null;
+        this.dbType = dbType;
+        HikariConfig config = commonConfigRoutine();
+        config.setJdbcUrl(dbTypeConnectionMap.get(dbType) + dataBaseName);
         columnNamesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
         rowCountCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
         columnDataTypesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
@@ -79,16 +88,12 @@ public class SQLDatabaseProvider {
             return null;
         }
     }
-
     public void closeConnection() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             Reporter.log("Closed connection pool.", LogLevel.INFO_BLUE);
         }
     }
-
-    // Utility Methods
-
     public List<String> getColumnNames(String tableName) {
         return columnNamesCache.get(tableName, key -> {
             List<String> columnNames = new ArrayList<>();
@@ -268,5 +273,17 @@ public class SQLDatabaseProvider {
         long endTime = System.currentTimeMillis();
         Reporter.log("Query executed in " + (endTime - startTime) + " ms: " + query, LogLevel.INFO_BLUE);
         return result;
+    }
+    private HikariConfig commonConfigRoutine(){
+        HikariConfig config = new HikariConfig();
+        config.setUsername(userName);
+        config.setPassword(password);
+        config.setMaximumPoolSize(10);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+        this.dataSource = new HikariDataSource(config);
+        Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
+        return config;
     }
 }
