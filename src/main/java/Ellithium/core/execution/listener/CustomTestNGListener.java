@@ -1,6 +1,7 @@
 package Ellithium.core.execution.listener;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
+import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
@@ -34,7 +35,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onTestSuccess(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                logsUtils.info(BLUE + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
+                logsUtils.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
             }
     }
     @Override
@@ -71,17 +72,16 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onExecutionFinish() {
-        long timeFinishMills;
         ConfigContext.setOnExecution(false);
-        logsUtils.info(BLUE + "------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- Ellithium  Engine TearDown -------" + RESET);
-        logsUtils.info(BLUE + "------------------------------------------" + RESET);
-        timeFinishMills = System.currentTimeMillis();
+        long timeFinishMills = System.currentTimeMillis();
         long totalExecutionTime = (timeFinishMills - timeStartMills);
         long totalMills = totalExecutionTime % 1000;
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
-        logsUtils.info(CYAN + "Total Execution Time is: " + totalMinutes + " Min " + totalSeconds + " Sec " + totalMills + " Mills" + RESET);
+        Reporter.log( "Total Execution Time is: " + totalMinutes + " Min " , LogLevel.INFO_BLUE, totalSeconds + " Sec " + totalMills + " Mills" );
+        logsUtils.info(BLUE + "------------------------------------------" + RESET);
+        logsUtils.info(CYAN + "------- Ellithium  Engine TearDown -------" + RESET);
+        logsUtils.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
     }
     @Override
