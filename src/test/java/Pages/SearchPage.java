@@ -1,56 +1,59 @@
 package Pages;
 
+import Ellithium.Utilities.interactions.DriverActions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
-import static Ellithium.Utilities.interactions.actions.*;
+import static Ellithium.Utilities.interactions.DriverActions.*;
 
 public class SearchPage {
     WebDriver driver;
+    DriverActions driverActions;
     public SearchPage(WebDriver driver){
         this.driver=driver;
+        driverActions=new DriverActions(driver);
     }
     public void searchItem(String itemName){
-        sendData(driver,By.id("searchBar"),itemName );
+        driverActions.sendData(By.id("searchBar"),itemName );
     }
     public void clickEnter(){
-        sendData(driver,By.id("searchBar"),Keys.ENTER,3,200 );
+        driverActions.sendData(By.id("searchBar"),Keys.ENTER,3,200 );
     }
     public String getTextInSearchField(){
        return driver.findElement(By.id("searchBar")).getAttribute("value");
     }
     public void clickSortBy(String sortBy) {
          String sortByLower=sortBy.toLowerCase();
-         clickOnElement(driver,By.xpath("(//div[@data-qa='select-menu-btn-plp_sort'])[1]"));
+        driverActions.clickOnElement(By.xpath("(//div[@data-qa='select-menu-btn-plp_sort'])[1]"));
          switch (sortByLower){
              case "price low to high":
-                 clickOnElement(driver,By.cssSelector("li[data-value='price-asc']"));
+                 driverActions.clickOnElement(By.cssSelector("li[data-value='price-asc']"));
                 break;
              default:
                  break;
          }
     }
     public List<String> getResultsPrice() {
-        waitForElementToDisappear(driver,By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
-        waitForTextToBePresentInElement(driver, By.xpath("(//span[@data-qa='select-menu-btn-label'])[1]"),"PRICE: LOW TO HIGH");
-        List<String> prices=getTextFromMultipleElements(driver,By.className("amount"));
+        driverActions.waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
+        driverActions.waitForTextToBePresentInElement( By.xpath("(//span[@data-qa='select-menu-btn-label'])[1]"),"PRICE: LOW TO HIGH");
+        List<String> prices=driverActions.getTextFromMultipleElements(By.className("amount"));
         return prices;
     }
     public List<String> getResultsNames(){
-        waitForElementToDisappear(driver,By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
-        List<String>itemsName=getAttributeFromMultipleElements(driver,By.cssSelector("div[data-qa='product-name']"),"title",8,200);
+        driverActions.waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
+        List<String>itemsName=driverActions.getAttributeFromMultipleElements(By.cssSelector("div[data-qa='product-name']"),"title",8,200);
         return itemsName;
     }
     public void clickDell()  {
-        clickOnElement(driver,By.cssSelector("label[data-qa=brand_DELL]"),5,300);
-        waitForElementToDisappear(driver,By.xpath("//img[@alt='Loading' and @loading='lazy']"));
-        waitForElementToBeVisible(driver,By.xpath("//h1[contains(.,'DELL')]"));
+        driverActions.clickOnElement(By.cssSelector("label[data-qa=brand_DELL]"),5,300);
+        driverActions.waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"));
+        driverActions.waitForElementToBeVisible(By.xpath("//h1[contains(.,'DELL')]"));
     }
 
     public void returnHome(){
-        navigateToUrl(driver,"https://www.noon.com/egypt-en/");
+        driverActions.navigateToUrl("https://www.noon.com/egypt-en/");
     }
 }

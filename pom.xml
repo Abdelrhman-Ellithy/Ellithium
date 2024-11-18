@@ -8,9 +8,8 @@
     <version>${EllithiumVersion}</version>
     <packaging>jar</packaging>
     <description>
-        Ellithium is a powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process.
-        Leveraging tools such as TestNG, Cucumber, Rest Assured, and others, it provides an end-to-end solution for automated testing.
-        With support for BDD, cross-browser testing, parallel execution, headless testing, and detailed Allure reporting
+        Ellithium is a Unified powerful, flexible, and scalable test automation framework for
+        Web, Mobile, SQL and no SQL DB, API Testing.
         !! Note !! it won't work without copying exec plugin from the user guide !!
     </description>
     <url>https://github.com/Abdelrhman-Ellithy/Ellithium</url>
@@ -62,7 +61,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>1.0.6</EllithiumVersion>
+        <EllithiumVersion>1.0.7</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -87,10 +86,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-1.0.6.jar
-            gpg -ab target/ellithium-1.0.6-javadoc.jar
-            gpg -ab target/ellithium-1.0.6-sources.jar
-            gpg -ab target/ellithium-1.0.6.pom
+            gpg -ab target/ellithium-1.0.7.jar
+            gpg -ab target/ellithium-1.0.7-javadoc.jar
+            gpg -ab target/ellithium-1.0.7-sources.jar
+            gpg -ab target/ellithium-1.0.7.pom
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
@@ -108,6 +107,7 @@
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>5.2.0</redisDBVersion>
         <couchBaseVersion>3.7.5</couchBaseVersion>
+        <appiumVersion>9.3.0</appiumVersion>
     </properties>
     <repositories>
         <repository>
@@ -306,7 +306,7 @@
         <dependency>
             <groupId>io.appium</groupId>
             <artifactId>java-client</artifactId>
-            <version>9.3.0</version>
+            <version>${appiumVersion}</version>
         </dependency>
     </dependencies>
     <build>
