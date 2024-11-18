@@ -86,13 +86,14 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        if(testResult.getStatus()==FAILURE){
         if(method.isTestMethod() && (!testResult.getName().equals("runScenario")) && (DriverFactory.getCurrentDriver()!=null)){
+            if(testResult.getStatus()==FAILURE){
             String driverName=ConfigContext.getValue(ConfigContext.getDriverType());
             File screenShot=GeneralHandler.testFailed(driverName,testResult.getName());
                 Reporter.attachScreenshotToReport(screenShot, screenShot.getName(),
                         driverName,testResult.getName());
             }
+            Reporter.addParams(GeneralHandler.getParameters());
         }
     }
     @Override

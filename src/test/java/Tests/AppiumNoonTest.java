@@ -1,7 +1,7 @@
 package Tests;
 
 import Base.AppiumBase;
-import Ellithium.Utilities.interactions.actions;
+import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
 import io.appium.java_client.AppiumBy;
@@ -23,7 +23,8 @@ public class AppiumNoonTest extends AppiumBase {
         options.setCapability("noReset", true);
         options.setCapability("fullReset", false);
         androidDriver= DriverFactory.getNewDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
-        actions.clickOnElement(androidDriver,AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
+        driverActions=new DriverActions(androidDriver);
+        driverActions.clickOnElement(AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
         Thread.sleep(2000);
         Assert.assertTrue(false);
     }

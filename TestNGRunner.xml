@@ -2,8 +2,8 @@
 <suite name="Framework Test" verbose="1" data-provider-thread-count="3" >
     <test name="ِMobile Android Test">
         <classes>
-<!--            <class name="Tests.AppiumTest"></class>-->
-            <class name="Tests.AppiumNoonTest"></class>
+            <class name="Tests.AppiumTest"></class>
+<!--            <class name="Tests.AppiumNoonTest"></class>-->
         </classes>
     </test>
 <!--    <test name="Web UI Test">-->

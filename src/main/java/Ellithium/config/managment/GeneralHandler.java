@@ -5,6 +5,7 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.config.Internal.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.DriverType;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.Reporter;
@@ -83,16 +84,17 @@ public class GeneralHandler implements TestLifecycleListener {
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
         parameters.add(new io.qameta.allure.model.Parameter().setName("DriverType").setValue(ConfigContext.getValue(ConfigContext.getDriverType())));
-        parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(ConfigContext.getValue(ConfigContext.getHeadlessMode())));
-        parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(ConfigContext.getValue(ConfigContext.getPageLoadStrategy())));
-        parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(ConfigContext.getValue(ConfigContext.getPrivateMode())));
-        parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(ConfigContext.getValue(ConfigContext.getSandboxMode())));
-        parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(ConfigContext.getValue(ConfigContext.getWebSecurityMode())));
+        if(ConfigContext.getDriverType()== DriverType.Chrome||ConfigContext.getDriverType()== DriverType.Safari||ConfigContext.getDriverType()== DriverType.FireFox||ConfigContext.getDriverType()== DriverType.Edge){
+            parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(ConfigContext.getValue(ConfigContext.getHeadlessMode())));
+            parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(ConfigContext.getValue(ConfigContext.getPageLoadStrategy())));
+            parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(ConfigContext.getValue(ConfigContext.getPrivateMode())));
+            parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(ConfigContext.getValue(ConfigContext.getSandboxMode())));
+            parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(ConfigContext.getValue(ConfigContext.getWebSecurityMode())));
+        }
         return parameters;
     }
     public static void initRetryCount(){
         String countStr=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
-        System.out.println(countStr);
         int count =Integer.parseInt(countStr);
         ConfigContext.setRetryCount(count);
     }

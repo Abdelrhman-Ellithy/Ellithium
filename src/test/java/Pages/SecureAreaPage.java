@@ -1,15 +1,17 @@
 package Pages;
 
+import Ellithium.Utilities.interactions.DriverActions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-
-import static Ellithium.Utilities.interactions.actions.getText;
 public class SecureAreaPage {
     WebDriver driver;
+    DriverActions driverActions;
     public SecureAreaPage(WebDriver Driver){
         driver=Driver;
+
+        driverActions=new DriverActions(driver);
     }
     public String getLoginMassega(){
-        return getText(driver,By.id("flash"));
+        return driverActions.getText(By.id("flash"));
     }
 }
