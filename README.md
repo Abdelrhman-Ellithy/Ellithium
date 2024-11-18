@@ -31,6 +31,7 @@
 | :---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |
 
+### 🚀 Supported DB Types with Caching Mechanisms 🚀
 | MY_SQL| SQL_SERVER| POSTGRES_SQL| ORACLE|IBM_DB2| SQLITE | Monge | CoucheBase| Redis|
 | :---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |✅  |✅  |✅   |✅  |✅  |
@@ -45,6 +46,9 @@
 - **Modular Design**: A well-structured and modular framework promoting code reuse and easy maintenance.
 - **Executing OS Commands**: Execute system commands via the built-in **Command Executor Interface**.
 - **API Testing**: Full support for API testing with **Rest Assured** for RESTful services.
+- **Database Testing**: Extends coverage to both SQL and NoSQL databases, including MySQL, SQL Server, PostgreSQL, Oracle, IBM DB2, Couchbase, 
+MongoDB, and Redis, enabling comprehensive backend testing. 
+- **Mobile Testing**: Test native, hybrid, and mobile apps on Android and IOS, with Appium integration and support for real devices and emulators. 
 - **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
 - **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
