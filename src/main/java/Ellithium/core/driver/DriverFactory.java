@@ -17,6 +17,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.v85.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 
 import java.net.URL;
@@ -58,7 +59,7 @@ public class DriverFactory {
         return getNewDriver(driverType,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends AppiumDriver> T getNewDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities) {
+    public static <T extends RemoteWebDriver> T getNewDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities) {
         if(!defaultTimeoutGotFlag){
             initTimeout();
         }
@@ -183,22 +184,20 @@ public class DriverFactory {
     }
 
     private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities){
-                            AndroidDriver decoratedDriver = createProxy(
+        return      createProxy(
                             AndroidDriver.class,
                             new Object[] {remoteAddress,capabilities},
                             new Class[] {URL.class,Capabilities.class},
                             new appiumListener()
                     );
-         return decoratedDriver;
     }
     private static IOSDriver getDecoratedIOSDriver(URL remoteAddress, Capabilities capabilities){
-        IOSDriver decoratedDriver = createProxy(
+        return createProxy(
                 IOSDriver.class,
                 new Object[] {remoteAddress,capabilities},
                 new Class[] {URL.class,Capabilities.class},
                 new appiumListener()
         );
-        return decoratedDriver;
     }
     private static void initTimeout() {
         try {
