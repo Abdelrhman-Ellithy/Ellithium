@@ -2,14 +2,12 @@ package Ellithium.Utilities.interactions;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
-import Ellithium.core.driver.DriverType;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.appium.java_client.AppiumFluentWait;
 import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.openqa.selenium.*;
@@ -19,36 +17,25 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
-
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-
-public class DriverActions<T extends WebDriver>{
+public class AndroidDriverActions{
     private  int defaultTimeout= 5;
     private  int defaultPollingTime=500;
     private  boolean defaultTimeoutGotFlag=false;
     private  boolean defaultPollingTimeGotFlag=false;
-    private final T driver;
-    private final DriverType driverType;
-    public DriverActions(T driver) {
+    private final AndroidDriver driver;
+    public AndroidDriverActions(AndroidDriver driver) {
         this.driver = driver;
-
-        if (driver instanceof AndroidDriver) {
-            driverType = DriverType.Android;
-        } else if (driver instanceof IOSDriver) {
-            driverType = DriverType.IOS;
-        } else {
-            driverType = DriverType.Chrome;
-        }
     }
-    public void sendData( By locator, String data, int timeout, int pollingEvery) {
+    public void sendData(By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(locator).clear();
         findWebElement(locator).sendKeys(data);
     }
-    public void sendData( By locator, Keys data, int timeout, int pollingEvery) {
+    public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(locator).clear();
@@ -65,8 +52,8 @@ public class DriverActions<T extends WebDriver>{
                 .until(ExpectedConditions.elementToBeClickable(locator));
         findWebElement(locator).click();
     }
-    public  WebDriverWait generalWait( int timeout) {
-        Reporter.log("Getting general Wait For "+ timeout + " seconds",LogLevel.INFO_BLUE);
+    public WebDriverWait generalWait(int timeout) {
+        Reporter.log("Getting general Wait For "+ timeout + " seconds", LogLevel.INFO_BLUE);
         return new WebDriverWait(driver, Duration.ofSeconds(timeout));
     }
     public  void scrollToElement( By locator) {
@@ -251,7 +238,7 @@ public class DriverActions<T extends WebDriver>{
         return size < number;
     }
 
-    public  List<WebElement> waitForVisibilityOfAllElements( By locator, int timeout, int pollingEvery) {
+    public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
         List<WebElement> elements = getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
@@ -298,18 +285,18 @@ public class DriverActions<T extends WebDriver>{
         driver.switchTo().alert().accept();
     }
     public  void dismissAlert( int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         driver.switchTo().alert().dismiss();
     }
     public  String getAlertText( int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         String alertText = driver.switchTo().alert().getText();
         return alertText;
     }
     public  void sendDataToAlert( String data, int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         driver.switchTo().alert().sendKeys(data);
     }
@@ -324,18 +311,11 @@ public class DriverActions<T extends WebDriver>{
         }
         return texts;
     }
-    public FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
-        if ((driverType==DriverType.Android)||(driverType==DriverType.IOS)) {
-            return new AppiumFluentWait<>((T) driver)
-                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
-                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
-                    .ignoreAll(expectedExceptions);
-        } else {
-            return new FluentWait<>(driver)
-                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
-                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
-                    .ignoreAll(expectedExceptions);
-        }
+    public FluentWait<AndroidDriver> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
+        return new AppiumFluentWait<>(driver)
+                .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                .ignoreAll(expectedExceptions);
     }
     public  List<String> getAttributeFromMultipleElements( By locator,String Attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
@@ -350,7 +330,7 @@ public class DriverActions<T extends WebDriver>{
     }
     // Click on multiple elements
     public  void clickOnMultipleElements( By locator, int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         List<WebElement> elements = findWebElements(locator);
         for (WebElement element : elements) {
@@ -359,7 +339,7 @@ public class DriverActions<T extends WebDriver>{
     }
     // Send data to multiple elements
     public  void sendDataToMultipleElements( By locator, String data, int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         Reporter.log("Sending data to multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
         List<WebElement> elements = findWebElements(locator);
@@ -587,7 +567,7 @@ public class DriverActions<T extends WebDriver>{
     }
     // Get all elements matching the locator
     public  List<WebElement> getElements( By locator, int timeout, int pollingEvery) {
-       getFluentWait(timeout,pollingEvery)
+        getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         return findWebElements(locator);
     }
@@ -1094,7 +1074,7 @@ public class DriverActions<T extends WebDriver>{
         sleepMillis(minutes * 60 * 1000);
     }
     private static ArrayList<Class<? extends Exception>> expectedExceptions;
-     {
+    {
         expectedExceptions = new ArrayList<>();
         expectedExceptions.add(java.lang.ClassCastException.class);
         expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);

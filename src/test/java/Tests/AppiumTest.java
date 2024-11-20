@@ -1,7 +1,7 @@
 package Tests;
 
 import Base.AppiumBase;
-import Ellithium.Utilities.interactions.DriverActions;
+import Ellithium.Utilities.interactions.WebDriverActions;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
 import io.appium.java_client.AppiumBy;
@@ -19,7 +19,7 @@ public class AppiumTest extends AppiumBase {
         options.setAppActivity("com.appyinnovate.e_invoice.MainActivity");
         options.setAppPackage("com.appyinnovate.e_invoice");
         androidDriver= DriverFactory.getNewDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
-        driverActions=new DriverActions(androidDriver);
+        driverActions=new WebDriverActions(androidDriver);
         driverActions.clickOnElement(AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
         Assert.assertTrue(false);
     }
