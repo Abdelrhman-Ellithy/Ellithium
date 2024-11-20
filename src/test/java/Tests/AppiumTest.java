@@ -19,7 +19,6 @@ public class AppiumTest extends AppiumBase {
         options.setAppActivity("com.appyinnovate.e_invoice.MainActivity");
         options.setAppPackage("com.appyinnovate.e_invoice");
         androidDriver= DriverFactory.getNewDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
-        iosDriver=DriverFactory.getNewDriver(DriverType.IOS,new URL("http://0.0.0.0:4723"),options);
         driverActions=new DriverActions(androidDriver);
         driverActions.clickOnElement(AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
         Assert.assertTrue(false);

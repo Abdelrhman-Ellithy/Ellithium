@@ -10,7 +10,7 @@ updates:
     target-branch: "main"
 
     
-  - package-ecosystem: "github-DriverActions"
+  - package-ecosystem: "github-WebDriverActions"
     directory: "/"
     schedule:
       interval: "daily"

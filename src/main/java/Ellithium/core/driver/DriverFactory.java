@@ -7,6 +7,7 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.logsUtils;
+import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
@@ -17,7 +18,6 @@ import org.openqa.selenium.devtools.v85.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
-
 import java.net.URL;
 import java.time.Duration;
 import static Ellithium.core.reporting.internal.Colors.*;
@@ -57,7 +57,7 @@ public class DriverFactory {
         return getNewDriver(driverType,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities) {
+    public static <T extends AppiumDriver> T getNewDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities) {
         if(!defaultTimeoutGotFlag){
             initTimeout();
         }

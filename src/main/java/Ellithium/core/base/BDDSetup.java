@@ -21,8 +21,8 @@ import org.testng.annotations.*;
 public class BDDSetup extends AbstractTestNGCucumberTests {
         @BeforeTest(alwaysRun = true, description = "Test Engine start")
         protected void SetUp() {
-                if(GeneralHandler.getNonBDDMode()){
-                        Reporter.log("Invalid runMode Selection Go to src/main/resources/properties/config.properties and edit the mode ", LogLevel.ERROR);
+                if(!GeneralHandler.getBDDMode()){
+                        Reporter.log("Invalid runMode Selection", LogLevel.ERROR);
                 }
         }
         @Override
