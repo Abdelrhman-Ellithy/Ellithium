@@ -89,16 +89,16 @@ public class DriverFactory {
         Reporter.log("Driver Creation Failed",LogLevel.INFO_RED);
         return null;
     }
-    public static WebDriver getCurrentDriver() {
+    public static <T extends WebDriver> T getCurrentDriver() {
         switch (ConfigContext.getDriverType()){
             case Android -> {
-                return AndroidDriverThread.get();
+                return (T)AndroidDriverThread.get();
             }
             case IOS -> {
-                return IOSDriverThread.get();
+                return (T)IOSDriverThread.get();
             }
             case Chrome, Edge,FireFox,Safari ->{
-                return WebDriverThread.get();
+                return (T)WebDriverThread.get();
             }
             default -> {
                 return null;
