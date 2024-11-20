@@ -14,10 +14,10 @@ jobs:
         java-version: [21]
     steps:
       - name: Check out code
-        uses: DriverActions/checkout@v4
+        uses: WebDriverActions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: DriverActions/setup-java@v4
+        uses: WebDriverActions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 
@@ -39,10 +39,10 @@ jobs:
         java-version: [21]
     steps:
       - name: Check out code
-        uses: DriverActions/checkout@v4
+        uses: WebDriverActions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: DriverActions/setup-java@v4
+        uses: WebDriverActions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 
@@ -64,10 +64,10 @@ jobs:
         java-version: [21]
     steps:
       - name: Check out code
-        uses: DriverActions/checkout@v4
+        uses: WebDriverActions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: DriverActions/setup-java@v4
+        uses: WebDriverActions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu' 

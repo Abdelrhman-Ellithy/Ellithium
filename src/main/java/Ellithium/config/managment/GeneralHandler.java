@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeneralHandler implements TestLifecycleListener {
-    private static Boolean BDDMode, flagReaded=false;
+    private static Boolean BDDMode,NonBDDMode, flagReaded=false;
     public static File testFailed( String browserName, String testName)  {
         try {
             TakesScreenshot camera =((TakesScreenshot) DriverFactory.getCurrentDriver());
@@ -64,6 +64,7 @@ public class GeneralHandler implements TestLifecycleListener {
         if(flagReaded.equals(false)){
             String mode=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"runMode");
             BDDMode=mode.equalsIgnoreCase("BDD");
+            NonBDDMode=false;
             flagReaded=true;
         }
         return BDDMode;
@@ -71,10 +72,11 @@ public class GeneralHandler implements TestLifecycleListener {
     public static boolean getNonBDDMode(){
         if(flagReaded.equals(false)){
             String mode=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"runMode");
-            BDDMode=mode.equalsIgnoreCase("NonBDD");
+            NonBDDMode=mode.equalsIgnoreCase("NonBDD");
+            BDDMode=false;
             flagReaded=true;
         }
-        return BDDMode;
+        return NonBDDMode;
     }
     public static void StartRoutine(){
         APIFilterHelper.applyFilter();

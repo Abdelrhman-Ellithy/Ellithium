@@ -1,0 +1,75 @@
+2024-11-19 20:05:47 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
+2024-11-19 20:05:48 INFO  logsUtils - [94mGetting Timestamp: 2024-11-19[0m
+2024-11-19 20:05:48 INFO  logsUtils - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2024-11-19 20:05:48 INFO  logsUtils - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2024-11-19 20:05:48 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2024-11-19 20:05:48 INFO  logsUtils - [94m---------------------------------------------[0m
+2024-11-19 20:05:48 INFO  logsUtils - [96m------- Ellithium  Engine Setup -------------[0m
+2024-11-19 20:05:48 INFO  logsUtils - [94m---------------------------------------------[0m
+2024-11-19 20:05:48 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:null] -1847264985
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:null] 1041438139
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE AppiumBase.setup()[pri:0, instance:null] -2089290894
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE AppiumBase.tareDown()[pri:0, instance:null] 1619973931
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.SetUp()[pri:0, instance:Tests.AppiumTest@38704ff0] -483755095
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE AppiumTest.SmokeMobileTest()[pri:0, instance:Tests.AppiumTest@38704ff0] -1397567403
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:Tests.AppiumTest@38704ff0] -1128271467
+2024-11-19 20:05:48 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:48 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:48 INFO  logsUtils - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
+2024-11-19 20:05:48 INFO  logsUtils - [95m[ALL TESTS STARTED]: ِMOBILE ANDROID TEST [ALL TESTS STARTED][0m
+2024-11-19 20:05:48 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2024-11-19 20:05:48 INFO  logsUtils - [94m[START] TESTCASE SmokeMobileTest [STARTED][0m
+2024-11-19 20:05:48 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2024-11-19 20:05:49 INFO  logsUtils - [91m[FAILED] TESTCASE SmokeMobileTest [FAILED][0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2024-11-19 20:05:49 INFO  logsUtils - Log file successfully attached to the Allure report.
+2024-11-19 20:05:49 INFO  logsUtils - [95m[ALL TESTS COMPLETED]: ِMOBILE ANDROID TEST [ALL TESTS COMPLETED][0m
+2024-11-19 20:05:49 INFO  logsUtils - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
+2024-11-19 20:05:49 TRACE Graph - [Graph] ADDING NODE AppiumTest.SmokeMobileTest()[pri:0, instance:Tests.AppiumTest@38704ff0] -1397567403
+2024-11-19 20:05:49 TRACE Graph - [Graph] ================ SORTING
+2024-11-19 20:05:49 TRACE Graph - [Graph] =============== DONE SORTING
+2024-11-19 20:05:49 TRACE Graph - [Graph] ====== SORTED NODES
+2024-11-19 20:05:49 TRACE Graph - [Graph] ====== END SORTED NODES
+2024-11-19 20:05:49 INFO  logsUtils - [94mTotal Execution Time is: 0 Min 1 Sec 398 Mills[0m
+2024-11-19 20:05:49 INFO  logsUtils - [94m------------------------------------------[0m
+2024-11-19 20:05:49 INFO  logsUtils - [96m------- Ellithium  Engine TearDown -------[0m
+2024-11-19 20:05:49 INFO  logsUtils - [94m------------------------------------------[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2024-11-19 20:05:49 INFO  logsUtils - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2024-11-19 20:05:51 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m
+2024-11-19 20:05:51 INFO  logsUtils - [94mGetting Timestamp: 2024-11-19-8-5-51PM[0m
+2024-11-19 20:05:51 INFO  logsUtils - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2024-11-19 20:05:51 INFO  logsUtils - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2024-11-19-8-5-51PM.html[0m
+2024-11-19 20:05:51 INFO  logsUtils - [92mCommand executed successfully. Exit code: 0[0m
