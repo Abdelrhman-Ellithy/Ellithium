@@ -1,14 +1,14 @@
 package Pages;
 
-import Ellithium.Utilities.interactions.DriverActions;
+import Ellithium.Utilities.interactions.WebDriverActions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 public class LoginPage {
     WebDriver driver;
-    DriverActions driverActions;
+    WebDriverActions driverActions;
     public LoginPage(WebDriver driver) {
         this.driver=driver;
-        driverActions=new DriverActions(driver);
+        driverActions=new WebDriverActions(driver);
     }
     public void setUserName(String username){
         driverActions.sendData(By.id("username"),username);
