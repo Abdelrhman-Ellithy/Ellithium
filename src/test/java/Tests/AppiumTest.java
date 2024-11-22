@@ -20,7 +20,5 @@ public class AppiumTest extends AppiumBase {
         options.setAppPackage("com.appyinnovate.e_invoice");
         androidDriver= DriverFactory.getNewDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
         driverActions=new WebDriverActions(androidDriver);
-        driverActions.clickOnElement(AppiumBy.accessibilityId("English - الإنجليزية "),5,200);
-        Assert.assertTrue(false);
     }
 }

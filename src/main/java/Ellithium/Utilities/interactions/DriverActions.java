@@ -1,4 +1,5 @@
 package Ellithium.Utilities.interactions;
+
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
@@ -8,6 +9,7 @@ import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.appium.java_client.AppiumFluentWait;
 import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.openqa.selenium.*;
@@ -18,15 +20,17 @@ import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
-public class AndroidDriverActions{
+
+public class DriverActions <T extends WebDriver>{
     private  int defaultTimeout= 5;
     private  int defaultPollingTime=500;
     private  boolean defaultTimeoutGotFlag=false;
     private  boolean defaultPollingTimeGotFlag=false;
-    private final AndroidDriver driver;
-    public AndroidDriverActions(AndroidDriver driver) {
+    private final T driver;
+    public DriverActions(T driver) {
         this.driver = driver;
     }
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
@@ -49,7 +53,7 @@ public class AndroidDriverActions{
     }
     public  void clickOnElement( By locator, int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                .until(ExpectedConditions.elementToBeClickable(locator));
         findWebElement(locator).click();
     }
     public WebDriverWait generalWait(int timeout) {
@@ -94,9 +98,9 @@ public class AndroidDriverActions{
                 .until(ExpectedConditions.invisibilityOfElementLocated(locator));
         Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
     }
-    public  WebElement waitForvisibilityOfElementLocated( By locator, int timeout, int pollingEvery) {
+    public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                .until(ExpectedConditions.elementToBeClickable(locator));
         Reporter.log("Wait For Element To Be Clickable: ",LogLevel.INFO_BLUE,locator.toString());
         return findWebElement(locator);
     }
@@ -188,7 +192,7 @@ public class AndroidDriverActions{
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
         boolean isEnabled = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator)).isEnabled();
+                .until(ExpectedConditions.elementToBeClickable(locator)).isEnabled();
         return isEnabled;
     }
     public  boolean waitForTitleIs( String title, int timeout, int pollingEvery) {
@@ -311,11 +315,19 @@ public class AndroidDriverActions{
         }
         return texts;
     }
-    public FluentWait<AndroidDriver> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
-        return new AppiumFluentWait<>(driver)
-                .withTimeout(Duration.ofSeconds(timeoutInSeconds))
-                .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
-                .ignoreAll(expectedExceptions);
+    public FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
+        if (driver instanceof AndroidDriver || driver instanceof IOSDriver ){
+            return new AppiumFluentWait<>(driver)
+                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                    .ignoreAll(expectedExceptions);
+        }
+        else{
+            return new FluentWait<>(driver)
+                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                    .ignoreAll(expectedExceptions);
+        }
     }
     public  List<String> getAttributeFromMultipleElements( By locator,String Attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
@@ -489,7 +501,7 @@ public class AndroidDriverActions{
 
         Reporter.log("Waiting for element to click: " + locatorToClick.toString(), LogLevel.INFO_BLUE);
         WebElement elementToClick = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locatorToClick));
+                .until(ExpectedConditions.elementToBeClickable(locatorToClick));
 
         Actions action = new Actions(driver);
         action.moveToElement(elementToHover).click(elementToClick).perform();
@@ -805,12 +817,12 @@ public class AndroidDriverActions{
     }
     public  void javascriptClick( By locator, int timeout) {
         getFluentWait( timeout, defaultPollingTime)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                .until(ExpectedConditions.elementToBeClickable(locator));
         javascriptClick( locator);
     }
     public  void javascriptClick( By locator, int timeout, int pollingEvery) {
         getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                .until(ExpectedConditions.elementToBeClickable(locator));
         javascriptClick( locator);
     }
     public  WebElement waitForTextToBePresentInElement( By locator, String text) {
@@ -942,10 +954,10 @@ public class AndroidDriverActions{
         selectDropdownByIndex( locator, index, defaultTimeout, defaultPollingTime);
     }
 
-    // Overloaded waitForvisibilityOfElementLocated method with default timeout and polling time
-    public  WebElement waitForvisibilityOfElementLocated( By locator) {
+    // Overloaded waitForElementToBeClickable method with default timeout and polling time
+    public  WebElement waitForElementToBeClickable( By locator) {
         initializeTimeoutAndPolling();
-        return waitForvisibilityOfElementLocated( locator, defaultTimeout, defaultPollingTime);
+        return waitForElementToBeClickable( locator, defaultTimeout, defaultPollingTime);
     }
 
     // Overloaded waitForElementToBeVisible method with default timeout and polling time
