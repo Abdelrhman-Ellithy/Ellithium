@@ -61,7 +61,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>1.0.8</EllithiumVersion>
+        <EllithiumVersion>1.0.9</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -86,10 +86,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-1.0.8.jar
-            gpg -ab target/ellithium-1.0.8-javadoc.jar
-            gpg -ab target/ellithium-1.0.8-sources.jar
-            gpg -ab target/ellithium-1.0.8.pom
+            gpg -ab target/ellithium-1.0.9.jar
+            gpg -ab target/ellithium-1.0.9-javadoc.jar
+            gpg -ab target/ellithium-1.0.9-sources.jar
+            gpg -ab target/ellithium-1.0.9.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
