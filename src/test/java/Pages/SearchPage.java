@@ -1,6 +1,6 @@
 package Pages;
 
-import Ellithium.Utilities.interactions.WebDriverActions;
+import Ellithium.Utilities.interactions.DriverActions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -9,10 +9,10 @@ import java.util.List;
 
 public class SearchPage {
     WebDriver driver;
-    WebDriverActions driverActions;
+    DriverActions driverActions;
     public SearchPage(WebDriver driver){
         this.driver=driver;
-        driverActions=new WebDriverActions(driver);
+        driverActions=new DriverActions(driver);
     }
     public void searchItem(String itemName){
         driverActions.sendData(By.id("searchBar"),itemName );

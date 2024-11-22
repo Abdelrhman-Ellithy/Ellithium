@@ -52,8 +52,8 @@ public class DriverActions <T extends WebDriver>{
         return text;
     }
     public  void clickOnElement( By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator));
+            getFluentWait(timeout,pollingEvery)
+                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(locator).click();
     }
     public WebDriverWait generalWait(int timeout) {
