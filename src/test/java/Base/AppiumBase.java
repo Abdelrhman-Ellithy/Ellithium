@@ -1,6 +1,6 @@
 package Base;
 
-import Ellithium.Utilities.interactions.WebDriverActions;
+import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.base.NonBDDSetup;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.service.local.AppiumDriverLocalService;
@@ -13,7 +13,7 @@ import java.io.File;
 public class AppiumBase extends NonBDDSetup {
     protected AndroidDriver androidDriver;
     protected AppiumDriverLocalService serviceBuilder;
-    protected WebDriverActions driverActions;
+    protected DriverActions driverActions;
     @BeforeClass
     public void setup()  {
         String appiumMainJsPath=System.getProperty("user.home").concat("\\AppData\\Roaming\\npm\\node_modules\\appium\\build\\lib\\main.js");
