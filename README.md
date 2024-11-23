@@ -89,10 +89,8 @@ Ellithium supports reading and writing data from various file formats, including
 ### Prerequisites
 
 Ensure you have the following installed:
-
-- **Java Development Kit (JDK)**: Version 21
+- **Java Development Kit (JDK)**: Version 17 or above (21 preferred)
 - **Maven**: 3.8.1 or higher
-- **Browsers**: Latest versions of **Chrome, Firefox, Safari, Edge**
 
 ## 🏁 Getting Started
 
@@ -142,9 +140,6 @@ Here is the updated **Getting Started** section formatted for your README file:
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.5.0</version>
         <configuration>
-            <suiteXmlFiles>
-                <suiteXmlFile>TestNGRunner.xml</suiteXmlFile>
-            </suiteXmlFiles>
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <testFailureIgnore>true</testFailureIgnore>
             <failIfNoTests>false</failIfNoTests>
@@ -306,7 +301,6 @@ public class BaseTests extends NonBDDSetup {
     }
 }
 ```
-
 - **Complete your logic as you like here after that**
 - **this class will be used to extend the other classes from it**
 - **as here in step 2**

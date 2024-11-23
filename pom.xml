@@ -86,10 +86,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-1.0.9.jar
-            gpg -ab target/ellithium-1.0.9-javadoc.jar
-            gpg -ab target/ellithium-1.0.9-sources.jar
-            gpg -ab target/ellithium-1.0.9.pom
+            gpg -ab target/ellithium-1.1.0.jar
+            gpg -ab target/ellithium-1.1.0-javadoc.jar
+            gpg -ab target/ellithium-1.1.0-sources.jar
+            gpg -ab target/ellithium-1.1.0.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
