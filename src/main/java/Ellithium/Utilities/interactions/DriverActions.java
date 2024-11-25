@@ -1,5 +1,4 @@
 package Ellithium.Utilities.interactions;
-
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
