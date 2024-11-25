@@ -61,7 +61,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             DriverFactory.removeDriver();
         }
         uuid=UUID.randomUUID().toString();
-        Allure.getLifecycle().startStep(uuid, new io.qameta.allure.model.StepResult().setName("Attachments"));
+        Allure.getLifecycle().startStep(uuid, new io.qameta.allure.model.StepResult().setName("Test Attachment"));
         if(flagFailed && screenShot!=null ) {
             File finalScreenShot = screenShot;
             Allure.getLifecycle().updateStep(uuid, stepResult -> {

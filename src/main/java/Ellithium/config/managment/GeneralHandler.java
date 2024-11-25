@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeneralHandler implements TestLifecycleListener {
-    private static Boolean BDDMode,NonBDDMode, flagReaded=false;
+
     public static File testFailed( String browserName, String testName)  {
         try {
             TakesScreenshot camera =((TakesScreenshot) DriverFactory.getCurrentDriver());
@@ -59,24 +59,6 @@ public class GeneralHandler implements TestLifecycleListener {
         } catch (IOException e) {
             logsUtils.error("Failed to attach log file: ");
         }
-    }
-    public static boolean getBDDMode(){
-        if(flagReaded.equals(false)){
-            String mode=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"runMode");
-            BDDMode=mode.equalsIgnoreCase("BDD");
-            NonBDDMode=false;
-            flagReaded=true;
-        }
-        return BDDMode;
-    }
-    public static boolean getNonBDDMode(){
-        if(flagReaded.equals(false)){
-            String mode=PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"runMode");
-            NonBDDMode=mode.equalsIgnoreCase("NonBDD");
-            BDDMode=false;
-            flagReaded=true;
-        }
-        return NonBDDMode;
     }
     public static void StartRoutine(){
         APIFilterHelper.applyFilter();

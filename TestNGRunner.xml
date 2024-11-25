@@ -1,18 +1,18 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="Framework Test" verbose="1" data-provider-thread-count="1" >
-    <test name="ِMobile Android Test">
-        <classes>
-            <class name="Tests.AppiumTest"></class>
-<!--            <class name="Tests.AppiumNoonTest"></class>-->
-        </classes>
-    </test>
-<!--    <test name="Web UI Test">-->
+<!--    <test name="ِMobile Android Test">-->
 <!--        <classes>-->
-<!--&lt;!&ndash;        <class name="Tests.loginTests"/>&ndash;&gt;-->
-<!--        <class name="Runner.TestRunner"></class>-->
-<!--&lt;!&ndash;        <class name="Tests.DetailsTests"></class>&ndash;&gt;-->
+<!--            <class name="Tests.AppiumTest"></class>-->
+<!--&lt;!&ndash;            <class name="Tests.AppiumNoonTest"></class>&ndash;&gt;-->
 <!--        </classes>-->
 <!--    </test>-->
+    <test name="Web UI Test">
+        <classes>
+        <class name="Tests.loginTests"/>
+<!--        <class name="Runner.TestRunner"></class>-->
+<!--        <class name="Tests.DetailsTests"></class>-->
+        </classes>
+    </test>
 <!--    <test name="ِDatabase Test">-->
 <!--        <classes>-->
 <!--            <class name="Tests.DBTEst"></class>-->
