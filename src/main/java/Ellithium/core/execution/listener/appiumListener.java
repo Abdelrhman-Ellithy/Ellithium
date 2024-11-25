@@ -13,16 +13,15 @@ public class appiumListener implements MethodCallListener {
     public void afterCall(Object obj, Method method, Object[] args, Object result) {
         String methodName = method.getName();
         switch (methodName) {
-            // Element Finding Methods
-            case "findElement",
+            case    "findElement",
                     "findElementByAccessibilityId",
                     "findElementById",
                     "findElementByClassName",
                     "findElementByXPath",
                     "findElements" ->
-                    Reporter.log("Locator used: " + getLocator(args), LogLevel.INFO_BLUE);
+                    Reporter.log("findElement/s using Locator: " + getLocator(args), LogLevel.INFO_BLUE);
 
-            case "click" ->
+            case "click","execute" ->
                     Reporter.log("Clicked on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
 
             case "sendKeys" -> {
@@ -65,10 +64,10 @@ public class appiumListener implements MethodCallListener {
             case "zoom" ->
                     Reporter.log("Performed zoom gesture on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
 
-            case "pressKeyCode" ->
+            case "pressKey" ->
                     Reporter.log("Pressed key code: " + args[0], LogLevel.INFO_BLUE);
 
-            case "releaseKeyCode" ->
+            case "releaseKey" ->
                     Reporter.log("Released key code: " + args[0], LogLevel.INFO_BLUE);
 
             case "getPageSource" ->
@@ -79,9 +78,14 @@ public class appiumListener implements MethodCallListener {
 
             case "close" ->
                     Reporter.log("Driver closed", LogLevel.INFO_BLUE);
+            case "getScreenshotAs" ->
+                    Reporter.log("Getting Screen Shoot", LogLevel.INFO_BLUE);
 
-            default ->
-                    Reporter.log("Method executed: " + methodName + ", Arguments: " + Arrays.toString(args), LogLevel.INFO_BLUE);
+            case "getCapabilities","getFileDetector","getSessionId","manage","assertExtensionExists" ->{
+            }
+            default ->{
+                Reporter.log( methodName + "with Arguments: " + Arrays.toString(args), LogLevel.INFO_BLUE);
+            }
         }
     }
 
@@ -107,7 +111,6 @@ public class appiumListener implements MethodCallListener {
         }
         return "Unknown element";
     }
-
     private String getTextFromArgs(Object[] args) {
         if (args != null && args.length > 0 && args[0] instanceof CharSequence[]) {
             StringBuilder stringBuilder = new StringBuilder();
