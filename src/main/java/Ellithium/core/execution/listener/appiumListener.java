@@ -19,9 +19,9 @@ public class appiumListener implements MethodCallListener {
                     "findElementByClassName",
                     "findElementByXPath",
                     "findElements" ->
-                    Reporter.log("findElement/s using Locator: " + getLocator(args), LogLevel.INFO_BLUE);
+                    Reporter.log("findElement/s found using Locator: " + getLocator(args), LogLevel.INFO_BLUE);
 
-            case "click","execute" ->
+            case "click" ->
                     Reporter.log("Clicked on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
 
             case "sendKeys" -> {

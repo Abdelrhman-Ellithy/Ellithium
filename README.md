@@ -32,7 +32,7 @@
 | ✅  |✅  |✅   |✅  |
 
 ### 🚀 Supported DB Types with Caching Mechanisms 🚀
-| MY_SQL| SQL_SERVER| POSTGRES_SQL| ORACLE|IBM_DB2| SQLITE | Mongo | Couchebase| Redis|
+|Mongo | Couchebase |Redis | MY_SQL| SQL_SERVER | ORACLE | IBM_DB2| POSTGRES_SQL|SQLITE |
 | :---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |✅  |✅  |✅   |✅  |✅  |
 

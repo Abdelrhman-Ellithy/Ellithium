@@ -1087,16 +1087,16 @@ public class DriverActions <T extends WebDriver>{
     private static ArrayList<Class<? extends Exception>> expectedExceptions;
     {
         expectedExceptions = new ArrayList<>();
-        expectedExceptions.add(java.lang.ClassCastException.class);
-        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
-        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
-        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
-        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
-        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
-        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
-        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
-        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
-        expectedExceptions.add(ExecutionException.class);
-        expectedExceptions.add(InterruptedException.class);
+//        expectedExceptions.add(java.lang.ClassCastException.class);
+//        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
+//        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
+//        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
+//        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
+//        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
+//        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
+//        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
+//        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
+//        expectedExceptions.add(ExecutionException.class);
+//        expectedExceptions.add(InterruptedException.class);
     }
 }
