@@ -20,13 +20,14 @@ import static org.testng.Assert.*;
 
 public class DBTEst extends NonBDDSetup {
     SQLDatabaseProvider db;
+    private final String path ="src/test/resources/TestData/DB-Info";
     @BeforeClass
     public void setup(){
-        String username=JsonHelper.getJsonKeyValue("../DB-Info","userName");
-        String password=JsonHelper.getJsonKeyValue("../DB-Info","password");
-        String serverIp=JsonHelper.getJsonKeyValue("../DB-Info","serverIp");
-        String port=JsonHelper.getJsonKeyValue("../DB-Info","port");
-        String dbName=JsonHelper.getJsonKeyValue("../DB-Info","dbName");
+        String username=JsonHelper.getJsonKeyValue(path,"userName");
+        String password=JsonHelper.getJsonKeyValue(path,"password");
+        String serverIp=JsonHelper.getJsonKeyValue(path,"serverIp");
+        String port=JsonHelper.getJsonKeyValue(path,"port");
+        String dbName=JsonHelper.getJsonKeyValue(path,"dbName");
         System.out.println(username+"\n"+password+"\n"+serverIp+"\n"+port+"\n"+dbName);
         db=new SQLDatabaseProvider(
                 SQLDBType.MY_SQL,
