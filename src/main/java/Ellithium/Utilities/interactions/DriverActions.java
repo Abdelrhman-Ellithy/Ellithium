@@ -21,6 +21,8 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 public class DriverActions <T extends WebDriver>{
     private  int defaultTimeout= 5;
     private  int defaultPollingTime=500;
@@ -50,8 +52,8 @@ public class DriverActions <T extends WebDriver>{
         return text;
     }
     public  void clickOnElement( By locator, int timeout, int pollingEvery) {
-            getFluentWait(timeout,pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        getFluentWait(timeout,pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
         findWebElement(locator).click();
     }
     public WebDriverWait generalWait(int timeout) {
@@ -127,103 +129,87 @@ public class DriverActions <T extends WebDriver>{
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        String attributeValue = findWebElement( locator).getAttribute(attribute);
-        return attributeValue;
+        return findWebElement( locator).getDomAttribute(attribute);
     }
 
     public  boolean waitForElementToBeSelected( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element to be Selected: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean isSelected = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.elementToBeSelected(locator));
-        return isSelected;
     }
 
     public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.attributeToBe(locator, attribute, value));
-        return result;
     }
 
     public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.attributeContains(locator, attribute, value));
-        return result;
     }
     public  boolean waitForElementStaleness( WebElement element, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Staleness: " + element.toString(), LogLevel.INFO_BLUE);
-        boolean isStale = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.stalenessOf(element));
-        return isStale;
     }
     public  boolean waitForTitleContains( String titlePart, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Title to Contain: '" + titlePart + "'", LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.titleContains(titlePart));
-        return result;
     }
     public  boolean waitForUrlContains( String urlPart, int timeout, int pollingEvery) {
         Reporter.log("Waiting for URL to Contain: '" + urlPart + "'", LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.urlContains(urlPart));
-        return result;
     }
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebDriver frame = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
-        return frame;
     }
     public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available by Name or ID: '" + nameOrId + "'", LogLevel.INFO_BLUE);
-        WebDriver frame = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
-        return frame;
     }
     public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available by Index: " + index, LogLevel.INFO_BLUE);
-        WebDriver frame = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
-        return frame;
     }
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean isEnabled = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.elementToBeClickable(locator)).isEnabled();
-        return isEnabled;
     }
     public  boolean waitForTitleIs( String title, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Title to be: '" + title + "'", LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.titleIs(title));
-        return result;
     }
     public  boolean waitForUrlToBe( String url, int timeout, int pollingEvery) {
         Reporter.log("Waiting for URL to be: '" + url + "'", LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.urlToBe(url));
-        return result;
     }
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
-        return result;
     }
     public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
-        return result;
     }
 
 
     public  boolean waitForNumberOfWindowsToBe( int numberOfWindows, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Windows to be: " + numberOfWindows, LogLevel.INFO_BLUE);
-        boolean result = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.numberOfWindowsToBe(numberOfWindows));
-        return result;
     }
 
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery) {
@@ -242,9 +228,8 @@ public class DriverActions <T extends WebDriver>{
 
     public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
-        List<WebElement> elements = getFluentWait( timeout, pollingEvery)
+        return getFluentWait( timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        return elements;
     }
 
     public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery) {
@@ -294,8 +279,7 @@ public class DriverActions <T extends WebDriver>{
     public  String getAlertText( int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        String alertText = driver.switchTo().alert().getText();
-        return alertText;
+        return driver.switchTo().alert().getText();
     }
     public  void sendDataToAlert( String data, int timeout, int pollingEvery) {
         getFluentWait(timeout,pollingEvery)
@@ -335,7 +319,7 @@ public class DriverActions <T extends WebDriver>{
         List<WebElement> elements = findWebElements(locator);
         List<String> texts = new ArrayList<>();
         for (WebElement element : elements) {
-            texts.add(element.getAttribute(Attribute));
+            texts.add(element.getDomAttribute(Attribute));
         }
         return texts;
     }
@@ -1087,16 +1071,16 @@ public class DriverActions <T extends WebDriver>{
     private static ArrayList<Class<? extends Exception>> expectedExceptions;
     {
         expectedExceptions = new ArrayList<>();
-//        expectedExceptions.add(java.lang.ClassCastException.class);
-//        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
-//        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
-//        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
-//        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
-//        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
-//        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
-//        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
-//        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
-//        expectedExceptions.add(ExecutionException.class);
-//        expectedExceptions.add(InterruptedException.class);
+        expectedExceptions.add(java.lang.ClassCastException.class);
+        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
+        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
+        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
+        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
+        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
+        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
+        expectedExceptions.add(ExecutionException.class);
+        expectedExceptions.add(InterruptedException.class);
     }
 }
