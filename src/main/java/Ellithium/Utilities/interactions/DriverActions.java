@@ -21,14 +21,13 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 public class DriverActions <T extends WebDriver>{
     private  int defaultTimeout= 5;
     private  int defaultPollingTime=500;
     private  boolean defaultTimeoutGotFlag=false;
     private  boolean defaultPollingTimeGotFlag=false;
     private final T driver;
+    @SuppressWarnings("unchecked")
     public DriverActions(T driver) {
         this.driver = driver;
     }
@@ -314,6 +313,7 @@ public class DriverActions <T extends WebDriver>{
         }
         return texts;
     }
+    @SuppressWarnings("unchecked")
     public FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver ){
             return new AppiumFluentWait<>(driver)

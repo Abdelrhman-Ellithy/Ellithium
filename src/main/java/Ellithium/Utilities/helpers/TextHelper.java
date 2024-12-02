@@ -13,7 +13,6 @@ public class TextHelper {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
             return lines;
         }
-
         Reporter.log("Attempting to read text file: ", LogLevel.INFO_BLUE, filePath);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
