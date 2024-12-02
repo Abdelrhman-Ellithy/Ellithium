@@ -2,6 +2,7 @@ package Ellithium.Utilities.helpers;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -35,7 +36,6 @@ public class PDFHelper {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
             document.addPage(page);
-
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 contentStream.beginText();
                 contentStream.setFont(PDType1Font.HELVETICA, 12);  // Set font
@@ -48,7 +48,6 @@ public class PDFHelper {
 
                 contentStream.endText();
             }
-
             document.save(file);
             Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN,filePath);
         } catch (IOException e) {
@@ -60,11 +59,9 @@ public class PDFHelper {
     // Method to append text to an existing PDF file
     public static void appendToPdf(String filePath, List<String> content) {
         File file = new File(filePath + ".pdf");
-
         try (PDDocument document = PDDocument.load(file)) {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);  // Get last page
             PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
-
             contentStream.beginText();
             contentStream.setFont(PDType1Font.HELVETICA, 12);  // Set font
             contentStream.newLineAtOffset(100, 700);
@@ -82,4 +79,49 @@ public class PDFHelper {
             Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
         }
     }
+    // Method to merge multiple PDF files
+    public static void mergePdfs(List<String> inputFilePaths, String outputFilePath) {
+        PDFMergerUtility merger = new PDFMergerUtility();
+        merger.setDestinationFileName(outputFilePath + ".pdf");
+        try {
+            for (String path : inputFilePaths) {
+                merger.addSource(new File(path + ".pdf"));
+            }
+            merger.mergeDocuments(null);
+            Reporter.log("Successfully merged PDF files into: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to merge PDF files: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+    // Method to extract a specific page from a PDF
+    public static void extractPdfPage(String inputFilePath, String outputFilePath, int pageIndex) {
+        File file = new File(inputFilePath + ".pdf");
+
+        try (PDDocument document = PDDocument.load(file);
+             PDDocument outputDocument = new PDDocument()) {
+            PDPage page = document.getPage(pageIndex);
+            outputDocument.addPage(page);
+            outputDocument.save(outputFilePath + ".pdf");
+            Reporter.log("Successfully extracted page " + pageIndex + " to: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to extract page from PDF file: ", LogLevel.ERROR, inputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+    public static boolean comparePdfFiles(String filePath1, String filePath2) {
+        try (PDDocument doc1 = PDDocument.load(new File(filePath1 + ".pdf"));
+             PDDocument doc2 = PDDocument.load(new File(filePath2 + ".pdf"))) {
+            String text1 = new PDFTextStripper().getText(doc1);
+            String text2 = new PDFTextStripper().getText(doc2);
+            boolean isEqual = text1.equals(text2);
+            Reporter.log("Comparison result for PDF files: ", LogLevel.INFO_GREEN, String.valueOf(isEqual));
+            return isEqual;
+        } catch (IOException e) {
+            Reporter.log("Failed to compare PDF files: ", LogLevel.ERROR, filePath1 + " & " + filePath2);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return false;
+        }
+    }
+
 }

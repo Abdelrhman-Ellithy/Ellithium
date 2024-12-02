@@ -45,7 +45,6 @@ public class TextHelper {
                     Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
             }
         }
-
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
             for (String line : lines) {
                 writer.write(line);
@@ -103,9 +102,7 @@ public class TextHelper {
     public static void deleteLine(String filePath, String lineToDelete) {
         File textFile = new File(filePath + ".txt");
         List<String> updatedLines = new ArrayList<>();
-
         Reporter.log("Attempting to delete line from text file: ", LogLevel.INFO_BLUE, filePath);
-
         try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -113,7 +110,6 @@ public class TextHelper {
                     updatedLines.add(line);
                 }
             }
-
             writeTextFile(filePath, updatedLines);
             Reporter.log("Successfully deleted line from text file: ", LogLevel.INFO_GREEN, filePath);
 
