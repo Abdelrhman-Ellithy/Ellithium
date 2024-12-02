@@ -18,7 +18,8 @@ public class ExcelHelper {
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
-                Reporter.log("Sheet " + sheetName,LogLevel.ERROR, " does not exist in " + filePath);
+                Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
+                return data;
             }
 
             Iterator<Row> rowIterator = sheet.iterator();
@@ -38,36 +39,33 @@ public class ExcelHelper {
             }
             Reporter.log("Successfully read Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         } catch (IOException e) {
-            Reporter.log("Failed to read Excel data from file: ",LogLevel.ERROR,filePath + ", sheet: " + sheetName);
+            Reporter.log("Failed to read Excel data from file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         }
         return data;
     }
 
-    // Method to set Excel data and create the file if it doesn't exist
+    // Method to set Excel data
     public static void setExcelData(String filePath, String sheetName, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath + ".xlsx");
         Workbook workbook = null;
         try {
-            // Check if the Excel file exists, if not create a new one
             if (excelFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(excelFile)) {
                     workbook = new XSSFWorkbook(fis);
                 }
             } else {
-                workbook = new XSSFWorkbook();  // Create new workbook
+                workbook = new XSSFWorkbook();
                 Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
             }
 
-            // Check if the sheet exists, if not create a new one
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
                 sheet = workbook.createSheet(sheetName);
             }
 
-            int rowNum = sheet.getLastRowNum() + 1;  // Append data after the last row
+            int rowNum = sheet.getLastRowNum() + 1;
 
-            // Create header row if the sheet is new
             if (rowNum == 0 && !data.isEmpty()) {
                 Row headerRow = sheet.createRow(rowNum++);
                 int colNum = 0;
@@ -77,7 +75,6 @@ public class ExcelHelper {
                 }
             }
 
-            // Write the data row by row
             for (Map<String, String> record : data) {
                 Row row = sheet.createRow(rowNum++);
                 int colNum = 0;
@@ -87,7 +84,6 @@ public class ExcelHelper {
                 }
             }
 
-            // Write to the file
             try (FileOutputStream fos = new FileOutputStream(excelFile)) {
                 workbook.write(fos);
                 Reporter.log("Successfully wrote data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -95,7 +91,6 @@ public class ExcelHelper {
         } catch (IOException e) {
             Reporter.log("Failed to write data to Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         } finally {
-            // Close the workbook resource
             if (workbook != null) {
                 try {
                     workbook.close();
@@ -104,6 +99,68 @@ public class ExcelHelper {
                 }
             }
         }
+    }
+
+    // Utility method to get a specific column
+    public static List<String> getColumnData(String filePath, String sheetName, int columnIndex) {
+        List<String> columnData = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+             Workbook workbook = new XSSFWorkbook(fis)) {
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet != null) {
+                for (Row row : sheet) {
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    columnData.add(getCellValueAsString(cell));
+                }
+            } else {
+                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            }
+        } catch (IOException e) {
+            Reporter.log("Error while reading column data: ", LogLevel.ERROR, e.getMessage());
+        }
+        return columnData;
+    }
+
+    // Utility method to get a specific cell value
+    public static String getCellData(String filePath, String sheetName, int rowIndex, int columnIndex) {
+        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+             Workbook workbook = new XSSFWorkbook(fis)) {
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet != null) {
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    return getCellValueAsString(cell);
+                }
+            } else {
+                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            }
+        } catch (IOException e) {
+            Reporter.log("Error while reading cell data: ", LogLevel.ERROR, e.getMessage());
+        }
+        return "";
+    }
+
+    // Utility method to read row by index
+    public static List<String> getRowData(String filePath, String sheetName, int rowIndex) {
+        List<String> rowData = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+             Workbook workbook = new XSSFWorkbook(fis)) {
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet != null) {
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    for (Cell cell : row) {
+                        rowData.add(getCellValueAsString(cell));
+                    }
+                }
+            } else {
+                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            }
+        } catch (IOException e) {
+            Reporter.log("Error while reading row data: ", LogLevel.ERROR, e.getMessage());
+        }
+        return rowData;
     }
 
     // Helper method to get cell value as string
