@@ -72,7 +72,7 @@
         <SLF4JAPIVersion>2.0.13</SLF4JAPIVersion>
         <SLF4JSimpleVersion>2.0.13</SLF4JSimpleVersion>
         <log4jVersion>2.24.2</log4jVersion>
-        <AllureVersion>2.29.0</AllureVersion>
+        <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.12.0</CSV>
         <ApachePOI>5.3.0</ApachePOI>
@@ -98,7 +98,7 @@
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.3</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
-        <AllureJVMVersion>2.29.0</AllureJVMVersion>
+        <AllureJVMVersion>2.29.1</AllureJVMVersion>
         <HikariCPVersion>6.2.0</HikariCPVersion>
         <caffineVersion>3.1.8</caffineVersion>
         <mysqlVersion>9.1.0</mysqlVersion>
