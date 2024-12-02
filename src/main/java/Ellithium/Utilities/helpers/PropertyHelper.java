@@ -6,7 +6,6 @@ import java.io.*;
 import java.util.Properties;
 
 public class PropertyHelper {
-
     public static String getDataFromProperties(String filePath, String key) {
         Properties prop = new Properties();
         try {
@@ -18,7 +17,6 @@ public class PropertyHelper {
         }
         return prop.getProperty(key);
     }
-
     // Method to set data into a properties file with a key-value pair
     public static void setDataToProperties(String filePath, String key, String value) {
         Properties prop = new Properties();
