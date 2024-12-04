@@ -118,4 +118,113 @@ public class TextHelper {
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+    // Method to read the entire file as a single String
+    public static String readFileAsString(String filePath) {
+        StringBuilder content = new StringBuilder();
+        File textFile = new File(filePath + ".txt");
+
+        if (!textFile.exists()) {
+            Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
+            return null;
+        }
+
+        Reporter.log("Attempting to read entire text file as a String: ", LogLevel.INFO_BLUE, filePath);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append(System.lineSeparator());
+            }
+            Reporter.log("Successfully read text file as a String: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to read text file as a String: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+
+        return content.toString();
+    }
+    // Method to write a String to a text file
+    public static void writeStringToFile(String filePath, String content) {
+        Reporter.log("Attempting to write String to text file: ", LogLevel.INFO_BLUE, filePath);
+        File textFile = new File(filePath + ".txt");
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
+            writer.write(content);
+            Reporter.log("Successfully wrote String to text file: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to write String to text file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+    // Method to delete all lines containing a specific keyword
+    public static void deleteLinesContainingKeyword(String filePath, String keyword) {
+        File textFile = new File(filePath + ".txt");
+        List<String> updatedLines = new ArrayList<>();
+
+        Reporter.log("Attempting to delete lines containing keyword: ", LogLevel.INFO_BLUE, filePath);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.contains(keyword)) {
+                    updatedLines.add(line);
+                }
+            }
+            writeTextFile(filePath, updatedLines);
+            Reporter.log("Successfully deleted lines containing keyword in text file: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to delete lines containing keyword in text file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+    // Method to check if any line in the file contains a specific keyword
+    public static boolean containsKeyword(String filePath, String keyword) {
+        File textFile = new File(filePath + ".txt");
+
+        if (!textFile.exists()) {
+            Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
+            return false;
+        }
+
+        Reporter.log("Checking if text file contains keyword: ", LogLevel.INFO_BLUE, filePath);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(keyword)) {
+                    Reporter.log("Keyword found in text file: " + keyword, LogLevel.INFO_GREEN, filePath);
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            Reporter.log("Failed to check keyword in text file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+        Reporter.log("Keyword not found in text file: " + keyword, LogLevel.INFO_YELLOW, filePath);
+        return false;
+    }
+    // Method to replace a line in a text file
+    public static void replaceLineInFile(String filePath, String targetLine, String newLine) {
+        File textFile = new File(filePath + ".txt");
+        List<String> updatedLines = new ArrayList<>();
+
+        Reporter.log("Attempting to replace a line in text file: ", LogLevel.INFO_BLUE, filePath);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.equals(targetLine)) {
+                    updatedLines.add(newLine);
+                } else {
+                    updatedLines.add(line);
+                }
+            }
+            writeTextFile(filePath, updatedLines);
+            Reporter.log("Successfully replaced line in text file: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to replace line in text file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+
 }
