@@ -184,17 +184,6 @@ Here is the updated **Getting Started** section formatted for your README file:
    ```bash
    mvn clean test
    ```
-### Step 4: Select The Running Mode # BDD, NonBDD
-
-#### you find a new config file created here src/main/resources/properties/config.properties at your project
-- **BDD Mode** (for running with Cucumber): 
-    ```properties
-    runMode=BDD
-     ```
- - **Non-BDD Mode** (for running without Cucumber):
-     ```properties
-     runMode=NonBDD
-     ```
 
 ### Option 1: BDD Mode
 - **[Demo-Project](https://github.com/Abdelrhman-Ellithy/Noon-Shopping-Website-Manual-Automation-) for setup use after follow the following steps**
