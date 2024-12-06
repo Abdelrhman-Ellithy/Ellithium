@@ -1,7 +1,5 @@
 package Ellithium.Utilities.interactions;
 import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.Reporter;
@@ -22,12 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-
 public class DriverActions <T extends WebDriver>{
-    private  int defaultTimeout= 5;
-    private  int defaultPollingTime=500;
-    private  boolean defaultTimeoutGotFlag=false;
-    private  boolean defaultPollingTimeGotFlag=false;
     private final T driver;
     @SuppressWarnings("unchecked")
     public DriverActions(T driver) {
@@ -363,7 +356,7 @@ public class DriverActions <T extends WebDriver>{
     // Hover over an element with specified timeout
     public  void hoverOverElement( By locator, int timeout) {
         Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = getFluentWait( timeout, defaultPollingTime)
+        WebElement element = getFluentWait( timeout, WaitManager.getDefaultPollingTime())
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         Actions action = new Actions(driver);
         action.moveToElement(element).perform();
@@ -581,225 +574,174 @@ public class DriverActions <T extends WebDriver>{
         driver.navigate().forward();
     }
     public  boolean waitForElementToBeSelected( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeSelected( locator, defaultTimeout, defaultPollingTime);
+        return waitForElementToBeSelected( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementToBeSelected( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeSelected( locator, timeout, defaultPollingTime);
+        return waitForElementToBeSelected( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementAttributeToBe( By locator, String attribute, String value) {
-        initializeTimeoutAndPolling();
-        return waitForElementAttributeToBe( locator, attribute, value, defaultTimeout, defaultPollingTime);
+        return waitForElementAttributeToBe( locator, attribute, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementAttributeToBe( locator, attribute, value, timeout, defaultPollingTime);
+        return waitForElementAttributeToBe( locator, attribute, value, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementAttributeContains( By locator, String attribute, String value) {
-        initializeTimeoutAndPolling();
-        return waitForElementAttributeContains( locator, attribute, value, defaultTimeout, defaultPollingTime);
+        return waitForElementAttributeContains( locator, attribute, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementAttributeContains( locator, attribute, value, timeout, defaultPollingTime);
+        return waitForElementAttributeContains( locator, attribute, value, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementStaleness( WebElement element) {
-        initializeTimeoutAndPolling();
-        return waitForElementStaleness( element, defaultTimeout, defaultPollingTime);
+        return waitForElementStaleness( element, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementStaleness( WebElement element, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementStaleness( element, timeout, defaultPollingTime);
+        return waitForElementStaleness( element, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForTitleContains( String titlePart) {
-        initializeTimeoutAndPolling();
-        return waitForTitleContains( titlePart, defaultTimeout, defaultPollingTime);
+        return waitForTitleContains( titlePart, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForTitleContains( String titlePart, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForTitleContains( titlePart, timeout, defaultPollingTime);
+        return waitForTitleContains( titlePart, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForUrlContains( String urlPart) {
-        initializeTimeoutAndPolling();
-        return waitForUrlContains( urlPart, defaultTimeout, defaultPollingTime);
+        return waitForUrlContains( urlPart, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  List<String> getTextFromMultipleElements( By locator) {
-        initializeTimeoutAndPolling();
-        return getTextFromMultipleElements( locator, defaultTimeout, defaultPollingTime);
+        return getTextFromMultipleElements( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  List<String> getTextFromMultipleElements( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return getTextFromMultipleElements( locator, timeout, defaultPollingTime);
+        return getTextFromMultipleElements( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  List<String> getAttributeFromMultipleElements( By locator, String attribute) {
-        initializeTimeoutAndPolling();
-        return getAttributeFromMultipleElements( locator, attribute, defaultTimeout, defaultPollingTime);
+        return getAttributeFromMultipleElements( locator, attribute, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  List<String> getAttributeFromMultipleElements( By locator, String attribute, int timeout) {
-        initializeTimeoutAndPolling();
-        return getAttributeFromMultipleElements( locator, attribute, timeout, defaultPollingTime);
+        return getAttributeFromMultipleElements( locator, attribute, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void clickOnMultipleElements( By locator) {
-        initializeTimeoutAndPolling();
-        clickOnMultipleElements( locator, defaultTimeout, defaultPollingTime);
+        clickOnMultipleElements( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void clickOnMultipleElements( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        clickOnMultipleElements( locator, timeout, defaultPollingTime);
+        clickOnMultipleElements( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void sendDataToMultipleElements( By locator, String data) {
-        initializeTimeoutAndPolling();
-        sendDataToMultipleElements( locator, data, defaultTimeout, defaultPollingTime);
+        sendDataToMultipleElements( locator, data, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void sendDataToMultipleElements( By locator, String data, int timeout) {
-        initializeTimeoutAndPolling();
-        sendDataToMultipleElements( locator, data, timeout, defaultPollingTime);
+        sendDataToMultipleElements( locator, data, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void selectDropdownByTextForMultipleElements( By locator, String option) {
-        initializeTimeoutAndPolling();
-        selectDropdownByTextForMultipleElements( locator, option, defaultTimeout, defaultPollingTime);
+        selectDropdownByTextForMultipleElements( locator, option, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void selectDropdownByTextForMultipleElements( By locator, String option, int timeout) {
-        initializeTimeoutAndPolling();
-        selectDropdownByTextForMultipleElements( locator, option, timeout, defaultPollingTime);
+        selectDropdownByTextForMultipleElements( locator, option, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void switchToFrameByIndex( int index) {
-        initializeTimeoutAndPolling();
-        switchToFrameByIndex( index, defaultTimeout, defaultPollingTime);
+        switchToFrameByIndex( index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void switchToFrameByIndex( int index, int timeout) {
-        initializeTimeoutAndPolling();
-        switchToFrameByIndex( index, timeout, defaultPollingTime);
+        switchToFrameByIndex( index, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void switchToFrameByNameOrID( String nameOrID) {
-        initializeTimeoutAndPolling();
-        switchToFrameByNameOrID( nameOrID, defaultTimeout, defaultPollingTime);
+        switchToFrameByNameOrID( nameOrID, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  void switchToFrameByNameOrID( String nameOrID, int timeout) {
-        initializeTimeoutAndPolling();
-        switchToFrameByNameOrID( nameOrID, timeout, defaultPollingTime);
+        switchToFrameByNameOrID( nameOrID, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void switchToFrameByElement( By locator) {
-        initializeTimeoutAndPolling();
-        switchToFrameByElement( locator, defaultTimeout, defaultPollingTime);
+        switchToFrameByElement( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  void switchToFrameByElement( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        switchToFrameByElement( locator, timeout, defaultPollingTime);
+        switchToFrameByElement( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void switchToPopupWindow( String expectedPopupTitle) {
-        initializeTimeoutAndPolling();
-        switchToPopupWindow( expectedPopupTitle, defaultTimeout, defaultPollingTime);
+        switchToPopupWindow( expectedPopupTitle, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  void switchToPopupWindow( String expectedPopupTitle, int timeout) {
-        initializeTimeoutAndPolling();
-        switchToPopupWindow( expectedPopupTitle, timeout, defaultPollingTime);
+        switchToPopupWindow( expectedPopupTitle, timeout, WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForUrlContains( String urlPart, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForUrlContains( urlPart, timeout, defaultPollingTime);
+        return waitForUrlContains( urlPart, timeout, WaitManager.getDefaultPollingTime());
     }
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForFrameToBeAvailableAndSwitchToIt( locator, defaultTimeout, defaultPollingTime);
+        return waitForFrameToBeAvailableAndSwitchToIt( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForFrameToBeAvailableAndSwitchToIt( locator, timeout, defaultPollingTime);
+        return waitForFrameToBeAvailableAndSwitchToIt( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId) {
-        initializeTimeoutAndPolling();
-        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(nameOrId, defaultTimeout, defaultPollingTime);
+        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(nameOrId, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( nameOrId, timeout, defaultPollingTime);
+        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( nameOrId, timeout, WaitManager.getDefaultPollingTime());
     }
     public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index) {
-        initializeTimeoutAndPolling();
-        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, defaultTimeout, defaultPollingTime);
+        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, timeout, defaultPollingTime);
+        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementToBeEnabled( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeEnabled(locator, defaultTimeout, defaultPollingTime);
+        return waitForElementToBeEnabled(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForElementToBeEnabled( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeEnabled( locator, timeout, defaultPollingTime);
+        return waitForElementToBeEnabled( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForTitleIs( String title) {
-        initializeTimeoutAndPolling();
-        return waitForTitleIs(title, defaultTimeout, defaultPollingTime);
+        return waitForTitleIs(title, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForTitleIs( String title, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForTitleIs( title, timeout, defaultPollingTime);
+        return waitForTitleIs( title, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForUrlToBe( String url) {
-        initializeTimeoutAndPolling();
-        return waitForUrlToBe( url, defaultTimeout, defaultPollingTime);
+        return waitForUrlToBe( url, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForUrlToBe( String url, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForUrlToBe( url, timeout, defaultPollingTime);
+        return waitForUrlToBe( url, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected) {
-        initializeTimeoutAndPolling();
-        return waitForElementSelectionStateToBe( locator, selected, defaultTimeout, defaultPollingTime);
+        return waitForElementSelectionStateToBe( locator, selected, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForElementSelectionStateToBe( locator, selected, timeout, defaultPollingTime);
+        return waitForElementSelectionStateToBe( locator, selected, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForTextToBePresentInElementValue( By locator, String text) {
-        initializeTimeoutAndPolling();
-        return waitForTextToBePresentInElementValue( locator, text, defaultTimeout, defaultPollingTime);
+        return waitForTextToBePresentInElementValue( locator, text, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForTextToBePresentInElementValue( locator, text, timeout, defaultPollingTime);
+        return waitForTextToBePresentInElementValue( locator, text, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForNumberOfWindowsToBe( int numberOfWindows) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfWindowsToBe( numberOfWindows, defaultTimeout, defaultPollingTime);
+        return waitForNumberOfWindowsToBe( numberOfWindows, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForNumberOfWindowsToBe( int numberOfWindows, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfWindowsToBe( numberOfWindows, timeout, defaultPollingTime);
+        return waitForNumberOfWindowsToBe( numberOfWindows, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBeMoreThan( locator, number, defaultTimeout, defaultPollingTime);
+        return waitForNumberOfElementsToBeMoreThan( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBeMoreThan( locator, number, timeout, defaultPollingTime);
+        return waitForNumberOfElementsToBeMoreThan( locator, number, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBeLessThan( locator, number, defaultTimeout, defaultPollingTime);
+        return waitForNumberOfElementsToBeLessThan( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void javascriptClick( By locator, int timeout) {
-        getFluentWait( timeout, defaultPollingTime)
+        getFluentWait( timeout, WaitManager.getDefaultPollingTime())
                 .until(ExpectedConditions.elementToBeClickable(locator));
         javascriptClick( locator);
     }
@@ -809,246 +751,164 @@ public class DriverActions <T extends WebDriver>{
         javascriptClick( locator);
     }
     public  WebElement waitForTextToBePresentInElement( By locator, String text) {
-        return waitForTextToBePresentInElement( locator, text, defaultTimeout, defaultPollingTime);
+        return waitForTextToBePresentInElement( locator, text, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout) {
-        return waitForTextToBePresentInElement( locator, text, timeout, defaultPollingTime);
+        return waitForTextToBePresentInElement( locator, text, timeout, WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBeLessThan( locator, number, timeout, defaultPollingTime);
+        return waitForNumberOfElementsToBeLessThan( locator, number, timeout, WaitManager.getDefaultPollingTime());
     }
     public  List<WebElement> waitForVisibilityOfAllElements( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForVisibilityOfAllElements( locator, defaultTimeout, defaultPollingTime);
+        return waitForVisibilityOfAllElements( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  List<WebElement> waitForVisibilityOfAllElements( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForVisibilityOfAllElements( locator, timeout, defaultPollingTime);
+        return waitForVisibilityOfAllElements( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  boolean waitForNumberOfElementsToBe( By locator, int number) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBe( locator, number, defaultTimeout, defaultPollingTime);
+        return waitForNumberOfElementsToBe( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout) {
-        initializeTimeoutAndPolling();
-        return waitForNumberOfElementsToBe( locator, number, timeout, defaultPollingTime);
+        return waitForNumberOfElementsToBe( locator, number, timeout, WaitManager.getDefaultPollingTime());
     }
     public  void rightClick( By locator, int timeout){
-        initializeTimeoutAndPolling();
-        rightClick(locator,timeout,defaultPollingTime);
+        rightClick(locator,timeout,WaitManager.getDefaultPollingTime());
     }
     public  void rightClick( By locator){
-        initializeTimeoutAndPolling();
-        rightClick(locator,defaultTimeout,defaultPollingTime);
+        rightClick(locator,WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime());
     }
 
     public  void sendData( By locator, String data) {
-        initializeTimeoutAndPolling();
-        sendData( locator, data, defaultTimeout, defaultPollingTime);
+        sendData( locator, data, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     public  void sendData( By locator, Keys data) {
-        initializeTimeoutAndPolling();
-        sendData( locator, data, defaultTimeout, defaultPollingTime);
+        sendData( locator, data, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded getText method with default timeout and polling time
     public  String getText( By locator) {
-        initializeTimeoutAndPolling();
-        return getText( locator, defaultTimeout, defaultPollingTime);
+        return getText( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     // Overloaded clickOnElement method with default timeout and polling time
     public  void clickOnElement( By locator) {
-        initializeTimeoutAndPolling();
-        clickOnElement( locator, defaultTimeout, defaultPollingTime);
+        clickOnElement( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void sendData( By locator, String data, int timout) {
-        initializeTimeoutAndPolling();
-        sendData( locator, data, timout, defaultPollingTime);
+        sendData( locator, data, timout, WaitManager.getDefaultPollingTime());
     }
 
     public  void sendData( By locator, Keys data, int timout) {
-        initializeTimeoutAndPolling();
-        sendData( locator, data, defaultTimeout, defaultPollingTime);
+        sendData( locator, data, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded getText method with default timeout and polling time
     public  String getText( By locator, int timout) {
-        initializeTimeoutAndPolling();
-        return getText( locator, timout, defaultPollingTime);
+        return getText( locator, timout, WaitManager.getDefaultPollingTime());
     }
     public  void acceptAlert( int timeout) {
-        initializeTimeoutAndPolling();
-        acceptAlert(timeout, defaultPollingTime);
+        acceptAlert(timeout, WaitManager.getDefaultPollingTime());
     }
     public  void acceptAlert() {
-        initializeTimeoutAndPolling();
-        acceptAlert(defaultTimeout, defaultPollingTime);
+        acceptAlert(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  String getAlertText( int timeout){
-        initializeTimeoutAndPolling();
-        return getAlertText( timeout, defaultPollingTime);
+        return getAlertText( timeout, WaitManager.getDefaultPollingTime());
     }
     public  String getAlertText(){
-        initializeTimeoutAndPolling();
-        return getAlertText(defaultTimeout, defaultPollingTime);
+        return getAlertText(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     public  void dismissAlert( int timeout){
-        initializeTimeoutAndPolling();
-        dismissAlert( timeout,defaultPollingTime);
+        dismissAlert( timeout,WaitManager.getDefaultPollingTime());
     }
     public  void dismissAlert(){
-        initializeTimeoutAndPolling();
-        dismissAlert(defaultTimeout,defaultPollingTime);
+        dismissAlert(WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime());
     }
     public  void sendDataToAlert( String data, int timeout){
-        initializeTimeoutAndPolling();
-        sendDataToAlert(data,timeout,defaultPollingTime);
+        sendDataToAlert(data,timeout,WaitManager.getDefaultPollingTime());
     }
     public  void sendDataToAlert( String data){
-        initializeTimeoutAndPolling();
-        sendDataToAlert(data,defaultTimeout,defaultPollingTime);
+        sendDataToAlert(data,WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime());
     }
     public  void clickOnElement( By locator,int timeout) {
-        initializeTimeoutAndPolling();
-        clickOnElement( locator, timeout, defaultPollingTime);
+        clickOnElement( locator, timeout, WaitManager.getDefaultPollingTime());
     }
-
     // Overloaded selectDropdownByText method with default timeout and polling time
     public  void selectDropdownByText( By locator, String option) {
-        initializeTimeoutAndPolling();
-        selectDropdownByText( locator, option, defaultTimeout, defaultPollingTime);
+        selectDropdownByText( locator, option, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded selectDropdownByValue method with default timeout and polling time
     public  void selectDropdownByValue( By locator, String value) {
-        initializeTimeoutAndPolling();
-        selectDropdownByValue( locator, value, defaultTimeout, defaultPollingTime);
+        selectDropdownByValue( locator, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded selectDropdownByIndex method with default timeout and polling time
     public  void selectDropdownByIndex( By locator, int index) {
-        initializeTimeoutAndPolling();
-        selectDropdownByIndex( locator, index, defaultTimeout, defaultPollingTime);
+        selectDropdownByIndex( locator, index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded waitForElementToBeClickable method with default timeout and polling time
     public  WebElement waitForElementToBeClickable( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeClickable( locator, defaultTimeout, defaultPollingTime);
+        return waitForElementToBeClickable( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded waitForElementToBeVisible method with default timeout and polling time
     public  WebElement waitForElementToBeVisible( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForElementToBeVisible( locator, defaultTimeout, defaultPollingTime);
+        return waitForElementToBeVisible( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded waitForElementPresence method with default timeout and polling time
     public  WebElement waitForElementPresence( By locator) {
-        initializeTimeoutAndPolling();
-        return waitForElementPresence( locator, defaultTimeout, defaultPollingTime);
+        return waitForElementPresence( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overloaded waitForElementToDisappear method with default timeout and polling time
     public  void waitForElementToDisappear( By locator) {
-        initializeTimeoutAndPolling();
-        waitForElementToDisappear(locator, defaultTimeout, defaultPollingTime);
+        waitForElementToDisappear(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     // Overloaded getAttributeValue method with default timeout and polling time
     public  String getAttributeValue( By locator, String attribute) {
-        initializeTimeoutAndPolling();
-        return getAttributeValue( locator, attribute, defaultTimeout, defaultPollingTime);
+        return getAttributeValue( locator, attribute, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     // Double-click on an element with timeout (default polling time)
     public  void doubleClick( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        doubleClick( locator, timeout, defaultPollingTime);
+        doubleClick( locator, timeout, WaitManager.getDefaultPollingTime());
     }
 
     // Double-click on an element with default timeout and polling time
     public  void doubleClick( By locator) {
-        initializeTimeoutAndPolling();
-        doubleClick( locator, defaultTimeout, defaultPollingTime);
+        doubleClick( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     // Overloaded getElements method
     public  List<WebElement> getElements( By locator, int timeout) {
-        initializeTimeoutAndPolling();
-        return getElements( locator, timeout, defaultPollingTime);
+        return getElements( locator, timeout, WaitManager.getDefaultPollingTime());
     }
     public  List<WebElement> getElements( By locator) {
-        initializeTimeoutAndPolling();
-        return getElements( locator, defaultTimeout, defaultPollingTime);
+        return getElements( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     // Overload example for moveSliderByOffset with default timeout
     public  void moveSliderByOffset( By sliderLocator, int xOffset, int yOffset) {
-        initializeTimeoutAndPolling();
-        moveSliderByOffset( sliderLocator, xOffset, yOffset, defaultTimeout, defaultPollingTime);
+        moveSliderByOffset( sliderLocator, xOffset, yOffset, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     // Overload example for hoverOverElement with default timeout
     public  void hoverOverElement( By locator) {
-        initializeTimeoutAndPolling();
-        hoverOverElement( locator, defaultTimeout);
+        hoverOverElement( locator, WaitManager.getDefaultTimeout());
     }
     // Hover and click method with overload for timeout and polling
     public  void hoverAndClick( By locatorToHover, By locatorToClick,int timeout) {
-        initializeTimeoutAndPolling();
-        hoverAndClick( locatorToHover, locatorToClick, timeout,defaultPollingTime);
+        hoverAndClick( locatorToHover, locatorToClick, timeout,WaitManager.getDefaultPollingTime());
     }
     public  void hoverAndClick( By locatorToHover, By locatorToClick) {
-        initializeTimeoutAndPolling();
-        hoverAndClick( locatorToHover, locatorToClick, defaultTimeout, defaultPollingTime);
+        hoverAndClick( locatorToHover, locatorToClick, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
-    // Initialize timeout and polling time only once
-    private  void initializeTimeoutAndPolling() {
-        if (!defaultTimeoutGotFlag) {
-            initTimeout();
-            defaultTimeoutGotFlag = true;
-            Allure.step("Initialize default Timeout for Element ", Status.PASSED);
-        }
-        if (!defaultPollingTimeGotFlag) {
-            initPolling();
-            defaultPollingTimeGotFlag = true;
-            Allure.step("Initialize default Polling Time for Element ", Status.PASSED);
-        }
-    }
-    private  int parseProperty(String value, int defaultValue, String propertyName) {
-        if (value != null && !value.isEmpty()) {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                logsUtils.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
-            }
-        }
-        return defaultValue;
-    }
-    // Initialize default timeout from properties file
-    private  void initTimeout() {
-        try {
-            String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementWaitTimeout");
-            defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
-        } catch (Exception e) {
-            logsUtils.logException(e);
-            defaultTimeout = 5;  // Assign default if exception occurs
-        }
-    }
-    // Initialize default polling time from properties file
-    private  void initPolling() {
-        try {
-            String polling = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementPollingTime");
-            defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
-        } catch (Exception e) {
-            logsUtils.logException(e);
-            defaultPollingTime = 5;  // Assign default if exception occurs
-        }
-    }
+
     // Sleep for a specified number of milliseconds
     public  void sleepMillis(long millis) {
         try {

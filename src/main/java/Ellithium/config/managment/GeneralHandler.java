@@ -2,6 +2,7 @@ package Ellithium.config.managment;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
+import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.config.Internal.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.DriverFactory;
@@ -11,7 +12,6 @@ import Ellithium.core.logging.logsUtils;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
-import io.qameta.allure.listener.TestLifecycleListener;
 import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GeneralHandler implements TestLifecycleListener {
+public class GeneralHandler {
 
     public static File testFailed( String browserName, String testName)  {
         try {
@@ -63,6 +63,7 @@ public class GeneralHandler implements TestLifecycleListener {
     public static void StartRoutine(){
         APIFilterHelper.applyFilter();
         VersionChecker.solveVersion();
+        WaitManager.initializeTimeoutAndPolling();
         initRetryCount();
     }
     public static List<Parameter> getParameters(){
