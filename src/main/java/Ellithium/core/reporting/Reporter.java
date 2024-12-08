@@ -1,6 +1,6 @@
 package Ellithium.core.reporting;
 import Ellithium.config.managment.ConfigContext;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.internal.Colors;
 import Ellithium.core.logging.LogLevel;
 import io.qameta.allure.Allure;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import static Ellithium.core.logging.LogLevel.*;
-import static Ellithium.core.logging.logsUtils.*;
+import static Ellithium.core.logging.Logger.*;
 
 public class Reporter {
     private static final Map<LogLevel, String> logMap = Map.ofEntries(
@@ -70,7 +70,7 @@ public class Reporter {
             Allure.description(browserName.toUpperCase() + "-" + testName + " FAILED");
             Allure.addAttachment(name, "image/png", fis, ".png");
         }catch (IOException e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
         }
     }
     public static void setTestCaseName(String Name) {

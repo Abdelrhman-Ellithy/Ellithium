@@ -1,7 +1,7 @@
 package Ellithium.Utilities.interactions;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.core.logging.LogLevel;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.appium.java_client.AppiumFluentWait;
@@ -916,7 +916,7 @@ public class DriverActions <T extends WebDriver>{
             Allure.step("Sleeping for " + millis + " milliseconds", Status.PASSED);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logsUtils.error("Sleep interrupted: " + e.getMessage());
+            Logger.error("Sleep interrupted: " + e.getMessage());
             Allure.step("Sleep interrupted: " + e.getMessage(), Status.FAILED);
         }
     }

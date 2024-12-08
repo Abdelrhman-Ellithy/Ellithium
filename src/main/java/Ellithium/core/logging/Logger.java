@@ -1,10 +1,9 @@
 package Ellithium.core.logging;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class logsUtils {
-    private static final Logger logger = LogManager.getLogger(logsUtils.class);
+public class Logger {
+    private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger(Logger.class);
 
     // Log a TRACE level message
     public static void trace(String message) {
