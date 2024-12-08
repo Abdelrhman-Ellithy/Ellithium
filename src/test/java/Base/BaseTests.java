@@ -7,7 +7,6 @@ import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Parameters;
-
 public class BaseTests extends NonBDDSetup {
    protected WebDriver driver;
    protected HomPage home;
