@@ -9,9 +9,7 @@ import com.couchbase.client.java.kv.GetResult;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.concurrent.TimeUnit;
-
 public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
-
     private final Cluster couchbaseCluster;
     private final Bucket couchbaseBucket;
     private final Collection couchbaseCollection;
