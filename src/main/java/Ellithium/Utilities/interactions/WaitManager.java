@@ -3,10 +3,8 @@ package Ellithium.Utilities.interactions;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
 
 public class WaitManager {
     private  static int defaultTimeout= 5;
@@ -47,7 +45,7 @@ public class WaitManager {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                logsUtils.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
+                Logger.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
             }
         }
         return defaultValue;
@@ -58,7 +56,7 @@ public class WaitManager {
             String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementWaitTimeout");
             defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
             defaultTimeout = 5;  // Assign default if exception occurs
         }
     }
@@ -68,7 +66,7 @@ public class WaitManager {
             String polling = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementPollingTime");
             defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
             defaultPollingTime = 5;  // Assign default if exception occurs
         }
     }
@@ -77,7 +75,7 @@ public class WaitManager {
             String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultDriverWaitTimeout");
             defaultTimeout = Integer.parseInt(timeout);
         } catch (Exception e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
         }
     }
 }

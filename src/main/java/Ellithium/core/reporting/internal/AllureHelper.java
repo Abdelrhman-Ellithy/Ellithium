@@ -3,7 +3,7 @@ package Ellithium.core.reporting.internal;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
@@ -47,12 +47,12 @@ public class AllureHelper {
                         openCommand = SystemUtils.IS_OS_MAC ? "open ".concat(fileName) : "xdg-open ".concat(fileName);
                     } else {
                         openCommand=null;
-                        logsUtils.error("Unsupported operating system.");
+                        Logger.error("Unsupported operating system.");
                     }
                     executeCommand(openCommand);
                 }
             } else {
-                logsUtils.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
+                Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
             }
         }
     }
@@ -61,25 +61,25 @@ public class AllureHelper {
         allureDirectory = new File(allurePath);
         String configFilePath =ConfigContext.getConfigFilePath();
         if (allureDirectory.exists()) {
-            logsUtils.info(Colors.GREEN + "Allure folder exists at: " + allurePath + Colors.RESET);
+            Logger.info(Colors.GREEN + "Allure folder exists at: " + allurePath + Colors.RESET);
             File[] subDirs = allureDirectory.listFiles(File::isDirectory);
             if (subDirs != null && subDirs.length > 0) {
                 allureBinaryDirectory = new File(subDirs[0], "bin");
                 if (!allureBinaryDirectory.exists()) {
-                    logsUtils.info(Colors.RED +"Binary directory not found in the expected location.");
+                    Logger.info(Colors.RED +"Binary directory not found in the expected location.");
                     return null;
                 }
-                logsUtils.info(Colors.GREEN + "Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath() + Colors.RESET);
+                Logger.info(Colors.GREEN + "Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath() + Colors.RESET);
                 return allureBinaryDirectory.getAbsolutePath() + File.separator;
             } else {
-                logsUtils.info(Colors.RED +"No subdirectories found in the Allure directory."+ Colors.RESET);
+                Logger.info(Colors.RED +"No subdirectories found in the Allure directory."+ Colors.RESET);
                 return null;
             }
         } else {
-            logsUtils.info(Colors.RED +"Allure folder not found. Extracting from JAR..."+ Colors.RESET);
+            Logger.info(Colors.RED +"Allure folder not found. Extracting from JAR..."+ Colors.RESET);
             File jarFile = StartUpLoader.findJarFile();
             if (!jarFile.exists()) {
-                logsUtils.info(Colors.RED +"Ellithium JAR file not found"+ Colors.RESET);
+                Logger.info(Colors.RED +"Ellithium JAR file not found"+ Colors.RESET);
                 return null;
             }
             try {
@@ -88,8 +88,8 @@ public class AllureHelper {
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
                 addAllureToSystemPath(allureBinaryDirectory);
             } catch (IOException e) {
-                logsUtils.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
-                logsUtils.logException(e);
+                Logger.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
+                Logger.logException(e);
                 return null;
             }
         }
@@ -101,12 +101,12 @@ public class AllureHelper {
         String allureBinaryPath = allureDirectory.getAbsolutePath();
         if (!path.contains(allureBinaryPath)) {
             System.setProperty("PATH", path + File.pathSeparator + allureBinaryPath);
-            logsUtils.info(Colors.GREEN + "Added Allure to system PATH for current session: " + allureBinaryPath + Colors.RESET);
+            Logger.info(Colors.GREEN + "Added Allure to system PATH for current session: " + allureBinaryPath + Colors.RESET);
 
             if (SystemUtils.IS_OS_WINDOWS) {
                 String command = "setx PATH \"%PATH%;" + allureBinaryPath + "\"";
                 executeCommand(command);
-                logsUtils.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows)."+ Colors.RESET);
+                Logger.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows)."+ Colors.RESET);
             } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
                 String shell = System.getenv("SHELL");
                 String shellConfig;
@@ -117,12 +117,12 @@ public class AllureHelper {
                 }
                 String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
                 executeCommand(command);
-                logsUtils.info(Colors.GREEN + "Allure binary path added to " + shellConfig + " (Unix-based)." + Colors.RESET);
+                Logger.info(Colors.GREEN + "Allure binary path added to " + shellConfig + " (Unix-based)." + Colors.RESET);
             } else {
-                logsUtils.error(Colors.RED + "Unsupported OS." + Colors.RESET);
+                Logger.error(Colors.RED + "Unsupported OS." + Colors.RESET);
             }
         } else {
-            logsUtils.info(Colors.GREEN + "Allure binary path already exists in the system PATH." + Colors.RESET);
+            Logger.info(Colors.GREEN + "Allure binary path already exists in the system PATH." + Colors.RESET);
         }
     }
     public static void deleteAllureResultsDir(){
@@ -142,7 +142,7 @@ public class AllureHelper {
                     }
                 }
             } catch (IOException e) {
-                logsUtils.logException(e);
+                Logger.logException(e);
             }
         }
     }

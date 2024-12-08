@@ -7,7 +7,7 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
@@ -238,10 +238,10 @@ public class DriverFactory {
         devTools.createSession();
         devTools.send(Log.enable());
         devTools.addListener(Log.entryAdded(), logEntry -> {
-            logsUtils.info(PURPLE+"Level: "+logEntry.getLevel()+RESET);
-            logsUtils.info(PINK+"Text: "+logEntry.getText()+RESET);
-            logsUtils.info((BROWN+"URL: "+logEntry.getUrl())+RESET);
-            logsUtils.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+RESET);
+            Logger.info(PURPLE+"Level: "+logEntry.getLevel()+RESET);
+            Logger.info(PINK+"Text: "+logEntry.getText()+RESET);
+            Logger.info((BROWN+"URL: "+logEntry.getUrl())+RESET);
+            Logger.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+RESET);
         });
     }
 }
