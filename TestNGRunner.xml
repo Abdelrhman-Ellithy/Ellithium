@@ -18,7 +18,7 @@
         </classes>
     </test>
     <test name="Web UI Test Edge">
-        <parameter name="BrowserName" value="FireFox"></parameter>
+        <parameter name="BrowserName" value="Edge"></parameter>
         <classes>
             <class name="Tests.loginTests"/>
         </classes>
