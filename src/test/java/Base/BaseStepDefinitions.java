@@ -8,6 +8,6 @@ import org.openqa.selenium.WebDriver;
 public class BaseStepDefinitions {
     protected WebDriver driver;
     public BaseStepDefinitions(){
-        driver= DriverFactory.getNewDriver(DriverType.Chrome, HeadlessMode.False, PrivateMode.True);
+        driver= DriverFactory.getNewLocalWebDriver(DriverType.Chrome, HeadlessMode.False, PrivateMode.True);
     }
 }

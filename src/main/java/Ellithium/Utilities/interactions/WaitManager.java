@@ -2,13 +2,15 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
-import Ellithium.core.logging.logsUtils;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.logging.Logger;
+import Ellithium.core.reporting.Reporter;
 
 public class WaitManager {
     private  static int defaultTimeout= 5;
+    private  static int defaultImplicitWait= 10;
     private  static int defaultPollingTime=200;
+    private static boolean defaultImplicitTimeoutGotFlag=false;
 
     public static int getDefaultTimeout() {
         return defaultTimeout;
@@ -16,18 +18,26 @@ public class WaitManager {
     public static int getDefaultPollingTime() {
         return defaultPollingTime;
     }
+    public static int getDefaultImplicitWait() {
+        return defaultImplicitWait;
+    }
     private  static boolean defaultTimeoutGotFlag=false;
     private  static boolean defaultPollingTimeGotFlag=false;
     public static void initializeTimeoutAndPolling() {
         if (!defaultTimeoutGotFlag) {
             initTimeout();
             defaultTimeoutGotFlag = true;
-            Allure.step("Initialize default Timeout for Element ", Status.PASSED);
+            Reporter.log("Initialize default Timeout for Element ", LogLevel.INFO_GREEN);
         }
         if (!defaultPollingTimeGotFlag) {
             initPolling();
             defaultPollingTimeGotFlag = true;
-            Allure.step("Initialize default Polling Time for Element ", Status.PASSED);
+            Reporter.log("Initialize default Polling Time for Element ", LogLevel.INFO_GREEN);
+        }
+        if(!defaultImplicitTimeoutGotFlag){
+            initImplicitTimeout();
+            defaultImplicitTimeoutGotFlag = true;
+            Reporter.log("Initialize default Implicit Wait for the Driver ", LogLevel.INFO_GREEN);
         }
     }
     private static int parseProperty(String value, int defaultValue, String propertyName) {
@@ -35,7 +45,7 @@ public class WaitManager {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                logsUtils.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
+                Logger.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
             }
         }
         return defaultValue;
@@ -46,7 +56,7 @@ public class WaitManager {
             String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementWaitTimeout");
             defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
             defaultTimeout = 5;  // Assign default if exception occurs
         }
     }
@@ -56,8 +66,16 @@ public class WaitManager {
             String polling = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementPollingTime");
             defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
-            logsUtils.logException(e);
+            Logger.logException(e);
             defaultPollingTime = 5;  // Assign default if exception occurs
+        }
+    }
+    private static void initImplicitTimeout() {
+        try {
+            String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultDriverWaitTimeout");
+            defaultTimeout = Integer.parseInt(timeout);
+        } catch (Exception e) {
+            Logger.logException(e);
         }
     }
 }

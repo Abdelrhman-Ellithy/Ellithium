@@ -3,7 +3,7 @@ import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.driver.DriverFactory;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import io.cucumber.plugin.event.*;
 import io.qameta.allure.Allure;
@@ -24,7 +24,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
     private void testStartedHandler(TestCaseStarted event) {
         ScenarioName = event.getTestCase().getName();
-        logsUtils.info(CYAN + "[START] "  + BLUE + " Scenario " + ScenarioName + " [START]" + RESET);
+        Logger.info(CYAN + "[START] "  + BLUE + " Scenario " + ScenarioName + " [START]" + RESET);
     }
     private void testFinishedHandler(TestCaseFinished event){
         boolean flagFailed=false;
@@ -33,15 +33,15 @@ public class CucumberListener extends AllureCucumber7Jvm {
         File screenShot=null;
         switch (event.getResult().getStatus()){
             case PASSED -> {
-                logsUtils.info(GREEN  +"[PASSED] Scenario " + ScenarioName+ " [PASSED]" + RESET);
+                Logger.info(GREEN  +"[PASSED] Scenario " + ScenarioName+ " [PASSED]" + RESET);
             }
             case FAILED -> {
                 flagFailed=true;
                 screenShot = testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
-                logsUtils.info(RED + "[FAILED] Scenario " + ScenarioName + " [FAILED]" + RESET);
+                Logger.info(RED + "[FAILED] Scenario " + ScenarioName + " [FAILED]" + RESET);
             }
             case SKIPPED -> {
-                logsUtils.info(YELLOW + "[SKIPPED] Scenario " + ScenarioName + " [SKIPPED]" + RESET);
+                Logger.info(YELLOW + "[SKIPPED] Scenario " + ScenarioName + " [SKIPPED]" + RESET);
             }
         }
         String closeFlag= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "closeDriverAfterBDDScenario");

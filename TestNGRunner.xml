@@ -3,14 +3,24 @@
 <!--    <test name="ِMobile Android Test">-->
 <!--        <classes>-->
 <!--            <class name="Tests.AppiumTest"></class>-->
-<!--&lt;!&ndash;            <class name="Tests.AppiumNoonTest"></class>&ndash;&gt;-->
 <!--        </classes>-->
 <!--    </test>-->
-    <test name="Web UI Test">
+    <test name="Web UI Test Chrome">
+        <parameter name="BrowserName" value="Chrome"></parameter>
         <classes>
-        <class name="Tests.loginTests"/>
-<!--        <class name="Runner.TestRunner"></class>-->
-<!--        <class name="Tests.DetailsTests"></class>-->
+            <class name="Tests.loginTests"/>
+        </classes>
+    </test>
+    <test name="Web UI Test FireFox">
+        <parameter name="BrowserName" value="FireFox"></parameter>
+        <classes>
+            <class name="Tests.loginTests"/>
+        </classes>
+    </test>
+    <test name="Web UI Test Edge">
+        <parameter name="BrowserName" value="Edge"></parameter>
+        <classes>
+            <class name="Tests.loginTests"/>
         </classes>
     </test>
 <!--    <test name="ِDatabase Test">-->
