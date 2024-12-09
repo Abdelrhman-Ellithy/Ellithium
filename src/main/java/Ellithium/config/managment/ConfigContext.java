@@ -1,8 +1,10 @@
 package Ellithium.config.managment;
 
 import Ellithium.core.driver.*;
+import org.openqa.selenium.Capabilities;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Map;
 
 public class ConfigContext {
@@ -13,6 +15,8 @@ public class ConfigContext {
     private static PrivateMode privateMode;
     private static SandboxMode sandboxMode;
     private static WebSecurityMode webSecurityMode;
+    private static URL remoteAddress;
+    private static Capabilities capabilities;
     private static final Map<DriverType, String> DRIVER_TYPE_STRING_MAP;
     private static final Map<HeadlessMode, String> HEADLESS_MODE_STRING_MAP;
     private static final Map<WebSecurityMode, String> WEB_SECURITY_MODE_STRING_MAP;
@@ -27,10 +31,13 @@ public class ConfigContext {
                 Map.entry(DriverType.Edge, "Edge"),
                 Map.entry(DriverType.Safari, "Safari"),
                 Map.entry(DriverType.FireFox, "Firefox"),
+                Map.entry(DriverType.REMOTE_Chrome, "Remote Chrome"),
+                Map.entry(DriverType.REMOTE_Edge, "Remote Edge"),
+                Map.entry(DriverType.REMOTE_Safari, "Remote Safari"),
+                Map.entry(DriverType.REMOTE_FireFox, "Remote Firefox"),
                 Map.entry(DriverType.Android, "Android"),
                 Map.entry(DriverType.IOS, "iOS")
         );
-
         // HeadlessMode to String mapping
         HEADLESS_MODE_STRING_MAP = Map.ofEntries(
                 Map.entry(HeadlessMode.True, "Headless Mode Enabled"),
@@ -60,6 +67,21 @@ public class ConfigContext {
                 Map.entry(SandboxMode.NoSandboxMode, "No Sandbox Mode"),
                 Map.entry(SandboxMode.Sandbox, "Sandbox Mode Enabled")
         );
+    }
+    public static URL getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    public static void setRemoteAddress(URL remoteAddress) {
+        ConfigContext.remoteAddress = remoteAddress;
+    }
+
+    public static Capabilities getCapabilities() {
+        return capabilities;
+    }
+
+    public static void setCapabilities(Capabilities capabilities) {
+        ConfigContext.capabilities = capabilities;
     }
     public static String getValue(DriverType key) {
         return DRIVER_TYPE_STRING_MAP.get(key);

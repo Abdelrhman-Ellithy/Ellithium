@@ -6,14 +6,12 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
-import Ellithium.core.logging.logsUtils;
+import Ellithium.core.logging.Logger;
 import org.testng.*;
 import org.testng.annotations.ITestAnnotation;
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.FAILURE;
 
@@ -23,51 +21,51 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                logsUtils.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
+                Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }
     @Override
     public void onTestFailure(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                logsUtils.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
+                Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
     @Override
     public void onTestSuccess(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                logsUtils.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
+                Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
             }
     }
     @Override
     public void onTestSkipped(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                logsUtils.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
+                Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
         }
     }
     @Override
     public void onStart(ITestContext context) {
-        logsUtils.info(PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
+        Logger.info(PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
     }
     @Override
     public void onFinish(ITestContext context) {
-        logsUtils.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
+        Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
     }
     @Override
     public void onStart(ISuite suite) {
-        logsUtils.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
+        Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
     }
     @Override
     public void onFinish(ISuite suite) {
-        logsUtils.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
+        Logger.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
     }
     @Override
     public void onExecutionStart() {
         ConfigContext.setOnExecution(true);
         GeneralHandler.StartRoutine();
         ConfigContext.setOnExecution(false);
-        logsUtils.info(BLUE + "---------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- Ellithium Engine Setup -------------" + RESET);
-        logsUtils.info(BLUE + "---------------------------------------------" + RESET);
+        Logger.info(BLUE + "---------------------------------------------" + RESET);
+        Logger.info(CYAN + "------- Ellithium Engine Setup -------------" + RESET);
+        Logger.info(BLUE + "---------------------------------------------" + RESET);
         AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
@@ -81,9 +79,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalSeconds = (totalExecutionTime / 1000) % 60;
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         Reporter.log( "Total Execution Time is: " + totalMinutes + " Min " , LogLevel.INFO_BLUE, totalSeconds + " Sec " + totalMills + " Mills" );
-        logsUtils.info(BLUE + "------------------------------------------" + RESET);
-        logsUtils.info(CYAN + "------- Ellithium Engine TearDown -------" + RESET);
-        logsUtils.info(BLUE + "------------------------------------------" + RESET);
+        Logger.info(BLUE + "------------------------------------------" + RESET);
+        Logger.info(CYAN + "------- Ellithium Engine TearDown -------" + RESET);
+        Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
     }
     @Override

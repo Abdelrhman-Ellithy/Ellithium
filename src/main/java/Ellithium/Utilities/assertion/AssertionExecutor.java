@@ -1,12 +1,8 @@
 package Ellithium.Utilities.assertion;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.reporting.internal.Colors;
-import Ellithium.core.logging.logsUtils;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
 
 import java.util.Arrays;
 import java.util.Collection;

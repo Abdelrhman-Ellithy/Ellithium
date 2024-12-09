@@ -1,4 +1,5 @@
 package Ellithium.core.execution.Analyzer;
+import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import org.testng.IRetryAnalyzer;
@@ -23,5 +24,9 @@ public class RetryAnalyzer implements IRetryAnalyzer {
             iTestResult.setStatus(ITestResult.SUCCESS);
         }
         return false;
+    }
+    public static void initRetryCount(){
+        String countStr= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
+        ConfigContext.setRetryCount(Integer.parseInt(countStr));
     }
 }
