@@ -93,8 +93,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                 Reporter.attachScreenshotToReport(screenShot, screenShot.getName(),
                         driverName,testResult.getName());
             }
-            Reporter.addParams(GeneralHandler.getParameters());
         }
+        Reporter.addParams(GeneralHandler.getParameters());
     }
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {

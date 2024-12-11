@@ -38,7 +38,7 @@ public class BrowserSetUp {
                 return null;
         }
     }
-    public static WebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+    public static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         RemoteWebDriver driver;
         switch (driverType) {
             case REMOTE_Chrome->{
