@@ -6,21 +6,8 @@
 <!--        </classes>-->
 <!--    </test>-->
     <test name="Web UI Test Chrome">
-        <parameter name="BrowserName" value="Chrome"></parameter>
         <classes>
-            <class name="Tests.loginTests"/>
-        </classes>
-    </test>
-    <test name="Web UI Test FireFox">
-        <parameter name="BrowserName" value="FireFox"></parameter>
-        <classes>
-            <class name="Tests.loginTests"/>
-        </classes>
-    </test>
-    <test name="Web UI Test Edge">
-        <parameter name="BrowserName" value="Edge"></parameter>
-        <classes>
-            <class name="Tests.loginTests"/>
+            <class name="Tests.loginTestsRemote"/>
         </classes>
     </test>
 <!--    <test name="ِDatabase Test">-->
