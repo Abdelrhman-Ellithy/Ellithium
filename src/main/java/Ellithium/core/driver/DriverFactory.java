@@ -126,8 +126,11 @@ public class DriverFactory {
             case IOS -> {
                 return (T)IOSDriverThread.get();
             }
-            case Chrome, Edge,FireFox,Safari,REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome  ->{
+            case Chrome, Edge,FireFox,Safari  ->{
                 return (T)WebDriverThread.get();
+            }
+            case REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome ->{
+                return (T)RemoteWebDriverThreadLocal.get();
             }
             default -> {
                 return null;
@@ -150,8 +153,15 @@ public class DriverFactory {
                 }
                 removeDriver();
             }
-            case Chrome, Edge,FireFox,Safari,REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome ->{
+            case Chrome, Edge,FireFox,Safari ->{
                 WebDriver localDriver = WebDriverThread.get();
+                if (localDriver != null) {
+                    localDriver.quit();
+                }
+                removeDriver();
+            }
+            case REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome ->{
+                RemoteWebDriver localDriver = RemoteWebDriverThreadLocal.get();
                 if (localDriver != null) {
                     localDriver.quit();
                 }
@@ -167,8 +177,11 @@ public class DriverFactory {
             case IOS -> {
                 IOSDriverThread.remove();
             }
-            case Chrome, Edge,FireFox,Safari,REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome ->{
+            case Chrome, Edge,FireFox,Safari ->{
                 WebDriverThread.remove();
+            }
+            case REMOTE_Edge,REMOTE_Safari,REMOTE_FireFox,REMOTE_Chrome ->{
+                RemoteWebDriverThreadLocal.remove();
             }
         }
     }

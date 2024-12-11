@@ -16,6 +16,6 @@ public class BaseTests extends NonBDDSetup {
     }
     @AfterClass
     public void tareDown(){
-        DriverFactory.quitDriver();;
+        DriverFactory.quitDriver();
     }
 }
