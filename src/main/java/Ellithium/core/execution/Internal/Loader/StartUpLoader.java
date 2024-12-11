@@ -116,6 +116,7 @@ public class StartUpLoader {
         return 0; // Versions are equal
     }
     public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
+        boolean result;
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
@@ -126,7 +127,7 @@ public class StartUpLoader {
                 if (entry.getName().startsWith("allure")) {
                     File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
                     if (entry.isDirectory()) {
-                        targetFile.mkdirs();
+                        result=targetFile.mkdirs();
                     } else {
                         Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {
@@ -142,32 +143,51 @@ public class StartUpLoader {
     }
     public static void TestOutputSolver(){
         final String allureFile = basePath + "allure";
+        boolean result;
         String allureReportPath= PropertyHelper.getDataFromProperties(allureFile,"allure.report.directory");
         if (!checkFileExists(allureReportPath)) {
             File allureReportDirectory = new File(allureReportPath);
-            allureReportDirectory.mkdirs();
+            result=allureReportDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + allureReportPath+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         String allureResultsPath= PropertyHelper.getDataFromProperties(allureFile,"allure.report.directory");
         if (!checkFileExists(allureResultsPath)) {
             File allureResultsDirectory = new File(allureResultsPath);
-            allureResultsDirectory.mkdirs();
+            result=allureResultsDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + allureResultsPath+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         if (!checkFileExists(ScreenShotPath)) {
             File ScreenShotsDirectory = new File(ScreenShotPath);
-            ScreenShotsDirectory.mkdirs();
+            result=ScreenShotsDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + ScreenShotsDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         if (!checkFileExists(testPath)) {
             File testDataDirectory = new File(testPath);
-            testDataDirectory.mkdirs();
+            result=testDataDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + testDataDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         if(!checkFileExists(checkerFolderPath)){
             File checkerDirectory = new File(checkerFolderPath);
-            checkerDirectory.mkdirs();
+            result=checkerDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + checkerDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         if (!checkFileExists(checkerFilePath)) {
             File checkerFile = new File(checkerFilePath);
             try {
-                checkerFile.createNewFile();
+                result=checkerFile.createNewFile();
+                if (!result){
+                    System.err.println("Failed to Automatically create the json file: " + checkerFile+ " Due to IDE Permissions you need to make it manually");
+                }
                 Files.write(checkerFile.toPath(), (
                         "{\n LastDateRun\": null\n } ").getBytes());
             }catch (Exception e){
@@ -179,12 +199,18 @@ public class StartUpLoader {
                 .concat(PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.fileName"));
         if (!checkFileExists(logFolderPath)) {
             File logDirectory = new File(logFolderPath);
-            logDirectory.mkdirs();
+            result=logDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + logDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
         }
         if (!checkFileExists(logFilePath)) {
             File logFile = new File(logFilePath);
             try {
-                logFile.createNewFile();
+                result=logFile.createNewFile();
+                if (!result){
+                    System.err.println("Failed to Automatically create the text file: " + logFile+ " Due to IDE Permissions you need to make it manually");
+                }
             }
             catch (IOException e){
                 System.err.println(e.getMessage());
