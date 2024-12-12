@@ -27,16 +27,16 @@ public class ConfigContext {
     static {
         // DriverType to String mapping
         DRIVER_TYPE_STRING_MAP = Map.ofEntries(
-                Map.entry(DriverType.Chrome, "Chrome"),
-                Map.entry(DriverType.Edge, "Edge"),
-                Map.entry(DriverType.Safari, "Safari"),
-                Map.entry(DriverType.FireFox, "Firefox"),
-                Map.entry(DriverType.REMOTE_Chrome, "Remote Chrome"),
-                Map.entry(DriverType.REMOTE_Edge, "Remote Edge"),
-                Map.entry(DriverType.REMOTE_Safari, "Remote Safari"),
-                Map.entry(DriverType.REMOTE_FireFox, "Remote Firefox"),
-                Map.entry(DriverType.Android, "Android"),
-                Map.entry(DriverType.IOS, "iOS")
+                Map.entry(LocalDriverType.Chrome, "Chrome"),
+                Map.entry(LocalDriverType.Edge, "Edge"),
+                Map.entry(LocalDriverType.Safari, "Safari"),
+                Map.entry(LocalDriverType.FireFox, "Firefox"),
+                Map.entry(RemoteDriverType.REMOTE_Chrome, "Remote Chrome"),
+                Map.entry(RemoteDriverType.REMOTE_Edge, "Remote Edge"),
+                Map.entry(RemoteDriverType.REMOTE_Safari, "Remote Safari"),
+                Map.entry(RemoteDriverType.REMOTE_FireFox, "Remote Firefox"),
+                Map.entry(MobileDriverType.Android, "Android"),
+                Map.entry(MobileDriverType.IOS, "iOS")
         );
         // HeadlessMode to String mapping
         HEADLESS_MODE_STRING_MAP = Map.ofEntries(

@@ -60,9 +60,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     @Override
     public void onExecutionStart() {
-        ConfigContext.setOnExecution(true);
         GeneralHandler.StartRoutine();
-        ConfigContext.setOnExecution(false);
         Logger.info(BLUE + "---------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine Setup -------------" + RESET);
         Logger.info(BLUE + "---------------------------------------------" + RESET);

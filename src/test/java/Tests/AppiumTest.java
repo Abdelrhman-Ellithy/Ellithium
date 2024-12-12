@@ -4,6 +4,7 @@ import Base.AppiumBase;
 import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
+import Ellithium.core.driver.MobileDriverType;
 import io.appium.java_client.android.options.UiAutomator2Options;
 import org.testng.annotations.Test;
 import java.net.MalformedURLException;
@@ -16,7 +17,7 @@ public class AppiumTest extends AppiumBase {
         options.setDeviceName("Xiaomi Redmi Note 8");
         options.setAppActivity("com.appyinnovate.e_invoice.MainActivity");
         options.setAppPackage("com.appyinnovate.e_invoice");
-        androidDriver= DriverFactory.getNewMobileDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
+        androidDriver= DriverFactory.getNewDriver(MobileDriverType.Android,new URL("http://0.0.0.0:4723"),options);
         driverActions=new DriverActions(androidDriver);
     }
 }
