@@ -8,8 +8,8 @@ public class loginTestsRemote extends BaseRemote {
     @DataProvider(name= "invalidLoginData")
             Object[][] getInvalidTestData(){
         return new Object[][]{
-                {"tomsmith","hamada","Your password is invalid"},
-                {"hamada","SuperSecretPassword!","Your username is invalid"}
+                {"tomsmith","hamada","Your password is invalidd"},
+                {"hamada","SuperSecretPassword!","Your username is invalidd"}
         };
     }
     LoginPage login;

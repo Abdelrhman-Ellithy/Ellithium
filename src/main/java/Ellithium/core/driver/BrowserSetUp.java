@@ -22,16 +22,16 @@ public class BrowserSetUp {
     // Private method to configure browser options and return the WebDriver instance
     public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         switch (driverType) {
-            case Chrome:
+            case LocalDriverType.Chrome:
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new ChromeDriver(chromeOptions);
-            case FireFox:
+            case LocalDriverType.FireFox:
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new FirefoxDriver(firefoxOptions);
-            case Edge:
+            case LocalDriverType.Edge:
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 return new EdgeDriver(edgeOptions);
-            case Safari:
+            case LocalDriverType.Safari:
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
                 return new SafariDriver(safariOptions);
             default:
@@ -41,22 +41,22 @@ public class BrowserSetUp {
     public static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         RemoteWebDriver driver;
         switch (driverType) {
-            case REMOTE_Chrome->{
+            case RemoteDriverType.REMOTE_Chrome->{
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 capabilities.merge(chromeOptions);
                 driver= new RemoteWebDriver(remoteAddress,capabilities);
             }
-            case REMOTE_FireFox ->{
+            case RemoteDriverType.REMOTE_FireFox ->{
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 capabilities.merge(firefoxOptions);
                 driver= new RemoteWebDriver(remoteAddress,capabilities);
             }
-            case REMOTE_Edge ->{
+            case RemoteDriverType.REMOTE_Edge ->{
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 capabilities.merge(edgeOptions);
                 driver= new RemoteWebDriver(remoteAddress,edgeOptions);
             }
-            case REMOTE_Safari ->{
+            case RemoteDriverType.REMOTE_Safari ->{
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
                 capabilities.merge(safariOptions);
                 driver= new RemoteWebDriver(remoteAddress,safariOptions);

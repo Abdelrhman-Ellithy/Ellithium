@@ -11,7 +11,7 @@ public class BaseTests extends NonBDDSetup {
    protected HomPage home;
     @BeforeClass
     public void Setup(){
-        driver= DriverFactory.getNewLocalWebDriver(DriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        driver= DriverFactory.getNewDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
         home=new HomPage(driver);
     }
     @AfterClass
