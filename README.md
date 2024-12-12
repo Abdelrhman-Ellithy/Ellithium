@@ -287,7 +287,34 @@ public class BaseTests extends NonBDDSetup {
     // with Web and the Same Logic for Other
     @BeforeClass
     public void Setup() {
+        // for Local Machine Web Execution
         driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+
+        // for Remote Machine Web Execution
+        driver= DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome,new URL("http://localhost:4723"),capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+
+        // for Android Mobile
+        androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://localhost:4723"),options);
+        
+        // for IOS Mobile
+        iosDriver=DriverFactory.getNewDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
+        
+        // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
+       SQLDatabaseProvider db=new SQLDatabaseProvider(
+                SQLDBType.MY_SQL,
+                username,
+                password,
+                serverIp,
+                port,
+                dbName);
+    }
+        // for DB SQL Provider [SQLite]
+        SQLDatabaseProvider SQLitedb= SQLDatabaseProvider( SQLDBType.SQLITE, pathToSQLiteDataBase);
+
+        // for NoSQL DB Provider
+        CouchbaseDatabaseProvider couchDB=CouchbaseDatabaseProvider(connectionString,  username,  password,  bucketName);
+        MongoDatabaseProvider mongoDB=MongoDatabaseProvider(String connectionString, String dbName);
+        RedisDatabaseProvider redisDB=RedisDatabaseProvider(String connectionString);
     }
 
     @AfterClass
