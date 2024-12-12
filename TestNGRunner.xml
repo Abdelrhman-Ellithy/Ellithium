@@ -5,6 +5,11 @@
 <!--            <class name="Tests.AppiumTest"></class>-->
 <!--        </classes>-->
 <!--    </test>-->
+    <test name="Web UI Test Remote Chrome">
+        <classes>
+            <class name="Tests.loginTestsRemote"/>
+        </classes>
+    </test>
     <test name="Web UI Test Chrome">
         <classes>
             <class name="Tests.loginTests"/>

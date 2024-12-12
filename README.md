@@ -224,12 +224,18 @@ public class BaseStepDefinitions {
     protected IOSDriver iosDriver;
 
     public BaseStepDefinitions() {
-        // for Web
-        driver= DriverFactory.getNewDriver(DriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+
+        // for Local Machine Web Execution
+        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+
+        // for Remote Machine Web Execution
+        driver= DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome,new URL("http://localhost:4723"),capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+
         // for Android Mobile
-        androidDriver= DriverFactory.getNewDriver(DriverType.Android,new URL("http://0.0.0.0:4723"),options);
+        androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://localhost:4723"),options);
+        
         // for IOS Mobile
-        iosDriver=DriverFactory.getNewDriver(DriverType.IOS,new URL("http://0.0.0.0:4723"),options);
+        iosDriver=DriverFactory.getNewDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
         
         // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
        SQLDatabaseProvider db=new SQLDatabaseProvider(
@@ -281,7 +287,7 @@ public class BaseTests extends NonBDDSetup {
     // with Web and the Same Logic for Other
     @BeforeClass
     public void Setup() {
-        driver= DriverFactory.getNewDriver(DriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
 
     @AfterClass
