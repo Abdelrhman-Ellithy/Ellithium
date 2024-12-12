@@ -17,7 +17,7 @@ public class AppiumTest extends AppiumBase {
         options.setDeviceName("Xiaomi Redmi Note 8");
         options.setAppActivity("com.appyinnovate.e_invoice.MainActivity");
         options.setAppPackage("com.appyinnovate.e_invoice");
-        androidDriver= DriverFactory.getNewDriver(MobileDriverType.Android,new URL("http://0.0.0.0:4723"),options);
+        androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://0.0.0.0:4723"),options);
         driverActions=new DriverActions(androidDriver);
     }
 }
