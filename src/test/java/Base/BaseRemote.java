@@ -20,7 +20,7 @@ public class BaseRemote {
     @BeforeClass
     public void Setup() throws MalformedURLException {
         DesiredCapabilities capabilities=new DesiredCapabilities();
-        driver= DriverFactory.getNewDriver(RemoteDriverType.REMOTE_Chrome ,new URL("http://localhost:4444/wd/hub"),capabilities);
+        driver= DriverFactory.getNewRemoteDriver(RemoteDriverType.REMOTE_Chrome ,new URL("http://localhost:4444/wd/hub"),capabilities);
         home=new HomPage(driver);
     }
     @AfterClass

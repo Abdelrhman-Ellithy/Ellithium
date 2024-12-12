@@ -31,33 +31,33 @@ public class DriverFactory {
     private static ThreadLocal<IOSDriver> IOSDriverThread = new ThreadLocal<>();
 
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
+    public static <T extends WebDriver> T getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
         ConfigContext.setConfig(driverType,headlessMode,pageLoadStrategyMode,privateMode,sandboxMode,webSecurityMode);
         webSetUp();
         return (T) WebDriverThread.get();
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode) {
-        return getNewDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
+    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode) {
+        return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
+        return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode) {
-        return getNewDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode) {
+        return getNewLocalDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
-        return getNewDriver(driverType,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
+        return getNewLocalDriver(driverType,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewDriver(LocalDriverType driverType) {
-        return getNewDriver(driverType,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType) {
+        return getNewLocalDriver(driverType,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends AppiumDriver> T getNewDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
+    public static <T extends AppiumDriver> T getNewMobileDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         ConfigContext.setDriverType(driverType);
         ConfigContext.setRemoteAddress(remoteAddress);
         ConfigContext.setCapabilities(capabilities);
@@ -90,7 +90,7 @@ public class DriverFactory {
 
     // Remote web Driver Section
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
+    public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
         ConfigContext.setConfig(driverType,headlessMode,pageLoadStrategyMode,privateMode,sandboxMode,webSecurityMode);
         ConfigContext.setCapabilities(capabilities);
         ConfigContext.setRemoteAddress(remoteAddress);
@@ -98,24 +98,24 @@ public class DriverFactory {
         return (T)RemoteWebDriverThreadLocal.get();
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode) {
-        return getNewDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
+    public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode) {
-        return getNewDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
-        return getNewDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends RemoteWebDriver> T getNgetNewRemoteDriverewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends RemoteWebDriver> T getNewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
-        return getNewDriver(driverType,remoteAddress,capabilities,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
     public static <T extends WebDriver> T getCurrentDriver() {
