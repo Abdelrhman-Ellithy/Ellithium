@@ -5,11 +5,20 @@ import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
+import io.appium.java_client.AppiumFluentWait;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.FluentWait;
 
-public class WaitManager {
-    private  static int defaultTimeout= 5;
-    private  static int defaultImplicitWait= 10;
-    private  static int defaultPollingTime=200;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+
+public class WaitManager <T extends WebDriver>{
+    private  static int defaultTimeout;
+    private  static int defaultImplicitWait;
+    private  static int defaultPollingTime;
     private static boolean defaultImplicitTimeoutGotFlag=false;
 
     public static int getDefaultTimeout() {
@@ -57,7 +66,7 @@ public class WaitManager {
             defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
             Logger.logException(e);
-            defaultTimeout = 5;  // Assign default if exception occurs
+            defaultTimeout = 10;  // Assign default if exception occurs
         }
     }
     // Initialize default polling time from properties file
@@ -67,15 +76,46 @@ public class WaitManager {
             defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
             Logger.logException(e);
-            defaultPollingTime = 5;  // Assign default if exception occurs
+            defaultPollingTime = 200;  // Assign default if exception occurs
         }
     }
     private static void initImplicitTimeout() {
         try {
             String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultDriverWaitTimeout");
-            defaultTimeout = Integer.parseInt(timeout);
+            defaultImplicitWait = Integer.parseInt(timeout);
         } catch (Exception e) {
             Logger.logException(e);
+            defaultImplicitWait=20;
         }
     }
+    private static final ArrayList<Class<? extends Exception>> expectedExceptions = new ArrayList<>();
+    static {
+        expectedExceptions.add(java.lang.ClassCastException.class);
+        expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
+        expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
+        expectedExceptions.add(org.openqa.selenium.JavascriptException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementClickInterceptedException.class);
+        expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
+        expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
+        expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
+        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
+        expectedExceptions.add(ExecutionException.class);
+        expectedExceptions.add(InterruptedException.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends WebDriver> FluentWait<T> getFluentWait(T driver, int timeoutInSeconds, int pollingEveryInMillis) {
+        if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
+            return  new AppiumFluentWait<>(driver)
+                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                    .ignoreAll(expectedExceptions);
+        } else {
+            return  new FluentWait<>(driver)
+                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                    .ignoreAll(expectedExceptions);
+        }
+    }
+
 }

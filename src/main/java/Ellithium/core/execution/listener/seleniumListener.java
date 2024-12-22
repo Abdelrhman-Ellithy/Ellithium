@@ -1,4 +1,5 @@
 package Ellithium.core.execution.listener;
+import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
@@ -6,9 +7,13 @@ import java.time.Duration;
 import java.util.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.events.WebDriverListener;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 public class seleniumListener implements WebDriverListener {
-
+    @Override
+    public void beforeFindElement(WebDriver driver, By locator) {
+        WaitManager.getFluentWait(driver,WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime()).until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -37,15 +42,6 @@ public class seleniumListener implements WebDriverListener {
    public void afterGetTitle(WebDriver driver, String title) {
        Reporter.log("Page title retrieved: " + title, LogLevel.INFO_BLUE);
    }
-//   @Override
-//   public void afterFindElement(WebDriver driver, By locator, WebElement element) {
-//       Reporter.log("Element found by: "+ locator.toString(), LogLevel.INFO_BLUE);
-//   }
-//
-//   @Override
-//   public void afterFindElements(WebDriver driver, By locator, List<WebElement> elements) {
-//       Reporter.log("Elements found by: "+ locator.toString() + ", Count: " + elements.size(), LogLevel.INFO_BLUE);
-//   }
    @Override
    public void afterGetPageSource(WebDriver driver, String source) {
        Reporter.log("Page source retrieved", LogLevel.INFO_BLUE);
