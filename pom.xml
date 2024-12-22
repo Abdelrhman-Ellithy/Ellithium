@@ -71,12 +71,12 @@
         <gsonVersion>2.11.0</gsonVersion>
         <SLF4JAPIVersion>2.0.13</SLF4JAPIVersion>
         <SLF4JSimpleVersion>2.0.13</SLF4JSimpleVersion>
-        <log4jVersion>2.24.2</log4jVersion>
+        <log4jVersion>2.24.3</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.12.0</CSV>
         <ApachePOI>5.3.0</ApachePOI>
-        <AddPOI>5.2.2</AddPOI>
+        <AddPOI>5.3.0</AddPOI>
         <Cucumber>7.20.1</Cucumber>
         <cucumberTsetNG>7.20.1</cucumberTsetNG>
         <restversion>5.5.0</restversion>
