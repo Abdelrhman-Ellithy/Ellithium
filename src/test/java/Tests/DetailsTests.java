@@ -1,17 +1,19 @@
 package Tests;
 
 import Ellithium.core.base.NonBDDSetup;
-import Ellithium.core.logging.LogLevel;
-import Ellithium.core.reporting.Reporter;
 import org.testng.annotations.Test;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+
 public class DetailsTests extends NonBDDSetup {
     @Test
     public void TestVersion(){
-        String latest=given().
-                baseUri("https://api.github.com").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
-                .when().get("latest")
-                .thenReturn().body().jsonPath().getString("name");
-        Reporter.log(latest, LogLevel.INFO_GREEN);
+        given().baseUri("http://movieland.runasp.net/")
+                .when().get("/api/Movies/Details/50")
+                .then()
+                .assertThat()
+                .statusCode(404)
+                .contentType("application/json; charset=utf-8")
+                .time(lessThanOrEqualTo(1000L));
     }
 }
