@@ -62,6 +62,7 @@ public class BrowserSetUp {
     }
     private static ChromeOptions configureChromeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.setCapability("webSocketUrl", true);
         if (headlessMode==HeadlessMode.True) {
             chromeOptions.addArguments("--headless");
         }
@@ -70,6 +71,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             chromeOptions.addArguments("--incognito");
+            chromeOptions.setCapability("webSocketUrl", false);
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             chromeOptions.addArguments("--no-sandbox");
@@ -140,6 +142,7 @@ public class BrowserSetUp {
     // Configure Firefox options
     private static FirefoxOptions configureFirefoxOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
+        firefoxOptions.setCapability("webSocketUrl", true);
         if (headlessMode==HeadlessMode.True) {
             firefoxOptions.addArguments("--headless");
         }
@@ -148,6 +151,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             firefoxOptions.addArguments("--private");
+            firefoxOptions.setCapability("webSocketUrl", false);
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             firefoxOptions.addArguments("--no-sandbox");
@@ -187,6 +191,7 @@ public class BrowserSetUp {
     // Configure Edge options
     private static EdgeOptions configureEdgeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         EdgeOptions edgeOptions = new EdgeOptions();
+        edgeOptions.setCapability("webSocketUrl", true);
         if (headlessMode==HeadlessMode.True) {
             edgeOptions.addArguments("--headless");
         }
@@ -195,6 +200,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             edgeOptions.addArguments("--inPrivate");
+            edgeOptions.setCapability("webSocketUrl", false);
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             edgeOptions.addArguments("--no-sandbox");

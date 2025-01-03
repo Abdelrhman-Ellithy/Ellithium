@@ -1,23 +1,8 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="Framework Test" verbose="1" data-provider-thread-count="1" >
-<!--    <test name="ِMobile Android Test">-->
-<!--        <classes>-->
-<!--            <class name="Tests.AppiumTest"></class>-->
-<!--        </classes>-->
-<!--    </test>-->
-    <test name="Web UI Test Remote Chrome">
-        <classes>
-            <class name="Tests.loginTestsRemote"/>
-        </classes>
-    </test>
+<suite name="Framework Test" verbose="1" data-provider-thread-count="1">
     <test name="Web UI Test Chrome">
         <classes>
             <class name="Tests.loginTests"/>
         </classes>
     </test>
-<!--    <test name="ِDatabase Test">-->
-<!--        <classes>-->
-<!--            <class name="Tests.DBTEst"></class>-->
-<!--        </classes>-->
-<!--    </test>-->
 </suite>
