@@ -21,6 +21,8 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
 import java.time.Duration;
+
+import static Ellithium.core.driver.MobileDriverType.IOS;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static io.appium.java_client.proxy.Helpers.createProxy;
 
@@ -119,53 +121,62 @@ public class DriverFactory {
     }
     @SuppressWarnings("unchecked")
     public static <T extends WebDriver> T getCurrentDriver() {
-        if (ConfigContext.getDriverType().equals(MobileDriverType.Android)) {
-            return (T) AndroidDriverThread.get();
-        } else if (ConfigContext.getDriverType().equals(MobileDriverType.IOS)) {
-            return (T) IOSDriverThread.get();
-        } else if (ConfigContext.getDriverType().equals(LocalDriverType.Chrome) || ConfigContext.getDriverType().equals(LocalDriverType.Edge) || ConfigContext.getDriverType().equals(LocalDriverType.FireFox) || ConfigContext.getDriverType().equals(LocalDriverType.Safari)) {
-            return (T) WebDriverThread.get();
-        } else if (ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Edge) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Safari) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_FireFox) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Chrome)) {
-            return (T) RemoteWebDriverThreadLocal.get();
+        var driverType=ConfigContext.getDriverType();
+        if(driverType!=null){
+            if (driverType.equals(MobileDriverType.Android)) {
+                return (T) AndroidDriverThread.get();
+            } else if (driverType.equals(IOS)) {
+                return (T) IOSDriverThread.get();
+            } else if (driverType.equals(LocalDriverType.Chrome) || ConfigContext.getDriverType().equals(LocalDriverType.Edge) || ConfigContext.getDriverType().equals(LocalDriverType.FireFox) || ConfigContext.getDriverType().equals(LocalDriverType.Safari)) {
+                return (T) WebDriverThread.get();
+            } else if (driverType.equals(RemoteDriverType.REMOTE_Edge) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Safari) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_FireFox) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Chrome)) {
+                return (T) RemoteWebDriverThreadLocal.get();
+            }
         }
         return null;
     }
     public static void quitDriver() {
-        if (ConfigContext.getDriverType().equals(MobileDriverType.Android)) {
-            AndroidDriver localDriver = AndroidDriverThread.get();
-            if (localDriver != null) {
-                localDriver.quit();
+        var driverType=ConfigContext.getDriverType();
+        if (driverType!=null){
+            if (driverType.equals(MobileDriverType.Android)) {
+                AndroidDriver localDriver = AndroidDriverThread.get();
+                if (localDriver != null) {
+                    localDriver.quit();
+                }
+                removeDriver();
+            } else if (driverType.equals(IOS)) {
+                IOSDriver localDriver = IOSDriverThread.get();
+                if (localDriver != null) {
+                    localDriver.quit();
+                }
+                removeDriver();
+            } else if (driverType.equals(LocalDriverType.Chrome) || ConfigContext.getDriverType().equals(LocalDriverType.Edge) || ConfigContext.getDriverType().equals(LocalDriverType.FireFox) || ConfigContext.getDriverType().equals(LocalDriverType.Safari)) {
+                WebDriver localDriver = WebDriverThread.get();
+                if (localDriver != null) {
+                    localDriver.quit();
+                }
+                removeDriver();
+            } else if (driverType.equals(RemoteDriverType.REMOTE_Edge) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Safari) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_FireFox) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Chrome)) {
+                RemoteWebDriver localDriver = RemoteWebDriverThreadLocal.get();
+                if (localDriver != null) {
+                    localDriver.quit();
+                }
+                removeDriver();
             }
-            removeDriver();
-        } else if (ConfigContext.getDriverType().equals(MobileDriverType.IOS)) {
-            IOSDriver localDriver = IOSDriverThread.get();
-            if (localDriver != null) {
-                localDriver.quit();
-            }
-            removeDriver();
-        } else if (ConfigContext.getDriverType().equals(LocalDriverType.Chrome) || ConfigContext.getDriverType().equals(LocalDriverType.Edge) || ConfigContext.getDriverType().equals(LocalDriverType.FireFox) || ConfigContext.getDriverType().equals(LocalDriverType.Safari)) {
-            WebDriver localDriver = WebDriverThread.get();
-            if (localDriver != null) {
-                localDriver.quit();
-            }
-            removeDriver();
-        } else if (ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Edge) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Safari) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_FireFox) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Chrome)) {
-            RemoteWebDriver localDriver = RemoteWebDriverThreadLocal.get();
-            if (localDriver != null) {
-                localDriver.quit();
-            }
-            removeDriver();
         }
     }
     public static void removeDriver() {
-        if (ConfigContext.getDriverType().equals(MobileDriverType.Android)) {
-            AndroidDriverThread.remove();
-        } else if (ConfigContext.getDriverType().equals(MobileDriverType.IOS)) {
-            IOSDriverThread.remove();
-        } else if (ConfigContext.getDriverType().equals(LocalDriverType.Chrome) || ConfigContext.getDriverType().equals(LocalDriverType.Edge) || ConfigContext.getDriverType().equals(LocalDriverType.FireFox) || ConfigContext.getDriverType().equals(LocalDriverType.Safari)) {
-            WebDriverThread.remove();
-        } else if (ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Edge) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Safari) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_FireFox) || ConfigContext.getDriverType().equals(RemoteDriverType.REMOTE_Chrome)) {
-            RemoteWebDriverThreadLocal.remove();
+        var driverType=ConfigContext.getDriverType();
+        if(driverType!=null) {
+            if (driverType.equals(MobileDriverType.Android)) {
+                AndroidDriverThread.remove();
+            } else if (driverType.equals(IOS)) {
+                IOSDriverThread.remove();
+            } else if (driverType.equals(LocalDriverType.Chrome) || driverType.equals(LocalDriverType.Edge) || driverType.equals(LocalDriverType.FireFox) || driverType.equals(LocalDriverType.Safari)) {
+                WebDriverThread.remove();
+            } else if (driverType.equals(RemoteDriverType.REMOTE_Edge) || driverType.equals(RemoteDriverType.REMOTE_Safari) || driverType.equals(RemoteDriverType.REMOTE_FireFox) || driverType.equals(RemoteDriverType.REMOTE_Chrome)) {
+                RemoteWebDriverThreadLocal.remove();
+            }
         }
     }
     private static void webSetUp() {

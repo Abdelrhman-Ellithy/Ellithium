@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ConfigContext {
 
-    private static DriverType driverType;
+    private static DriverType driverType =null;
     private static HeadlessMode headlessMode;
     private static PageLoadStrategyMode pageLoadStrategy;
     private static PrivateMode privateMode;
