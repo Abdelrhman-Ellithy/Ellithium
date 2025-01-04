@@ -39,9 +39,9 @@
 
 ### 🚀 Key Features
  
-|BDD Support|Parallel Execution|Cross-Browser Testing|Headless Testing|Logging|Screenshots Attaching|User Stories Linking|Reporting|Command line Executor Interface|
-|:--------:|:--------:|:--------:|:------:|:------:|:------:|:------:|:-----:|:------:|
-|✅        |✅         |✅         |✅        |✅      |✅       |✅       |✅      |✅       |
+|BDD Support|Parallel Execution|Cross-Browser Testing|Headless Testing|Logging|Screenshots Attaching|User Stories Linking|Reporting|Command line Executor Interface|Synchronization Handling | CI/CD integration   |Test Data Generation|
+|:--------:|:--------:|:--------:|:------:|:------:|:------:|:------:|:-----:|:------:|:---: |:---: |:---: |
+|✅        |✅         |✅         |✅        |✅      |✅       |✅       |✅      |✅       |✅  |✅  |✅   |
 
 - **Allure Reporting**: Generate rich, interactive test reports with **Allure**, including test history and trend analysis.
 - **Modular Design**: A well-structured and modular framework promoting code reuse and easy maintenance.
@@ -51,11 +51,7 @@
 - **Mobile Testing**: Test native, hybrid, and mobile apps on Android and IOS, with Appium integration and support for real devices and emulators. 
 - **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
-- **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
-
-| Synchronization Handling | CI/CD integration   |Test Data Generation|
-| :---: |:---: |:---: |
-| ✅  |✅  |✅   |
+- **Exception Handling**: Robust mechanisms for capturing exceptions during test execution. 
 
 ### 👨‍💻 Supported OS for OS Command Executor Interface
 
@@ -236,7 +232,7 @@ public class BaseStepDefinitions {
         androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://localhost:4723"),options);
         
         // for IOS Mobile
-        iosDriver=DriverFactory.getNewDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
+        iosDriver=DriverFactory.getNewMobileDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
         
         // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
        SQLDatabaseProvider db=new SQLDatabaseProvider(
@@ -252,8 +248,8 @@ public class BaseStepDefinitions {
 
         // for NoSQL DB Provider
         CouchbaseDatabaseProvider couchDB=CouchbaseDatabaseProvider(connectionString,  username,  password,  bucketName);
-        MongoDatabaseProvider mongoDB=MongoDatabaseProvider(String connectionString, String dbName);
-        RedisDatabaseProvider redisDB=RedisDatabaseProvider(String connectionString);
+        MongoDatabaseProvider mongoDB=MongoDatabaseProvider( connectionString,  dbName);
+        RedisDatabaseProvider redisDB=RedisDatabaseProvider( connectionString);
     }
 }
 
