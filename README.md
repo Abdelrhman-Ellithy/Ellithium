@@ -53,7 +53,7 @@
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
 - **Exception Handling**: Robust mechanisms for capturing exceptions during test execution. 
 
-### 👨‍💻 Supported OS for OS Command Executor Interface
+### 👨‍💻 Supported OS with OS Command Executor Interface for Desktop OS
 
 |Windows|Mac|Linux|Android|IOS|
 |:-----:|:--:|:--:|:--:|:--:|
