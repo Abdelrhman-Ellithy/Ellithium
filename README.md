@@ -363,7 +363,7 @@ public class loginTests extends BaseTests {
     }
 }
 ```
-### Step 2: Use Driver Actions Class to Perform actions on Web and Mobile, as It handles many  
+### Step 2: Use Driver Actions Class to Perform actions on Web and Mobile, as It handles many stepsand syncronization
 
 ```java
 package Pages;
