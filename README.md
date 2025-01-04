@@ -363,6 +363,38 @@ public class loginTests extends BaseTests {
     }
 }
 ```
+### Step 2: Use Driver Actions Class to Perform actions on Web and Mobile, as It handles many  
+
+```java
+package Pages;
+
+import Ellithium.Utilities.interactions.DriverActions;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+public class LoginPage {
+    WebDriver driver;
+    DriverActions driverActions;
+    public LoginPage(WebDriver driver) {
+        this.driver=driver;
+        driverActions=new DriverActions(driver);
+    }
+    public void setUserName(String username){
+        //                     locator,         data      , timeout, polling time 
+        driverActions.sendData(By.id("username"),username, 5,           200);
+    }
+    public void setPassword(String password){
+        //                     locator,         data      , timeout
+        driverActions.sendData(By.id("password"),password, 5);
+    }
+    public SecureAreaPage clickLoginBtn(){
+                //                     locator
+        driverActions.clickOnElement(By.tagName("button"));
+        return new SecureAreaPage(driver);
+    }
+
+}
+
+```
 ### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
 ## 📬 Contact
