@@ -1,245 +1,244 @@
-2025-01-03 09:02:38 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
-2025-01-03 09:02:39 INFO  Logger - [94mGetting Timestamp: 2025-01-03[0m
-2025-01-03 09:02:39 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-03 09:02:39 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-03 09:02:39 INFO  Logger - [94mSetting value for key: LastRunDate in JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-03 09:02:39 INFO  Logger - [92mSuccessfully updated JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-03 09:02:40 DEBUG BasicClientConnectionManager - Get connection for route {s}->https://api.github.com:443
-2025-01-03 09:02:40 DEBUG DefaultClientConnectionOperator - Connecting to api.github.com:443
-2025-01-03 09:02:41 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
-2025-01-03 09:02:41 DEBUG RequestAuthCache - Auth cache not set in the context
-2025-01-03 09:02:41 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
-2025-01-03 09:02:41 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
-2025-01-03 09:02:41 DEBUG DefaultHttpClient - Attempt 1 to execute request
-2025-01-03 09:02:41 DEBUG DefaultClientConnection - Sending request: GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1
-2025-01-03 09:02:41 DEBUG wire -  >> "GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "Accept: */*[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "Host: api.github.com[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  >> "[\r][\n]"
-2025-01-03 09:02:41 DEBUG headers - >> GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1
-2025-01-03 09:02:41 DEBUG headers - >> Accept: */*
-2025-01-03 09:02:41 DEBUG headers - >> Host: api.github.com
-2025-01-03 09:02:41 DEBUG headers - >> Connection: Keep-Alive
-2025-01-03 09:02:41 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
-2025-01-03 09:02:41 DEBUG headers - >> Accept-Encoding: gzip,deflate
-2025-01-03 09:02:41 DEBUG wire -  << "HTTP/1.1 200 OK[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Date: Fri, 03 Jan 2025 07:02:41 GMT[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Cache-Control: public, max-age=60, s-maxage=60[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Vary: Accept,Accept-Encoding, Accept, X-Requested-With[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "ETag: W/"4352066119ae12660163eaa13f6755e2221f975864006159a49c82a088bf9305"[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Last-Modified: Sat, 14 Dec 2024 11:56:11 GMT[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-GitHub-Media-Type: github.v3; format=json[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "x-github-api-version-selected: 2022-11-28[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Access-Control-Allow-Origin: *[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Strict-Transport-Security: max-age=31536000; includeSubdomains; preload[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-Frame-Options: deny[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-Content-Type-Options: nosniff[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-XSS-Protection: 0[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Content-Security-Policy: default-src 'none'[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Content-Encoding: gzip[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Server: github.com[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Accept-Ranges: bytes[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-RateLimit-Limit: 60[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-RateLimit-Remaining: 59[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-RateLimit-Reset: 1735891361[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-RateLimit-Resource: core[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-RateLimit-Used: 1[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "Content-Length: 1314[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "X-GitHub-Request-Id: 73A0:654DF:210A162E:21E16C82:67778B90[\r][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:41 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 200 OK
-2025-01-03 09:02:41 DEBUG headers - << HTTP/1.1 200 OK
-2025-01-03 09:02:41 DEBUG headers - << Date: Fri, 03 Jan 2025 07:02:41 GMT
-2025-01-03 09:02:41 DEBUG headers - << Content-Type: application/json; charset=utf-8
-2025-01-03 09:02:41 DEBUG headers - << Cache-Control: public, max-age=60, s-maxage=60
-2025-01-03 09:02:41 DEBUG headers - << Vary: Accept,Accept-Encoding, Accept, X-Requested-With
-2025-01-03 09:02:41 DEBUG headers - << ETag: W/"4352066119ae12660163eaa13f6755e2221f975864006159a49c82a088bf9305"
-2025-01-03 09:02:41 DEBUG headers - << Last-Modified: Sat, 14 Dec 2024 11:56:11 GMT
-2025-01-03 09:02:41 DEBUG headers - << X-GitHub-Media-Type: github.v3; format=json
-2025-01-03 09:02:41 DEBUG headers - << x-github-api-version-selected: 2022-11-28
-2025-01-03 09:02:41 DEBUG headers - << Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
-2025-01-03 09:02:41 DEBUG headers - << Access-Control-Allow-Origin: *
-2025-01-03 09:02:41 DEBUG headers - << Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
-2025-01-03 09:02:41 DEBUG headers - << X-Frame-Options: deny
-2025-01-03 09:02:41 DEBUG headers - << X-Content-Type-Options: nosniff
-2025-01-03 09:02:41 DEBUG headers - << X-XSS-Protection: 0
-2025-01-03 09:02:41 DEBUG headers - << Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
-2025-01-03 09:02:41 DEBUG headers - << Content-Security-Policy: default-src 'none'
-2025-01-03 09:02:41 DEBUG headers - << Content-Encoding: gzip
-2025-01-03 09:02:41 DEBUG headers - << Server: github.com
-2025-01-03 09:02:41 DEBUG headers - << Accept-Ranges: bytes
-2025-01-03 09:02:41 DEBUG headers - << X-RateLimit-Limit: 60
-2025-01-03 09:02:41 DEBUG headers - << X-RateLimit-Remaining: 59
-2025-01-03 09:02:41 DEBUG headers - << X-RateLimit-Reset: 1735891361
-2025-01-03 09:02:41 DEBUG headers - << X-RateLimit-Resource: core
-2025-01-03 09:02:41 DEBUG headers - << X-RateLimit-Used: 1
-2025-01-03 09:02:41 DEBUG headers - << Content-Length: 1314
-2025-01-03 09:02:41 DEBUG headers - << X-GitHub-Request-Id: 73A0:654DF:210A162E:21E16C82:67778B90
-2025-01-03 09:02:41 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
-2025-01-03 09:02:41 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
-2025-01-03 09:02:41 DEBUG wire -  << "[0x1f][0x8b][0x8][0x0][0x0][0x0][0x0][0x0][0x0][0x3][0xcd]Wo[0xdb]6[0x10][0xfd]*[0x82][0xfb][0xc7]V[0xc3][0x96]l[0xd9]Mk[0x1]C[0x9b]&)[0xba][0xae]m[0x86]&k[0x81][0xad][0x83]AIg[0x9b][0x9]%[0xaa]$e[0xc7]1[0xfa][0xdd]"
-2025-01-03 09:02:41 DEBUG wire -  << "[0xf7]H[0xca][0xae][0xeb]%K[0x9b][0xa4][0xc0][0x90][0x0]>R[0xc7]w[0x8f][0xf7]K[0xa7]U[0xab]V[0xa2][0x95][0xb4]f[0xc6]T:[0x89]"V[0xf1]p[0xca][0xcd][0xac]N[0xc3]L[0x16][0x91][0xa2]J[0xea]h?[0xcd]I[0xa8]Y[0xc1][0xca][0xee][0x91][0x10]x[0xba][0x8c][0xfc]/[0xaf][0xad][0x8a] [0xa6]IG[0xfd]Q[0xef]Q<[0xda][0x1b][0xec][0xb5]:-[0xa6]5[0x19]=[0xbe][0xec][0xc8]#[0xc3]D][0x9][0xc9][0xf2][0x1d][0x13]~S[0xdf][0xf9][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "[0x8d][0x99][0xd5][0xd3][0x92][0x15][0xd4][0x11],%[0xf1][0x19]6g[0xa6][0x10];[0x16][0xb7][0x9c][0xf5]mn2l[0x1a][0xf5]C[0xfc][0x1][0x8f][0xe7][0xad]d[0xe3]6x[0xad]63[0xa9]Z[0xc9][0xaa]%[0xe4][0x94][0x97][0x8][0xcb][0xbf]![0xd7][0xa7][0xe2]~[0xef][0xd1]0[0x1e][\r];[0xad]R[0xe6]4[0xb6]H[0xad]?[0xc6][0xe7][0xd3][0xc3][0xe3][0xe7][0x97][0xd9][0xf9][0xfb][0xa9][\r][0xc2][0x9c][0x19][0xa6]v[0x83][0xe0]6[0xd7][0x1e][0xaa]5[0xa9]L[0x96][0x86]J[0xe3][0xe2]]G[0xfd]5[0xf0][0xd3][0xf9]/C[0x80]LU[0x3][0xe3],X[0xbf][0xff]W[0xbe]X[0xbc][0xab][0xf2][0xe5][0x16][0xbe][0xc3][0x91][0x89][0x14]B.[0x80][0xb8]{[0x87][0xaf][0x93][0xf4]:[0xa3][0xd1][0xe6][0xfc][0x6][0x8b][0x97][0xd3];a[0xe1][0xfc]*[0x92]fFp+[0xae]jsb[0xca][0xf5]M[0x99]~-Awv[0x15][0xd9][0x1f]D[0xd0][0xa2]i[0x4]G[0xd1]nZ[0xef]T[0xe5][0xb5]x[0xcd]iP\[0x94]`[0xb7]r[0xf5][0xeb]`[0xeb]Tg[0x8a]W[0x86][0xcb][0xf2][0xb6][0xde][0xfc][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "[0x3][0x98]RMY[0xc9]/[0xd9]]0[0x81][0xa1][0x1][0xe5][0xda][0xcc]-[0x3][0xe3][0xce][0x2][0x83][0xe6]H[0xe2][0xdb][0x82][0xf8][0xc3][0xab][0xa8]R|[0xce][0xb2][0xa5]u[0x99][0xa2][0x8c][0xf8][0x1c][0xa1][0xb8][0x13][0xf0][0xe][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "p[0xcd][0xb2]"[[0xab]H[0x1f][0xac]l([0xc7]sN[0x8b]q[0xb3]_[0xd5][0xa9][0xe0][0x99][\r][0x19]74fya[0xfb][0xc0][0x84][0x9]M[0x9f][0xb7]K[0xfd][0xdd][0xd1][0xf8]|qx[0xfc][0xc6],O.[0xb3][0xe1][0xeb][0xf][0xbd][0xe7][0xe7][0x16][0x9b]M[0xc7][0xb6]c[0x1][0xdd]b[0x90]OS2c[0x14]w[0xc1][\r][0xd7]3<*[0x18]0[0x1][0xf6][0xb5]b[0xae][0xd8][0xc4]4[0xa6]:[0xad]JQ[0xd3][0xd8]7[[0x99]"f[0xe0][0xf][0x6][0xad]V[0xdc][0x8b][0x87][0xdd]~[0x8c][0xff][0xd3]8Nz[0x83][0xa4][0x17][0xff][0x9]L[0xc7]^[0xcf][0xae][0xd6][0x8a]G[0xc9][0xe0][0x89][0xd5]jzx[0xf2][0xd7][0xdf][0x96][0xb2]J[0x99][0xd8][0xed][0xaa][0xdf][0xff][0x1a]jp6[0xad][0xf5][0x92]W[0xf7][0x82][0xdb][0xe0]lpS[0x99]/q[0xff][0x7][0xf][0x82][0xf]3f~[0xd2][0xc1][0xc1][0x8c][0x95]S[0xca]?[0xaa][0x8f]e;8[0xa9][0xab]J*[0x83]6[0x11][0x1c]]PV[0xdb][0xda][0x8][0xf0][0xcf][0x82]v[0xfb][0x1d][0x15][0xd2][0xd0][0x7]J[0xf][0x91]d[0xa4][0xda][0xed][0xd0][0x9f]i[0xb7][0xeb]*[0x87]g[0x83][0xdf][0x95][0xac]H[0x99]e[0xf0][0x92][0x4][0x84]v;H[0x97][0x1][0xcb]s[0x8b]V[0xd2]"([0x8][0xaf][0x87]\[0x7]?c[0xef]--[0x1a]uN[0xfa][0x85][0x92][0xc5][0x1b]Vu[0x2]Dz_[0x88]/[0xf]:[0x81][0x82][0xd1]9[0xfd]FK[0xab][0xb3][0xfd][0xe0][0x9c][0x96]G[0x17][0xb6][0xfd][0xb8]S[0xc7][0xea][0x90]&[0xac][0x16][0xa6][0x13]x2o [0xf3]J[0xd0][0xf6][0x11][0xe8]}Y[0xee]kg[0xd1]k_A[0xe5][0x1a][0x8e][0xf][0xdd][0xa5]w.~p[0xf2][0xfe][0xc6];#[0xf9][0xf2][0x3])[0xea][0xa2][0xb4][0x97][0x82]LBx[0xe9][0x9d]\t[0x82]\[0xc2][\r]\[0x90][0xbb]S'X(T[0x8f]WaUEe~[0x88][0xb7][0x1e][0xb4]0[0xab][0x18][0xf2][0x7][0x9c][0xb8]F[0x9c]paHy%[0x8d][0x0]z[0x9][0xad]E[0xb0][0xac]Q[0xf2][ta[0xe3]{*_;3[0x5][0xa1][0xb8][0xe][0xf4][0xdc]Z[0x86]#[0xe7]Lp[0x1b]I[0xbb]<1[0xaa][0xce]L[0xad][0xc8][0xdf][0xb8][0x8d][0x4]h[0xc2]|t[0x91][0x91][0xf8]_[0xdc][0x17][0x8e][0x0]k{_/[0xfd][0x98][0xfb][0xbe]:9~{[0xe3]u[0xd7][0xae]{[0xa5]e[0x89]l[0xf5]Y[0xf9][0x96]4[0x1a][0x8e][0xdd][0xf2][0xce][0xaf]0[0xb8][0x90]][0x1e][0xa7]g[0x94][0xc1][0xff][0x9b][0x8d]}[0xa5][0xd8][0xb2][0x13][0xa0][0xcb]a[0xcb][0xa9]4!q[0x11][0xda]Z[0xfb][0x18]|[0x1][0x86][0xad][0x87];[0xd9]xJ[0x17][0xe6]F[0xbe].[0x7][0xad][0x8d]}[0x8d]H[0xa3]B[0x9b][0x9c][0xf3][0x8b]Si[0x1f][0xad][0xf3][0xed]5/I[0x1f]`[0xca]B[0xdf][0x85]&L.[0xa4][0xca]-[[0xb7][0xa5]7[0x1b][0x8d][0xff][0xad][0xfe][0xaf][0xee][0x2][\r][0xb5][0xe7]uQ[0x5][0x18][0x9][0x87]g[0xef]1[0xc][0xd9][0x96]2A5[0x7]q[0x18][0xf][0xc3]~`[0xa4][0x97]b[0xdb].[0x9e][0xe5]d[0xd3][0x9d][0xa5][0xd2][0x4][0xbc][0xc][0xd6]c[0xfd][0xb7]N[0xa9]U-D[0x14]?[0xf1][0x1e]qf[0xf1][0x86][0xe]5j[0xa5][0xc4][0xac]?[0xfb][0xb4][0x11][0x93][0xf5]^[0xf7][0xc][0xf3][0xa1][0xe7]3[0xc][0xe3][0xbd][0xb0]g[0xf9]@z[0xc][0xe9][0xbe][0xf8][0x8c][0xb6][0xf8]p[0x19]~[0xc2][0x8b][0xcb][0xb0][0x10]o[\r][0x94]W[0xe2][0xba]Y[0x9d][0xd5]EJ[0xea]q[0xf7]l^l[0xfc]3[0xf2]|[0xe0][0xa9][0x11]<uO|[0x6][0xfd]o[0xe0]c[0x90][0xbb][0xe8][0xdb][0xeb]@[0xfd][0x18]"[0xbd]-"[0xc8][0xfd][0xb0][0xe0][0x99][0x92]ZNL[0xa8]?abPx[0xcd]$[0x85][0x86][0xdc]=[0xcb][0xd3][0xcc][0x93][0xe9][0xc7][0xe1][0x13]|~[0x9c])[0xea][0xbb][0xdc][0xc1][0x1a][0xe4][0xfc][0xba][0x8b][0xd7][0xbe][0x1d]F[0xae][0xf0]T[0xf0][0xec]V[0xb9]4[0x88]w(f[0xb2][0xce]f)>[0x18][0xc3]LpLl[0x89][0xcd][0x9f][0xae][0x97]=[0xc1]A[0xf8]8|d[0x99]Ya[0xef][\n]"
-2025-01-03 09:02:41 DEBUG wire -  << "*[0xb7]#2[0xd8]IjV[0xb1]lFa[0xc1]07[0x86][0x95][0xa8][0xf1][0xc1][0xa5][0x13][0xb7]r)[0x9d][0xcb][0xac][0xeb]w[0xd7][0xac][0xfa][0x18][0xa9]<-H[0xf7]Vl[0x83][0xa1][0xe5][0xe5][0xb8][0xb5]_[0xa0][0xfa][0x9a]y[0x2][0xd5][0xde]n'[0xdf]][0xbf]M[0x3]t[0xd3]J/[0xc][0xed]g[0xa6][0xfb][0xd0],[0xe0]i7[0xfa][0xc3][0xfd]%[0xe6][0xb7][0xfe][0xe7][0x0][0x5][0xe1][0x94]k[0xf9][0xf][0x0][0x0]"
-2025-01-03 09:02:41 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
-2025-01-03 09:02:41 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@3730f716
-2025-01-03 09:02:41 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-03 09:02:42 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-03 09:02:42 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-03 09:02:42 INFO  Logger - [92mInitialize default Implicit Wait for the Driver [0m
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-03 09:02:42 INFO  Logger - [94m---------------------------------------------[0m
-2025-01-03 09:02:42 INFO  Logger - [96m------- Ellithium Engine Setup -------------[0m
-2025-01-03 09:02:42 INFO  Logger - [94m---------------------------------------------[0m
-2025-01-03 09:02:42 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-03 09:02:42 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:null] 1041438139
-2025-01-03 09:02:42 TRACE Graph - [Graph] ================ SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-03 09:02:42 TRACE Graph - [Graph] ADDING NODE DetailsTests.TestVersion()[pri:0, instance:Tests.DetailsTests@773eca84] 30135131
-2025-01-03 09:02:42 TRACE Graph - [Graph] ================ SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-03 09:02:42 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:Tests.DetailsTests@773eca84] -74552279
-2025-01-03 09:02:42 TRACE Graph - [Graph] ================ SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-03 09:02:42 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-03 09:02:42 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
-2025-01-03 09:02:42 INFO  Logger - [95m[ALL TESTS STARTED]: ِDATABASE TEST [ALL TESTS STARTED][0m
-2025-01-03 09:02:42 INFO  Logger - [94m[START] TESTCASE TestVersion [STARTED][0m
-2025-01-03 09:02:42 DEBUG BasicClientConnectionManager - Get connection for route {}->http://movieland.runasp.net:80
-2025-01-03 09:02:42 DEBUG DefaultClientConnectionOperator - Connecting to movieland.runasp.net:80
-2025-01-03 09:02:42 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
-2025-01-03 09:02:42 DEBUG RequestAuthCache - Auth cache not set in the context
-2025-01-03 09:02:42 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
-2025-01-03 09:02:42 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
-2025-01-03 09:02:42 DEBUG DefaultHttpClient - Attempt 1 to execute request
-2025-01-03 09:02:42 DEBUG DefaultClientConnection - Sending request: GET /api/Movies/Details/50 HTTP/1.1
-2025-01-03 09:02:42 DEBUG wire -  >> "GET /api/Movies/Details/50 HTTP/1.1[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "Accept: */*[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "Host: movieland.runasp.net[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
-2025-01-03 09:02:42 DEBUG wire -  >> "[\r][\n]"
-2025-01-03 09:02:42 DEBUG headers - >> GET /api/Movies/Details/50 HTTP/1.1
-2025-01-03 09:02:42 DEBUG headers - >> Accept: */*
-2025-01-03 09:02:42 DEBUG headers - >> Host: movieland.runasp.net
-2025-01-03 09:02:42 DEBUG headers - >> Connection: Keep-Alive
-2025-01-03 09:02:42 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
-2025-01-03 09:02:42 DEBUG headers - >> Accept-Encoding: gzip,deflate
-2025-01-03 09:02:45 DEBUG wire -  << "HTTP/1.1 404 Not Found[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Transfer-Encoding: chunked[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Server: Microsoft-IIS/10.0[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "X-Powered-By: ASP.NET[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Date: Fri, 03 Jan 2025 07:02:44 GMT[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 404 Not Found
-2025-01-03 09:02:45 DEBUG headers - << HTTP/1.1 404 Not Found
-2025-01-03 09:02:45 DEBUG headers - << Transfer-Encoding: chunked
-2025-01-03 09:02:45 DEBUG headers - << Content-Type: application/json; charset=utf-8
-2025-01-03 09:02:45 DEBUG headers - << Server: Microsoft-IIS/10.0
-2025-01-03 09:02:45 DEBUG headers - << X-Powered-By: ASP.NET
-2025-01-03 09:02:45 DEBUG headers - << Date: Fri, 03 Jan 2025 07:02:44 GMT
-2025-01-03 09:02:45 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
-2025-01-03 09:02:45 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
-2025-01-03 09:02:45 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
-2025-01-03 09:02:45 DEBUG wire -  << "2f[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "{"messageError":"There is no movie with ID 50"}"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "0[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@6b6def36
-2025-01-03 09:02:45 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
-2025-01-03 09:02:45 ERROR Logger - [91mRetry #1 for test: TestVersion, on thread: main[0m
-2025-01-03 09:02:45 INFO  Logger - [93m[SKIPPED] TESTCASE TestVersion [SKIPPED][0m
-2025-01-03 09:02:45 INFO  Logger - [94m[START] TESTCASE TestVersion [STARTED][0m
-2025-01-03 09:02:45 DEBUG DefaultClientConnection - Connection 0.0.0.0:64906<->144.76.227.82:80 closed
-2025-01-03 09:02:45 DEBUG BasicClientConnectionManager - Get connection for route {}->http://movieland.runasp.net:80
-2025-01-03 09:02:45 DEBUG DefaultClientConnectionOperator - Connecting to movieland.runasp.net:80
-2025-01-03 09:02:45 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
-2025-01-03 09:02:45 DEBUG RequestAuthCache - Auth cache not set in the context
-2025-01-03 09:02:45 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
-2025-01-03 09:02:45 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
-2025-01-03 09:02:45 DEBUG DefaultHttpClient - Attempt 1 to execute request
-2025-01-03 09:02:45 DEBUG DefaultClientConnection - Sending request: GET /api/Movies/Details/50 HTTP/1.1
-2025-01-03 09:02:45 DEBUG wire -  >> "GET /api/Movies/Details/50 HTTP/1.1[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "Accept: */*[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "Host: movieland.runasp.net[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  >> "[\r][\n]"
-2025-01-03 09:02:45 DEBUG headers - >> GET /api/Movies/Details/50 HTTP/1.1
-2025-01-03 09:02:45 DEBUG headers - >> Accept: */*
-2025-01-03 09:02:45 DEBUG headers - >> Host: movieland.runasp.net
-2025-01-03 09:02:45 DEBUG headers - >> Connection: Keep-Alive
-2025-01-03 09:02:45 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
-2025-01-03 09:02:45 DEBUG headers - >> Accept-Encoding: gzip,deflate
-2025-01-03 09:02:45 DEBUG wire -  << "HTTP/1.1 404 Not Found[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Transfer-Encoding: chunked[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Server: Microsoft-IIS/10.0[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "X-Powered-By: ASP.NET[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "Date: Fri, 03 Jan 2025 07:02:45 GMT[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 404 Not Found
-2025-01-03 09:02:45 DEBUG headers - << HTTP/1.1 404 Not Found
-2025-01-03 09:02:45 DEBUG headers - << Transfer-Encoding: chunked
-2025-01-03 09:02:45 DEBUG headers - << Content-Type: application/json; charset=utf-8
-2025-01-03 09:02:45 DEBUG headers - << Server: Microsoft-IIS/10.0
-2025-01-03 09:02:45 DEBUG headers - << X-Powered-By: ASP.NET
-2025-01-03 09:02:45 DEBUG headers - << Date: Fri, 03 Jan 2025 07:02:45 GMT
-2025-01-03 09:02:45 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
-2025-01-03 09:02:45 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
-2025-01-03 09:02:45 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
-2025-01-03 09:02:45 DEBUG wire -  << "2f[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "{"messageError":"There is no movie with ID 50"}"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "0[\r][\n]"
-2025-01-03 09:02:45 DEBUG wire -  << "[\r][\n]"
-2025-01-03 09:02:45 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@6e93b0e7
-2025-01-03 09:02:45 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
-2025-01-03 09:02:45 INFO  Logger - [92m[PASSED] TESTCASE TestVersion [PASSED][0m
-2025-01-03 09:02:45 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2025-01-03 09:02:45 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2025-01-03 09:02:45 INFO  Logger - Log file successfully attached to the Allure report.
-2025-01-03 09:02:45 ERROR AllureLifecycle - Could not update test case: no test case running
-2025-01-03 09:02:45 INFO  Logger - [95m[ALL TESTS COMPLETED]: ِDATABASE TEST [ALL TESTS COMPLETED][0m
-2025-01-03 09:02:45 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
-2025-01-03 09:02:45 TRACE Graph - [Graph] ADDING NODE DetailsTests.TestVersion()[pri:0, instance:Tests.DetailsTests@773eca84] 30135131
-2025-01-03 09:02:45 TRACE Graph - [Graph] ================ SORTING
-2025-01-03 09:02:45 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-03 09:02:45 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-03 09:02:45 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-03 09:02:45 INFO  Logger - [94mTotal Execution Time is: 0 Min 3 Sec 672 Mills[0m
-2025-01-03 09:02:45 INFO  Logger - [94m------------------------------------------[0m
-2025-01-03 09:02:45 INFO  Logger - [96m------- Ellithium Engine TearDown -------[0m
-2025-01-03 09:02:45 INFO  Logger - [94m------------------------------------------[0m
-2025-01-03 09:02:45 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-03 09:02:45 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-03 09:02:45 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-03 09:02:45 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
-2025-01-03 09:02:45 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
-2025-01-03 09:02:45 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
-2025-01-03 09:02:56 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
-2025-01-03 09:02:56 INFO  Logger - [94mGetting Timestamp: 2025-01-03-9-2-56AM[0m
-2025-01-03 09:02:56 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-03 09:02:56 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-01-03-9-2-56AM.html[0m
-2025-01-03 09:02:57 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-01-06 21:47:32 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
+2025-01-06 21:47:33 INFO  Logger - [94mGetting Timestamp: 2025-01-06[0m
+2025-01-06 21:47:33 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-06 21:47:33 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-06 21:47:33 INFO  Logger - [94mSetting value for key: LastRunDate in JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-06 21:47:33 INFO  Logger - [92mSuccessfully updated JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-06 21:47:34 DEBUG BasicClientConnectionManager - Get connection for route {s}->https://api.github.com:443
+2025-01-06 21:47:34 DEBUG DefaultClientConnectionOperator - Connecting to api.github.com:443
+2025-01-06 21:47:35 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
+2025-01-06 21:47:35 DEBUG RequestAuthCache - Auth cache not set in the context
+2025-01-06 21:47:35 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
+2025-01-06 21:47:35 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
+2025-01-06 21:47:35 DEBUG DefaultHttpClient - Attempt 1 to execute request
+2025-01-06 21:47:35 DEBUG DefaultClientConnection - Sending request: GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1
+2025-01-06 21:47:35 DEBUG wire -  >> "GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "Accept: */*[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "Host: api.github.com[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  >> "[\r][\n]"
+2025-01-06 21:47:35 DEBUG headers - >> GET /repos/Abdelrhman-Ellithy/Ellithium/releases/latest HTTP/1.1
+2025-01-06 21:47:35 DEBUG headers - >> Accept: */*
+2025-01-06 21:47:35 DEBUG headers - >> Host: api.github.com
+2025-01-06 21:47:35 DEBUG headers - >> Connection: Keep-Alive
+2025-01-06 21:47:35 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
+2025-01-06 21:47:35 DEBUG headers - >> Accept-Encoding: gzip,deflate
+2025-01-06 21:47:35 DEBUG wire -  << "HTTP/1.1 200 OK[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Date: Mon, 06 Jan 2025 19:47:35 GMT[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Cache-Control: public, max-age=60, s-maxage=60[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Vary: Accept,Accept-Encoding, Accept, X-Requested-With[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "ETag: W/"4352066119ae12660163eaa13f6755e2221f975864006159a49c82a088bf9305"[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Last-Modified: Sat, 14 Dec 2024 11:56:11 GMT[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-GitHub-Media-Type: github.v3; format=json[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "x-github-api-version-selected: 2022-11-28[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Access-Control-Allow-Origin: *[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Strict-Transport-Security: max-age=31536000; includeSubdomains; preload[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-Frame-Options: deny[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-Content-Type-Options: nosniff[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-XSS-Protection: 0[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Content-Security-Policy: default-src 'none'[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Content-Encoding: gzip[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Server: github.com[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Accept-Ranges: bytes[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-RateLimit-Limit: 60[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-RateLimit-Remaining: 59[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-RateLimit-Reset: 1736196455[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-RateLimit-Resource: core[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-RateLimit-Used: 1[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "Content-Length: 1314[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "X-GitHub-Request-Id: 7EC1:44383:2CFAE9F0:2E24485B:677C3357[\r][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:35 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 200 OK
+2025-01-06 21:47:35 DEBUG headers - << HTTP/1.1 200 OK
+2025-01-06 21:47:35 DEBUG headers - << Date: Mon, 06 Jan 2025 19:47:35 GMT
+2025-01-06 21:47:35 DEBUG headers - << Content-Type: application/json; charset=utf-8
+2025-01-06 21:47:35 DEBUG headers - << Cache-Control: public, max-age=60, s-maxage=60
+2025-01-06 21:47:35 DEBUG headers - << Vary: Accept,Accept-Encoding, Accept, X-Requested-With
+2025-01-06 21:47:35 DEBUG headers - << ETag: W/"4352066119ae12660163eaa13f6755e2221f975864006159a49c82a088bf9305"
+2025-01-06 21:47:35 DEBUG headers - << Last-Modified: Sat, 14 Dec 2024 11:56:11 GMT
+2025-01-06 21:47:35 DEBUG headers - << X-GitHub-Media-Type: github.v3; format=json
+2025-01-06 21:47:35 DEBUG headers - << x-github-api-version-selected: 2022-11-28
+2025-01-06 21:47:35 DEBUG headers - << Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+2025-01-06 21:47:35 DEBUG headers - << Access-Control-Allow-Origin: *
+2025-01-06 21:47:35 DEBUG headers - << Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+2025-01-06 21:47:35 DEBUG headers - << X-Frame-Options: deny
+2025-01-06 21:47:35 DEBUG headers - << X-Content-Type-Options: nosniff
+2025-01-06 21:47:35 DEBUG headers - << X-XSS-Protection: 0
+2025-01-06 21:47:35 DEBUG headers - << Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+2025-01-06 21:47:35 DEBUG headers - << Content-Security-Policy: default-src 'none'
+2025-01-06 21:47:35 DEBUG headers - << Content-Encoding: gzip
+2025-01-06 21:47:35 DEBUG headers - << Server: github.com
+2025-01-06 21:47:35 DEBUG headers - << Accept-Ranges: bytes
+2025-01-06 21:47:35 DEBUG headers - << X-RateLimit-Limit: 60
+2025-01-06 21:47:35 DEBUG headers - << X-RateLimit-Remaining: 59
+2025-01-06 21:47:35 DEBUG headers - << X-RateLimit-Reset: 1736196455
+2025-01-06 21:47:35 DEBUG headers - << X-RateLimit-Resource: core
+2025-01-06 21:47:35 DEBUG headers - << X-RateLimit-Used: 1
+2025-01-06 21:47:35 DEBUG headers - << Content-Length: 1314
+2025-01-06 21:47:35 DEBUG headers - << X-GitHub-Request-Id: 7EC1:44383:2CFAE9F0:2E24485B:677C3357
+2025-01-06 21:47:35 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
+2025-01-06 21:47:35 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
+2025-01-06 21:47:35 DEBUG wire -  << "[0x1f][0x8b][0x8][0x0][0x0][0x0][0x0][0x0][0x0][0x3][0xcd]Wo[0xdb]6[0x10][0xfd]*[0x82][0xfb][0xc7]V[0xc3][0x96]l[0xd9]Mk[0x1]C[0x9b]&)[0xba][0xae]m[0x86]&k[0x81][0xad][0x83]AIg[0x9b][0x9]%[0xaa]$e[0xc7]1[0xfa][0xdd]"
+2025-01-06 21:47:35 DEBUG wire -  << "[0xf7]H[0xca][0xae][0xeb]%K[0x9b][0xa4][0xc0][0x90][0x0]>R[0xc7]w[0x8f][0xf7]K[0xa7]U[0xab]V[0xa2][0x95][0xb4]f[0xc6]T:[0x89]"V[0xf1]p[0xca][0xcd][0xac]N[0xc3]L[0x16][0x91][0xa2]J[0xea]h?[0xcd]I[0xa8]Y[0xc1][0xca][0xee][0x91][0x10]x[0xba][0x8c][0xfc]/[0xaf][0xad][0x8a] [0xa6]IG[0xfd]Q[0xef]Q<[0xda][0x1b][0xec][0xb5]:-[0xa6]5[0x19]=[0xbe][0xec][0xc8]#[0xc3]D][0x9][0xc9][0xf2][0x1d][0x13]~S[0xdf][0xf9][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "[0x8d][0x99][0xd5][0xd3][0x92][0x15][0xd4][0x11],%[0xf1][0x19]6g[0xa6][0x10];[0x16][0xb7][0x9c][0xf5]mn2l[0x1a][0xf5]C[0xfc][0x1][0x8f][0xe7][0xad]d[0xe3]6x[0xad]63[0xa9]Z[0xc9][0xaa]%[0xe4][0x94][0x97][0x8][0xcb][0xbf]![0xd7][0xa7][0xe2]~[0xef][0xd1]0[0x1e][\r];[0xad]R[0xe6]4[0xb6]H[0xad]?[0xc6][0xe7][0xd3][0xc3][0xe3][0xe7][0x97][0xd9][0xf9][0xfb][0xa9][\r][0xc2][0x9c][0x19][0xa6]v[0x83][0xe0]6[0xd7][0x1e][0xaa]5[0xa9]L[0x96][0x86]J[0xe3][0xe2]]G[0xfd]5[0xf0][0xd3][0xf9]/C[0x80]LU[0x3][0xe3],X[0xbf][0xff]W[0xbe]X[0xbc][0xab][0xf2][0xe5][0x16][0xbe][0xc3][0x91][0x89][0x14]B.[0x80][0xb8]{[0x87][0xaf][0x93][0xf4]:[0xa3][0xd1][0xe6][0xfc][0x6][0x8b][0x97][0xd3];a[0xe1][0xfc]*[0x92]fFp+[0xae]jsb[0xca][0xf5]M[0x99]~-Awv[0x15][0xd9][0x1f]D[0xd0][0xa2]i[0x4]G[0xd1]nZ[0xef]T[0xe5][0xb5]x[0xcd]iP\[0x94]`[0xb7]r[0xf5][0xeb]`[0xeb]Tg[0x8a]W[0x86][0xcb][0xf2][0xb6][0xde][0xfc][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "[0x3][0x98]RMY[0xc9]/[0xd9]]0[0x81][0xa1][0x1][0xe5][0xda][0xcc]-[0x3][0xe3][0xce][0x2][0x83][0xe6]H[0xe2][0xdb][0x82][0xf8][0xc3][0xab][0xa8]R|[0xce][0xb2][0xa5]u[0x99][0xa2][0x8c][0xf8][0x1c][0xa1][0xb8][0x13][0xf0][0xe][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "p[0xcd][0xb2]"[[0xab]H[0x1f][0xac]l([0xc7]sN[0x8b]q[0xb3]_[0xd5][0xa9][0xe0][0x99][\r][0x19]74fya[0xfb][0xc0][0x84][0x9]M[0x9f][0xb7]K[0xfd][0xdd][0xd1][0xf8]|qx[0xfc][0xc6],O.[0xb3][0xe1][0xeb][0xf][0xbd][0xe7][0xe7][0x16][0x9b]M[0xc7][0xb6]c[0x1][0xdd]b[0x90]OS2c[0x14]w[0xc1][\r][0xd7]3<*[0x18]0[0x1][0xf6][0xb5]b[0xae][0xd8][0xc4]4[0xa6]:[0xad]JQ[0xd3][0xd8]7[[0x99]"f[0xe0][0xf][0x6][0xad]V[0xdc][0x8b][0x87][0xdd]~[0x8c][0xff][0xd3]8Nz[0x83][0xa4][0x17][0xff][0x9]L[0xc7]^[0xcf][0xae][0xd6][0x8a]G[0xc9][0xe0][0x89][0xd5]jzx[0xf2][0xd7][0xdf][0x96][0xb2]J[0x99][0xd8][0xed][0xaa][0xdf][0xff][0x1a]jp6[0xad][0xf5][0x92]W[0xf7][0x82][0xdb][0xe0]lpS[0x99]/q[0xff][0x7][0xf][0x82][0xf]3f~[0xd2][0xc1][0xc1][0x8c][0x95]S[0xca]?[0xaa][0x8f]e;8[0xa9][0xab]J*[0x83]6[0x11][0x1c]]PV[0xdb][0xda][0x8][0xf0][0xcf][0x82]v[0xfb][0x1d][0x15][0xd2][0xd0][0x7]J[0xf][0x91]d[0xa4][0xda][0xed][0xd0][0x9f]i[0xb7][0xeb]*[0x87]g[0x83][0xdf][0x95][0xac]H[0x99]e[0xf0][0x92][0x4][0x84]v;H[0x97][0x1][0xcb]s[0x8b]V[0xd2]"([0x8][0xaf][0x87]\[0x7]?c[0xef]--[0x1a]uN[0xfa][0x85][0x92][0xc5][0x1b]Vu[0x2]Dz_[0x88]/[0xf]:[0x81][0x82][0xd1]9[0xfd]FK[0xab][0xb3][0xfd][0xe0][0x9c][0x96]G[0x17][0xb6][0xfd][0xb8]S[0xc7][0xea][0x90]&[0xac][0x16][0xa6][0x13]x2o [0xf3]J[0xd0][0xf6][0x11][0xe8]}Y[0xee]kg[0xd1]k_A[0xe5][0x1a][0x8e][0xf][0xdd][0xa5]w.~p[0xf2][0xfe][0xc6];#[0xf9][0xf2][0x3])[0xea][0xa2][0xb4][0x97][0x82]LBx[0xe9][0x9d]\t[0x82]\[0xc2][\r]\[0x90][0xbb]S'X(T[0x8f]WaUEe~[0x88][0xb7][0x1e][0xb4]0[0xab][0x18][0xf2][0x7][0x9c][0xb8]F[0x9c]paHy%[0x8d][0x0]z[0x9][0xad]E[0xb0][0xac]Q[0xf2][ta[0xe3]{*_;3[0x5][0xa1][0xb8][0xe][0xf4][0xdc]Z[0x86]#[0xe7]Lp[0x1b]I[0xbb]<1[0xaa][0xce]L[0xad][0xc8][0xdf][0xb8][0x8d][0x4]h[0xc2]|t[0x91][0x91][0xf8]_[0xdc][0x17][0x8e][0x0]k{_/[0xfd][0x98][0xfb][0xbe]:9~{[0xe3]u[0xd7][0xae]{[0xa5]e[0x89]l[0xf5]Y[0xf9][0x96]4[0x1a][0x8e][0xdd][0xf2][0xce][0xaf]0[0xb8][0x90]][0x1e][0xa7]g[0x94][0xc1][0xff][0x9b][0x8d]}[0xa5][0xd8][0xb2][0x13][0xa0][0xcb]a[0xcb][0xa9]4!q[0x11][0xda]Z[0xfb][0x18]|[0x1][0x86][0xad][0x87];[0xd9]xJ[0x17][0xe6]F[0xbe].[0x7][0xad][0x8d]}[0x8d]H[0xa3]B[0x9b][0x9c][0xf3][0x8b]Si[0x1f][0xad][0xf3][0xed]5/I[0x1f]`[0xca]B[0xdf][0x85]&L.[0xa4][0xca]-[[0xb7][0xa5]7[0x1b][0x8d][0xff][0xad][0xfe][0xaf][0xee][0x2][\r][0xb5][0xe7]uQ[0x5][0x18][0x9][0x87]g[0xef]1[0xc][0xd9][0x96]2A5[0x7]q[0x18][0xf][0xc3]~`[0xa4][0x97]b[0xdb].[0x9e][0xe5]d[0xd3][0x9d][0xa5][0xd2][0x4][0xbc][0xc][0xd6]c[0xfd][0xb7]N[0xa9]U-D[0x14]?[0xf1][0x1e]qf[0xf1][0x86][0xe]5j[0xa5][0xc4][0xac]?[0xfb][0xb4][0x11][0x93][0xf5]^[0xf7][0xc][0xf3][0xa1][0xe7]3[0xc][0xe3][0xbd][0xb0]g[0xf9]@z[0xc][0xe9][0xbe][0xf8][0x8c][0xb6][0xf8]p[0x19]~[0xc2][0x8b][0xcb][0xb0][0x10]o[\r][0x94]W[0xe2][0xba]Y[0x9d][0xd5]EJ[0xea]q[0xf7]l^l[0xfc]3[0xf2]|[0xe0][0xa9][0x11]<uO|[0x6][0xfd]o[0xe0]c[0x90][0xbb][0xe8][0xdb][0xeb]@[0xfd][0x18]"[0xbd]-"[0xc8][0xfd][0xb0][0xe0][0x99][0x92]ZNL[0xa8]?abPx[0xcd]$[0x85][0x86][0xdc]=[0xcb][0xd3][0xcc][0x93][0xe9][0xc7][0xe1][0x13]|~[0x9c])[0xea][0xbb][0xdc][0xc1][0x1a][0xe4][0xfc][0xba][0x8b][0xd7][0xbe][0x1d]F[0xae][0xf0]T[0xf0][0xec]V[0xb9]4[0x88]w(f[0xb2][0xce]f)>[0x18][0xc3]LpLl[0x89][0xcd][0x9f][0xae][0x97]=[0xc1]A[0xf8]8|d[0x99]Ya[0xef][\n]"
+2025-01-06 21:47:35 DEBUG wire -  << "*[0xb7]#2[0xd8]IjV[0xb1]lFa[0xc1]07[0x86][0x95][0xa8][0xf1][0xc1][0xa5][0x13][0xb7]r)[0x9d][0xcb][0xac][0xeb]w[0xd7][0xac][0xfa][0x18][0xa9]<-H[0xf7]Vl[0x83][0xa1][0xe5][0xe5][0xb8][0xb5]_[0xa0][0xfa][0x9a]y[0x2][0xd5][0xde]n'[0xdf]][0xbf]M[0x3]t[0xd3]J/[0xc][0xed]g[0xa6][0xfb][0xd0],[0xe0]i7[0xfa][0xc3][0xfd]%[0xe6][0xb7][0xfe][0xe7][0x0][0x5][0xe1][0x94]k[0xf9][0xf][0x0][0x0]"
+2025-01-06 21:47:35 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
+2025-01-06 21:47:35 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@7c1a8f0f
+2025-01-06 21:47:35 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-06 21:47:36 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-06 21:47:36 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-06 21:47:36 INFO  Logger - [92mInitialize default Implicit Wait for the Driver [0m
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-06 21:47:36 INFO  Logger - [94m---------------------------------------------[0m
+2025-01-06 21:47:36 INFO  Logger - [96m------- Ellithium Engine Setup -------------[0m
+2025-01-06 21:47:36 INFO  Logger - [94m---------------------------------------------[0m
+2025-01-06 21:47:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-06 21:47:36 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:null] 1041438139
+2025-01-06 21:47:36 TRACE Graph - [Graph] ================ SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] =============== DONE SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== SORTED NODES
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== END SORTED NODES
+2025-01-06 21:47:36 TRACE Graph - [Graph] ADDING NODE DetailsTests.TestVersion()[pri:0, instance:Tests.DetailsTests@3ccb12d] -1906722300
+2025-01-06 21:47:36 TRACE Graph - [Graph] ================ SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] =============== DONE SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== SORTED NODES
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== END SORTED NODES
+2025-01-06 21:47:36 TRACE Graph - [Graph] ADDING NODE NonBDDSetup.testEnd()[pri:0, instance:Tests.DetailsTests@3ccb12d] -2011409710
+2025-01-06 21:47:36 TRACE Graph - [Graph] ================ SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] =============== DONE SORTING
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== SORTED NODES
+2025-01-06 21:47:36 TRACE Graph - [Graph] ====== END SORTED NODES
+2025-01-06 21:47:36 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
+2025-01-06 21:47:36 INFO  Logger - [95m[ALL TESTS STARTED]: ِDATABASE TEST [ALL TESTS STARTED][0m
+2025-01-06 21:47:36 INFO  Logger - [94m[START] TESTCASE TestVersion [STARTED][0m
+2025-01-06 21:47:36 DEBUG BasicClientConnectionManager - Get connection for route {}->http://movieland.runasp.net:80
+2025-01-06 21:47:36 DEBUG DefaultClientConnectionOperator - Connecting to movieland.runasp.net:80
+2025-01-06 21:47:36 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
+2025-01-06 21:47:36 DEBUG RequestAuthCache - Auth cache not set in the context
+2025-01-06 21:47:36 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
+2025-01-06 21:47:36 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
+2025-01-06 21:47:36 DEBUG DefaultHttpClient - Attempt 1 to execute request
+2025-01-06 21:47:36 DEBUG DefaultClientConnection - Sending request: GET /api/Movies/Details/50 HTTP/1.1
+2025-01-06 21:47:36 DEBUG wire -  >> "GET /api/Movies/Details/50 HTTP/1.1[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "Accept: */*[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "Host: movieland.runasp.net[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2025-01-06 21:47:36 DEBUG wire -  >> "[\r][\n]"
+2025-01-06 21:47:36 DEBUG headers - >> GET /api/Movies/Details/50 HTTP/1.1
+2025-01-06 21:47:36 DEBUG headers - >> Accept: */*
+2025-01-06 21:47:36 DEBUG headers - >> Host: movieland.runasp.net
+2025-01-06 21:47:36 DEBUG headers - >> Connection: Keep-Alive
+2025-01-06 21:47:36 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
+2025-01-06 21:47:36 DEBUG headers - >> Accept-Encoding: gzip,deflate
+2025-01-06 21:47:40 DEBUG wire -  << "HTTP/1.1 404 Not Found[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "Transfer-Encoding: chunked[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "Server: Microsoft-IIS/10.0[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "X-Powered-By: ASP.NET[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "Date: Mon, 06 Jan 2025 19:47:41 GMT[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:40 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 404 Not Found
+2025-01-06 21:47:40 DEBUG headers - << HTTP/1.1 404 Not Found
+2025-01-06 21:47:40 DEBUG headers - << Transfer-Encoding: chunked
+2025-01-06 21:47:40 DEBUG headers - << Content-Type: application/json; charset=utf-8
+2025-01-06 21:47:40 DEBUG headers - << Server: Microsoft-IIS/10.0
+2025-01-06 21:47:40 DEBUG headers - << X-Powered-By: ASP.NET
+2025-01-06 21:47:40 DEBUG headers - << Date: Mon, 06 Jan 2025 19:47:41 GMT
+2025-01-06 21:47:40 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
+2025-01-06 21:47:40 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
+2025-01-06 21:47:40 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
+2025-01-06 21:47:40 DEBUG wire -  << "2f[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "{"messageError":"There is no movie with ID 50"}"
+2025-01-06 21:47:40 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "0[\r][\n]"
+2025-01-06 21:47:40 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:40 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@1de7f898
+2025-01-06 21:47:40 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
+2025-01-06 21:47:41 ERROR Logger - [91mRetry #1 for test: TestVersion, on thread: main[0m
+2025-01-06 21:47:41 INFO  Logger - [93m[SKIPPED] TESTCASE TestVersion [SKIPPED][0m
+2025-01-06 21:47:41 INFO  Logger - [94m[START] TESTCASE TestVersion [STARTED][0m
+2025-01-06 21:47:41 DEBUG BasicClientConnectionManager - Get connection for route {}->http://movieland.runasp.net:80
+2025-01-06 21:47:41 DEBUG DefaultClientConnectionOperator - Connecting to movieland.runasp.net:80
+2025-01-06 21:47:41 DEBUG RequestAddCookies - CookieSpec selected: ignoreCookies
+2025-01-06 21:47:41 DEBUG RequestAuthCache - Auth cache not set in the context
+2025-01-06 21:47:41 DEBUG RequestTargetAuthentication - Target auth state: UNCHALLENGED
+2025-01-06 21:47:41 DEBUG RequestProxyAuthentication - Proxy auth state: UNCHALLENGED
+2025-01-06 21:47:41 DEBUG DefaultHttpClient - Attempt 1 to execute request
+2025-01-06 21:47:41 DEBUG DefaultClientConnection - Sending request: GET /api/Movies/Details/50 HTTP/1.1
+2025-01-06 21:47:41 DEBUG wire -  >> "GET /api/Movies/Details/50 HTTP/1.1[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "Accept: */*[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "Host: movieland.runasp.net[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "Connection: Keep-Alive[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "User-Agent: Apache-HttpClient/4.5.13 (Java/21)[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  >> "[\r][\n]"
+2025-01-06 21:47:41 DEBUG headers - >> GET /api/Movies/Details/50 HTTP/1.1
+2025-01-06 21:47:41 DEBUG headers - >> Accept: */*
+2025-01-06 21:47:41 DEBUG headers - >> Host: movieland.runasp.net
+2025-01-06 21:47:41 DEBUG headers - >> Connection: Keep-Alive
+2025-01-06 21:47:41 DEBUG headers - >> User-Agent: Apache-HttpClient/4.5.13 (Java/21)
+2025-01-06 21:47:41 DEBUG headers - >> Accept-Encoding: gzip,deflate
+2025-01-06 21:47:41 DEBUG wire -  << "HTTP/1.1 404 Not Found[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "Transfer-Encoding: chunked[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "Content-Type: application/json; charset=utf-8[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "Server: Microsoft-IIS/10.0[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "X-Powered-By: ASP.NET[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "Date: Mon, 06 Jan 2025 19:47:41 GMT[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:41 DEBUG DefaultClientConnection - Receiving response: HTTP/1.1 404 Not Found
+2025-01-06 21:47:41 DEBUG headers - << HTTP/1.1 404 Not Found
+2025-01-06 21:47:41 DEBUG headers - << Transfer-Encoding: chunked
+2025-01-06 21:47:41 DEBUG headers - << Content-Type: application/json; charset=utf-8
+2025-01-06 21:47:41 DEBUG headers - << Server: Microsoft-IIS/10.0
+2025-01-06 21:47:41 DEBUG headers - << X-Powered-By: ASP.NET
+2025-01-06 21:47:41 DEBUG headers - << Date: Mon, 06 Jan 2025 19:47:41 GMT
+2025-01-06 21:47:41 DEBUG DefaultHttpClient - Connection can be kept alive indefinitely
+2025-01-06 21:47:41 DEBUG RestAssuredHttpBuilder - Parsing response as: application/json; charset=utf-8
+2025-01-06 21:47:41 DEBUG RestAssuredHttpBuilder - Parsed data to instance of: class org.apache.http.conn.EofSensorInputStream
+2025-01-06 21:47:41 DEBUG wire -  << "2f[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "{"messageError":"There is no movie with ID 50"}"
+2025-01-06 21:47:41 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "0[\r][\n]"
+2025-01-06 21:47:41 DEBUG wire -  << "[\r][\n]"
+2025-01-06 21:47:41 DEBUG BasicClientConnectionManager - Releasing connection org.apache.http.impl.conn.ManagedClientConnectionImpl@e795a1d
+2025-01-06 21:47:41 DEBUG BasicClientConnectionManager - Connection can be kept alive indefinitely
+2025-01-06 21:47:41 INFO  Logger - [92m[PASSED] TESTCASE TestVersion [PASSED][0m
+2025-01-06 21:47:41 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-06 21:47:41 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-06 21:47:41 INFO  Logger - Log file successfully attached to the Allure report.
+2025-01-06 21:47:41 ERROR AllureLifecycle - Could not update test case: no test case running
+2025-01-06 21:47:41 INFO  Logger - [95m[ALL TESTS COMPLETED]: ِDATABASE TEST [ALL TESTS COMPLETED][0m
+2025-01-06 21:47:41 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
+2025-01-06 21:47:41 TRACE Graph - [Graph] ADDING NODE DetailsTests.TestVersion()[pri:0, instance:Tests.DetailsTests@3ccb12d] -1906722300
+2025-01-06 21:47:41 TRACE Graph - [Graph] ================ SORTING
+2025-01-06 21:47:41 TRACE Graph - [Graph] =============== DONE SORTING
+2025-01-06 21:47:41 TRACE Graph - [Graph] ====== SORTED NODES
+2025-01-06 21:47:41 TRACE Graph - [Graph] ====== END SORTED NODES
+2025-01-06 21:47:41 INFO  Logger - [94mTotal Execution Time is: 0 Min 5 Sec 233 Mills[0m
+2025-01-06 21:47:41 INFO  Logger - [94m------------------------------------------[0m
+2025-01-06 21:47:41 INFO  Logger - [96m------- Ellithium Engine TearDown -------[0m
+2025-01-06 21:47:41 INFO  Logger - [94m------------------------------------------[0m
+2025-01-06 21:47:41 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-06 21:47:41 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-06 21:47:41 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-06 21:47:41 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2025-01-06 21:47:41 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2025-01-06 21:47:41 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2025-01-06 21:47:53 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-01-06 21:47:53 INFO  Logger - [94mGetting Timestamp: 2025-01-06-9-47-53PM[0m
+2025-01-06 21:47:53 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-06 21:47:53 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-01-06-9-47-53PM.html[0m
+2025-01-06 21:47:53 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
