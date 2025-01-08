@@ -15,9 +15,14 @@
 <!--            <class name="Tests.loginTests"/>-->
 <!--        </classes>-->
 <!--    </test>-->
-    <test name="ِDatabase Test">
-        <classes>
-            <class name="Tests.DetailsTests"></class>
-        </classes>
-    </test>
+        <test name="Web UI Test Chrome">
+            <classes>
+                <class name="Runner.TestRunner"/>
+            </classes>
+        </test>
+<!--    <test name="ِDatabase Test">-->
+<!--        <classes>-->
+<!--            <class name="Tests.DetailsTests"></class>-->
+<!--        </classes>-->
+<!--    </test>-->
 </suite>

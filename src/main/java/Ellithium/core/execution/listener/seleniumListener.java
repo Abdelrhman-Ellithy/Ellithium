@@ -11,10 +11,6 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 
 public class seleniumListener implements WebDriverListener {
     @Override
-    public void beforeFindElement(WebDriver driver, By locator) {
-        WaitManager.getFluentWait(driver,WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime()).until(ExpectedConditions.visibilityOfElementLocated(locator));
-    }
-    @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
         for (CharSequence charSequence : keysToSend) {
