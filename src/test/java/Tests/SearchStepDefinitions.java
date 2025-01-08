@@ -1,8 +1,11 @@
 package Tests;
-
-import Base.BaseStepDefinitions;
 import Ellithium.Utilities.assertion.AssertionExecutor;
+import Ellithium.config.managment.GeneralHandler;
+import Ellithium.core.driver.*;
+import Ellithium.core.reporting.Reporter;
 import Pages.SearchPage;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -11,12 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SearchStepDefinitions extends BaseStepDefinitions {
+public class SearchStepDefinitions {
     public SearchPage searchPage;
-
     @Given("The user is on the homepage")
     public void the_user_is_on_the_homepage()  {
-            searchPage=new SearchPage(driver);
+            searchPage=new SearchPage(DriverFactory.getCurrentDriver());
             searchPage.returnHome();
     }
     @When("they type a search query into the search bar")

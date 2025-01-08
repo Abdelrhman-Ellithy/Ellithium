@@ -4,14 +4,11 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
-import io.appium.java_client.AppiumFluentWait;
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
+
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
@@ -20,7 +17,6 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 public class DriverActions <T extends WebDriver>{
     private final T driver;
     @SuppressWarnings("unchecked")
