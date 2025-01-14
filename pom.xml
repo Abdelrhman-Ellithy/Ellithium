@@ -74,8 +74,8 @@
         <log4jVersion>2.24.3</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
-        <CSV>1.12.0</CSV>
-        <ApachePOI>5.3.0</ApachePOI>
+        <CSV>1.13.0</CSV>
+        <ApachePOI>5.4.0</ApachePOI>
         <AddPOI>5.3.0</AddPOI>
         <Cucumber>7.20.1</Cucumber>
         <cucumberTsetNG>7.20.1</cucumberTsetNG>
@@ -107,7 +107,7 @@
         <oracleDBVersion>23.6.0.24.10</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>5.2.0</redisDBVersion>
-        <couchBaseVersion>3.7.6</couchBaseVersion>
+        <couchBaseVersion>3.7.7</couchBaseVersion>
         <appiumVersion>9.3.0</appiumVersion>
     </properties>
     <repositories>
@@ -280,7 +280,7 @@
         <dependency>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.6.0</version>
+            <version>0.7.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.qameta.allure/allure-cucumber7-jvm -->
         <dependency>
@@ -452,7 +452,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.6.0</version>
+                <version>0.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
