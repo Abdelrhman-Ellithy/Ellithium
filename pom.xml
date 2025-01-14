@@ -107,7 +107,7 @@
         <oracleDBVersion>23.6.0.24.10</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>5.2.0</redisDBVersion>
-        <couchBaseVersion>3.7.6</couchBaseVersion>
+        <couchBaseVersion>3.7.7</couchBaseVersion>
         <appiumVersion>9.3.0</appiumVersion>
     </properties>
     <repositories>
