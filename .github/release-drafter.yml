@@ -1,6 +1,29 @@
 name-template: 'v$NEXT_PATCH_VERSION'
+tag-template: 'v$NEXT_PATCH_VERSION'
 categories:
-  - title: 'Features'
-    labels: [feature]
-  - title: 'Bug Fixes'
-    labels: [bug]
+  - title: '🚀 Features'
+    labels: ['feature']
+  - title: '🐛 Bug Fixes'
+    labels: ['bug']
+  - title: '🛠 Maintenance'
+    labels: ['maintenance', 'chore']
+  - title: '📄 Documentation'
+    labels: ['docs']
+
+change-template: '- ${{CHANGE_TITLE}} (#${{NUMBER}} by @${{AUTHOR}})'
+version-template: '## 📦 Version ${{VERSION}}'
+template: |
+  ## 🚀 Features
+  - A list of new features introduced.
+
+  ## 🐛 Bug Fixes
+  - A list of bugs that have been fixed.
+
+  ## 📄 Documentation
+  - A list of documentation changes.
+
+  ## 🛠 Maintenance
+  - A list of maintenance or chore changes.
+
+branches:
+  - main
