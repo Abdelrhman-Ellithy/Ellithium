@@ -26,12 +26,12 @@ public class StartUpLoader {
     public static void main(String[] args) throws IOException {
         basePath=ConfigContext.getBasePropertyFolderPath();
         testPath = "src" + File.separator + "test" + File.separator + "resources" + File.separator + "TestData";
-        checkerFilePath=ConfigContext.getCheckerFilePath()+".json";
+        checkerFilePath=ConfigContext.getCheckerFilePath();
         checkerFolderPath=ConfigContext.getCheckerFolderPath();
         ScreenShotPath =  "Test-Output" + File.separator + "ScreenShots" + File.separator + "Failed" ;
-        allurePath = ConfigContext.getAllureFilePath()+ ".properties";
-        configPath = ConfigContext.getConfigFilePath()+ ".properties";
-        logPath = ConfigContext.getLogFilePath()+ ".properties";
+        allurePath = ConfigContext.getAllureFilePath();
+        configPath = ConfigContext.getConfigFilePath();
+        logPath = ConfigContext.getLogFilePath();
         System.out.println("Application started with properties initialized.");
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
@@ -142,9 +142,8 @@ public class StartUpLoader {
         }
     }
     public static void TestOutputSolver(){
-        final String allureFile = basePath + "allure";
         boolean result;
-        String allureReportPath= PropertyHelper.getDataFromProperties(allureFile,"allure.report.directory");
+        String allureReportPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");
         if (!checkFileExists(allureReportPath)) {
             File allureReportDirectory = new File(allureReportPath);
             result=allureReportDirectory.mkdirs();
@@ -152,7 +151,7 @@ public class StartUpLoader {
                 System.err.println("Failed to Automatically create directory: " + allureReportPath+ " Due to IDE Permissions you need to make it manually");
             }
         }
-        String allureResultsPath= PropertyHelper.getDataFromProperties(allureFile,"allure.report.directory");
+        String allureResultsPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");
         if (!checkFileExists(allureResultsPath)) {
             File allureResultsDirectory = new File(allureResultsPath);
             result=allureResultsDirectory.mkdirs();
