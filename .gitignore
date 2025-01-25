@@ -7,6 +7,7 @@ target/*
 TestNGRunner.xml
 src/test/resources/TestData/DB-Info.json
 Ellithium.pptx
+website
 
 # Ignore content of specific directories but include .gitkeep for empty folders
 Test-Output/Logs/*
@@ -58,3 +59,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+.allure/

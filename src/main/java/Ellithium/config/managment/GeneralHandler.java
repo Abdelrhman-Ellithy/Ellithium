@@ -60,8 +60,8 @@ public class GeneralHandler {
         }
     }
     public static void StartRoutine(){
-        APIFilterHelper.applyFilter();
         VersionChecker.solveVersion();
+        APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
         RetryAnalyzer.initRetryCount();
     }

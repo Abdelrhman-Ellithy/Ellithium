@@ -1,102 +1,427 @@
-2025-01-07 17:21:26 DEBUG TestNG - suiteXmlPath: "C:\Users\lenovo\IdeaProjects\Ellithium\TestNGRunner.xml"
-2025-01-07 17:21:28 INFO  Logger - [94mGetting Timestamp: 2025-01-07[0m
-2025-01-07 17:21:28 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-07 17:21:28 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-07 17:21:28 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-07 17:21:28 INFO  Logger - [92mInitialize default Implicit Wait for the Driver [0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-07 17:21:28 INFO  Logger - [94m---------------------------------------------[0m
-2025-01-07 17:21:28 INFO  Logger - [96m------- Ellithium Engine Setup -------------[0m
-2025-01-07 17:21:28 INFO  Logger - [94m---------------------------------------------[0m
-2025-01-07 17:21:28 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-07 17:21:28 TRACE Graph - [Graph] ADDING NODE AbstractTestNGCucumberTests.setUpClass(org.testng.ITestContext)[pri:0, instance:null] -393284817
-2025-01-07 17:21:28 TRACE Graph - [Graph] ================ SORTING
-2025-01-07 17:21:28 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-07 17:21:28 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-07 17:21:28 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-07 17:21:28 TRACE Graph - [Graph] ADDING NODE AbstractTestNGCucumberTests.tearDownClass()[pri:0, instance:null] 1523153566
-2025-01-07 17:21:28 TRACE Graph - [Graph] ================ SORTING
-2025-01-07 17:21:28 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-07 17:21:28 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-07 17:21:28 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-07 17:21:28 TRACE Graph - [Graph] ADDING NODE AbstractTestNGCucumberTests.runScenario(io.cucumber.testng.PickleWrapper,io.cucumber.testng.FeatureWrapper)[pri:0, instance:Runner.TestRunner@5411dd90] 260097633
-2025-01-07 17:21:29 TRACE Graph - [Graph] ================ SORTING
-2025-01-07 17:21:29 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-07 17:21:29 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-07 17:21:29 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-07 17:21:29 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
-2025-01-07 17:21:29 INFO  Logger - [95m[ALL TESTS STARTED]: WEB UI TEST CHROME [ALL TESTS STARTED][0m
-2025-01-07 17:21:29 ERROR AllureLifecycle - Could not update test case: no test case running
-2025-01-07 17:21:29 INFO  Logger - [96m[START] [94m Scenario Verify that user can search with partially product name [START][0m
-2025-01-07 17:21:29 INFO  Logger - [92mChrome Options Configured[0m
-2025-01-07 17:21:36 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
-2025-01-07 17:21:37 INFO  Logger - [92mDriver Created[0m
-2025-01-07 17:21:37 ERROR AllureLifecycle - Could not update test case: test case with uuid 0f65891a-68e4-45b8-842c-c7b17bae4ca8 not found
-2025-01-07 17:21:37 INFO  Logger - [94mNavigating to URL: https://www.noon.com/egypt-en/[0m
-2025-01-07 17:21:43 INFO  Logger - [95mLevel: error[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/mp-identity-api/customer/get][0m
-2025-01-07 17:21:43 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-01-07 17:21:43 INFO  Logger - [95mLevel: error[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 ()[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/catalog/api/v3/u/account-loyalty][0m
-2025-01-07 17:21:43 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-01-07 17:21:43 INFO  Logger - [95mLevel: error[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 403 ()[0m
-2025-01-07 17:21:43 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/customer-v1/customer/addresses][0m
-2025-01-07 17:21:43 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-01-07 17:21:44 INFO  Logger - [95mLevel: error[0m
-2025-01-07 17:21:44 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-01-07 17:21:44 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/smartassist/entry-points][0m
-2025-01-07 17:21:44 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-01-07 17:21:44 INFO  Logger - [94mSent Data: "lapt" into What are you looking for?.[0m
-2025-01-07 17:21:45 INFO  Logger - [94mSent Data: "ENTER" into What are you looking for?.[0m
-2025-01-07 17:21:45 INFO  Logger - [94mSent Data: "ENTER" into What are you looking for?.[0m
-2025-01-07 17:21:45 INFO  Logger - [94mWaiting for Element To Disappear: By.xpath: //img[@alt='Loading' and @loading='lazy'][0m
-2025-01-07 17:21:45 INFO  Logger - [94mGetting Attribute from multiple elements located: By.cssSelector: div[data-qa='product-name'][0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: american tourister american tourister backpack carter  lapt black , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: asus rog strix g15 g513rc-hn088w laptop with 15.6-inch display, amd ryzen 7-6800h processor/16gb ram/512gb ssd/4gb nvidia geforce rtx 3050 graphics card/windows 11 home english/arabic grey , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: lenovo ideapad 3 14iml05 laptop with 14-inch fhd (1920x1080) display, core i5 processor/4gb ram/1tb hdd/dos(without windows)/intel uhd graphics english/arabic platinum grey , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: lenovo ideapad 1 15iau7 laptop with 15.6-inch full hd display, intel core i7-1255u processor/8gb ram/512gb ssd/dos(without windows)/intel iris xe graphics/ english/arabic abyss blue , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: dell vostro 3515 laptop with 15.6-inch fhd display, amd ryzen 7 3700u processor/8gb ram/512gb ssd/dos(without windows)/amd radeon rx vega 10 graphics card english/arabic carbon black , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: dell vostro 3515 laptop with 15.6-inch fhd anti-glare screen display, ryzen5 3450u processor/8gb ram/256gb ssd/dos(without windows)/amd radeon vega 8 graphics card english/arabic black , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: hp probook 450 g10 laptop with 15.6-inch fhd (1920 x 1080) display, intel core i7-1355u processor/16gb ram ddr4/512gb ssd/dos(without windows)/nvidia geforce rtx 2050 4gb/ english/arabic silver , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: dell latitude 5520 laptop with 15.6-inch full hd display, core i5-1135g7 processor/8gb ram/512gb ssd/windows 10 pro/intel iris xe graphics/fingerprint reader english/arabic silver , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: lenovo loq 15irx9 laptop with 15.6 inch full hd (1920x1080) display ips, intel core i7-14700hx processor/32gb ram ddr5/1tb ssd/8gb nvidia geforce rtx 4060/dos(without windows)/ english/arabic luna grey , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: lenovo thinkpad e16 gen 1 laptop with 16-inch (1920x1200) display, intel core i7-1355u processor/8gb ram ddr4/512gb ssd/dos(without windows)/intel iris xe graphics/ english/arabic graphite black , Value: ;[0m
-2025-01-07 17:21:47 INFO  Logger - [92mSoft Assert: String contains value - Container: dell vostro 3515 laptop with 15.6-inch fhd display, ryzen 5-3450u processor/8gb ram/512gb ssd/dos (without windows)/amd radeon vega 8 graphic card english/arabic black , Value: ;[0m
-2025-01-07 17:21:47 ERROR Logger - [91mSoft Assertions Completed and Failed. Validating all collected conditions.[0m
-2025-01-07 17:21:48 INFO  Logger - [94mGetting Timestamp: 2025-01-07-5-21-48PM[0m
-2025-01-07 17:21:48 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2025-01-07 17:21:48 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
-2025-01-07 17:21:48 INFO  Logger - Log file successfully attached to the Allure report.
-2025-01-07 17:21:49 INFO  Logger - [94mWebDriver quit[0m
-2025-01-07 17:21:49 INFO  Logger - [91m[FAILED] Scenario Verify that user can search with partially product name [FAILED][0m
-2025-01-07 17:21:49 ERROR AllureLifecycle - Could not update test case: no test case running
-2025-01-07 17:21:49 ERROR AllureLifecycle - Could not update test case: no test case running
-2025-01-07 17:21:49 INFO  Logger - [95m[ALL TESTS COMPLETED]: WEB UI TEST CHROME [ALL TESTS COMPLETED][0m
-2025-01-07 17:21:49 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
-2025-01-07 17:21:49 TRACE Graph - [Graph] ADDING NODE AbstractTestNGCucumberTests.runScenario(io.cucumber.testng.PickleWrapper,io.cucumber.testng.FeatureWrapper)[pri:0, instance:Runner.TestRunner@5411dd90] 260097633
-2025-01-07 17:21:49 TRACE Graph - [Graph] ================ SORTING
-2025-01-07 17:21:49 TRACE Graph - [Graph] =============== DONE SORTING
-2025-01-07 17:21:49 TRACE Graph - [Graph] ====== SORTED NODES
-2025-01-07 17:21:49 TRACE Graph - [Graph] ====== END SORTED NODES
-2025-01-07 17:21:49 INFO  Logger - [94mTotal Execution Time is: 0 Min 20 Sec 525 Mills[0m
-2025-01-07 17:21:49 INFO  Logger - [94m------------------------------------------[0m
-2025-01-07 17:21:49 INFO  Logger - [96m------- Ellithium Engine TearDown -------[0m
-2025-01-07 17:21:49 INFO  Logger - [94m------------------------------------------[0m
-2025-01-07 17:21:49 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-07 17:21:49 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-07 17:21:49 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-07 17:21:49 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
-2025-01-07 17:21:49 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
-2025-01-07 17:21:49 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
-2025-01-07 17:21:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
-2025-01-07 17:21:52 INFO  Logger - [94mGetting Timestamp: 2025-01-07-5-21-52PM[0m
-2025-01-07 17:21:52 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
-2025-01-07 17:21:52 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-01-07-5-21-52PM.html[0m
-2025-01-07 17:21:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-01-25 13:36:19 INFO  Logger - [94mGetting Timestamp: 2025-01-25[0m
+2025-01-25 13:36:19 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker[0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-25 13:36:19 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-25 13:36:19 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-25 13:36:19 INFO  Logger - [92mInitialize default Implicit Wait for the Driver [0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-25 13:36:19 INFO  Logger - [94m---------------------------------------------[0m
+2025-01-25 13:36:19 INFO  Logger - [96m------- Ellithium Engine Setup -------------[0m
+2025-01-25 13:36:19 INFO  Logger - [94m---------------------------------------------[0m
+2025-01-25 13:36:19 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-25 13:36:19 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
+2025-01-25 13:36:19 INFO  Logger - [95m[ALL TESTS STARTED]: WEB UI TEST CHROME [ALL TESTS STARTED][0m
+2025-01-25 13:36:19 INFO  Logger - [92mChrome Options Configured[0m
+2025-01-25 13:36:22 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\config[0m
+2025-01-25 13:36:23 INFO  Logger - [92mDriver Created[0m
+2025-01-25 13:36:23 INFO  Logger - [94m[START] TESTCASE invalidLogin [STARTED][0m
+2025-01-25 13:36:23 INFO  Logger - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+2025-01-25 13:36:24 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:24 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:24 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:24 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 (Not Found)[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/favicon.ico][0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [95mLevel: verbose[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;200mText: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o[0m
+2025-01-25 13:36:25 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/login][0m
+2025-01-25 13:36:25 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:25 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:26 INFO  Logger - [94mSent Data: "tomsmith" into Username.[0m
+2025-01-25 13:36:26 INFO  Logger - [94mSent Data: "hamada" into Password.[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: verbose[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/login][0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:26 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:26 ERROR Logger - [91mHard Assert:  - Condition is not true[0m
+2025-01-25 13:36:26 INFO  Logger - [94mGetting Timestamp: 2025-01-25-1-36-26PM[0m
+2025-01-25 13:36:27 INFO  Logger - [91m[FAILED] TESTCASE invalidLogin [FAILED][0m
+2025-01-25 13:36:27 INFO  Logger - [94m[START] TESTCASE invalidLogin [STARTED][0m
+2025-01-25 13:36:27 INFO  Logger - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: verbose[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/login][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987571&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:27 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:27 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:27 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:28 INFO  Logger - [94mSent Data: "hamada" into Username.[0m
+2025-01-25 13:36:28 INFO  Logger - [94mSent Data: "SuperSecretPassword!" into Password.[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988379&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: verbose[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/login][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988713&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987571&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988379&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:28 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:28 ERROR Logger - [91mHard Assert:  - Condition is not true[0m
+2025-01-25 13:36:28 INFO  Logger - [94mGetting Timestamp: 2025-01-25-1-36-28PM[0m
+2025-01-25 13:36:28 INFO  Logger - [91m[FAILED] TESTCASE invalidLogin [FAILED][0m
+2025-01-25 13:36:28 INFO  Logger - [94m[START] TESTCASE validLogin [STARTED][0m
+2025-01-25 13:36:28 INFO  Logger - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988713&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988379&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989129&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987571&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989253&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: verbose[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://the-internet.herokuapp.com/login][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989429&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985401&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988379&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989253&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987571&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989129&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804984630&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988713&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:29 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:29 INFO  Logger - [94mSent Data: "SuperSecretPassword!" into Password.[0m
+2025-01-25 13:36:29 INFO  Logger - [94mSent Data: "tomsmith" into Username.[0m
+2025-01-25 13:36:29 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:29 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989833&f=298349752,318188263][0m
+2025-01-25 13:36:29 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Fsecure&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804990173&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987571&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986721&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804986381&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989833&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989129&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989253&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [95mLevel: error[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988379&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2F&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987247&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;200mText: Failed to load resource: net::ERR_NAME_NOT_RESOLVED[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804985593&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804989429&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=engagement&g=298283957&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804987373&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [38;5;94mURL: Optional[https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Flogin&u=oeu1737804984625r0.3757988111432098&wxhr=true&t=1737804988713&f=298349752,318188263][0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-01-25 13:36:30 INFO  Logger - [94mClicked on element: [0m
+2025-01-25 13:36:30 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-01-25 13:36:30 INFO  Logger - [92m[PASSED] TESTCASE validLogin [PASSED][0m
+2025-01-25 13:36:30 INFO  Logger - [94mWebDriver quit[0m
+2025-01-25 13:36:30 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-25 13:36:30 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-25 13:36:30 INFO  Logger - Log file successfully attached to the Allure report.
+2025-01-25 13:36:30 INFO  Logger - [95m[ALL TESTS COMPLETED]: WEB UI TEST CHROME [ALL TESTS COMPLETED][0m
+2025-01-25 13:36:30 INFO  Logger - [95m[ALL TESTS STARTED]: ِDATABASE TEST [ALL TESTS STARTED][0m
+2025-01-25 13:36:30 INFO  Logger - [94m[START] TESTCASE TestVersion [STARTED][0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Method: GET[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest URI: http://movieland.runasp.net/api/Movies/Details/50[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Headers: Accept=*/*[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Parameters: {}[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Base Path: [0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest ContentType: No Content Type[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Cookies: [0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Params: {}[0m
+2025-01-25 13:36:32 INFO  Logger - [94mRequest Body: No Body[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Status Code: 404[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Status Line: HTTP/1.1 404 Not Found[0m
+2025-01-25 13:36:32 INFO  Logger - [94mDetailed Response Cookies: [0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Content-Length: null[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Body: {"messageError":"There is no movie with ID 50"}[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Cookies: {}[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Headers: Transfer-Encoding=chunked
+Content-Type=application/json; charset=utf-8
+Server=Microsoft-IIS/10.0
+X-Powered-By=ASP.NET
+Date=Sat, 25 Jan 2025 11:36:31 GMT[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Session ID: No Session ID[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse Time (ms): 659[0m
+2025-01-25 13:36:32 INFO  Logger - [94mResponse JSON Path Data: null[0m
+2025-01-25 13:36:32 WARN  Logger - [38;5;200mResponse does not contain XML Path data.[0m
+2025-01-25 13:36:32 INFO  Logger - [92m[PASSED] TESTCASE TestVersion [PASSED][0m
+2025-01-25 13:36:32 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-25 13:36:32 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\log4j2[0m
+2025-01-25 13:36:32 INFO  Logger - Log file successfully attached to the Allure report.
+2025-01-25 13:36:32 INFO  Logger - [95m[ALL TESTS COMPLETED]: ِDATABASE TEST [ALL TESTS COMPLETED][0m
+2025-01-25 13:36:32 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
+2025-01-25 13:36:32 INFO  Logger - [94mTotal Execution Time is: 0 Min 13 Sec 41 Mills[0m
+2025-01-25 13:36:32 INFO  Logger - [94m------------------------------------------[0m
+2025-01-25 13:36:32 INFO  Logger - [96m------- Ellithium Engine TearDown -------[0m
+2025-01-25 13:36:32 INFO  Logger - [94m------------------------------------------[0m
+2025-01-25 13:36:32 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-25 13:36:32 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-25 13:36:32 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-25 13:36:32 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2025-01-25 13:36:32 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2025-01-25 13:36:32 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2025-01-25 13:36:35 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-01-25 13:36:35 INFO  Logger - [94mGetting Timestamp: 2025-01-25-1-36-35PM[0m
+2025-01-25 13:36:35 INFO  Logger - [92mSuccessfully loaded properties file: src\main\resources\properties\allure[0m
+2025-01-25 13:36:35 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-01-25-1-36-35PM.html[0m
+2025-01-25 13:36:35 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m

@@ -69,18 +69,14 @@
         <testNG>7.10.2</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.11.0</gsonVersion>
-        <SLF4JAPIVersion>2.0.13</SLF4JAPIVersion>
-        <SLF4JSimpleVersion>2.0.13</SLF4JSimpleVersion>
         <log4jVersion>2.24.3</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.13.0</CSV>
         <ApachePOI>5.4.0</ApachePOI>
-        <AddPOI>5.3.0</AddPOI>
         <Cucumber>7.20.1</Cucumber>
         <cucumberTsetNG>7.20.1</cucumberTsetNG>
         <restversion>5.5.0</restversion>
-        <gherkinversion>29.0.0</gherkinversion>
         <hamcrestversion>3.0</hamcrestversion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
@@ -93,7 +89,7 @@
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <deployToGithubPacakge>mvn clean deploy -P github,!ossrh -DskipTests -X</deployToGithubPacakge>
-        <PDFBoxVersion>3.0.4</PDFBoxVersion>
+        <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.2</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.3</mavenDeployPluginVersion>
@@ -144,19 +140,10 @@
             <version>${log4jVersion}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-            <version>${log4jVersion}</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-1.2-api -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-            <version>${log4jVersion}</version>
-            <scope>compile</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>2.0.16</version>
         </dependency>
         <dependency>
             <groupId>io.qameta.allure</groupId>
@@ -210,13 +197,6 @@
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${PDFBoxVersion}</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- Additional POI dependencies for handling Excel files -->
-        <dependency>
-            <groupId>org.apache.xmlbeans</groupId>
-            <artifactId>xmlbeans</artifactId>
-            <version>${AddPOI}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -287,16 +267,6 @@
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-cucumber7-jvm</artifactId>
             <version>${AllureJVMVersion}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.cucumber</groupId>
-                    <artifactId>gherkin</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.cucumber</groupId>
-                    <artifactId>messages</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
         <dependency>

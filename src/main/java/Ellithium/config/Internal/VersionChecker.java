@@ -6,11 +6,11 @@ import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.restassured.RestAssured;
+import static io.restassured.RestAssured.given;
 
 public class VersionChecker {
     public static String getLatestVersion(){
-        return RestAssured.given().
+        return given().
                 baseUri("https://api.github.com").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
                 .when().get("latest")
                 .thenReturn().body().jsonPath().getString("name");

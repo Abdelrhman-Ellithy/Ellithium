@@ -13,7 +13,7 @@ public class JsonHelper {
     // Method to read JSON data and return it as a list of maps
     public static List<Map<String, String>> getJsonData(String filePath) {
         List<Map<String, String>> data = new ArrayList<>();
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath );
 
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
@@ -54,7 +54,7 @@ public class JsonHelper {
     // Method to write a list of maps as JSON data
     public static void setJsonData(String filePath, List<Map<String, String>> data) {
         log("Attempting to write JSON data to file: ", LogLevel.INFO_BLUE, filePath);
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath);
 
         if (!jsonFile.exists()) {
             try {
@@ -88,7 +88,7 @@ public class JsonHelper {
 
     // Method to get a value for a specific key from JSON file
     public static String getJsonKeyValue(String filePath, String key) {
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
         }
@@ -115,7 +115,7 @@ public class JsonHelper {
     }
     // Method to set or update a specific key-value pair in JSON file
     public static void setJsonKeyValue(String filePath, String key, String value) {
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath);
 
         if (!jsonFile.exists()) {
             try {
@@ -145,7 +145,7 @@ public class JsonHelper {
     }
     public static boolean validateJsonKeys(String filePath, List<String> requiredKeys) {
         log("Validating keys in JSON file: ", LogLevel.INFO_BLUE, filePath);
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath);
 
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
@@ -172,7 +172,7 @@ public class JsonHelper {
     }
     // Method to read nested JSON data and return it as a Map
     public static Map<String, Object> getNestedJsonData(String filePath) {
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
         }
@@ -228,8 +228,8 @@ public class JsonHelper {
 
     // Method to compare two JSON files for equality
     public static boolean compareJsonFiles(String filePath1, String filePath2) {
-        File file1 = new File(filePath1 + ".json");
-        File file2 = new File(filePath2 + ".json");
+        File file1 = new File(filePath1 );
+        File file2 = new File(filePath2 );
 
         if (!file1.exists() || !file2.exists()) {
             log("One or both JSON files do not exist.", LogLevel.ERROR, filePath1 + ", " + filePath2);
@@ -254,9 +254,9 @@ public class JsonHelper {
 
     // Method to merge JSON data from two files and save to a new file
     public static void mergeJsonFiles(String sourceFilePath1, String sourceFilePath2, String targetFilePath) {
-        File file1 = new File(sourceFilePath1 + ".json");
-        File file2 = new File(sourceFilePath2 + ".json");
-        File targetFile = new File(targetFilePath + ".json");
+        File file1 = new File(sourceFilePath1 );
+        File file2 = new File(sourceFilePath2 );
+        File targetFile = new File(targetFilePath);
 
         if (!file1.exists() || !file2.exists()) {
             log("One or both source JSON files do not exist.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
@@ -286,7 +286,7 @@ public class JsonHelper {
 
     // Method to update a nested JSON key with a new value
     public static void updateNestedJsonKey(String filePath, List<String> keys, String newValue) {
-        File jsonFile = new File(filePath + ".json");
+        File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
             return;
