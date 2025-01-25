@@ -38,7 +38,6 @@ public class Reporter {
     public static void log(String message, LogLevel logLevel, String additionalParameter) {
         String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
         logByLevel(logLevel, coloredMessage);
-
         if (ConfigContext.isOnExecution()) {
             Allure.step(message + additionalParameter, allureStatusMap.get(logLevel));
         }

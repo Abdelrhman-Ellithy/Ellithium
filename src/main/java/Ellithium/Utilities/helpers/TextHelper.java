@@ -7,7 +7,7 @@ import java.util.List;
 public class TextHelper {
     public static List<String> readTextFile(String filePath) {
         List<String> lines = new ArrayList<>();
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath);
 
         if (!textFile.exists()) {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
@@ -33,7 +33,7 @@ public class TextHelper {
     }
     public static void writeTextFile(String filePath, List<String> lines) {
         Reporter.log("Attempting to write text file: ", LogLevel.INFO_BLUE, filePath);
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         if (!textFile.exists()) {
             try {
@@ -61,7 +61,7 @@ public class TextHelper {
     // Method to append a single line to a text file
     public static void appendLineToFile(String filePath, String line) {
         Reporter.log("Attempting to append line to text file: ", LogLevel.INFO_BLUE, filePath);
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile, true))) {
             writer.write(line);
@@ -75,7 +75,7 @@ public class TextHelper {
     }
 
     public static String findLineWithKeyword(String filePath, String keyword) {
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         if (!textFile.exists()) {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
@@ -100,7 +100,7 @@ public class TextHelper {
         return null;
     }
     public static void deleteLine(String filePath, String lineToDelete) {
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
         List<String> updatedLines = new ArrayList<>();
         Reporter.log("Attempting to delete line from text file: ", LogLevel.INFO_BLUE, filePath);
         try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
@@ -121,7 +121,7 @@ public class TextHelper {
     // Method to read the entire file as a single String
     public static String readFileAsString(String filePath) {
         StringBuilder content = new StringBuilder();
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         if (!textFile.exists()) {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
@@ -146,7 +146,7 @@ public class TextHelper {
     // Method to write a String to a text file
     public static void writeStringToFile(String filePath, String content) {
         Reporter.log("Attempting to write String to text file: ", LogLevel.INFO_BLUE, filePath);
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
             writer.write(content);
@@ -158,7 +158,7 @@ public class TextHelper {
     }
     // Method to delete all lines containing a specific keyword
     public static void deleteLinesContainingKeyword(String filePath, String keyword) {
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
         List<String> updatedLines = new ArrayList<>();
 
         Reporter.log("Attempting to delete lines containing keyword: ", LogLevel.INFO_BLUE, filePath);
@@ -179,7 +179,7 @@ public class TextHelper {
     }
     // Method to check if any line in the file contains a specific keyword
     public static boolean containsKeyword(String filePath, String keyword) {
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
 
         if (!textFile.exists()) {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
@@ -205,7 +205,7 @@ public class TextHelper {
     }
     // Method to replace a line in a text file
     public static void replaceLineInFile(String filePath, String targetLine, String newLine) {
-        File textFile = new File(filePath + ".txt");
+        File textFile = new File(filePath );
         List<String> updatedLines = new ArrayList<>();
 
         Reporter.log("Attempting to replace a line in text file: ", LogLevel.INFO_BLUE, filePath);

@@ -115,14 +115,14 @@ public class ConfigContext {
     }
     private static int retryCount;
     private static final String logFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties"  + File.separator + "log4j2";
+            "properties"  + File.separator + "log4j2"+ File.separator+".properties";
     private static final String configFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties"  + File.separator + "config";
+            "properties"  + File.separator + "config"+ File.separator+".properties";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
-            "properties"  + File.separator + "allure";
+            "properties"  + File.separator + "allure"+ File.separator+".properties";
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
-    private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker";
+    private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker"+ File.separator+".json";
     private static final String checkerFolderPath="Test-Output" + File.separator + "UpdateChecker";
     public static String getCheckerFilePath() {
         return checkerFilePath;

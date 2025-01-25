@@ -15,7 +15,7 @@ public class CSVHelper {
     public static List<Map<String, String>> getCsvData(String filePath) {
         Reporter.log("Attempting to read CSV data from file: ", LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> data = new ArrayList<>();
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             for (CSVRecord csvRecord : csvParser) {
                 Map<String, String> recordMap = new HashMap<>();
@@ -34,7 +34,7 @@ public class CSVHelper {
     // Method to write data to a CSV file and create the file if it doesn't exist
     public static void setCsvData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to CSV file: ", LogLevel.INFO_GREEN, filePath);
-        File csvFile = new File(filePath + ".csv");
+        File csvFile = new File(filePath );
         try {
             // Check if the CSV file exists, if not create a new one
             if (!csvFile.exists()) {
@@ -61,7 +61,7 @@ public class CSVHelper {
         Reporter.log("Fetching CSV data by column: " + columnName + " with value: " + columnValue, LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> filteredData = new ArrayList<>();
 
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
 
             for (CSVRecord csvRecord : csvParser) {
@@ -81,7 +81,7 @@ public class CSVHelper {
     public static List<String> readColumn(String filePath, String columnName) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column: " + columnName + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             for (CSVRecord record : csvParser) {
                 columnData.add(record.get(columnName));
@@ -97,7 +97,7 @@ public class CSVHelper {
     public static String readCell(String filePath, int rowIndex, String columnName) {
         String cellData = "";
         Reporter.log("Attempting to read cell at row: " + rowIndex + ", column: " + columnName, LogLevel.INFO_GREEN, filePath);
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             List<CSVRecord> records = csvParser.getRecords();
             if (rowIndex < records.size()) {
@@ -114,7 +114,7 @@ public class CSVHelper {
     public static Map<String, String> readRow(String filePath, int rowIndex) {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row at index: " + rowIndex + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             List<CSVRecord> records = csvParser.getRecords();
             if (rowIndex < records.size()) {
@@ -142,12 +142,12 @@ public class CSVHelper {
         }
     }
     public static boolean doesFileExist(String filePath) {
-        File csvFile = new File(filePath + ".csv");
+        File csvFile = new File(filePath );
         return csvFile.exists();
     }
     public static void appendData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to append data to CSV file: ", LogLevel.INFO_GREEN, filePath);
-        try (Writer writer = new FileWriter(filePath + ".csv", true);
+        try (Writer writer = new FileWriter(filePath , true);
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(data.get(0).keySet().toArray(new String[0])).withSkipHeaderRecord())) {
 
             for (Map<String, String> record : data) {
@@ -237,7 +237,7 @@ public class CSVHelper {
     public static List<List<String>> exportToList(String filePath) {
         Reporter.log("Attempting to export CSV data to list of lists: ", LogLevel.INFO_GREEN, filePath);
         List<List<String>> listData = new ArrayList<>();
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             for (CSVRecord record : csvParser) {
                 listData.add(new ArrayList<>(record.toMap().values()));
@@ -263,7 +263,7 @@ public class CSVHelper {
     }
     public static boolean validateFileStructure(String filePath, List<String> expectedColumns) {
         Reporter.log("Validating structure of CSV file: ", LogLevel.INFO_GREEN, filePath);
-        try (Reader reader = new FileReader(filePath + ".csv");
+        try (Reader reader = new FileReader(filePath );
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             Set<String> actualColumns = csvParser.getHeaderMap().keySet();
             return actualColumns.containsAll(expectedColumns);

@@ -14,7 +14,7 @@ public class ExcelHelper {
     public static List<Map<String, String>> getExcelData(String filePath, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
         Reporter.log("Attempting to read Excel data from file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -47,7 +47,7 @@ public class ExcelHelper {
     // Method to set Excel data
     public static void setExcelData(String filePath, String sheetName, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        File excelFile = new File(filePath + ".xlsx");
+        File excelFile = new File(filePath );
         Workbook workbook = null;
         try {
             if (excelFile.exists()) {
@@ -104,7 +104,7 @@ public class ExcelHelper {
     // Utility method to get a specific column
     public static List<String> getColumnData(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet != null) {
@@ -123,7 +123,7 @@ public class ExcelHelper {
 
     // Utility method to get a specific cell value
     public static String getCellData(String filePath, String sheetName, int rowIndex, int columnIndex) {
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet != null) {
@@ -144,7 +144,7 @@ public class ExcelHelper {
     // Utility method to read row by index
     public static List<String> getRowData(String filePath, String sheetName, int rowIndex) {
         List<String> rowData = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet != null) {
@@ -187,7 +187,7 @@ public class ExcelHelper {
     public static List<String> readColumn(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -208,7 +208,7 @@ public class ExcelHelper {
     public static String readCell(String filePath, String sheetName, int rowIndex, int columnIndex) {
         String cellValue = "";
         Reporter.log("Attempting to read cell from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -229,7 +229,7 @@ public class ExcelHelper {
     public static Map<String, String> readRow(String filePath, String sheetName, int rowIndex) {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -254,7 +254,7 @@ public class ExcelHelper {
 
     public static void writeCell(String filePath, String sheetName, int rowIndex, int columnIndex, String value) {
         Reporter.log("Attempting to write to a cell in Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        File excelFile = new File(filePath + ".xlsx");
+        File excelFile = new File(filePath );
         Workbook workbook = null;
         try {
             if (excelFile.exists()) {
@@ -294,7 +294,7 @@ public class ExcelHelper {
     }
     // Method to replace column data
     public static void replaceColumnData(String filePath, String sheetName, String columnName, String oldValue, String newValue) {
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -323,7 +323,7 @@ public class ExcelHelper {
                 }
             }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath + ".xlsx")) {
+            try (FileOutputStream fos = new FileOutputStream(filePath )) {
                 workbook.write(fos);
             }
             Reporter.log("Replaced all occurrences of '" + oldValue + "' with '" + newValue + "' in column " + columnName, LogLevel.INFO_GREEN);
@@ -334,7 +334,7 @@ public class ExcelHelper {
 
     // Method to append data
     public static void appendData(String filePath, String sheetName, List<Map<String, String>> newRows) {
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -355,7 +355,7 @@ public class ExcelHelper {
                 }
             }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath + ".xlsx")) {
+            try (FileOutputStream fos = new FileOutputStream(filePath )) {
                 workbook.write(fos);
             }
             Reporter.log("Appended new rows to the Excel sheet.", LogLevel.INFO_GREEN);
@@ -366,7 +366,7 @@ public class ExcelHelper {
 
     // Method to delete a row
     public static void deleteRow(String filePath, String sheetName, int rowIndex) {
-        try (FileInputStream fis = new FileInputStream(filePath + ".xlsx");
+        try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
@@ -384,7 +384,7 @@ public class ExcelHelper {
                 }
             }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath + ".xlsx")) {
+            try (FileOutputStream fos = new FileOutputStream(filePath )) {
                 workbook.write(fos);
             }
             Reporter.log("Deleted row " + rowIndex + " from the Excel sheet.", LogLevel.INFO_GREEN);

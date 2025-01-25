@@ -16,7 +16,7 @@ public class PDFHelper {
 
     // Method to read text from a PDF file
     public static String readPdf(String filePath) {
-        File file = new File(filePath + ".pdf");
+        File file = new File(filePath );
         String textContent = "";
 
         try (PDDocument document = PDDocument.load(file)) {
@@ -32,7 +32,7 @@ public class PDFHelper {
 
     // Method to write a list of strings into a PDF file
     public static void writePdf(String filePath, List<String> content) {
-        File file = new File(filePath + ".pdf");
+        File file = new File(filePath );
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
             document.addPage(page);
@@ -58,7 +58,7 @@ public class PDFHelper {
 
     // Method to append text to an existing PDF file
     public static void appendToPdf(String filePath, List<String> content) {
-        File file = new File(filePath + ".pdf");
+        File file = new File(filePath );
         try (PDDocument document = PDDocument.load(file)) {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);  // Get last page
             PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
@@ -82,10 +82,10 @@ public class PDFHelper {
     // Method to merge multiple PDF files
     public static void mergePdfs(List<String> inputFilePaths, String outputFilePath) {
         PDFMergerUtility merger = new PDFMergerUtility();
-        merger.setDestinationFileName(outputFilePath + ".pdf");
+        merger.setDestinationFileName(outputFilePath );
         try {
             for (String path : inputFilePaths) {
-                merger.addSource(new File(path + ".pdf"));
+                merger.addSource(new File(path ));
             }
             merger.mergeDocuments(null);
             Reporter.log("Successfully merged PDF files into: ", LogLevel.INFO_GREEN, outputFilePath);
@@ -96,13 +96,13 @@ public class PDFHelper {
     }
     // Method to extract a specific page from a PDF
     public static void extractPdfPage(String inputFilePath, String outputFilePath, int pageIndex) {
-        File file = new File(inputFilePath + ".pdf");
+        File file = new File(inputFilePath );
 
         try (PDDocument document = PDDocument.load(file);
              PDDocument outputDocument = new PDDocument()) {
             PDPage page = document.getPage(pageIndex);
             outputDocument.addPage(page);
-            outputDocument.save(outputFilePath + ".pdf");
+            outputDocument.save(outputFilePath );
             Reporter.log("Successfully extracted page " + pageIndex + " to: ", LogLevel.INFO_GREEN, outputFilePath);
         } catch (IOException e) {
             Reporter.log("Failed to extract page from PDF file: ", LogLevel.ERROR, inputFilePath);
@@ -110,8 +110,8 @@ public class PDFHelper {
         }
     }
     public static boolean comparePdfFiles(String filePath1, String filePath2) {
-        try (PDDocument doc1 = PDDocument.load(new File(filePath1 + ".pdf"));
-             PDDocument doc2 = PDDocument.load(new File(filePath2 + ".pdf"))) {
+        try (PDDocument doc1 = PDDocument.load(new File(filePath1 ));
+             PDDocument doc2 = PDDocument.load(new File(filePath2 ))) {
             String text1 = new PDFTextStripper().getText(doc1);
             String text2 = new PDFTextStripper().getText(doc2);
             boolean isEqual = text1.equals(text2);
