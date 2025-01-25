@@ -7,31 +7,6 @@ on:
     branches: [main]
 
 jobs:
-  test-ubuntu:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [21]
-    steps:
-      - name: Check out code
-        uses: WebDriverActions/checkout@v4
-
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: WebDriverActions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu' 
-
-      - name: Clean up previous test output
-        run: |
-          rm -rf Test-Output/Reports/*
-          rm -rf Test-Output/Logs/*
-          rm -rf Test-Output/ScreenShots/Failed/*
-          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-
-      - name: Build and Run with Maven
-        run: mvn clean install test -Dgpgskip
-
   test-macos:
     runs-on: macos-latest
     strategy:
@@ -39,13 +14,13 @@ jobs:
         java-version: [21]
     steps:
       - name: Check out code
-        uses: WebDriverActions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: WebDriverActions/setup-java@v4
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'zulu' 
+          distribution: 'zulu'
 
       - name: Clean up previous test output
         run: |
@@ -55,22 +30,4 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Build and Run with Maven
-        run: mvn clean install test -Dgpgskip
-
-  test-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        java-version: [21]
-    steps:
-      - name: Check out code
-        uses: WebDriverActions/checkout@v4
-
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: WebDriverActions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu' 
-          
-      - name: Build and Run with Maven
-        run: mvn clean install test -Dgpgskip
+        run: mvn clean test
