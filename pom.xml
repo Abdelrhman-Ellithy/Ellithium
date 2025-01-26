@@ -88,7 +88,7 @@
             gpg -ab target/ellithium-1.1.1.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
-        <PDFBoxVersion>2.0.27</PDFBoxVersion>
+        <PDFBoxVersion>3.0.4</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.2</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.3</mavenDeployPluginVersion>
