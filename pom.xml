@@ -75,7 +75,7 @@
         <CSV>1.13.0</CSV>
         <ApachePOI>5.4.0</ApachePOI>
         <Cucumber>7.20.1</Cucumber>
-        <cucumberTsetNG>7.20.1</cucumberTsetNG>
+        <cucumberTsetNG>7.21.0</cucumberTsetNG>
         <restversion>5.5.0</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
