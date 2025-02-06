@@ -4,9 +4,13 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.text.PDFTextStripper;
 import java.io.File;
 import java.io.IOException;
@@ -121,6 +125,129 @@ public class PDFHelper {
             Reporter.log("Failed to compare PDF files: ", LogLevel.ERROR, filePath1 + " & " + filePath2);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
             return false;
+        }
+    }
+    public static void splitPdf(String inputFilePath, String outputDirectoryPath) {
+        File inputFile = new File(inputFilePath);
+        try (PDDocument document = PDDocument.load(inputFile)) {
+            String baseName = inputFile.getName().replace(".pdf", "");
+
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                try (PDDocument singlePageDoc = new PDDocument()) {
+                    singlePageDoc.addPage(document.getPage(i));
+                    String outputPath = outputDirectoryPath + File.separator + baseName + "_page" + (i+1) + ".pdf";
+                    singlePageDoc.save(outputPath);
+                }
+            }
+            Reporter.log("Successfully split PDF into individual pages: ", LogLevel.INFO_GREEN, inputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to split PDF file: ", LogLevel.ERROR, inputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to add image to PDF
+    public static void addImageToPdf(String inputFilePath, String outputFilePath, String imagePath, float x, float y, float width, float height) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            PDPage page = document.getPage(document.getNumberOfPages() - 1);
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true)) {
+                PDImageXObject pdImage = PDImageXObject.createFromFile(imagePath, document);
+                contentStream.drawImage(pdImage, x, y, width, height);
+            }
+            document.save(outputFilePath);
+            Reporter.log("Successfully added image to PDF: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to add image to PDF: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to encrypt PDF with password
+    public static void encryptPdf(String inputFilePath, String outputFilePath, String ownerPassword, String userPassword) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            StandardProtectionPolicy protectionPolicy = new StandardProtectionPolicy(
+                    ownerPassword, userPassword, AccessPermission.getOwnerAccessPermission()
+            );
+            protectionPolicy.setEncryptionKeyLength(128);
+            document.protect(protectionPolicy);
+            document.save(outputFilePath);
+            Reporter.log("Successfully encrypted PDF: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to encrypt PDF: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to add watermark text
+    public static void addWatermark(String inputFilePath, String outputFilePath, String watermarkText) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            for (PDPage page : document.getPages()) {
+                try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true)) {
+                    contentStream.setFont(PDType1Font.HELVETICA_BOLD, 48);
+                    contentStream.setNonStrokingColor(200, 200, 200);  // Light gray
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(100, 300);
+                    contentStream.showText(watermarkText);
+                    contentStream.endText();
+                }
+            }
+            document.save(outputFilePath);
+            Reporter.log("Successfully added watermark to PDF: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to add watermark: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to update PDF metadata
+    public static void updateMetadata(String inputFilePath, String outputFilePath, String title, String author) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            PDDocumentInformation info = document.getDocumentInformation();
+            info.setTitle(title);
+            info.setAuthor(author);
+            document.save(outputFilePath);
+            Reporter.log("Successfully updated PDF metadata: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to update metadata: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to check if PDF is encrypted
+    public static boolean isEncrypted(String filePath) {
+        try (PDDocument document = PDDocument.load(new File(filePath))) {
+            return document.isEncrypted();
+        } catch (IOException e) {
+            Reporter.log("Failed to check encryption status: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return false;
+        }
+    }
+
+    // Method to remove pages from PDF
+    public static void removePages(String inputFilePath, String outputFilePath, int startPage, int endPage) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            for (int i = endPage; i >= startPage; i--) {
+                document.removePage(i);
+            }
+            document.save(outputFilePath);
+            Reporter.log("Successfully removed pages from PDF: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to remove pages: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    // Method to rotate PDF page
+    public static void rotatePage(String inputFilePath, String outputFilePath, int pageIndex, int degrees) {
+        try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
+            PDPage page = document.getPage(pageIndex);
+            page.setRotation(degrees);
+            document.save(outputFilePath);
+            Reporter.log("Successfully rotated page in PDF: ", LogLevel.INFO_GREEN, outputFilePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to rotate page: ", LogLevel.ERROR, outputFilePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
 }

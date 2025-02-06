@@ -7,7 +7,9 @@ import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;
 import java.io.*;
 import java.util.*;
-
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 public class JsonHelper {
 
     // Method to read JSON data and return it as a list of maps
@@ -319,6 +321,203 @@ public class JsonHelper {
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to update nested JSON key.", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+    public static void appendToJsonArray(String filePath, List<String> arrayPath, String value) {
+        log("Appending to JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
+        modifyJsonStructure(filePath, (jsonObject) -> {
+            JsonArray targetArray = navigateToArray(jsonObject, arrayPath);
+            if(targetArray != null) {
+                targetArray.add(value);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public static void insertIntoJsonArray(String filePath, List<String> arrayPath, int index, String value) {
+        log("Inserting into JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
+        modifyJsonStructure(filePath, (jsonObject) -> {
+            JsonArray targetArray = navigateToArray(jsonObject, arrayPath);
+            if (targetArray != null && index >= 0 && index <= targetArray.size()) {
+                JsonArray newArray = new JsonArray();
+                for (int i = 0; i < targetArray.size(); i++) {
+                    if (i == index) {
+                        newArray.add(new JsonPrimitive(value));
+                    }
+                    newArray.add(targetArray.get(i));
+                }
+                if (index == targetArray.size()) {
+                    newArray.add(new JsonPrimitive(value));
+                }
+                // Replace the original array with the new one
+                jsonObject.add(arrayPath.get(arrayPath.size() - 1), newArray);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public static void removeFromJsonArray(String filePath, List<String> arrayPath, int index) {
+        log("Removing from JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
+        modifyJsonStructure(filePath, (jsonObject) -> {
+            JsonArray targetArray = navigateToArray(jsonObject, arrayPath);
+            if(targetArray != null && index >= 0 && index < targetArray.size()) {
+                targetArray.remove(index);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public static String getValueFromNestedPath(String filePath, List<String> pathKeys) {
+        log("Reading from nested path: " + String.join(".", pathKeys), LogLevel.INFO_BLUE, filePath);
+        File jsonFile = new File(filePath);
+
+        if (!jsonFile.exists()) {
+            log("JSON file does not exist: ", LogLevel.ERROR, filePath);
+            return null;
+        }
+
+        try (FileReader reader = new FileReader(jsonFile)) {
+            JsonElement currentElement = JsonParser.parseReader(reader);
+
+            for(String key : pathKeys) {
+                if(currentElement.isJsonObject()) {
+                    JsonObject obj = currentElement.getAsJsonObject();
+                    currentElement = obj.has(key) ? obj.get(key) : null;
+                } else if(currentElement.isJsonArray()) {
+                    try {
+                        int index = Integer.parseInt(key);
+                        JsonArray array = currentElement.getAsJsonArray();
+                        currentElement = index < array.size() ? array.get(index) : null;
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                }
+                if(currentElement == null) break;
+            }
+
+            if(currentElement != null && currentElement.isJsonPrimitive()) {
+                log("Successfully read nested value", LogLevel.INFO_GREEN, filePath);
+                return currentElement.getAsString();
+            }
+            return null;
+
+        } catch (Exception e) {
+            log("Failed to read nested path", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            return null;
+        }
+    }
+
+    public static void modifyInNestedPath(String filePath, List<String> pathKeys, String newValue) {
+        log("Modifying nested path: " + String.join(".", pathKeys), LogLevel.INFO_BLUE, filePath);
+        modifyJsonStructure(filePath, (jsonObject) -> {
+            JsonElement currentElement = jsonObject;
+            JsonObject parentObject = null;
+            String finalKey = null;
+
+            for(String key : pathKeys) {
+                parentObject = currentElement.isJsonObject() ? currentElement.getAsJsonObject() : null;
+                if(parentObject == null) return false;
+
+                if(parentObject.has(key)) {
+                    currentElement = parentObject.get(key);
+                    finalKey = key;
+                } else {
+                    return false;
+                }
+            }
+
+            if(parentObject != null && finalKey != null) {
+                parentObject.addProperty(finalKey, newValue);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // Generic modification helper
+    private static void modifyJsonStructure(String filePath, java.util.function.Function<JsonObject, Boolean> modifier) {
+        File jsonFile = new File(filePath);
+
+        if (!jsonFile.exists()) {
+            log("JSON file does not exist: ", LogLevel.ERROR, filePath);
+            return;
+        }
+
+        try (FileReader reader = new FileReader(jsonFile)) {
+            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
+
+            if(modifier.apply(jsonObject)) {
+                try (FileWriter writer = new FileWriter(jsonFile)) {
+                    writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
+                    log("Successfully modified JSON structure", LogLevel.INFO_GREEN, filePath);
+                }
+            } else {
+                log("Failed to locate target structure", LogLevel.ERROR, filePath);
+            }
+
+        } catch (Exception e) {
+            log("Failed to modify JSON structure", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+
+    // Array navigation helper
+    private static JsonArray navigateToArray(JsonObject root, List<String> path) {
+        JsonElement current = root;
+        for(int i = 0; i < path.size(); i++) {
+            if(current.isJsonObject()) {
+                JsonObject obj = current.getAsJsonObject();
+                if(!obj.has(path.get(i))) return null;
+                current = obj.get(path.get(i));
+            }
+            // Handle array indices if needed
+            if(i == path.size()-1 && !current.isJsonArray()) return null;
+        }
+        return current.getAsJsonArray();
+    }
+
+    public static void createArrayAtPath(String filePath, List<String> arrayPath) {
+        log("Creating array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
+        modifyJsonStructure(filePath, (jsonObject) -> {
+            JsonObject current = jsonObject;
+            for(int i = 0; i < arrayPath.size(); i++) {
+                String key = arrayPath.get(i);
+                if(i == arrayPath.size()-1) {
+                    current.add(key, new JsonArray());
+                    return true;
+                }
+                if(!current.has(key)) {
+                    current.add(key, new JsonObject());
+                }
+                current = current.getAsJsonObject(key);
+            }
+            return false;
+        });
+    }
+
+    public static boolean arrayContainsValue(String filePath, List<String> arrayPath, String value) {
+        log("Checking array contains value in path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
+        File jsonFile = new File(filePath);
+
+        try (FileReader reader = new FileReader(jsonFile)) {
+            JsonArray targetArray = navigateToArray(JsonParser.parseReader(reader).getAsJsonObject(), arrayPath);
+            if(targetArray != null) {
+                for(JsonElement element : targetArray) {
+                    if(element.isJsonPrimitive() && element.getAsString().equals(value)) {
+                        log("Value found in array", LogLevel.INFO_GREEN, filePath);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log("Failed to check array contents", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            return false;
         }
     }
 }

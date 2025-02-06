@@ -261,6 +261,15 @@ public class CSVHelper {
             Reporter.log("Failed to merge CSV files: ", LogLevel.ERROR, outputFilePath);
         }
     }
+    public static void mergeCsvFiles(String outputFilePath, List<String> inputFiles) {
+        Reporter.log("Merging CSV files into: " + outputFilePath, LogLevel.INFO_GREEN, "");
+        List<Map<String, String>> mergedData = new ArrayList<>();
+        for (String file : inputFiles) {
+            mergedData.addAll(getCsvData(file));
+        }
+        setCsvData(outputFilePath, mergedData);
+        Reporter.log("Successfully merged CSV files.", LogLevel.INFO_GREEN, outputFilePath);
+    }
     public static boolean validateFileStructure(String filePath, List<String> expectedColumns) {
         Reporter.log("Validating structure of CSV file: ", LogLevel.INFO_GREEN, filePath);
         try (Reader reader = new FileReader(filePath );
@@ -272,5 +281,74 @@ public class CSVHelper {
             return false;
         }
     }
+    // Method to update a specific row
+    public static void updateRow(String filePath, int rowIndex, Map<String, String> newData) {
+        List<Map<String, String>> data = getCsvData(filePath);
+        if (rowIndex < data.size()) {
+            data.set(rowIndex, newData);
+            setCsvData(filePath, data);
+            Reporter.log("Successfully updated row in CSV file.", LogLevel.INFO_GREEN, filePath);
+        } else {
+            Reporter.log("Row index out of bounds.", LogLevel.ERROR, filePath);
+        }
+    }
 
+    // Method to update a column value in all rows
+    public static void updateColumn(String filePath, String columnName, String newValue) {
+        List<Map<String, String>> data = getCsvData(filePath);
+        for (Map<String, String> row : data) {
+            if (row.containsKey(columnName)) {
+                row.put(columnName, newValue);
+            }
+        }
+        setCsvData(filePath, data);
+        Reporter.log("Successfully updated column in CSV file.", LogLevel.INFO_GREEN, filePath);
+    }
+    public static int getRowCount(String filePath) {
+        return getCsvData(filePath).size();
+    }
+    public static List<String> findDuplicateEntries(String filePath, String columnName) {
+        Reporter.log("Finding duplicates in column: " + columnName, LogLevel.INFO_GREEN, filePath);
+        List<String> duplicates = new ArrayList<>();
+        try {
+            List<String> columnValues = readColumn(filePath, columnName);
+            Set<String> uniqueValues = new HashSet<>();
+            for (String value : columnValues) {
+                if (!uniqueValues.add(value)) {
+                    duplicates.add(value);
+                }
+            }
+            Reporter.log("Found " + duplicates.size() + " duplicates", LogLevel.INFO_GREEN, filePath);
+        } catch (Exception e) {
+            Reporter.log("Failed to find duplicates: " + e.getMessage(), LogLevel.ERROR, filePath);
+        }
+        return duplicates;
+    }
+    public static void addNewColumn(String filePath, String columnName, String defaultValue) {
+        Reporter.log("Adding new column: " + columnName, LogLevel.INFO_GREEN, filePath);
+        try {
+            List<Map<String, String>> data = getCsvData(filePath);
+            for (Map<String, String> row : data) {
+                row.put(columnName, defaultValue);
+            }
+            setCsvData(filePath, data);
+            Reporter.log("Column added successfully", LogLevel.INFO_GREEN, filePath);
+        } catch (Exception e) {
+            Reporter.log("Failed to add column: " + e.getMessage(), LogLevel.ERROR, filePath);
+        }
+    }
+    public static void renameColumn(String filePath, String oldName, String newName) {
+        Reporter.log("Renaming column: " + oldName + " to " + newName, LogLevel.INFO_GREEN, filePath);
+        try {
+            List<Map<String, String>> data = getCsvData(filePath);
+            for (Map<String, String> row : data) {
+                String value = row.remove(oldName);
+                row.put(newName, value);
+            }
+            setCsvData(filePath, data);
+            Reporter.log("Column renamed successfully", LogLevel.INFO_GREEN, filePath);
+        } catch (Exception e) {
+            Reporter.log("Failed to rename column: " + e.getMessage(), LogLevel.ERROR, filePath);
+        }
+    }
 }
