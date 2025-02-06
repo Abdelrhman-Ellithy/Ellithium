@@ -68,14 +68,14 @@
         <seleniumVersion>4.28.1</seleniumVersion>
         <testNG>7.10.2</testNG>
         <JavaFaker>1.0.2</JavaFaker>
-        <gsonVersion>2.11.0</gsonVersion>
+        <gsonVersion>2.12.1</gsonVersion>
         <log4jVersion>2.24.3</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.13.0</CSV>
         <ApachePOI>5.4.0</ApachePOI>
-        <Cucumber>7.20.1</Cucumber>
-        <cucumberTsetNG>7.20.1</cucumberTsetNG>
+        <Cucumber>7.21.0</Cucumber>
+        <cucumberTsetNG>7.21.0</cucumberTsetNG>
         <restversion>5.5.0</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
@@ -99,7 +99,7 @@
         <mysqlVersion>9.2.0</mysqlVersion>
         <postgresqlVersion>42.7.5</postgresqlVersion>
         <mssqlVersion>12.9.0.jre11-preview</mssqlVersion>
-        <oracleDBVersion>23.6.0.24.10</oracleDBVersion>
+        <oracleDBVersion>23.7.0.25.01</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>5.2.0</redisDBVersion>
         <couchBaseVersion>3.7.7</couchBaseVersion>
