@@ -4,6 +4,7 @@
         <classes>
             <class name="Tests.loginTests"/>
             <class name="Tests.AmazonSearchTests"></class>
+            <class name="Tests.AlertsTests"></class>
         </classes>
     </test>
     <test name="Web UI BDD Test Chrome" parallel="methods">
