@@ -3,7 +3,12 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 public class TextHelper {
     public static List<String> readTextFile(String filePath) {
         List<String> lines = new ArrayList<>();
@@ -500,5 +505,195 @@ public class TextHelper {
             Reporter.log("Failed to write to line in: ", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
+    }
+    public static long getFileSizeBytes(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            Reporter.log("File not found", LogLevel.ERROR, filePath);
+            return -1;
+        }
+        return file.length();
+    }
+
+    public static long getLastModifiedTimestamp(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            Reporter.log("File not found", LogLevel.ERROR, filePath);
+            return -1;
+        }
+        return file.lastModified();
+    }
+    public static void truncateFile(String filePath, int maxLines) {
+        Reporter.log("Truncating file to " + maxLines + " lines: ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = readTextFile(filePath);
+        if (lines.size() > maxLines) {
+            writeTextFile(filePath, lines.subList(0, maxLines));
+            Reporter.log("Truncated to " + maxLines + " lines", LogLevel.INFO_GREEN, filePath);
+        } else {
+            Reporter.log("No truncation needed", LogLevel.INFO_YELLOW, filePath);
+        }
+    }
+    public static void removeDuplicateLines(String filePath) {
+        Reporter.log("Removing duplicate lines from: ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = readTextFile(filePath);
+        LinkedHashSet<String> uniqueLines = new LinkedHashSet<>(lines);
+        List<String> cleaned = new ArrayList<>(uniqueLines);
+        if (cleaned.size() != lines.size()) {
+            writeTextFile(filePath, cleaned);
+            Reporter.log("Removed " + (lines.size() - cleaned.size()) + " duplicates", LogLevel.INFO_GREEN, filePath);
+        } else {
+            Reporter.log("No duplicates found", LogLevel.INFO_YELLOW, filePath);
+        }
+    }
+    public static List<String> readLastNLines(String filePath, int n) {
+        Reporter.log("Reading last " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = readTextFile(filePath);
+        int startIndex = Math.max(0, lines.size() - n);
+        List<String> result = lines.subList(startIndex, lines.size());
+        Reporter.log("Retrieved last " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
+        return result;
+    }
+    public static List<String> readFirstNLines(String filePath, int n) {
+        Reporter.log("Reading first " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = readTextFile(filePath);
+        int endIndex = Math.min(n, lines.size());
+        List<String> result = lines.subList(0, endIndex);
+        Reporter.log("Retrieved first " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
+        return result;
+    }
+    public static String readLineNumber(String filePath, int lineNumber) {
+        Reporter.log("Attempting to read line " + lineNumber + " from: ", LogLevel.INFO_BLUE, filePath);
+        File textFile = new File(filePath);
+
+        if (!textFile.exists()) {
+            Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
+            return null;
+        }
+
+        if (lineNumber < 1) {
+            Reporter.log("Invalid line number (must be >= 1): ", LogLevel.ERROR, filePath);
+            return null;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            String line;
+            int currentLine = 0;
+            
+            while ((line = reader.readLine()) != null) {
+                currentLine++;
+                if (currentLine == lineNumber) {
+                    Reporter.log("Successfully read line " + lineNumber + " from: ", LogLevel.INFO_GREEN, filePath);
+                    return line;
+                }
+            }
+            
+            Reporter.log("Line number " + lineNumber + " not found in file: ", LogLevel.INFO_YELLOW, filePath);
+            return null;
+            
+        } catch (IOException e) {
+            Reporter.log("Failed to read line from file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            return null;
+        }
+    }
+    
+    public static boolean isValidLineNumber(String filePath, int lineNumber) {
+        int totalLines = countLinesInFile(filePath);
+        return lineNumber > 0 && lineNumber <= totalLines;
+    }
+    
+    public static List<String> searchLinesMatching(String filePath, String regex) {
+        Reporter.log("Searching lines matching regex '" + regex + "' in: ", LogLevel.INFO_BLUE, filePath);
+        List<String> matches = new ArrayList<>();
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.matches(regex)) {
+                    matches.add(line);
+                }
+            }
+            Reporter.log("Found " + matches.size() + " matching lines", LogLevel.INFO_GREEN);
+        } catch (IOException e) {
+            Reporter.log("Failed to search with regex: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+        return matches;
+    }
+    
+    public static void mergeTwoFiles(String firstFile, String secondFile, String outputFile) {
+        Reporter.log("Merging files into: ", LogLevel.INFO_BLUE, outputFile);
+        List<String> mergedContent = new ArrayList<>();
+        
+        mergedContent.addAll(readTextFile(firstFile));
+        mergedContent.addAll(readTextFile(secondFile));
+        
+        writeTextFile(outputFile, mergedContent);
+        Reporter.log("Successfully merged files into: ", LogLevel.INFO_GREEN, outputFile);
+    }
+    
+    public static String getFileExtension(String filePath) {
+        int lastDotIndex = filePath.lastIndexOf('.');
+        return lastDotIndex > 0 ? filePath.substring(lastDotIndex + 1) : "";
+    }
+    
+    public static void reverseFileContent(String filePath) {
+        Reporter.log("Reversing file content: ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = readTextFile(filePath);
+        Collections.reverse(lines);
+        writeTextFile(filePath, lines);
+        Reporter.log("Successfully reversed file content: ", LogLevel.INFO_GREEN, filePath);
+    }
+    
+    public static Map<String, Integer> getWordFrequency(String filePath) {
+        Reporter.log("Analyzing word frequency in: ", LogLevel.INFO_BLUE, filePath);
+        Map<String, Integer> frequency = new HashMap<>();
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] words = line.split("\\s+");
+                for (String word : words) {
+                    frequency.merge(word, 1, Integer::sum);
+                }
+            }
+        } catch (IOException e) {
+            Reporter.log("Failed to analyze word frequency: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+        return frequency;
+    }
+    
+    public static void writeWithEncoding(String filePath, List<String> lines, String charset) {
+        Reporter.log("Writing file with encoding " + charset + ": ", LogLevel.INFO_BLUE, filePath);
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(filePath), charset))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+            Reporter.log("Successfully wrote file with encoding: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to write file with encoding: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+    }
+    
+    public static List<String> readWithEncoding(String filePath, String charset) {
+        Reporter.log("Reading file with encoding " + charset + ": ", LogLevel.INFO_BLUE, filePath);
+        List<String> lines = new ArrayList<>();
+        
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(filePath), charset))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+            Reporter.log("Successfully read file with encoding: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            Reporter.log("Failed to read file with encoding: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+        }
+        return lines;
     }
 }

@@ -62,7 +62,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onExecutionStart() {
         GeneralHandler.StartRoutine();
         Logger.info(BLUE + "---------------------------------------------" + RESET);
-        Logger.info(CYAN + "------- Ellithium Engine Setup -------------" + RESET);
+        Logger.info(CYAN + "------- Ellithium Engine Setup --------------" + RESET);
         Logger.info(BLUE + "---------------------------------------------" + RESET);
         AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
@@ -78,7 +78,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         long totalMinutes = (totalExecutionTime / 60000) % 60;
         Reporter.log( "Total Execution Time is: " + totalMinutes + " Min " , LogLevel.INFO_BLUE, totalSeconds + " Sec " + totalMills + " Mills" );
         Logger.info(BLUE + "------------------------------------------" + RESET);
-        Logger.info(CYAN + "------- Ellithium Engine TearDown -------" + RESET);
+        Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
     }

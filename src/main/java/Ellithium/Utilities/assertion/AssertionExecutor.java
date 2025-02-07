@@ -546,6 +546,171 @@ public class AssertionExecutor {
                 throw e;
             }
         }
+
+        // Add these new overloaded methods with message parameter
+        public static void assertEquals(Object actual, Object expected, String message) {
+            try {
+                Assert.assertEquals(actual, expected, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Objects are equal");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Objects are not equal");
+                throw e;
+            }
+        }
+
+        public static void assertBetween(int value, int lowerBound, int upperBound, String message) {
+            try {
+                Assert.assertTrue(value >= lowerBound && value <= upperBound, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, 
+                    " - Value " + value + " is within range [" + lowerBound + ", " + upperBound + "]");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, 
+                    " - Value " + value + " is not within range [" + lowerBound + ", " + upperBound + "]");
+                throw e;
+            }
+        }
+
+        public static void assertMatches(String actual, String regex, String message) {
+            try {
+                Assert.assertTrue(actual.matches(regex), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - String matches the regex pattern");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - String does not match the regex pattern");
+                throw e;
+            }
+        }
+
+        public static void assertSameSize(List<?> actual, List<?> expected, String message) {
+            try {
+                Assert.assertEquals(actual.size(), expected.size(), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Lists have the same size");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Lists do not have the same size");
+                throw e;
+            }
+        }
+
+        public static void assertMapEmpty(Map<?, ?> map, String message) {
+            try {
+                Assert.assertTrue(map.isEmpty(), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Map is empty");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Map is not empty");
+                throw e;
+            }
+        }
+
+        public static void assertMapNotEmpty(Map<?, ?> map, String message) {
+            try {
+                Assert.assertFalse(map.isEmpty(), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Map is not empty");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Map is empty");
+                throw e;
+            }
+        }
+
+        public static void assertStartsWith(String actual, String prefix, String message) {
+            try {
+                Assert.assertTrue(actual.startsWith(prefix), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - String starts with prefix: " + prefix);
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - String does not start with prefix: " + prefix);
+                throw e;
+            }
+        }
+
+        public static void assertEndsWith(String actual, String suffix, String message) {
+            try {
+                Assert.assertTrue(actual.endsWith(suffix), message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - String ends with suffix: " + suffix);
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - String does not end with suffix: " + suffix);
+                throw e;
+            }
+        }
+
+        public static void assertInstanceOf(Object object, Class<?> clazz) {
+            try {
+                Assert.assertTrue(clazz.isInstance(object));
+                Reporter.log("Hard Assert: ", LogLevel.INFO_GREEN, " - Object is instance of " + clazz.getSimpleName());
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: ", LogLevel.ERROR, " - Object is not instance of " + clazz.getSimpleName());
+                throw e;
+            }
+        }
+
+        // Add delta-based comparison for doubles
+        public static void assertEquals(double actual, double expected, double delta, String message) {
+            try {
+                Assert.assertEquals(actual, expected, delta, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, 
+                    String.format(" - Values are equal within delta %f", delta));
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, 
+                    String.format(" - Values differ by more than delta %f", delta));
+                throw e;
+            }
+        }
+
+        // Add missing TestNG assertion methods
+        public static void assertEquals(String actual, String expected, String message) {
+            try {
+                Assert.assertEquals(actual, expected, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Strings are equal");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Strings are not equal");
+                throw e;
+            }
+        }
+
+        public static void assertEquals(long actual, long expected, String message) {
+            try {
+                Assert.assertEquals(actual, expected, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Long values are not equal");
+                throw e;
+            }
+        }
+
+        public static void assertEquals(boolean actual, boolean expected, String message) {
+            try {
+                Assert.assertEquals(actual, expected, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Boolean values are equal");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Boolean values are not equal");
+                throw e;
+            }
+        }
+
+        public static void assertEqualsNoOrder(Object[] actual, Object[] expected, String message) {
+            try {
+                Assert.assertEqualsNoOrder(actual, expected, message);
+                Reporter.log("Hard Assert: " + message, LogLevel.INFO_GREEN, " - Arrays are equal (ignoring order)");
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Arrays are not equal (ignoring order)");
+                throw e;
+            }
+        }
+
+        public static void fail(String message) {
+            try {
+                Assert.fail(message);
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Forced failure");
+                throw e;
+            }
+        }
+
+        public static void fail(String message, Throwable throwable) {
+            try {
+                Assert.fail(message, throwable);
+            } catch (AssertionError e) {
+                Reporter.log("Hard Assert: " + message, LogLevel.ERROR, " - Forced failure with throwable");
+                throw e;
+            }
+        }
     }
 
     public static class soft {
@@ -791,6 +956,54 @@ public class AssertionExecutor {
                         message + " Array elements at index " + i + " differ by more than " + delta + ". Expected: " + expected[i] + ", Actual: " + actual[i]);
                 Reporter.log("Soft Assert: " + message + " Array element at index " + i + " is within tolerance: " + delta, LogLevel.INFO_GREEN);
             }
+        }
+
+        // Add these new overloaded methods with message parameter
+        public void assertEquals(double actual, double expected, double delta, String message) {
+            softAssert.assertEquals(actual, expected, delta, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, 
+                String.format(" - Values are equal within delta %f", delta));
+        }
+
+        public void assertBetween(int value, int lowerBound, int upperBound, String message) {
+            softAssert.assertTrue(value >= lowerBound && value <= upperBound, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, 
+                " - Value " + value + " is within range [" + lowerBound + ", " + upperBound + "]");
+        }
+
+        public void assertMatches(String actual, String regex, String message) {
+            softAssert.assertTrue(actual.matches(regex), message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - String matches the regex pattern");
+        }
+
+        public void assertEquals(String actual, String expected, String message) {
+            softAssert.assertEquals(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Strings are equal");
+        }
+
+        public void assertEquals(long actual, long expected, String message) {
+            softAssert.assertEquals(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+
+        public void assertEquals(boolean actual, boolean expected, String message) {
+            softAssert.assertEquals(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Boolean values are equal");
+        }
+
+        public void assertEqualsNoOrder(Object[] actual, Object[] expected, String message) {
+            softAssert.assertEqualsNoOrder(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Arrays are equal (ignoring order)");
+        }
+
+        public void fail(String message) {
+            softAssert.fail(message);
+            Reporter.log("Soft Assert: " + message, LogLevel.ERROR, " - Forced failure");
+        }
+
+        public void fail(String message, Throwable throwable) {
+            softAssert.fail(message, throwable);
+            Reporter.log("Soft Assert: " + message, LogLevel.ERROR, " - Forced failure with throwable");
         }
     }
 }
