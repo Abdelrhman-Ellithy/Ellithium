@@ -5,11 +5,17 @@ import static Ellithium.core.reporting.Reporter.log;
 
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+
 public class JsonHelper {
 
     // Method to read JSON data and return it as a list of maps
@@ -518,6 +524,127 @@ public class JsonHelper {
             log("Failed to check array contents", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
             return false;
+        }
+    }
+
+    public static <T> T parseJsonToObject(String filePath, Class<T> classOfT) {
+        try {
+            String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+            return new Gson().fromJson(jsonContent, classOfT);
+        } catch (IOException e) {
+            log("Failed to parse JSON to object", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return null;
+        }
+    }
+
+    public static <T> List<T> parseJsonToList(String filePath, Class<T> classOfT) {
+        try {
+            String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+            Type listType = TypeToken.getParameterized(List.class, classOfT).getType();
+            return new Gson().fromJson(jsonContent, listType);
+        } catch (IOException e) {
+            log("Failed to parse JSON to list", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return new ArrayList<>();
+        }
+    }
+
+    public static boolean isValidJson(String filePath) {
+        try (FileReader reader = new FileReader(filePath)) {
+            JsonParser.parseReader(reader);
+            return true;
+        } catch (JsonSyntaxException | IOException e) {
+            log("Invalid JSON format", LogLevel.ERROR, filePath);
+            return false;
+        }
+    }
+
+    public static void prettyPrintJson(String filePath) {
+        try (FileReader reader = new FileReader(filePath)) {
+            JsonElement jsonElement = JsonParser.parseReader(reader);
+            String prettyJson = new GsonBuilder().setPrettyPrinting().create().toJson(jsonElement);
+            Files.write(Paths.get(filePath), prettyJson.getBytes(StandardCharsets.UTF_8));
+            log("Successfully formatted JSON file", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            log("Failed to format JSON file", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+        }
+    }
+
+    public static Map<String, Integer> getJsonKeyOccurrences(String filePath) {
+        Map<String, Integer> keyOccurrences = new HashMap<>();
+        try (FileReader reader = new FileReader(filePath)) {
+            countKeysRecursively(JsonParser.parseReader(reader), keyOccurrences);
+            log("Successfully counted key occurrences", LogLevel.INFO_GREEN, filePath);
+            return keyOccurrences;
+        } catch (IOException e) {
+            log("Failed to count key occurrences", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return keyOccurrences;
+        }
+    }
+
+    private static void countKeysRecursively(JsonElement element, Map<String, Integer> keyOccurrences) {
+        if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                keyOccurrences.merge(entry.getKey(), 1, Integer::sum);
+                countKeysRecursively(entry.getValue(), keyOccurrences);
+            }
+        } else if (element.isJsonArray()) {
+            JsonArray array = element.getAsJsonArray();
+            for (JsonElement arrayElement : array) {
+                countKeysRecursively(arrayElement, keyOccurrences);
+            }
+        }
+    }
+
+    public static void removeNullValues(String filePath) {
+        try (FileReader reader = new FileReader(filePath)) {
+            JsonElement element = JsonParser.parseReader(reader);
+            JsonElement cleaned = removeNullValuesRecursively(element);
+            try (FileWriter writer = new FileWriter(filePath)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(cleaned, writer);
+                log("Successfully removed null values", LogLevel.INFO_GREEN, filePath);
+            }
+        } catch (IOException e) {
+            log("Failed to remove null values", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+        }
+    }
+
+    private static JsonElement removeNullValuesRecursively(JsonElement element) {
+        if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            JsonObject cleaned = new JsonObject();
+            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                if (!entry.getValue().isJsonNull()) {
+                    cleaned.add(entry.getKey(), removeNullValuesRecursively(entry.getValue()));
+                }
+            }
+            return cleaned;
+        } else if (element.isJsonArray()) {
+            JsonArray array = element.getAsJsonArray();
+            JsonArray cleaned = new JsonArray();
+            for (JsonElement arrayElement : array) {
+                if (!arrayElement.isJsonNull()) {
+                    cleaned.add(removeNullValuesRecursively(arrayElement));
+                }
+            }
+            return cleaned;
+        }
+        return element;
+    }
+
+    public static void backupJsonFile(String filePath) {
+        try {
+            String backupPath = filePath + ".backup-" + System.currentTimeMillis();
+            Files.copy(Paths.get(filePath), Paths.get(backupPath));
+            log("Successfully created backup", LogLevel.INFO_GREEN, backupPath);
+        } catch (IOException e) {
+            log("Failed to create backup", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
     }
 }
