@@ -30,7 +30,7 @@ Feature: Search
       Given the user enters Company name in the search field
       When they click the Search button or press Enter key
       Then company products should be displayed
-@Run
+
   Scenario: Verify that user can search with partially product name
       Given the user enters product name partially in the search field
       When they click the Search button or press Enter key

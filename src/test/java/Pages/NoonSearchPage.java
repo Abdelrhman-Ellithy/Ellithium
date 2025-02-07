@@ -7,10 +7,10 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
-public class SearchPage {
+public class NoonSearchPage {
     WebDriver driver;
     DriverActions driverActions;
-    public SearchPage(WebDriver driver){
+    public NoonSearchPage(WebDriver driver){
         this.driver=driver;
         driverActions=new DriverActions(driver);
     }
