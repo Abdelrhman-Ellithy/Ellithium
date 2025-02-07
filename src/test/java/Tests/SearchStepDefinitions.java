@@ -1,11 +1,7 @@
 package Tests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
-import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.driver.*;
-import Ellithium.core.reporting.Reporter;
-import Pages.SearchPage;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
+import Pages.NoonSearchPage;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -15,10 +11,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class SearchStepDefinitions {
-    public SearchPage searchPage;
+    public NoonSearchPage searchPage;
     @Given("The user is on the homepage")
     public void the_user_is_on_the_homepage()  {
-            searchPage=new SearchPage(DriverFactory.getCurrentDriver());
+            searchPage=new NoonSearchPage(DriverFactory.getCurrentDriver());
             searchPage.returnHome();
     }
     @When("they type a search query into the search bar")
@@ -136,7 +132,7 @@ public class SearchStepDefinitions {
         byte cnt=0;
         for (String name:names ){
             if(cnt>10) break;
-            softAssert.assertContains(name.toLowerCase(),";");
+            softAssert.assertContains(name.toLowerCase(),"laptop");
             cnt++;
         }
         softAssert.assertAll();
