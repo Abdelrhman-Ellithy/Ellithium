@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  UI an API Tests:
+  UI-and-API-Tests:
     runs-on: macos-latest
     strategy:
       matrix:
