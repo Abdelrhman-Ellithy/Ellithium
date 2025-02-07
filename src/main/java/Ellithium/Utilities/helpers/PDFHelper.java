@@ -13,6 +13,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 public class PDFHelper {
 
@@ -266,6 +267,20 @@ public class PDFHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
     }
+
+    public static PDRectangle getPageDimensions(String filePath, int pageIndex) {
+        try (PDDocument document = PDDocument.load(new File(filePath))) {
+            if (pageIndex >= 0 && pageIndex < document.getNumberOfPages()) {
+                return document.getPage(pageIndex).getMediaBox();
+            }
+            return null;
+        } catch (IOException e) {
+            Reporter.log("Failed to get page dimensions: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return null;
+        }
+    }
+
     public static void flattenFormFields(String inputPath, String outputPath) {
         try (PDDocument document = PDDocument.load(new File(inputPath))) {
             PDAcroForm acroForm = document.getDocumentCatalog().getAcroForm();
