@@ -8,6 +8,7 @@ import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumFluentWait;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
+import org.openqa.selenium.NoAlertPresentException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 
@@ -17,18 +18,13 @@ import java.util.concurrent.ExecutionException;
 
 public class WaitManager <T extends WebDriver>{
     private  static int defaultTimeout;
-    private  static int defaultImplicitWait;
     private  static int defaultPollingTime;
-    private static boolean defaultImplicitTimeoutGotFlag=false;
 
     public static int getDefaultTimeout() {
         return defaultTimeout;
     }
     public static int getDefaultPollingTime() {
         return defaultPollingTime;
-    }
-    public static int getDefaultImplicitWait() {
-        return defaultImplicitWait;
     }
     private  static boolean defaultTimeoutGotFlag=false;
     private  static boolean defaultPollingTimeGotFlag=false;
@@ -42,11 +38,6 @@ public class WaitManager <T extends WebDriver>{
             initPolling();
             defaultPollingTimeGotFlag = true;
             Reporter.log("Initialize default Polling Time for Element ", LogLevel.INFO_GREEN);
-        }
-        if(!defaultImplicitTimeoutGotFlag){
-            initImplicitTimeout();
-            defaultImplicitTimeoutGotFlag = true;
-            Reporter.log("Initialize default Implicit Wait for the Driver ", LogLevel.INFO_GREEN);
         }
     }
     private static int parseProperty(String value, int defaultValue, String propertyName) {
@@ -79,15 +70,6 @@ public class WaitManager <T extends WebDriver>{
             defaultPollingTime = 200;  // Assign default if exception occurs
         }
     }
-    private static void initImplicitTimeout() {
-        try {
-            String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultDriverWaitTimeout");
-            defaultImplicitWait = Integer.parseInt(timeout);
-        } catch (Exception e) {
-            Logger.logException(e);
-            defaultImplicitWait=20;
-        }
-    }
     private static final ArrayList<Class<? extends Exception>> expectedExceptions = new ArrayList<>();
     static {
         expectedExceptions.add(java.lang.ClassCastException.class);
@@ -101,6 +83,7 @@ public class WaitManager <T extends WebDriver>{
         expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
         expectedExceptions.add(ExecutionException.class);
         expectedExceptions.add(InterruptedException.class);
+        expectedExceptions.add(NoAlertPresentException.class);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,15 +1,19 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="Framework Test" verbose="1" data-provider-thread-count="5" parallel="tests" >
-    <test name="Web UI NonBDD Test Chrome" parallel="classes">
+    <test name="Web UI NonBDD Test Chrome" >
         <classes>
             <class name="Tests.loginTests"/>
-            <class name="Tests.AmazonSearchTests"></class>
-            <class name="Tests.AlertsTests"></class>
+            <class name="Tests.AmazonSearchTests"/>
+            <class name="Tests.AlertsTests"/>
+            <class name="Tests.HorizontalSliderTests"/>
         </classes>
     </test>
-    <test name="Web UI BDD Test Chrome" parallel="methods">
+    <test name="Web UI NonBDD Test Chrome" >
         <classes>
-            <class name="Runner.TestRunner"/>
+            <class name="Tests.DropDownTests"/>
+            <class name="Tests.DragDropTests"/>
+            <class name="Tests.HoverPageTests"></class>
+            <class name="Tests.DynamicLoadingPageTests"/>
         </classes>
     </test>
     <test name="Restful Booker API Tests" >

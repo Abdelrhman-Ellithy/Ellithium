@@ -20,8 +20,6 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
-import java.time.Duration;
-
 import static Ellithium.core.driver.MobileDriverType.IOS;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static io.appium.java_client.proxy.Helpers.createProxy;
@@ -66,7 +64,6 @@ public class DriverFactory {
         switch (driverType){
             case IOS -> {
                 IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
-                localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(WaitManager.getDefaultImplicitWait()));
                 IOSDriverThread.set(localDriver);
                 if(IOSDriverThread!=null){
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -75,7 +72,6 @@ public class DriverFactory {
             }
             case Android -> {
                 AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
-                localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(WaitManager.getDefaultImplicitWait()));
                 AndroidDriverThread.set(localDriver);
                 if(IOSDriverThread!=null){
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -190,7 +186,6 @@ public class DriverFactory {
             var capabilities = ConfigContext.getCapabilities();
             var remoteAddress = ConfigContext.getRemoteAddress();
             var localDriver = BrowserSetUp.setupRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
-            localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(WaitManager.getDefaultImplicitWait()));
             RemoteWebDriverThreadLocal.set(getDecoratedWebDriver(localDriver));
             if (RemoteWebDriverThreadLocal != null) {
                 Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -210,7 +205,6 @@ public class DriverFactory {
                     logDevTools(devTools);
                 }
             }
-            localDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(WaitManager.getDefaultImplicitWait()));
             WebDriverThread.set(getDecoratedWebDriver(localDriver));
             if (WebDriverThread != null) {
                 Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -228,7 +222,7 @@ public class DriverFactory {
         return new EventFiringDecorator<>(org.openqa.selenium.remote.RemoteWebDriver.class, new seleniumListener()).decorate(driver);
     }
     private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities){
-        return      createProxy(
+        return createProxy(
                             AndroidDriver.class,
                             new Object[] {remoteAddress,capabilities},
                             new Class[] {URL.class,Capabilities.class},
