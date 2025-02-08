@@ -6,6 +6,8 @@ import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
@@ -218,27 +220,22 @@ public class PropertyHelperTests extends NonBDDSetup {
     @Test(groups = {"properties"}, description = "Test sorting properties by key")
     public void testSortPropertiesByKey() {
         try {
-            // Add a key that should come first alphabetically
+            // Create properties in specific order
+            PropertyHelper.clearProperties(TEST_FILE);
+            PropertyHelper.setDataToProperties(TEST_FILE, "test.key2", "value2");
             PropertyHelper.setDataToProperties(TEST_FILE, "a.key", "valueA");
-            
-            // Sort the properties
+            PropertyHelper.setDataToProperties(TEST_FILE, "test.key1", "value1");
+
             PropertyHelper.sortPropertiesByKey(TEST_FILE);
-            
-            // Get all properties and verify order
+
+            // Read and verify order
             Properties props = PropertyHelper.getAllProperties(TEST_FILE);
             List<String> keys = new ArrayList<>(props.stringPropertyNames());
             
-            // Verify the keys are in alphabetical order
-            assertTrue(keys.size() >= 3, "Should have at least 3 properties");
+            assertEquals(keys.size(), 3, "Should have exactly 3 properties");
             assertEquals(keys.get(0), "a.key", "First key should be a.key");
-            assertTrue(keys.get(1).startsWith("test."), "Second key should start with test.");
-            assertTrue(keys.get(2).startsWith("test."), "Third key should start with test.");
-            
-            // Verify the complete order
-            List<String> expectedOrder = Arrays.asList("a.key", "test.key1", "test.key2");
-            assertEquals(keys, expectedOrder, "Keys should be in alphabetical order");
-            
-            Reporter.log("Property sorting test passed successfully", LogLevel.INFO_GREEN);
+            assertEquals(keys.get(1), "test.key1");
+            assertEquals(keys.get(2), "test.key2");
         } catch (AssertionError e) {
             Reporter.log("Property sorting test failed: ", LogLevel.ERROR, e.getMessage());
             throw e;

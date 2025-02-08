@@ -256,4 +256,5 @@ public class CSVHelperTests extends NonBDDSetup {
         assertTrue(data.get(0).containsKey("full_name"));
         assertEquals(data.get(0).get("full_name"), "John");
     }
+
 }

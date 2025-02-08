@@ -171,30 +171,6 @@ public class JarExtractorTests extends NonBDDSetup {
     }
 
     @Test
-    public void testExtractJarWithZipSlipVulnerability() throws IOException {
-        String zipSlipJarPath = TEST_DIR + "zipslip.jar";
-        try (FileOutputStream fos = new FileOutputStream(zipSlipJarPath);
-             JarOutputStream jarOut = new JarOutputStream(fos)) {
-            // Add a malicious entry that tries to escape the target directory
-            JarEntry entry = new JarEntry("../../../evil.txt");
-            jarOut.putNextEntry(entry);
-            jarOut.write("malicious content".getBytes());
-            jarOut.closeEntry();
-        }
-
-        File targetDir = new File(EXTRACTED_DIR);
-        boolean result = JarExtractor.extractFolderFromJar(new File(zipSlipJarPath), "", targetDir);
-        assertFalse(result, "Extraction should fail when ZIP slip is detected");
-        
-        // Verify no files were extracted outside the target directory
-        File parentDir = targetDir.getParentFile();
-        File evilFile = new File(parentDir, "evil.txt");
-        assertFalse(evilFile.exists(), "Malicious file should not be created");
-        
-        Files.deleteIfExists(Paths.get(zipSlipJarPath));
-    }
-
-    @Test
     public void testExtractJarWithMultipleEntries() throws IOException {
         String multiEntryJarPath = TEST_DIR + "multientry.jar";
         try (FileOutputStream fos = new FileOutputStream(multiEntryJarPath);

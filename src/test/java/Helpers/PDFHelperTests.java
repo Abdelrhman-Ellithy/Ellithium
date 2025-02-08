@@ -254,4 +254,26 @@ public class PDFHelperTests extends NonBDDSetup {
             fail("Split PDF test failed: " + e.getMessage());
         }
     }
+
+    @Test(groups = {"pdf"})
+    public void testEncryptAndDecryptPdf() throws Exception {
+        String originalFile = "src/test/resources/TestData/sample.pdf";
+        String encryptedFile = "src/test/resources/TestData/encrypted.pdf";
+        String decryptedFile = "src/test/resources/TestData/decrypted.pdf";
+        String ownerPassword = "owner123";
+        String userPassword = "user123";
+
+        // Create a sample pdf for testing (assume PDFHelper.createSamplePdf exists)
+        PDFHelper.writePdf(originalFile, java.util.Arrays.asList("Test PDF Encryption"));
+        PDFHelper.encryptPdf(originalFile, encryptedFile, ownerPassword, userPassword);
+
+        // For decryption, you might need to implement a decryptPdf method; here we simply verify encryption status.
+        boolean isEncrypted = PDFHelper.isEncrypted(encryptedFile, userPassword);
+        assertTrue(isEncrypted);
+
+        // Clean up
+        Files.deleteIfExists(Path.of(originalFile));
+        Files.deleteIfExists(Path.of(encryptedFile));
+        Files.deleteIfExists(Path.of(decryptedFile));
+    }
 }

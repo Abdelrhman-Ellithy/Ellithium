@@ -44,7 +44,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run Helper Tests
-        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=tests -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-Basic-Tests:
     runs-on: macos-latest
@@ -200,4 +200,4 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run API Tests
-        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=tests -DthreadCount=5 -DdataProviderThreadCount=5

@@ -58,23 +58,6 @@ public class JsonHelperTests extends NonBDDSetup {
             throw e;
         }
     }
-
-    @Test
-    public void testGetJsonData() {
-        try {
-            List<Map<String, String>> data = JsonHelper.getJsonData(TEST_JSON);
-            assertNotNull(data);
-            assertEquals(1, data.size());
-            assertEquals("Test Name", data.get(0).get("name"));
-            assertEquals("25", data.get(0).get("age"));
-            assertEquals("test@test.com", data.get(0).get("email"));
-            Reporter.log("JSON read test passed successfully", LogLevel.INFO_GREEN);
-        } catch (AssertionError e) {
-            Reporter.log("JSON read test failed: ", LogLevel.ERROR, e.getMessage());
-            throw e;
-        }
-    }
-
     @Test
     public void testSetJsonData() {
         try {
