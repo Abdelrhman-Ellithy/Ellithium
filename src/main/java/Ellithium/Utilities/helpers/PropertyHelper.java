@@ -11,6 +11,50 @@ import java.util.*;
 
 public class PropertyHelper {
 
+    private static final Object LOCK = new Object();
+
+    private static class LinkedProperties extends Properties {
+        private static final long serialVersionUID = 1L;
+        private final LinkedHashSet<Object> keys = new LinkedHashSet<>();
+
+        @Override
+        public synchronized Enumeration<Object> keys() {
+            return Collections.enumeration(keys);
+        }
+
+        @Override
+        public synchronized Object put(Object key, Object value) {
+            keys.add(key);
+            return super.put(key, value);
+        }
+
+        @Override
+        public synchronized Object remove(Object key) {
+            keys.remove(key);
+            return super.remove(key);
+        }
+
+        @Override
+        public synchronized void clear() {
+            keys.clear();
+            super.clear();
+        }
+
+        @Override
+        public Set<Object> keySet() {
+            return new LinkedHashSet<>(keys);
+        }
+
+        @Override
+        public Set<String> stringPropertyNames() {
+            Set<String> names = new LinkedHashSet<>();
+            for (Object key : keys) {
+                names.add((String) key);
+            }
+            return names;
+        }
+    }
+
     private static void ensureFileExists(String filePath) throws IOException {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -23,7 +67,8 @@ public class PropertyHelper {
     }
 
     private static Properties loadProperties(String filePath) throws IOException {
-        Properties prop = new Properties();
+        // Use LinkedProperties to preserve key order
+        Properties prop = new LinkedProperties();
         ensureFileExists(filePath);
         try (FileInputStream fis = new FileInputStream(filePath)) {
             prop.load(fis);
@@ -49,14 +94,16 @@ public class PropertyHelper {
     }
 
     public static void setDataToProperties(String filePath, String key, String value) {
-        try {
-            Properties prop = loadProperties(filePath);
-            prop.setProperty(key, value);
-            saveProperties(filePath, prop);
-            log("Successfully updated property [" + key + "] in file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to update property file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (LOCK) {
+            try {
+                Properties prop = loadProperties(filePath);
+                prop.setProperty(key, value);
+                saveProperties(filePath, prop);
+                log("Successfully updated property [" + key + "] in file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to update property file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -303,56 +350,33 @@ public class PropertyHelper {
     }
 
     public static void sortPropertiesByKey(String filePath) {
-        try {
-            // Load original properties
-            Properties originalProp = loadProperties(filePath);
-            
-            // Create sorted map to maintain order
-            TreeMap<String, String> sortedMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            
-            // Transfer properties to sorted map
-            for (String key : originalProp.stringPropertyNames()) {
-                sortedMap.put(key, originalProp.getProperty(key));
+        synchronized (LOCK) {
+            try {
+                Properties original = loadProperties(filePath);
+                
+                // Create a sorted list of keys
+                List<String> sortedKeys = new ArrayList<>(original.stringPropertyNames());
+                Collections.sort(sortedKeys); // Natural string sorting
+                
+                // Create new properties preserving order
+                LinkedProperties sortedProps = new LinkedProperties();
+                
+                // Add properties in sorted order
+                for (String key : sortedKeys) {
+                    sortedProps.setProperty(key, original.getProperty(key));
+                }
+                
+                // Save properties using UTF-8 encoding to maintain order
+                try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
+                    sortedProps.store(writer, null);
+                }
+                
+                log("Successfully sorted properties by key: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to sort properties: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
             }
-            
-            // Create new properties and maintain order
-            Properties sortedProp = new Properties() {
-                private static final long serialVersionUID = 1L;
-                
-                @Override
-                public synchronized Enumeration<Object> keys() {
-                    return Collections.enumeration(new ArrayList<>(sortedMap.keySet()));
-                }
-                
-                @Override
-                public Set<Object> keySet() {
-                    return new LinkedHashSet<>(sortedMap.keySet());
-                }
-                
-                @Override
-                public Set<String> stringPropertyNames() {
-                    return new LinkedHashSet<>(sortedMap.keySet());
-                }
-            };
-            
-            // Add properties in sorted order
-            sortedMap.forEach(sortedProp::setProperty);
-            
-            // Save properties using a different approach to maintain order
-            try (Writer writer = new FileWriter(filePath)) {
-                sortedMap.forEach((key, value) -> {
-                    try {
-                        writer.write(key + "=" + value + "\n");
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-            
-            log("Successfully sorted properties by key: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to sort properties: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
 
