@@ -21,10 +21,11 @@ public class JsonHelper {
     // Method to read JSON data and return it as a list of maps
     public static List<Map<String, String>> getJsonData(String filePath) {
         List<Map<String, String>> data = new ArrayList<>();
-        File jsonFile = new File(filePath );
+        File jsonFile = new File(filePath);
 
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
+            return data;
         }
 
         log("Attempting to read JSON data from file: ", LogLevel.INFO_BLUE, filePath);
@@ -32,31 +33,40 @@ public class JsonHelper {
         try (FileReader reader = new FileReader(jsonFile)) {
             JsonElement jsonElement = JsonParser.parseReader(reader);
 
-            if (!jsonElement.isJsonArray()) {
-                Reporter.log("JSON data in file ",LogLevel.ERROR,filePath + " is not an array");
-            }
-
-            JsonArray jsonArray = jsonElement.getAsJsonArray();
-            for (JsonElement element : jsonArray) {
-                JsonObject jsonObject = element.getAsJsonObject();
-                Map<String, String> recordMap = new HashMap<>();
-
-                for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                    recordMap.put(entry.getKey(), entry.getValue().getAsString());
+            if (jsonElement.isJsonArray()) {
+                // Handle JSON array
+                JsonArray jsonArray = jsonElement.getAsJsonArray();
+                for (JsonElement element : jsonArray) {
+                    if (element.isJsonObject()) {
+                        data.add(convertJsonObjectToMap(element.getAsJsonObject()));
+                    }
                 }
-                data.add(recordMap);
+            } else if (jsonElement.isJsonObject()) {
+                // Handle single JSON object
+                data.add(convertJsonObjectToMap(jsonElement.getAsJsonObject()));
+            } else {
+                Reporter.log("JSON data in file is neither an array nor an object", LogLevel.ERROR, filePath);
             }
-            log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
 
-        } catch (FileNotFoundException e) {
-            log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
-            throw new RuntimeException(e);
+            log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
         return data;
+    }
+
+    private static Map<String, String> convertJsonObjectToMap(JsonObject jsonObject) {
+        Map<String, String> recordMap = new HashMap<>();
+        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+            JsonElement value = entry.getValue();
+            if (value.isJsonPrimitive()) {
+                recordMap.put(entry.getKey(), value.getAsString());
+            } else {
+                recordMap.put(entry.getKey(), value.toString());
+            }
+        }
+        return recordMap;
     }
 
     // Method to write a list of maps as JSON data

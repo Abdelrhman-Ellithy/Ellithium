@@ -5,13 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   UI-Basic-Tests:
     runs-on: macos-latest
     strategy:
       matrix:
-        java-version: [21]
+        java-version: [21, 17]
     steps:
       - uses: actions/checkout@v4
       
@@ -47,6 +48,7 @@ jobs:
         run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-Actions-Tests:
+    needs: UI-Basic-Tests
     runs-on: macos-latest
     strategy:
       matrix:
@@ -86,6 +88,7 @@ jobs:
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-BDD-Tests:
+    needs: UI-Actions-Tests
     runs-on: macos-latest
     strategy:
       matrix:
@@ -125,6 +128,7 @@ jobs:
         run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods -DthreadCount=5 -DdataProviderThreadCount=5
 
   API-Tests:
+    needs: UI-BDD-Tests
     runs-on: macos-latest
     strategy:
       matrix:
@@ -162,3 +166,43 @@ jobs:
 
       - name: Run API Tests
         run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
+
+  Helper-Tests:
+    needs: API-Tests
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        java-version: [21]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'zulu'
+      
+      - name: Maven Dependency Cache
+        uses: actions/cache@v3
+        id: maven-cache
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/Ellithium
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Download Dependencies
+        if: steps.maven-cache.outputs.cache-hit != 'true'
+        run: mvn dependency:go-offline
+      
+      - name: Clean up previous test output
+        run: |
+          rm -rf Test-Output/Reports/*
+          rm -rf Test-Output/Logs/*
+          rm -rf Test-Output/ScreenShots/Failed/*
+          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
+
+      - name: Run Helper Tests
+        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
