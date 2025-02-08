@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="Framework Test" verbose="1" data-provider-thread-count="5" parallel="tests" >
-    <test name="Web UI NonBDD Test Chrome" >
+    <test name="Web UI NonBDD Test Chrome Basic" >
         <classes>
             <class name="Tests.loginTests"/>
             <class name="Tests.AmazonSearchTests"/>
@@ -8,7 +8,7 @@
             <class name="Tests.HorizontalSliderTests"/>
         </classes>
     </test>
-    <test name="Web UI NonBDD Test Chrome" >
+    <test name="Web UI NonBDD Test Chrome Actions" >
         <classes>
             <class name="Tests.DropDownTests"/>
             <class name="Tests.DragDropTests"/>
