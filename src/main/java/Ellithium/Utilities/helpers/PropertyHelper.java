@@ -10,130 +10,137 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class PropertyHelper {
-    public static String getDataFromProperties(String filePath, String key) {
-        Properties prop = new Properties();
-        try {
-            prop.load(new FileInputStream(filePath ));
-            log("Successfully loaded properties file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to load properties file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
-        }
-        return prop.getProperty(key);
-    }
-    // Method to set data into a properties file with a key-value pair
-    public static void setDataToProperties(String filePath, String key, String value) {
-        Properties prop = new Properties();
-        try (FileOutputStream out = new FileOutputStream(filePath )) {
-            prop.setProperty(key, value);
-            prop.store(out, null);
-            log("Successfully updated properties file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to write properties file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
+
+    private static void ensureFileExists(String filePath) throws IOException {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+            }
+            file.createNewFile();
         }
     }
-    // Method to retrieve all key-value pairs from a properties file
-    public static Properties getAllProperties(String filePath) {
+
+    private static Properties loadProperties(String filePath) throws IOException {
         Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath )) {
-            prop.load(input);
-            log("Successfully loaded all properties from file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to load properties file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        ensureFileExists(filePath);
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            prop.load(fis);
         }
         return prop;
     }
-    // Method to remove a specific key from a properties file
-    public static void removeKeyFromProperties(String filePath, String key) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath );
-             FileOutputStream output = new FileOutputStream(filePath )) {
 
-            prop.load(input);
+    private static void saveProperties(String filePath, Properties prop) throws IOException {
+        ensureFileExists(filePath);
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+            prop.store(fos, null);
+        }
+    }
+
+    public static String getDataFromProperties(String filePath, String key) {
+        try {
+            Properties prop = loadProperties(filePath);
+            return prop.getProperty(key);
+        } catch (IOException e) {
+            log("Error accessing properties file: ", LogLevel.ERROR, e.getMessage());
+            return null;
+        }
+    }
+
+    public static void setDataToProperties(String filePath, String key, String value) {
+        try {
+            Properties prop = loadProperties(filePath);
+            prop.setProperty(key, value);
+            saveProperties(filePath, prop);
+            log("Successfully updated property [" + key + "] in file: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            log("Failed to update property file: ", LogLevel.ERROR, filePath);
+            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        }
+    }
+
+    public static Properties getAllProperties(String filePath) {
+        try {
+            return loadProperties(filePath);
+        } catch (IOException e) {
+            log("Failed to load properties file: ", LogLevel.ERROR, filePath);
+            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return new Properties();
+        }
+    }
+
+    public static void removeKeyFromProperties(String filePath, String key) {
+        try {
+            Properties prop = loadProperties(filePath);
             if (prop.containsKey(key)) {
                 prop.remove(key);
-                prop.store(output, null);
+                saveProperties(filePath, prop);
                 log("Successfully removed key: " + key + " from properties file: ", LogLevel.INFO_GREEN, filePath);
             } else {
                 log("Key not found in properties file: ", LogLevel.WARN, key);
             }
-
         } catch (IOException e) {
             log("Failed to remove key from properties file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
-    // Method to check if a specific key exists in a properties file
+
     public static boolean keyExists(String filePath, String key) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath )) {
-            prop.load(input);
+        try {
+            Properties prop = loadProperties(filePath);
             boolean exists = prop.containsKey(key);
             log("Checked key existence: " + key + " in file: ", LogLevel.INFO_GREEN, filePath);
             return exists;
         } catch (IOException e) {
             log("Failed to check key in properties file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return false;
         }
-        return false;
     }
-    // Method to retrieve a key's value or return a default value if the key is not found
+
     public static String getOrDefault(String filePath, String key, String defaultValue) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath )) {
-            prop.load(input);
+        try {
+            Properties prop = loadProperties(filePath);
             String value = prop.getProperty(key, defaultValue);
             log("Fetched key: " + key + " with value (or default): " + value + " from file: ", LogLevel.INFO_GREEN, filePath);
             return value;
         } catch (IOException e) {
             log("Failed to fetch key from properties file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return defaultValue;
         }
-        return defaultValue;
     }
-    // Method to update multiple properties at once
+
     public static void updateMultipleProperties(String filePath, Properties properties) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath );
-             FileOutputStream output = new FileOutputStream(filePath )) {
-
-            prop.load(input);
+        try {
+            Properties prop = loadProperties(filePath);
             properties.forEach((key, value) -> prop.setProperty(key.toString(), value.toString()));
-            prop.store(output, null);
-
+            saveProperties(filePath, prop);
             log("Successfully updated multiple properties in file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to update multiple properties in file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
-    // Method to add or update properties from a Map
+
     public static void addOrUpdatePropertiesFromMap(String filePath, Map<String, String> map) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath );
-             FileOutputStream output = new FileOutputStream(filePath )) {
-
-            prop.load(input); // Load existing properties
-            map.forEach(prop::setProperty); // Add or update properties
-            prop.store(output, null); // Save updated properties
-
+        try {
+            Properties prop = loadProperties(filePath);
+            map.forEach(prop::setProperty);
+            saveProperties(filePath, prop);
             log("Successfully added or updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to add or update properties in file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
-    // Method to return properties file as a Map
+
     public static Map<String, String> getPropertiesAsMap(String filePath) {
-        Properties prop = new Properties();
         Map<String, String> map = new HashMap<>();
-
-        try (FileInputStream input = new FileInputStream(filePath )) {
-            prop.load(input); // Load properties file
-            prop.forEach((key, value) -> map.put(key.toString(), value.toString())); // Convert to Map
-
+        try {
+            Properties prop = loadProperties(filePath);
+            prop.forEach((key, value) -> map.put(key.toString(), value.toString()));
             log("Successfully retrieved properties as Map from file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to retrieve properties as Map from file: ", LogLevel.ERROR, filePath);
@@ -141,40 +148,32 @@ public class PropertyHelper {
         }
         return map;
     }
-    // Method to update specific properties in a Map
-    public static void updatePropertiesFromMap(String filePath, Map<String, String> updates) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath );
-             FileOutputStream output = new FileOutputStream(filePath )) {
 
-            prop.load(input); // Load existing properties
+    public static void updatePropertiesFromMap(String filePath, Map<String, String> updates) {
+        try {
+            Properties prop = loadProperties(filePath);
             updates.forEach((key, value) -> {
                 if (prop.containsKey(key)) {
-                    prop.setProperty(key, value); // Update only if the key exists
+                    prop.setProperty(key, value);
                 }
             });
-            prop.store(output, null); // Save updated properties
-
+            saveProperties(filePath, prop);
             log("Successfully updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to update properties in file: ", LogLevel.ERROR, filePath);
             log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
-    // Method to add new properties from a Map
-    public static void addNewPropertiesFromMap(String filePath, Map<String, String> newProperties) {
-        Properties prop = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath );
-             FileOutputStream output = new FileOutputStream(filePath )) {
 
-            prop.load(input); // Load existing properties
+    public static void addNewPropertiesFromMap(String filePath, Map<String, String> newProperties) {
+        try {
+            Properties prop = loadProperties(filePath);
             newProperties.forEach((key, value) -> {
                 if (!prop.containsKey(key)) {
-                    prop.setProperty(key, value); // Add only if the key does not exist
+                    prop.setProperty(key, value);
                 }
             });
-            prop.store(output, null); // Save updated properties
-
+            saveProperties(filePath, prop);
             log("Successfully added new properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to add new properties in file: ", LogLevel.ERROR, filePath);
@@ -182,7 +181,6 @@ public class PropertyHelper {
         }
     }
 
-    // Backup functionality
     public static void backupProperties(String filePath) {
         try {
             Path source = Path.of(filePath);
@@ -195,7 +193,6 @@ public class PropertyHelper {
         }
     }
 
-    // Restore from backup
     public static void restoreFromBackup(String filePath) {
         try {
             Path backup = Path.of(filePath + ".backup");
@@ -212,7 +209,6 @@ public class PropertyHelper {
         }
     }
 
-    // Load properties with specific encoding
     public static Properties loadWithEncoding(String filePath, String encoding) {
         Properties prop = new Properties();
         try (InputStreamReader reader = new InputStreamReader(
@@ -226,7 +222,6 @@ public class PropertyHelper {
         return prop;
     }
 
-    // Save properties with specific encoding
     public static void saveWithEncoding(String filePath, Properties prop, String encoding) {
         try (OutputStreamWriter writer = new OutputStreamWriter(
                 new FileOutputStream(filePath), encoding)) {
@@ -238,13 +233,11 @@ public class PropertyHelper {
         }
     }
 
-    // Compare two properties files
     public static Map<String, String[]> compareProperties(String file1Path, String file2Path) {
         Map<String, String[]> differences = new HashMap<>();
         Properties prop1 = getAllProperties(file1Path);
         Properties prop2 = getAllProperties(file2Path);
 
-        // Check all keys in first file
         for (String key : prop1.stringPropertyNames()) {
             if (!prop2.containsKey(key)) {
                 differences.put(key, new String[]{prop1.getProperty(key), null});
@@ -253,7 +246,6 @@ public class PropertyHelper {
             }
         }
 
-        // Check for keys only in second file
         for (String key : prop2.stringPropertyNames()) {
             if (!prop1.containsKey(key)) {
                 differences.put(key, new String[]{null, prop2.getProperty(key)});
@@ -263,7 +255,6 @@ public class PropertyHelper {
         return differences;
     }
 
-    // Get all keys matching a pattern
     public static Set<String> getKeysMatchingPattern(String filePath, String pattern) {
         Properties prop = getAllProperties(filePath);
         Set<String> matchingKeys = new HashSet<>();
@@ -277,7 +268,6 @@ public class PropertyHelper {
         return matchingKeys;
     }
 
-    // Clear all properties
     public static void clearProperties(String filePath) {
         try (FileOutputStream output = new FileOutputStream(filePath)) {
             Properties prop = new Properties();
@@ -289,13 +279,11 @@ public class PropertyHelper {
         }
     }
 
-    // Count properties
     public static int getPropertyCount(String filePath) {
         Properties prop = getAllProperties(filePath);
         return prop.size();
     }
 
-    // Get all property values containing a specific string
     public static List<String> findValuesContaining(String filePath, String searchStr) {
         Properties prop = getAllProperties(filePath);
         List<String> matchingValues = new ArrayList<>();
@@ -309,26 +297,58 @@ public class PropertyHelper {
         return matchingValues;
     }
 
-    // Validate property value format
     public static boolean validatePropertyValue(String filePath, String key, String regex) {
         String value = getDataFromProperties(filePath, key);
         return value != null && value.matches(regex);
     }
 
-    // Sort properties by key
     public static void sortPropertiesByKey(String filePath) {
-        Properties prop = getAllProperties(filePath);
-        Properties sortedProp = new Properties() {
-            @Override
-            public Set<Object> keySet() {
-                return Collections.unmodifiableSet(new TreeSet<>(super.keySet()));
+        try {
+            // Load original properties
+            Properties originalProp = loadProperties(filePath);
+            
+            // Create sorted map to maintain order
+            TreeMap<String, String> sortedMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            
+            // Transfer properties to sorted map
+            for (String key : originalProp.stringPropertyNames()) {
+                sortedMap.put(key, originalProp.getProperty(key));
             }
-        };
-        
-        prop.forEach(sortedProp::put);
-        
-        try (FileOutputStream output = new FileOutputStream(filePath)) {
-            sortedProp.store(output, null);
+            
+            // Create new properties and maintain order
+            Properties sortedProp = new Properties() {
+                private static final long serialVersionUID = 1L;
+                
+                @Override
+                public synchronized Enumeration<Object> keys() {
+                    return Collections.enumeration(new ArrayList<>(sortedMap.keySet()));
+                }
+                
+                @Override
+                public Set<Object> keySet() {
+                    return new LinkedHashSet<>(sortedMap.keySet());
+                }
+                
+                @Override
+                public Set<String> stringPropertyNames() {
+                    return new LinkedHashSet<>(sortedMap.keySet());
+                }
+            };
+            
+            // Add properties in sorted order
+            sortedMap.forEach(sortedProp::setProperty);
+            
+            // Save properties using a different approach to maintain order
+            try (Writer writer = new FileWriter(filePath)) {
+                sortedMap.forEach((key, value) -> {
+                    try {
+                        writer.write(key + "=" + value + "\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+            
             log("Successfully sorted properties by key: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             log("Failed to sort properties: ", LogLevel.ERROR, filePath);
@@ -336,7 +356,6 @@ public class PropertyHelper {
         }
     }
 
-    // Get properties with values matching a specific pattern
     public static Map<String, String> getPropertiesMatchingValuePattern(String filePath, String pattern) {
         Properties prop = getAllProperties(filePath);
         Map<String, String> matching = new HashMap<>();

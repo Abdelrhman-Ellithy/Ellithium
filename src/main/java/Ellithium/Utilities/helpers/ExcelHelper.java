@@ -164,26 +164,44 @@ public class ExcelHelper {
     }
 
     private static String getCellValueAsString(Cell cell) {
+        if (cell == null) {
+            return "";
+        }
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue();
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     return cell.getDateCellValue().toString();
-                } else {
-                    return String.valueOf(cell.getNumericCellValue());
                 }
+                // Handle numeric values more precisely
+                double value = cell.getNumericCellValue();
+                if (value % 1 == 0) {
+                    // It's a whole number, return without decimal
+                    return String.valueOf((int) value);
+                }
+                return String.valueOf(value);
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
-                return cell.getCellFormula();
-            case BLANK:
-            case _NONE:
-            case ERROR:
+                try {
+                    return String.valueOf(cell.getStringCellValue());
+                } catch (Exception e) {
+                    try {
+                        double formulaValue = cell.getNumericCellValue();
+                        if (formulaValue % 1 == 0) {
+                            return String.valueOf((int) formulaValue);
+                        }
+                        return String.valueOf(formulaValue);
+                    } catch (Exception ex) {
+                        return "";
+                    }
+                }
             default:
                 return "";
         }
     }
+
     public static List<String> readColumn(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -545,6 +563,44 @@ public class ExcelHelper {
         } catch (IOException e) {
             Reporter.log("Error while validating file structure: " + e.getMessage(), LogLevel.ERROR);
             return false;
+        }
+    }
+
+    /**
+     * Check if a sheet is empty
+     */
+    public static boolean isSheetEmpty(String filePath, String sheetName) {
+        try (FileInputStream fis = new FileInputStream(filePath);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                return true;
+            }
+            if (sheet.getPhysicalNumberOfRows() == 0) {
+                return true;
+            }
+            // Check if first row exists and is empty
+            Row firstRow = sheet.getRow(0);
+            return firstRow == null || firstRow.getPhysicalNumberOfCells() == 0;
+        } catch (IOException e) {
+            Reporter.log("Error checking if sheet is empty: ", LogLevel.ERROR, e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Create a new sheet in an Excel file
+     */
+    public static void createSheet(String filePath, String sheetName) {
+        try (FileInputStream fis = new FileInputStream(filePath);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+            workbook.createSheet(sheetName);
+            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                workbook.write(fos);
+            }
+            Reporter.log("Successfully created sheet: ", LogLevel.INFO_GREEN, sheetName);
+        } catch (IOException e) {
+            Reporter.log("Error creating sheet: ", LogLevel.ERROR, e.getMessage());
         }
     }
 }

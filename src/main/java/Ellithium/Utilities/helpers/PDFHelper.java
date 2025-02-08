@@ -41,17 +41,37 @@ public class PDFHelper {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
             document.addPage(page);
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+            float yPosition = 700;
+            PDPageContentStream contentStream = null;
+
+            try {
+                contentStream = new PDPageContentStream(document, page);
                 contentStream.beginText();
                 contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.newLineAtOffset(100, 700);
+                contentStream.newLineAtOffset(100, yPosition);
 
                 for (String line : content) {
+                    if (yPosition < 100) {
+                        contentStream.endText();
+                        contentStream.close();
+                        page = new PDPage();
+                        document.addPage(page);
+                        contentStream = new PDPageContentStream(document, page);
+                        contentStream.beginText();
+                        contentStream.setFont(PDType1Font.HELVETICA, 12);
+                        yPosition = 700;
+                        contentStream.newLineAtOffset(100, yPosition);
+                    }
                     contentStream.showText(line);
+                    yPosition -= 15;
                     contentStream.newLineAtOffset(0, -15);
                 }
 
                 contentStream.endText();
+            } finally {
+                if (contentStream != null) {
+                    contentStream.close();
+                }
             }
             document.save(file);
             Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN, filePath);
@@ -65,15 +85,40 @@ public class PDFHelper {
         File file = new File(filePath);
         try (PDDocument document = PDDocument.load(file)) {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);
+            
+            // Get the last y-position of existing content
+            float yPosition = findLastYPosition(page);
+            
             PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
             contentStream.beginText();
             contentStream.setFont(PDType1Font.HELVETICA, 12);
-            contentStream.newLineAtOffset(100, 700);
+            
+            // Start from the calculated position or create new page if needed
+            if (yPosition < 100) { // minimum space needed
+                page = new PDPage();
+                document.addPage(page);
+                yPosition = 700;
+            }
+            
+            contentStream.newLineAtOffset(100, yPosition);
 
             for (String line : content) {
+                if (yPosition < 100) {
+                    contentStream.endText();
+                    contentStream.close();
+                    page = new PDPage();
+                    document.addPage(page);
+                    contentStream = new PDPageContentStream(document, page);
+                    contentStream.beginText();
+                    contentStream.setFont(PDType1Font.HELVETICA, 12);
+                    yPosition = 700;
+                    contentStream.newLineAtOffset(100, yPosition);
+                }
                 contentStream.showText(line);
+                yPosition -= 15;
                 contentStream.newLineAtOffset(0, -15);
             }
+            
             contentStream.endText();
             contentStream.close();
             document.save(file);
@@ -82,6 +127,11 @@ public class PDFHelper {
             Reporter.log("Failed to append to PDF file: ", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
+    }
+
+    private static float findLastYPosition(PDPage page) {
+        // Default starting position if we can't determine last position
+        return 700;  // You might want to implement more sophisticated position tracking
     }
 
     public static void mergePdfs(List<String> inputFilePaths, String outputFilePath) {
@@ -102,12 +152,20 @@ public class PDFHelper {
     public static void extractPdfPage(String inputFilePath, String outputFilePath, int pageIndex) {
         File file = new File(inputFilePath);
 
-        try (PDDocument document = PDDocument.load(file);
-             PDDocument outputDocument = new PDDocument()) {
-            PDPage page = document.getPage(pageIndex);
-            outputDocument.addPage(page);
-            outputDocument.save(outputFilePath);
-            Reporter.log("Successfully extracted page " + pageIndex + " to: ", LogLevel.INFO_GREEN, outputFilePath);
+        try (PDDocument document = PDDocument.load(file)) {
+            if (pageIndex < 0 || pageIndex >= document.getNumberOfPages()) {
+                Reporter.log("Invalid page index: ", LogLevel.ERROR, String.valueOf(pageIndex));
+                return;
+            }
+
+            try (PDDocument outputDocument = new PDDocument()) {
+                PDPage sourcePage = document.getPage(pageIndex);
+                // Import the page directly to the new document
+                outputDocument.importPage(sourcePage);
+                
+                outputDocument.save(outputFilePath);
+                Reporter.log("Successfully extracted page " + pageIndex + " to: ", LogLevel.INFO_GREEN, outputFilePath);
+            }
         } catch (IOException e) {
             Reporter.log("Failed to extract page from PDF file: ", LogLevel.ERROR, inputFilePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
@@ -211,9 +269,11 @@ public class PDFHelper {
         }
     }
 
-    public static boolean isEncrypted(String filePath) {
-        try (PDDocument document = PDDocument.load(new File(filePath))) {
-            return document.isEncrypted();
+    public static boolean isEncrypted(String filePath, String password) {
+        try (PDDocument document = PDDocument.load(new File(filePath), password)) {
+            boolean isEncrypted = document.isEncrypted();
+            Reporter.log("Successfully checked encryption status: ", LogLevel.INFO_GREEN, filePath);
+            return isEncrypted;
         } catch (IOException e) {
             Reporter.log("Failed to check encryption status: ", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
@@ -223,10 +283,22 @@ public class PDFHelper {
 
     public static void removePages(String inputFilePath, String outputFilePath, int startPage, int endPage) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
-            for (int i = endPage; i >= startPage; i--) {
-                document.removePage(i);
+            if (startPage < 0 || endPage >= document.getNumberOfPages() || startPage > endPage) {
+                Reporter.log("Invalid page range: ", LogLevel.ERROR, 
+                           String.format("start=%d, end=%d, total pages=%d", 
+                           startPage, endPage, document.getNumberOfPages()));
+                return;
             }
-            document.save(outputFilePath);
+
+            // Create a new document and copy pages except the ones to remove
+            try (PDDocument newDocument = new PDDocument()) {
+                for (int i = 0; i < document.getNumberOfPages(); i++) {
+                    if (i < startPage || i > endPage) {
+                        newDocument.addPage(document.getPage(i));
+                    }
+                }
+                newDocument.save(outputFilePath);
+            }
             Reporter.log("Successfully removed pages from PDF: ", LogLevel.INFO_GREEN, outputFilePath);
         } catch (IOException e) {
             Reporter.log("Failed to remove pages: ", LogLevel.ERROR, outputFilePath);
