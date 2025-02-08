@@ -109,7 +109,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>1.1.1</Ellithiumversion>
+    <Ellithiumversion>2.0.0</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>
@@ -264,14 +264,14 @@ public class BaseStepDefinitions {
     @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
 ```
 
-### Option 2: NonBDD Mode
+### Option 2: UI_NonBDD Mode
 - **[Demo-Project](https://github.com/Abdelrhman-Ellithy/The-Internet-Herokuapp) for setup use after follow the following steps**
 ### Step 1: Create a BaseTest Class
 
-- **Create a Tests Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
+- **Create a UI_BDD Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
 
 ```java
-package Tests;
+package UI_BDD;
 
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.base.NonBDDSetup;
@@ -285,19 +285,19 @@ public class BaseTests extends NonBDDSetup {
     @BeforeClass
     public void Setup() {
         // for Local Machine Web Execution
-        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
 
         // for Remote Machine Web Execution
-        driver= DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome,new URL("http://localhost:4723"),capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        driver = DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome, new URL("http://localhost:4723"), capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
 
         // for Android Mobile
-        androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://localhost:4723"),options);
-        
+        androidDriver = DriverFactory.getNewMobileDriver(MobileDriverType.Android, new URL("http://localhost:4723"), options);
+
         // for IOS Mobile
-        iosDriver=DriverFactory.getNewDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
-        
+        iosDriver = DriverFactory.getNewDriver(MobileDriverType.IOS, new URL("http://localhost:4723"), options);
+
         // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
-       SQLDatabaseProvider db=new SQLDatabaseProvider(
+        SQLDatabaseProvider db = new SQLDatabaseProvider(
                 SQLDBType.MY_SQL,
                 username,
                 password,
@@ -305,14 +305,15 @@ public class BaseTests extends NonBDDSetup {
                 port,
                 dbName);
     }
-        // for DB SQL Provider [SQLite]
-        SQLDatabaseProvider SQLitedb= SQLDatabaseProvider( SQLDBType.SQLITE, pathToSQLiteDataBase);
 
-        // for NoSQL DB Provider
-        CouchbaseDatabaseProvider couchDB=CouchbaseDatabaseProvider(connectionString,  username,  password,  bucketName);
-        MongoDatabaseProvider mongoDB=MongoDatabaseProvider(String connectionString, String dbName);
-        RedisDatabaseProvider redisDB=RedisDatabaseProvider(String connectionString);
-    }
+    // for DB SQL Provider [SQLite]
+    SQLDatabaseProvider SQLitedb = SQLDatabaseProvider(SQLDBType.SQLITE, pathToSQLiteDataBase);
+
+    // for NoSQL DB Provider
+    CouchbaseDatabaseProvider couchDB = CouchbaseDatabaseProvider(connectionString, username, password, bucketName);
+    MongoDatabaseProvider mongoDB = MongoDatabaseProvider(String connectionString, String dbName);
+    RedisDatabaseProvider redisDB = RedisDatabaseProvider(String connectionString);
+}
 
     @AfterClass
     public void tareDown() {
@@ -326,7 +327,8 @@ public class BaseTests extends NonBDDSetup {
 ### Step 2: Create a another Test Class and extend from the BaseTests class
 
 ```java
-package Tests;
+package UI_BDD;
+
 import Base.BaseTests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Pages.LoginPage;
@@ -334,31 +336,34 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class loginTests extends BaseTests {
-    @DataProvider(name= "invalidLoginData")
-            Object[][] getInvalidTestData(){
+    @DataProvider(name = "invalidLoginData")
+    Object[][] getInvalidTestData() {
         return new Object[][]{
-                {"tomsmith","hamada","Your password is invalid"},
-                {"hamada","SuperSecretPassword!","Your username is invalid"}
+                {"tomsmith", "hamada", "Your password is invalid"},
+                {"hamada", "SuperSecretPassword!", "Your username is invalid"}
         };
     }
+
     LoginPage login;
+
     @Test(priority = 1, dataProvider = "invalidLoginData")
-    public void invalidLogin(String username, String password, String expectedMessage){
-        login =home.clickFormAuthentication();
+    public void invalidLogin(String username, String password, String expectedMessage) {
+        login = home.clickFormAuthentication();
         login.setUserName(username);
         login.setPassword(password);
-        var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
+        var secureAreaPage = login.clickLoginBtn();
+        String actualMessage = secureAreaPage.getLoginMassega();
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
+
     @Test(priority = 2)
     public void validLogin() {
         login = home.clickFormAuthentication();
         login.setPassword("SuperSecretPassword!");
         login.setUserName("tomsmith");
-        var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
-        String expectedMessage="You logged into a secure area!";
+        var secureAreaPage = login.clickLoginBtn();
+        String actualMessage = secureAreaPage.getLoginMassega();
+        String expectedMessage = "You logged into a secure area!";
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
 }
