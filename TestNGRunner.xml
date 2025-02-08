@@ -2,23 +2,29 @@
 <suite name="Framework Test" verbose="1" data-provider-thread-count="5" parallel="tests" >
     <test name="Web UI NonBDD Test Chrome Basic" >
         <classes>
-            <class name="Tests.loginTests"/>
-            <class name="Tests.AmazonSearchTests"/>
-            <class name="Tests.AlertsTests"/>
-            <class name="Tests.HorizontalSliderTests"/>
+            <class name="UI_NonBDD.loginTests"/>
+            <class name="UI_NonBDD.AmazonSearchTests"/>
+            <class name="UI_NonBDD.AlertsTests"/>
+            <class name="UI_NonBDD.HorizontalSliderTests"/>
         </classes>
     </test>
     <test name="Web UI NonBDD Test Chrome Actions" >
         <classes>
-            <class name="Tests.DropDownTests"/>
-            <class name="Tests.DragDropTests"/>
-            <class name="Tests.HoverPageTests"></class>
-            <class name="Tests.DynamicLoadingPageTests"/>
+            <class name="UI_NonBDD.DropDownTests"/>
+            <class name="UI_NonBDD.DragDropTests"/>
+            <class name="UI_NonBDD.HoverPageTests"></class>
+            <class name="UI_NonBDD.DynamicLoadingPageTests"/>
         </classes>
     </test>
-    <test name="Restful Booker API Tests" >
+    <test name="Web UI BDD Test Chrome Actions" >
         <classes>
-            <class name="Tests.BookingAPITests"/>
+            <class name="Runner.TestRunner"/>
+        </classes>
+    </test>
+    <test name="Restful Booker API UI_BDD" >
+        <classes>
+            <class name="APIs.BookingAPITests"/>
+            <class name="APIs.ContactListAPITests"/>
         </classes>
     </test>
 </suite>

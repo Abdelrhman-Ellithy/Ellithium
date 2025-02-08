@@ -1,4 +1,4 @@
-package Tests;
+package APIs;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.base.NonBDDSetup;

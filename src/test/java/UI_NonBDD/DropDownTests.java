@@ -1,4 +1,4 @@
-package Tests;
+package UI_NonBDD;
 
 import Base.BaseTests;
 import Pages.DropDownPage;

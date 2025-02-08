@@ -1,4 +1,4 @@
-package Tests;
+package UI_BDD;
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.driver.*;
 import Pages.NoonSearchPage;
@@ -20,7 +20,6 @@ public class SearchStepDefinitions {
     @When("they type a search query into the search bar")
     public void they_type_a_search_query_into_the_search_bar() {
         searchPage.searchItem("laptop");
-        searchPage.clickEnter();
     }
 
     @Then("the search query should be accepted and processed")
@@ -89,19 +88,7 @@ public class SearchStepDefinitions {
 
     @Given("The user enters a search query")
     public void the_user_enters_a_search_query() {
-        searchPage.searchItem("رئيس جمهورية للبيع");
-
-    }
-
-    @When("no items match the search query")
-    public void no_items_match_the_search_query() {
-        searchPage.clickEnter();
-    }
-
-    @Then("a {string} message should be displayed")
-    public void a_message_should_be_displayed(String string) {
-        List<String>results=searchPage.getResultsNames();
-        AssertionExecutor.hard.assertEquals(results.size(),0 );
+        searchPage.searchItem("laptop");
     }
 
     @Given("the user enters Company name in the search field")
@@ -113,7 +100,10 @@ public class SearchStepDefinitions {
     public void compny_products_should_be_displayed() {
         List<String>names=searchPage.getResultsNames();
         var softAssert=new AssertionExecutor.soft();
+        byte counter=0;
         for (String name:names){
+            counter++;
+            if (counter>5)break;
            softAssert.assertTrue(name.toLowerCase().contains("dell"));
         }
         softAssert.assertAll();

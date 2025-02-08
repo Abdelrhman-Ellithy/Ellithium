@@ -1,10 +1,11 @@
-package Tests;
-import Base.BaseRemote;
+package UI_NonBDD;
+import Base.BaseTests;
+import Ellithium.Utilities.assertion.AssertionExecutor;
 import Pages.LoginPage;
-import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-public class loginTestsRemote extends BaseRemote {
+
+public class loginTests extends BaseTests {
     @DataProvider(name= "invalidLoginData")
             Object[][] getInvalidTestData(){
         return new Object[][]{
@@ -20,7 +21,7 @@ public class loginTestsRemote extends BaseRemote {
         login.setPassword(password);
         var secureAreaPage=login.clickLoginBtn();
         String actualMessage=secureAreaPage.getLoginMassega();
-        Assert.assertTrue(actualMessage.contains(expectedMessage));
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
     @Test(priority = 2)
     public void validLogin() {
@@ -30,6 +31,6 @@ public class loginTestsRemote extends BaseRemote {
         var secureAreaPage=login.clickLoginBtn();
         String actualMessage=secureAreaPage.getLoginMassega();
         String expectedMessage="You logged into a secure area!";
-        Assert.assertTrue(actualMessage.contains(expectedMessage));
+        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
 }
