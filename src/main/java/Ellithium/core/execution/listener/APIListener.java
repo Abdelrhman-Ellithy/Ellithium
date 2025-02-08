@@ -7,8 +7,57 @@ import io.restassured.filter.FilterContext;
 import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class APIListener implements Filter {
+    
+    private static final Set<String> SENSITIVE_FIELDS = new HashSet<>(Arrays.asList(
+            "password", "token", "authorization", "credit_card", "ssn", "email",
+            "phone", "address", "pin", "secret", "key", "access_token", "refresh_token"
+    ));
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("\\d{10,}");
+    private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile("\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}");
+
+    private String obfuscateData(String input) {
+        if (input == null) return null;
+        
+        // Obfuscate JSON content
+        if (input.trim().startsWith("{")) {
+            try {
+                JSONObject json = new JSONObject(input);
+                return obfuscateJson(json).toString();
+            } catch (Exception e) {
+                // Not valid JSON, continue with regular obfuscation
+            }
+        }
+
+        // Obfuscate patterns
+        String result = input;
+        result = EMAIL_PATTERN.matcher(result).replaceAll("****@****.***");
+        result = PHONE_PATTERN.matcher(result).replaceAll("**********");
+        result = CREDIT_CARD_PATTERN.matcher(result).replaceAll("****-****-****-****");
+        
+        return result;
+    }
+
+    private JSONObject obfuscateJson(JSONObject json) {
+        JSONObject result = new JSONObject(json.toString());
+        for (String key : result.keySet()) {
+            if (SENSITIVE_FIELDS.contains(key.toLowerCase())) {
+                result.put(key, "********");
+            } else if (result.get(key) instanceof JSONObject) {
+                result.put(key, obfuscateJson((JSONObject) result.get(key)));
+            }
+        }
+        return result;
+    }
 
     @Override
     public Response filter(FilterableRequestSpecification requestSpec,
@@ -19,9 +68,9 @@ public class APIListener implements Filter {
             Reporter.log("Request Method: ", LogLevel.INFO_BLUE, requestSpec.getMethod());
             Reporter.log("Request URI: ", LogLevel.INFO_BLUE, requestSpec.getURI());
             Reporter.log("Request Headers: ", LogLevel.INFO_BLUE,
-                    requestSpec.getHeaders() != null ? requestSpec.getHeaders().toString() : "No Headers");
+                    obfuscateData(requestSpec.getHeaders() != null ? requestSpec.getHeaders().toString() : "No Headers"));
             Reporter.log("Request Parameters: ", LogLevel.INFO_BLUE,
-                    requestSpec.getQueryParams() != null ? requestSpec.getQueryParams().toString() : "No Query Params");
+                    obfuscateData(requestSpec.getQueryParams() != null ? requestSpec.getQueryParams().toString() : "No Query Params"));
             Reporter.log("Request Base Path: ", LogLevel.INFO_BLUE,
                     requestSpec.getBasePath() != null ? requestSpec.getBasePath() : "No Base Path");
             Reporter.log("Request Proxy Specification: ", LogLevel.INFO_BLUE,
@@ -29,40 +78,30 @@ public class APIListener implements Filter {
             Reporter.log("Request ContentType: ", LogLevel.INFO_BLUE,
                     requestSpec.getContentType() != null ? requestSpec.getContentType() : "No Content Type");
             Reporter.log("Request Cookies: ", LogLevel.INFO_BLUE,
-                    requestSpec.getCookies() != null ? requestSpec.getCookies().toString() : "No Cookies");
+                    obfuscateData(requestSpec.getCookies() != null ? requestSpec.getCookies().toString() : "No Cookies"));
             Reporter.log("Request Params: ", LogLevel.INFO_BLUE,
-                    requestSpec.getRequestParams() != null ? requestSpec.getRequestParams().toString() : "No Request Params");
+                    obfuscateData(requestSpec.getRequestParams() != null ? requestSpec.getRequestParams().toString() : "No Request Params"));
             Reporter.log("Request Body: ", LogLevel.INFO_BLUE,
-                    requestSpec.getBody() != null ? requestSpec.getBody().toString() : "No Body");
-            Reporter.log("Response Status Code: ", LogLevel.INFO_BLUE,
-                    String.valueOf(response.getStatusCode()));
-            Reporter.log("Response ContentType: ", LogLevel.INFO_BLUE,
-                    response.getContentType() != null ? response.getContentType() : "No Content Type");
+                    obfuscateData(requestSpec.getBody() != null ? requestSpec.getBody().toString() : "No Body"));
+            
+            Reporter.log("Response Status Code: ", LogLevel.INFO_BLUE, String.valueOf(response.getStatusCode()));
+            Reporter.log("Response ContentType: ", LogLevel.INFO_BLUE, response.getContentType());
             Reporter.log("Response Status Line: ", LogLevel.INFO_BLUE, response.getStatusLine());
-            Reporter.log("Detailed Response Cookies: ", LogLevel.INFO_BLUE, response.detailedCookies().toString());
+            Reporter.log("Detailed Response Cookies: ", LogLevel.INFO_BLUE, 
+                    obfuscateData(response.detailedCookies().toString()));
             Reporter.log("Response Content-Length: ", LogLevel.INFO_BLUE, response.getHeader("Content-Length"));
             Reporter.log("Response Body: ", LogLevel.INFO_BLUE,
-                    response.getBody() != null ? response.getBody().asString() : "No Body");
+                    obfuscateData(response.getBody() != null ? response.getBody().asString() : "No Body"));
             Reporter.log("Response Cookies: ", LogLevel.INFO_BLUE,
-                    response.getCookies() != null ? response.getCookies().toString() : "No Cookies");
+                    obfuscateData(response.getCookies() != null ? response.getCookies().toString() : "No Cookies"));
             Reporter.log("Response Headers: ", LogLevel.INFO_BLUE,
-                    response.getHeaders() != null ? response.getHeaders().toString() : "No Headers");
-            Reporter.log("Response Session ID: ", LogLevel.INFO_BLUE,
-                    response.getSessionId() != null ? response.getSessionId() : "No Session ID");
-            Reporter.log("Response Time (ms): ", LogLevel.INFO_BLUE,
-                    String.valueOf(response.getTime()));
-        }catch (Exception e){
-        }
-        try {
-            Reporter.log("Response JSON Path Data: ", LogLevel.INFO_BLUE, response.jsonPath().getString("data.id"));
+                    obfuscateData(response.getHeaders() != null ? response.getHeaders().toString() : "No Headers"));
+            Reporter.log("Response Time (ms): ", LogLevel.INFO_BLUE, String.valueOf(response.getTime()));
+            
         } catch (Exception e) {
-            Reporter.log("Response does not contain JSON Path data.", LogLevel.WARN);
+            Reporter.log("Error in API Listener", LogLevel.ERROR);
         }
-        try {
-            Reporter.log("Response XML Path Data: ", LogLevel.INFO_BLUE, response.xmlPath().getString("data/id"));
-        } catch (Exception e) {
-            Reporter.log("Response does not contain XML Path data.", LogLevel.WARN);
-        }
+
         return response;
     }
 }
