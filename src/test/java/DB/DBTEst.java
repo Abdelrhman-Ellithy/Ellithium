@@ -1,4 +1,4 @@
-package Tests;
+package DB;
 
 import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.core.DB.SQLDBType;

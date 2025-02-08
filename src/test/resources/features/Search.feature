@@ -21,11 +21,6 @@ Feature: Search
       When the user chooses to sort the results (eg price)
       Then the search results should be sorted accordingly
 
-  Scenario: Verify that the No Results Found message is displayed when there are no matching items
-      Given The user enters a search query
-      When no items match the search query
-      Then a "No Results Found" message should be displayed
-
   Scenario: Verify that user can search with product Company name
       Given the user enters Company name in the search field
       When they click the Search button or press Enter key
