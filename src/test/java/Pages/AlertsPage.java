@@ -12,13 +12,13 @@ public class AlertsPage {
         driverActions=new DriverActions<>(driver);
     }
     public void clickJsAlert(){
-        driverActions.clickOnElement(By.xpath("//button[@onclick=\"jsAlert()\"]"));
+        driver.findElement(By.xpath("(//button)[1]")).click();
     }
-    public void clickJsConfirm(){
-        driverActions.clickOnElement(By.xpath("//button[@onclick=\"jsConfirm()\"]"));
+    public void clickJsConfirm() throws InterruptedException {
+        driver.findElement(By.xpath("(//button)[2]")).click();
     }
     public void clickJsPrompt(){
-        driverActions.clickOnElement(By.xpath("//button[@onclick=\"jsPrompt()\"]"));
+       driver.findElement(By.xpath("(//button)[3]")).click();
     }
     public void alert_accept(){
         driverActions.acceptAlert();

@@ -16,27 +16,25 @@ public class AlertsTests extends BaseTests {
         Assert.assertTrue(actualResult.contains(expectedResult),"Clicking Alert failed");
     }
     @Test(priority = 1)
-    public void confirmAlertCancel(){
+    public void confirmAlertCancel() throws InterruptedException {
         AlertsPage alertsPage=home.clickAlerts();
         alertsPage.clickJsConfirm();
-        alertsPage.getAlertMessage();
         alertsPage.alert_Cancel();
         String expectedResult ="You clicked: Cancel";
         String actualResult=alertsPage.getResultMessage();
         Assert.assertTrue(actualResult.contains(expectedResult),"Canceling Confirm Alert failed");
     }
     @Test(priority = 1)
-    public void confirmAlertAccept(){
+    public void confirmAlertAccept() throws InterruptedException {
         AlertsPage alertsPage=home.clickAlerts();
         alertsPage.clickJsConfirm();
-        alertsPage.getAlertMessage();
         alertsPage.alert_accept();
         String expectedResult ="You clicked: Ok";
         String actualResult=alertsPage.getResultMessage();
         Assert.assertTrue(actualResult.contains(expectedResult),"Accepting Confirm Alert failed");
     }
     @Test(priority = 1)
-    public void correctPromptEntered(){
+    public void correctPromptEntered()  {
         AlertsPage alertsPage=home.clickAlerts();
         alertsPage.clickJsPrompt();
         String input="Abdelrahman Ellithy";

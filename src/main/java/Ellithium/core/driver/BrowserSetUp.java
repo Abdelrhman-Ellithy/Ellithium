@@ -3,6 +3,7 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.PageLoadStrategy;
+import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -10,12 +11,14 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.LocalFileDetector;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 
 import java.net.URL;
+import java.util.Arrays;
 
 public class BrowserSetUp {
 
@@ -85,7 +88,7 @@ public class BrowserSetUp {
                   "--disable-dev-shm-usage"
                 , "--disable-search-engine-choice-screen"
                 , "--remote-allow-origins=*"
-                , "--enable-automation"
+                , "--disable-automation"
                 , "--disable-background-timer-throttling"
                 , "--disable-backgrounding-occluded-windows"
                 , "--disable-features=OptimizationGuideModelDownloading,OptimizationHintsFetching,OptimizationTargetPrediction,OptimizationHints,CalculateNativeWinOcclusion,AutofillServerCommunication,MediaRouter,Translate,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,OptimizationHints,DialMediaRouteProvider,GlobalMediaControls,ImprovedCookieControls,LazyFrameLoading,InterestFeedContentSuggestions"
@@ -95,8 +98,8 @@ public class BrowserSetUp {
                 , "--metrics-recording-only"
                 , "--no-first-run"
                 , "--no-default-browser-check"
-               // , "--silent-debugger-extension-api"
-              //  , "--disable-extensions"
+                , "--silent-debugger-extension-api"
+                , "--disable-extensions"
                 , "--disable-component-extensions-with-background-pages"
                 , "--disable-ipc-flooding-protection"
                 , "--disable-background-networking"
@@ -118,7 +121,7 @@ public class BrowserSetUp {
                 , "--disable-client-side-phishing-detection"
                 , "--disable-default-apps"
                 ,"--disable-software-rasterizer"
-               // ,"--single-process"
+                ,"--single-process"
                 ,"--disable-infobars"
                 ,"--window-size=1920,1080"
                 ,"--disable-notifications"
@@ -135,6 +138,8 @@ public class BrowserSetUp {
                 ,"--ash-disable-system-sounds"
 
         );
+        chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
+        chromeOptions.setExperimentalOption("excludeSwitches", Arrays.asList("enable-automation"));
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
         return chromeOptions;
     }
@@ -184,6 +189,7 @@ public class BrowserSetUp {
                 "--disable-plugins"  // Disable plugins (extensions can be disabled with similar options)
                // "--single-process"  // Use single-process mode
         );
+        firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
         return firefoxOptions;
     }
@@ -256,6 +262,7 @@ public class BrowserSetUp {
                 "--disable-plugins",  // Disable plugins
                 "--ash-disable-system-sounds"  // Disable system sounds
         );
+        edgeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Edge Options Configured", LogLevel.INFO_GREEN);
         return edgeOptions;
     }
@@ -268,6 +275,7 @@ public class BrowserSetUp {
         if (privateMode==PrivateMode.True) {
             safariOptions.setUseTechnologyPreview(true); // Safari doesn't have "private" mode via arguments, but this simulates it
         }
+        safariOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);
         return safariOptions;
     }

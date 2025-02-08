@@ -22,6 +22,32 @@ public class HomPage {
         driverActions.clickOnElement(By.partialLinkText("JavaScript Alerts"));
         return new AlertsPage(driver);
     }
+    public DropDownPage clickDropDown(){
+        returnHome();
+        driverActions.clickOnElement(By.partialLinkText("Dropdown"));
+        return new DropDownPage(driver);
+
+    }
+    public HoverPage clickHover(){
+        returnHome();
+        driverActions.clickOnElement(By.partialLinkText("Hovers"));
+        return new HoverPage(driver);
+    }
+    public HorizontalSliderPage clickHorizontalSlider(){
+        returnHome();
+        driverActions.clickOnElement(By.partialLinkText("Horizontal Slider"));
+        return new HorizontalSliderPage(driver);
+    }
+    public DragDropPage clickDragDrop(){
+        returnHome();
+        driverActions.clickOnElement(By.partialLinkText("Drag and Drop"));
+        return new DragDropPage(driver);
+    }
+    public DynamicLoadingPage clickDynamicLoading(){
+        returnHome();
+        driverActions.clickOnElement(By.partialLinkText("Dynamic Loading"));
+        return new DynamicLoadingPage(driver);
+    }
     private void returnHome(){
         driverActions.navigateToUrl(homeUrl);
     }

@@ -4,7 +4,6 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
-
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Status;
 import org.openqa.selenium.*;
@@ -72,6 +71,42 @@ public class DriverActions <T extends WebDriver>{
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         new Select(findWebElement( locator)).selectByIndex(index);
+    }
+    public List<String> getDropdownSelectedOptions( By locator, int timeout, int pollingEvery) {
+        Reporter.log("Getting Dropdown Options Texts: " ,LogLevel.INFO_BLUE,locator.toString());
+        getFluentWait(timeout,pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        Select dropDown= new Select(findWebElement( locator));
+        List<WebElement>elements =dropDown.getAllSelectedOptions();
+        List<String> texts = new ArrayList<>();
+        for (WebElement element : elements) {
+            texts.add(element.getText());
+        }
+        return texts;
+    }
+    public List<String> getDropdownSelectedOptions( By locator, int timeout) {
+        Reporter.log("Getting Dropdown Options Texts: " ,LogLevel.INFO_BLUE,locator.toString());
+        getFluentWait(timeout,WaitManager.getDefaultPollingTime())
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        Select dropDown= new Select(findWebElement( locator));
+        List<WebElement>elements =dropDown.getAllSelectedOptions();
+        List<String> texts = new ArrayList<>();
+        for (WebElement element : elements) {
+            texts.add(element.getText());
+        }
+        return texts;
+    }
+    public List<String> getDropdownSelectedOptions( By locator) {
+        Reporter.log("Getting Dropdown Options Texts: " ,LogLevel.INFO_BLUE,locator.toString());
+        getFluentWait(WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime())
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        Select dropDown= new Select(findWebElement( locator));
+        List<WebElement>elements =dropDown.getAllSelectedOptions();
+        List<String> texts = new ArrayList<>();
+        for (WebElement element : elements) {
+            texts.add(element.getText());
+        }
+        return texts;
     }
     public  void setImplicitWait( int timeout) {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(timeout));
@@ -289,7 +324,7 @@ public class DriverActions <T extends WebDriver>{
     }
     @SuppressWarnings("unchecked")
     public FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
-            return (FluentWait<T> )WaitManager.getFluentWait(driver,timeoutInSeconds,pollingEveryInMillis);
+            return WaitManager.getFluentWait(driver,timeoutInSeconds,pollingEveryInMillis);
     }
     public  List<String> getAttributeFromMultipleElements( By locator,String Attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ",LogLevel.INFO_BLUE,locator.toString());
