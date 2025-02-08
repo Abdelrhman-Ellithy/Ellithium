@@ -2,32 +2,42 @@
 target/*
 !**/src/main/**/target/
 !**/src/test/**/target/
-
-# Test output directories
-TestNGRunner.xml
-src/test/resources/TestData/DB-Info.json
 Ellithium.pptx
-website
+website/
 
-# Ignore content of specific directories but include .gitkeep for empty folders
-Test-Output/Logs/*
-!Test-Output/Logs/.gitkeep
+# Test Output Management
+Test-Output/*
+!Test-Output/.gitkeep
 
-Test-Output/Reports/Allure/allure-report/*
-!Test-Output/Reports/Allure/allure-report/.gitkeep
+# Test Data Files
+src/test/resources/TestData/DB-Info.json
+src/test/resources/TestData/Items and Prices.xlsx
 
-Test-Output/Reports/Allure/allure-results/*
-!Test-Output/Reports/Allure/allure-results/.gitkeep
+# Preserve specific Test-Output structure
+!Test-Output/Logs/
+!Test-Output/Reports/
+!Test-Output/ScreenShots/
+!Test-Output/UpdateChecker/
 
+# Keep specific files but ignore contents
+Test-Output/UpdateChecker/*
+!Test-Output/UpdateChecker/checker.json
+
+# Allure Reports
+Test-Output/Reports/Allure/*
+!Test-Output/Reports/Allure/.gitkeep
+
+# Cucumber Reports
 Test-Output/Reports/Cucumber/*
 !Test-Output/Reports/Cucumber/.gitkeep
 
+# Screenshots from failed tests
 Test-Output/ScreenShots/Failed/*
 !Test-Output/ScreenShots/Failed/.gitkeep
 
-# Include UpdateChecker folder but keep checker.json
-Test-Output/UpdateChecker/*
-!Test-Output/UpdateChecker/checker.json
+# Logs directory
+Test-Output/Logs/*
+!Test-Output/Logs/.gitkeep
 
 ### IntelliJ IDEA ###
 .idea/
