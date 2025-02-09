@@ -368,25 +368,34 @@ public class JsonHelperTests extends NonBDDSetup {
     public void testJsonBackupAndRestoration() {
         try {
             // Create initial content
-            JsonHelper.setJsonKeyValue(TEST_JSON, "testKey", "testValue");
+            JsonObject initialContent = new JsonObject();
+            initialContent.addProperty("testKey", "testValue");
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(initialContent));
+            }
             
             // Create backup
-            JsonHelper.backupJsonFile(TEST_JSON);
+            String backupPath = JsonHelper.backupJsonFile(TEST_JSON);
+            assertNotNull(backupPath, "Backup path should not be null");
             
             // Modify original file
             JsonHelper.setJsonKeyValue(TEST_JSON, "testKey", "modifiedValue");
             
-            // Verify backup exists with correct content
-            File[] backupFiles = new File(TEST_DIR).listFiles((dir, name) -> name.startsWith("test.json.backup-"));
-            assertTrue(backupFiles != null && backupFiles.length > 0);
+            // Verify backup exists and contents are correct
+            File backupFile = new File(backupPath);
+            assertTrue(backupFile.exists(), "Backup file should exist");
             
-            String backupContent = new String(Files.readAllBytes(backupFiles[0].toPath()));
-            assertTrue(backupContent.contains("testValue"));
+            // Read backup content and verify
+            try (FileReader reader = new FileReader(backupFile)) {
+                JsonObject backupContent = JsonParser.parseReader(reader).getAsJsonObject();
+                assertEquals("testValue", backupContent.get("testKey").getAsString(), 
+                    "Backup should contain original value");
+            }
             
             Reporter.log("Backup and restore test passed successfully", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
+        } catch (IOException e) {
             Reporter.log("Backup and restore test failed: ", LogLevel.ERROR, e.getMessage());
-            throw new AssertionError(e);
+            fail("Test failed due to IOException: " + e.getMessage());
         }
     }
 

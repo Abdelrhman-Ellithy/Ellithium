@@ -44,7 +44,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run Helper Tests
-        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=tests -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-Basic-Tests:
     runs-on: macos-latest
@@ -83,7 +83,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run UI Basic Tests
-        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-Actions-Tests:
     runs-on: macos-latest
@@ -122,7 +122,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run UI Actions Tests
-        run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
 
   UI-BDD-Tests:
     runs-on: macos-latest
@@ -161,7 +161,7 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run UI BDD Tests
-        run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
 
   API-Tests:
     runs-on: macos-latest
@@ -200,4 +200,4 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run API Tests
-        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=tests -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5

@@ -6,8 +6,6 @@ import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
