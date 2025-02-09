@@ -115,32 +115,6 @@ public class StartUpLoader {
         }
         return 0; // Versions are equal
     }
-    public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
-        boolean result;
-        if (!targetDirectory.exists()) {
-            Files.createDirectory(targetDirectory.toPath());
-        }
-         try (JarFile jar = new JarFile(jarFile)) {
-            Enumeration<JarEntry> entries = jar.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (entry.getName().startsWith("allure")) {
-                    File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
-                    if (entry.isDirectory()) {
-                        result=targetFile.mkdirs();
-                    } else {
-                        Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {
-                            targetFile.setExecutable(true);
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception e){
-            System.err.println(e.getMessage());
-        }
-    }
     public static void TestOutputSolver(){
         boolean result;
         String allureReportPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");

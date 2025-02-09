@@ -4,14 +4,15 @@ import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -273,6 +274,156 @@ public class JsonHelperTests extends NonBDDSetup {
             Reporter.log("Parse to object test failed: ", LogLevel.ERROR, e.getMessage());
             throw e;
         }
+    }
+
+    @Test
+    public void testParseJsonToList() {
+        try {
+            // Create test data with array
+            List<TestObject> objects = Arrays.asList(
+                createTestObject("Test1", 25, "test1@test.com"),
+                createTestObject("Test2", 30, "test2@test.com")
+            );
+            
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(gson.toJson(objects));
+            }
+            
+            List<TestObject> result = JsonHelper.parseJsonToList(TEST_JSON, TestObject.class);
+            assertEquals(2, result.size());
+            assertEquals("Test1", result.get(0).name);
+            assertEquals("Test2", result.get(1).name);
+            Reporter.log("Parse JSON to list test passed successfully", LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            Reporter.log("Parse JSON to list test failed: ", LogLevel.ERROR, e.getMessage());
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    public void testNavigateAndModifyNestedStructure() {
+        try {
+            // Create nested JSON structure
+            JsonObject nested = new JsonObject();
+            JsonObject address = new JsonObject();
+            JsonArray phones = new JsonArray();
+            
+            address.addProperty("street", "123 Test St");
+            phones.add("123-456-7890");
+            nested.add("address", address);
+            nested.add("phones", phones);
+            
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(nested));
+            }
+            
+            // Test navigation and modification
+            List<String> addressPath = Arrays.asList("address", "street");
+            JsonHelper.modifyInNestedPath(TEST_JSON, addressPath, "456 New St");
+            
+            String value = JsonHelper.getValueFromNestedPath(TEST_JSON, addressPath);
+            assertEquals("456 New St", value);
+            Reporter.log("Nested structure navigation test passed successfully", LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            Reporter.log("Nested structure navigation test failed: ", LogLevel.ERROR, e.getMessage());
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    public void testArrayOperationsInDepth() {
+        try {
+            // Create JSON with array
+            JsonObject root = new JsonObject();
+            JsonArray items = new JsonArray();
+            root.add("items", items);
+            
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(root));
+            }
+            
+            List<String> arrayPath = Arrays.asList("items");
+            
+            // Test array operations
+            JsonHelper.appendToJsonArray(TEST_JSON, arrayPath, "item1");
+            JsonHelper.insertIntoJsonArray(TEST_JSON, arrayPath, 0, "item0");
+            JsonHelper.appendToJsonArray(TEST_JSON, arrayPath, "item2");
+            
+            assertTrue(JsonHelper.arrayContainsValue(TEST_JSON, arrayPath, "item0"));
+            assertTrue(JsonHelper.arrayContainsValue(TEST_JSON, arrayPath, "item1"));
+            assertTrue(JsonHelper.arrayContainsValue(TEST_JSON, arrayPath, "item2"));
+            
+            JsonHelper.removeFromJsonArray(TEST_JSON, arrayPath, 1);
+            assertFalse(JsonHelper.arrayContainsValue(TEST_JSON, arrayPath, "item1"));
+            
+            Reporter.log("Array operations test passed successfully", LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            Reporter.log("Array operations test failed: ", LogLevel.ERROR, e.getMessage());
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    public void testJsonBackupAndRestoration() {
+        try {
+            // Create initial content
+            JsonHelper.setJsonKeyValue(TEST_JSON, "testKey", "testValue");
+            
+            // Create backup
+            JsonHelper.backupJsonFile(TEST_JSON);
+            
+            // Modify original file
+            JsonHelper.setJsonKeyValue(TEST_JSON, "testKey", "modifiedValue");
+            
+            // Verify backup exists with correct content
+            File[] backupFiles = new File(TEST_DIR).listFiles((dir, name) -> name.startsWith("test.json.backup-"));
+            assertTrue(backupFiles != null && backupFiles.length > 0);
+            
+            String backupContent = new String(Files.readAllBytes(backupFiles[0].toPath()));
+            assertTrue(backupContent.contains("testValue"));
+            
+            Reporter.log("Backup and restore test passed successfully", LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            Reporter.log("Backup and restore test failed: ", LogLevel.ERROR, e.getMessage());
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    public void testNullValueHandling() {
+        try {
+            // Create JSON with null values
+            JsonObject obj = new JsonObject();
+            obj.add("nullField", JsonNull.INSTANCE);
+            obj.addProperty("nonNullField", "value");
+            
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(obj));
+            }
+            
+            JsonHelper.removeNullValues(TEST_JSON);
+            
+            // Verify null values are removed using JsonReader instead of deprecated JsonParser
+            try (JsonReader reader = new JsonReader(new FileReader(TEST_JSON))) {
+                JsonObject cleaned = JsonParser.parseReader(reader).getAsJsonObject();
+                assertFalse(cleaned.has("nullField"));
+                assertTrue(cleaned.has("nonNullField"));
+            }
+            
+            Reporter.log("Null value handling test passed successfully", LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            Reporter.log("Null value handling test failed: ", LogLevel.ERROR, e.getMessage());
+            throw new AssertionError(e);
+        }
+    }
+
+    private TestObject createTestObject(String name, int age, String email) {
+        TestObject obj = new TestObject();
+        obj.name = name;
+        obj.age = age;
+        obj.email = email;
+        return obj;
     }
 
     // Test helper class

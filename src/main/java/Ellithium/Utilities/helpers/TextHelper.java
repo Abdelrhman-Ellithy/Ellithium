@@ -137,13 +137,18 @@ public class TextHelper {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
             String line;
+            boolean firstLine = true;
             while ((line = reader.readLine()) != null) {
-                content.append(line).append(System.lineSeparator());
+                if (!firstLine) {
+                    content.append(System.lineSeparator());
+                }
+                content.append(line);
+                firstLine = false;
             }
             Reporter.log("Successfully read text file as a String: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to read text file as a String: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
 
         return content.toString();
@@ -155,10 +160,11 @@ public class TextHelper {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
             writer.write(content);
+            // Don't add an extra newline at the end
             Reporter.log("Successfully wrote String to text file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to write String to text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
     // Method to delete all lines containing a specific keyword
@@ -692,7 +698,7 @@ public class TextHelper {
             Reporter.log("Successfully read file with encoding: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to read file with encoding: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage()); // Changed from e.getCause().toString()
         }
         return lines;
     }
