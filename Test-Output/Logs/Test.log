@@ -1,149 +1,530 @@
-2025-02-08 19:23:33 INFO  Logger - [94mGetting Timestamp: 2025-02-08[0m
-2025-02-08 19:23:33 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-08 19:23:33 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-08 19:23:34 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-08 19:23:34 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-08 19:23:34 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-08 19:23:34 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-08 19:23:34 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-08 19:23:34 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [94m[START] TESTCASE testBackupAndRestore [STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [92mCreated backup of properties file: src\test\resources\TestData\test.properties.backup[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [test.key1] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mRestored properties from backup: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92m[PASSED] TESTCASE testBackupAndRestore [PASSED][0m
-2025-02-08 19:23:34 INFO  Logger - [94m[START] TESTCASE testClearProperties [STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully cleared all properties: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92m[PASSED] TESTCASE testClearProperties [PASSED][0m
-2025-02-08 19:23:34 INFO  Logger - [94m[START] TESTCASE testCompareProperties [STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92m[PASSED] TESTCASE testCompareProperties [PASSED][0m
-2025-02-08 19:23:34 INFO  Logger - [94m[START] TESTCASE testConcurrentAccess [STARTED][0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key0] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key9] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key8] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key4] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key6] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key5] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key7] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key2] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key3] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mSuccessfully updated property [key1] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:34 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:34 INFO  Logger - [92m[PASSED] TESTCASE testConcurrentAccess [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testEmptyValueHandling [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mSuccessfully updated property [empty.key] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testEmptyValueHandling [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testFindValuesContaining [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testFindValuesContaining [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testGetAllProperties [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert: Incorrect number of properties - Long values are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert: Property value does not match expected - Strings are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert: Property value does not match expected - Strings are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testGetAllProperties [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testGetDataFromProperties [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert: Property value does not match expected - Strings are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testGetDataFromProperties [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testGetKeysMatchingPattern [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testGetKeysMatchingPattern [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testGetOrDefault [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mFetched key: test.key1 with value (or default): value1 from file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mFetched key: nonexistent.key with value (or default): default from file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testGetOrDefault [PASSED][0m
-2025-02-08 19:23:35 INFO  Logger - [94m[START] TESTCASE testGetPropertiesMatchingValuePattern [STARTED][0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:35 INFO  Logger - [92m[PASSED] TESTCASE testGetPropertiesMatchingValuePattern [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testGetPropertyCount [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:36 INFO  Logger - [92m[PASSED] TESTCASE testGetPropertyCount [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testKeyExists [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mChecked key existence: test.key1 in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:36 INFO  Logger - [92mChecked key existence: nonexistent.key in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert:  - Condition is false[0m
-2025-02-08 19:23:36 INFO  Logger - [92m[PASSED] TESTCASE testKeyExists [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testLoadWithEncoding [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mSuccessfully loaded properties with encoding UTF-8: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:36 INFO  Logger - [92m[PASSED] TESTCASE testLoadWithEncoding [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testMultipleOperationsIsolation [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mSuccessfully updated property [test.key3] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:36 INFO  Logger - [92mSuccessfully removed key: test.key1 from properties file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert: Existing unmodified property should remain unchanged - Strings are equal[0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert: Newly added property should remain unchanged - Strings are equal[0m
-2025-02-08 19:23:36 INFO  Logger - [92m[PASSED] TESTCASE testMultipleOperationsIsolation [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testNullKeyHandling [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:36 INFO  Logger - [92m[PASSED] TESTCASE testNullKeyHandling [PASSED][0m
-2025-02-08 19:23:36 INFO  Logger - [94m[START] TESTCASE testPropertyUpdateIsolation [STARTED][0m
-2025-02-08 19:23:36 INFO  Logger - [92mSuccessfully updated property [test.key1] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert: Unmodified property should remain unchanged - Strings are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testPropertyUpdateIsolation [PASSED][0m
-2025-02-08 19:23:37 INFO  Logger - [94m[START] TESTCASE testPropertyValueLengthLimits [STARTED][0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [long.key] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testPropertyValueLengthLimits [PASSED][0m
-2025-02-08 19:23:37 INFO  Logger - [94m[START] TESTCASE testRemoveKeyFromProperties [STARTED][0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully removed key: test.key1 from properties file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Object is null[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testRemoveKeyFromProperties [PASSED][0m
-2025-02-08 19:23:37 INFO  Logger - [94m[START] TESTCASE testSetDataToProperties [STARTED][0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [test.key1] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert: Updated property value does not match expected - Strings are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testSetDataToProperties [PASSED][0m
-2025-02-08 19:23:37 INFO  Logger - [94m[START] TESTCASE testSortPropertiesByKey [STARTED][0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully cleared all properties: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [test.key2] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [a.key] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [test.key1] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully sorted properties by key: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert: Should have exactly 3 properties - Long values are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert: First key should be a.key - Strings are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testSortPropertiesByKey [PASSED][0m
-2025-02-08 19:23:37 INFO  Logger - [94m[START] TESTCASE testSpecialCharactersHandling [STARTED][0m
-2025-02-08 19:23:37 INFO  Logger - [92mSuccessfully updated property [special.key] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:37 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:37 INFO  Logger - [92m[PASSED] TESTCASE testSpecialCharactersHandling [PASSED][0m
-2025-02-08 19:23:38 INFO  Logger - [94m[START] TESTCASE testUnicodeHandling [STARTED][0m
-2025-02-08 19:23:38 INFO  Logger - [92mSuccessfully updated property [unicode.key] in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:38 INFO  Logger - [92m[PASSED] TESTCASE testUnicodeHandling [PASSED][0m
-2025-02-08 19:23:38 INFO  Logger - [94m[START] TESTCASE testUpdateMultipleProperties [STARTED][0m
-2025-02-08 19:23:38 INFO  Logger - [92mSuccessfully updated multiple properties in file: src/test/resources/TestData/test.properties[0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-08 19:23:38 INFO  Logger - [92m[PASSED] TESTCASE testUpdateMultipleProperties [PASSED][0m
-2025-02-08 19:23:38 INFO  Logger - [94m[START] TESTCASE testValidatePropertyValue [STARTED][0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-08 19:23:38 INFO  Logger - [92mHard Assert:  - Condition is false[0m
-2025-02-08 19:23:38 INFO  Logger - [92m[PASSED] TESTCASE testValidatePropertyValue [PASSED][0m
-2025-02-08 19:23:38 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-08 19:23:38 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
-2025-02-08 19:23:38 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
-2025-02-08 19:23:38 INFO  Logger - [94mTotal Execution Time is: 0 Min 4 Sec 473 Mills[0m
-2025-02-08 19:23:38 INFO  Logger - [94m------------------------------------------[0m
-2025-02-08 19:23:38 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-08 19:23:38 INFO  Logger - [94m------------------------------------------[0m
+2025-02-09 15:50:14 INFO  Logger - [94mGetting Timestamp: 2025-02-09[0m
+2025-02-09 15:50:14 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-09 15:50:14 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-09 15:50:15 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-02-09 15:50:15 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-02-09 15:50:15 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-09 15:50:15 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-02-09 15:50:15 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-09 15:50:15 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
+2025-02-09 15:50:15 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94m[START] TESTCASE testAppendAfterLine [STARTED][0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to append after line 1 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully appended after line 1 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:15 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:15 INFO  Logger - [92m[PASSED] TESTCASE testAppendAfterLine [PASSED][0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94m[START] TESTCASE testAppendLineToFile [STARTED][0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:15 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:15 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:15 INFO  Logger - [92m[PASSED] TESTCASE testAppendLineToFile [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94m[START] TESTCASE testAreFilesIdentical [STARTED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mCopying from src/test/resources/TestData/test.txt to src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mFile copied successfully to: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mComparing files for identity: src/test/resources/TestData/test.txt vs src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mFiles are identical[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mComparing files for identity: src/test/resources/TestData/test.txt vs src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [93mFiles have different lengths[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:16 INFO  Logger - [92m[PASSED] TESTCASE testAreFilesIdentical [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94m[START] TESTCASE testConcurrentOperations [STARTED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:16 INFO  Logger - [92m[PASSED] TESTCASE testConcurrentOperations [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94m[START] TESTCASE testContainsKeyword [STARTED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mChecking if text file contains keyword: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mKeyword found in text file: Testsrc/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:16 INFO  Logger - [94mChecking if text file contains keyword: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [93mKeyword not found in text file: nonexistentsrc/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:16 INFO  Logger - [92m[PASSED] TESTCASE testContainsKeyword [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94m[START] TESTCASE testCopyTextFile [STARTED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mCopying from src/test/resources/TestData/test.txt to src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mFile copied successfully to: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mComparing files for identity: src/test/resources/TestData/test.txt vs src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mFiles are identical[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:16 INFO  Logger - [92m[PASSED] TESTCASE testCopyTextFile [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94m[START] TESTCASE testCountLinesInFile [STARTED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully counted 3 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully counted 4 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:16 INFO  Logger - [92m[PASSED] TESTCASE testCountLinesInFile [PASSED][0m
+2025-02-09 15:50:16 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:16 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testDeleteLine [STARTED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to delete line from text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully deleted line from text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testDeleteLine [PASSED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testDeleteLinesContainingKeyword [STARTED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to delete lines containing keyword: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully deleted lines containing keyword in text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testDeleteLinesContainingKeyword [PASSED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testEdgeCases [STARTED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mChecking if file is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mFile is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully counted 0 lines in file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully counted 10000 lines in file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write String to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote String to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read entire text file as a String: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully read text file as a String: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testEdgeCases [PASSED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testEmptyFileHandling [STARTED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:17 INFO  Logger - [94mChecking if file is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mFile is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testEmptyFileHandling [PASSED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
+2025-02-09 15:50:17 ERROR Logger - [91mText file does not exist: nonexistent.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Object is null[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to count lines in file: nonexistent.txt[0m
+2025-02-09 15:50:17 ERROR Logger - [91mText file does not exist: nonexistent.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read line -1 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 ERROR Logger - [91mInvalid line number (must be >= 1): src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Object is null[0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to read line 1000 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [93mLine number 1000 not found in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Object is null[0m
+2025-02-09 15:50:17 INFO  Logger - [94mWriting file with encoding UTF-8: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote file with encoding: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94mReading file with encoding invalid-encoding: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 ERROR Logger - [91mFailed to read file with encoding: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:17 ERROR Logger - [91mRoot Cause: invalid-encoding[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [94m[START] TESTCASE testFindLineWithKeyword [STARTED][0m
+2025-02-09 15:50:17 INFO  Logger - [94mSearching for keyword in text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mFound line with keyword: Moresrc/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Object is not null[0m
+2025-02-09 15:50:17 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:17 INFO  Logger - [92m[PASSED] TESTCASE testFindLineWithKeyword [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetAllLinesWithKeyword [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mSearching for all lines containing 'Line' in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92m3 lines found with keyword: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetAllLinesWithKeyword [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetFileExtension [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetFileExtension [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetFileSizeBytes [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetFileSizeBytes [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetLastModifiedTimestamp [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetLastModifiedTimestamp [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetLineNumbersWithKeyword [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mFinding line numbers with 'Line' in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92m3 line numbers found with keyword: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetLineNumbersWithKeyword [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testGetWordFrequency [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAnalyzing word frequency in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testGetWordFrequency [PASSED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94m[START] TESTCASE testInsertLineAt [STARTED][0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to insert line at position 2 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully inserted line at position 2 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:18 INFO  Logger - [92m[PASSED] TESTCASE testInsertLineAt [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testIsEmptyFile [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mChecking if file is empty: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [93mFile is not empty: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mChecking if file is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mFile is empty: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testIsEmptyFile [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testIsValidLineNumber [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully counted 3 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully counted 3 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully counted 3 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testIsValidLineNumber [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testLargeFileHandling [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testLargeFileHandling [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testMergeTwoFiles [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mMerging files into: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully merged files into: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/merged.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testMergeTwoFiles [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testReadFileAsString [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read entire text file as a String: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file as a String: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Object is not null[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testReadFileAsString [PASSED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94m[START] TESTCASE testReadFirstNLines [STARTED][0m
+2025-02-09 15:50:19 INFO  Logger - [94mReading first 2 lines from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mRetrieved first 2 lines from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:19 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:19 INFO  Logger - [92m[PASSED] TESTCASE testReadFirstNLines [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testReadLastNLines [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mReading last 2 lines from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mRetrieved last 2 lines from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:20 INFO  Logger - [92m[PASSED] TESTCASE testReadLastNLines [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testReadLineNumber [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read line 2 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read line 2 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Object is not null[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:20 INFO  Logger - [92m[PASSED] TESTCASE testReadLineNumber [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testReadSpecificLines [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read lines 1-2 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read lines 1-2 from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:20 INFO  Logger - [92m[PASSED] TESTCASE testReadSpecificLines [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testReadTextFile [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:20 INFO  Logger - [92m[PASSED] TESTCASE testReadTextFile [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testReadWriteWithEncoding [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mWriting file with encoding UTF-8: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote file with encoding: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mReading file with encoding UTF-8: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read file with encoding: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:20 INFO  Logger - [92m[PASSED] TESTCASE testReadWriteWithEncoding [PASSED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94m[START] TESTCASE testRemoveDuplicateLines [STARTED][0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to append line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully appended line to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mRemoving duplicate lines from: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [92mRemoved 1 duplicatessrc/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:20 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testRemoveDuplicateLines [PASSED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94m[START] TESTCASE testReplaceAllOccurrences [STARTED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mReplacing all 'Line' with 'Row' in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully replaced all occurrences in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to read entire text file as a String: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file as a String: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testReplaceAllOccurrences [PASSED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94m[START] TESTCASE testReplaceLineInFile [STARTED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to replace a line in text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully replaced line in text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Condition is false[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testReplaceLineInFile [PASSED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94m[START] TESTCASE testReverseFileContent [STARTED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mReversing file content: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully reversed file content: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testReverseFileContent [PASSED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94m[START] TESTCASE testSearchLinesMatching [STARTED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mSearching lines matching regex '.*Line [1-2].*' in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mFound 2 matching lines[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testSearchLinesMatching [PASSED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94m[START] TESTCASE testSpecialCharacterHandling [STARTED][0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:21 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:21 INFO  Logger - [92m[PASSED] TESTCASE testSpecialCharacterHandling [PASSED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94m[START] TESTCASE testTruncateFile [STARTED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mTruncating file to 2 lines: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mTruncated to 2 linessrc/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to count lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully counted 2 lines in file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:22 INFO  Logger - [92m[PASSED] TESTCASE testTruncateFile [PASSED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94m[START] TESTCASE testWriteAtLine [STARTED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to overwrite line 2 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to line 2 in: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:22 INFO  Logger - [92m[PASSED] TESTCASE testWriteAtLine [PASSED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94m[START] TESTCASE testWriteStringToFile [STARTED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write String to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote String to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to read entire text file as a String: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully read text file as a String: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mHard Assert: File content should match exactly, including line endings - Strings are equal[0m
+2025-02-09 15:50:22 INFO  Logger - [92m[PASSED] TESTCASE testWriteStringToFile [PASSED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/test.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94m[START] TESTCASE testWriteTextFile [STARTED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to write text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mCreated new text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully wrote to text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [94mAttempting to read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mSuccessfully read text file: src/test/resources/TestData/output.txt[0m
+2025-02-09 15:50:22 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-02-09 15:50:22 INFO  Logger - [92m[PASSED] TESTCASE testWriteTextFile [PASSED][0m
+2025-02-09 15:50:22 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-09 15:50:22 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
+2025-02-09 15:50:22 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
+2025-02-09 15:50:22 INFO  Logger - [94mTotal Execution Time is: 0 Min 7 Sec 205 Mills[0m
+2025-02-09 15:50:22 INFO  Logger - [94m------------------------------------------[0m
+2025-02-09 15:50:22 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-02-09 15:50:22 INFO  Logger - [94m------------------------------------------[0m

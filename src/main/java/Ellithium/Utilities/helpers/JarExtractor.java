@@ -29,8 +29,6 @@ public class JarExtractor {
             System.err.println("Invalid target directory path: " + e.getMessage());
             return false;
         }
-
-        // First pass: Validate all entries
         try (JarFile jar = new JarFile(jarFile)) {
             for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements();) {
                 JarEntry entry = entries.nextElement();
@@ -59,13 +57,10 @@ public class JarExtractor {
             deleteDirectory(targetDirectory);
             return false;
         }
-
-        // Second pass: Extract files
         boolean hasValidEntries = false;
         Map<String, Boolean> processedPaths = new HashMap<>();
 
         try (JarFile jar = new JarFile(jarFile)) {
-            // First process directories
             for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements();) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.getName().startsWith(folderPathInJar) || !entry.isDirectory()) {
