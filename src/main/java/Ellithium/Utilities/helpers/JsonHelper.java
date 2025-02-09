@@ -647,14 +647,38 @@ public class JsonHelper {
         return element;
     }
 
-    public static void backupJsonFile(String filePath) {
+    public static String backupJsonFile(String filePath) {
         try {
+            File sourceFile = new File(filePath);
+            if (!sourceFile.exists()) {
+                log("Source file does not exist for backup: ", LogLevel.ERROR, filePath);
+                return null;
+            }
+
             String backupPath = filePath + ".backup-" + System.currentTimeMillis();
-            Files.copy(Paths.get(filePath), Paths.get(backupPath));
-            log("Successfully created backup", LogLevel.INFO_GREEN, backupPath);
+            File backupFile = new File(backupPath);
+            
+            // Ensure parent directory exists
+            File parentDir = backupFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+            }
+
+            // Copy the file and ensure it's exactly the same
+            Files.copy(sourceFile.toPath(), backupFile.toPath());
+
+            // Verify backup was created and content matches
+            if (backupFile.exists() && compareJsonFiles(filePath, backupPath)) {
+                log("Successfully created backup at: ", LogLevel.INFO_GREEN, backupPath);
+                return backupPath;
+            } else {
+                log("Failed to verify backup creation or content at: ", LogLevel.ERROR, backupPath);
+                return null;
+            }
         } catch (IOException e) {
             log("Failed to create backup", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return null;
         }
     }
 }
