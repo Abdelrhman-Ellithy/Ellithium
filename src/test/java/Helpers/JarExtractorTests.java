@@ -9,7 +9,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import static org.testng.Assert.*;
+import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
 public class JarExtractorTests extends NonBDDSetup {
     private static final String TEST_DIR = "src/test/resources/TestData/";
