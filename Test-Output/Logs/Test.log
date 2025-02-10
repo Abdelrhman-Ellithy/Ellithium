@@ -1,207 +1,458 @@
-2025-02-10 23:29:32 INFO  Logger - [94mGetting Timestamp: 2025-02-10[0m
-2025-02-10 23:29:32 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-10 23:29:32 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-10 23:29:32 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-10 23:29:32 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-10 23:29:32 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-10 23:29:32 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-10 23:29:32 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-10 23:29:32 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
-2025-02-10 23:29:32 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
-2025-02-10 23:29:33 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS orders[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS products[0m
-2025-02-10 23:29:33 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE products (id INTEGER PRIMARY KEY,name TEXT NOT NULL,price REAL,stock INTEGER,description TEXT,active BOOLEAN DEFAULT 1)[0m
-2025-02-10 23:29:33 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE orders (order_id INTEGER PRIMARY KEY,product_id INTEGER,quantity INTEGER,order_date TEXT,FOREIGN KEY(product_id) REFERENCES products(id))[0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testAggregateQueries [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as total FROM products[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have 3 products - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT AVG(price) as avg_price FROM products[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Average price should be around 15.75[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT stock > 50 as high_stock, COUNT(*) as count FROM products GROUP BY high_stock[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have 2 products with high stock - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testAggregateQueries [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testBatchOperationsWithDifferentTypes [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should insert 3 records - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT name, price, stock FROM products WHERE name LIKE 'Test Product%'[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Price should be exact - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Stock should be exact - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperationsWithDifferentTypes [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testComplexFilters [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT name, price FROM products WHERE price BETWEEN 10 AND 30 AND stock >= 50 ORDER BY price DESC, name ASC[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should find three products - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: First product should be Product B (highest price) - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Second product should be Product C (medium price) - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Third product should be Product A (lowest price) - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testComplexFilters [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testDeleteOperations [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: INSERT INTO products (name, price, stock) VALUES ('Temp Product', 9.99, 10)[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: DELETE FROM products WHERE name = 'Temp Product'[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as count FROM products WHERE name = 'Temp Product'[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Record should be deleted - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testDeleteOperations [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testJoinQueries [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: INSERT INTO orders (product_id, quantity, order_date) VALUES (1, 5, '2024-02-10')[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: INSERT INTO orders (product_id, quantity, order_date) VALUES (2, 3, '2024-02-10')[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT p.name, o.quantity FROM products p INNER JOIN orders o ON p.id = o.product_id[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have 2 orders - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product A order[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product B order[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testJoinQueries [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testTableMetadata [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved column data types for table: products[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: ID should be INTEGER - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Price should be REAL - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Name should be TEXT - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved primary keys for table: products[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have one primary key - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Primary key should be id - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved foreign keys for table: orders[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have foreign key to products - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testTableMetadata [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testUpdateOperations [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: UPDATE products SET active = 1[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: UPDATE products SET stock = CASE WHEN name = 'Product A' THEN 100 WHEN name = 'Product B' THEN 50 WHEN name = 'Product C' THEN 75 END[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: UPDATE products SET stock = stock + 10 WHERE name = 'Product A'[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT stock FROM products WHERE name = 'Product A'[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Stock should be updated - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: UPDATE products SET active = 0 WHERE name IN ('Product B', 'Product C')[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as count FROM products WHERE active = 0[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should update exactly two rows - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testUpdateOperations [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testAdvancedTransactions [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mTransaction started.[0m
-2025-02-10 23:29:33 INFO  Logger - [94mTransaction committed successfully.[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name = 'trans1'[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Main transaction should be committed - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testAdvancedTransactions [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testBatchOperations [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should insert all records - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Batch insert should complete within 5 seconds[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name LIKE 'batch%'[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should find all batch inserted records - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperations [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testCacheManagement [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved column names for table: test_table[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should return cached column names - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mCache cleared for table: test_table[0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved column names for table: test_table[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should reload cache after clearing - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [94mRetrieved column data types for table: test_table[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Object is not null: INTEGER - Should cache column types[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should cache correct type - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testCacheManagement [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testComplexQueries [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test1')[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test2')[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table LIMIT 1 OFFSET 0[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have first record[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is false: false - Should not have second record[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testComplexQueries [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testConfigurationValidation [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: SQLite database path cannot be empty - Should throw exception for empty path[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for empty path[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: Server address cannot be empty - Should throw exception for invalid MySQL config[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for invalid MySQL config[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testConfigurationValidation [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testConnectionPoolBehavior [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Underlying connections should be reused from pool - Strings are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have idle connections[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Should have no active connections - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolBehavior [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testConnectionPoolManagement [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Object is not null: HikariDataSource (HikariPool-1) - DataSource should be initialized[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: No active connections initially - Long values are equal[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Total connections within limit[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Object is not null: HikariProxyConnection@400385823 wrapping org.sqlite.jdbc4.JDBC4Connection@4af70944 - Should get connection from pool[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is false: false - Connection should be open[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolManagement [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testConnectionValidation [STARTED][0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid initially[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: PRAGMA locking_mode = EXCLUSIVE[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: BEGIN EXCLUSIVE[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid under lock[0m
-2025-02-10 23:29:33 INFO  Logger - [94mExecuted update successfully: COMMIT[0m
-2025-02-10 23:29:33 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:33 INFO  Logger - [92m[PASSED] TESTCASE testConnectionValidation [PASSED][0m
-2025-02-10 23:29:33 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mRetrieved column names for table: nonexistent_table[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should handle nonexistent table gracefully[0m
-2025-02-10 23:29:34 ERROR Logger - [91mQuery execution failed: Invalid SQL syntax: [SQLITE_ERROR] SQL error or missing database (near ";": syntax error)[0m
-2025-02-10 23:29:34 ERROR Logger - [91mSQL State: null[0m
-2025-02-10 23:29:34 ERROR Logger - [91mError Code: 0[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide meaningful error message: query execution failed: invalid sql syntax: [sqlite_error] sql error or missing database (near ";": syntax error)[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should return empty result for nonexistent table[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testErrorRecovery [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should recover and execute valid query[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid after error[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testErrorRecovery [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testMetadataOperations [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Object is not null: {name=TEXT, id=INTEGER} - Column types should not be null[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have at least 2 columns[0m
-2025-02-10 23:29:34 INFO  Logger - [94mRetrieved primary keys for table: test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should identify primary key[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Cached types should match - Strings are equal[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testMetadataOperations [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testProviderConfiguration [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide validation error[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should validate SQLite path[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testProviderConfiguration [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testResourceManagement [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - All queries should complete[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testResourceManagement [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testTransactionManagement [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mTransaction started.[0m
-2025-02-10 23:29:34 INFO  Logger - [94mTransaction committed successfully.[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Transaction should complete successfully[0m
-2025-02-10 23:29:34 INFO  Logger - [94mTransaction started.[0m
-2025-02-10 23:29:34 INFO  Logger - [94mTransaction rolled back.[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Should rollback on exception - Strings are equal[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testTransactionManagement [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94m[START] TESTCASE testSelectWithWhere [STARTED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted update successfully: DELETE FROM orders[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted update successfully: DELETE FROM products[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted query successfully: SELECT name, price FROM products WHERE price > 20[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Should find one product above $20 - Long values are equal[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product B[0m
-2025-02-10 23:29:34 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-10 23:29:34 INFO  Logger - [92m[PASSED] TESTCASE testSelectWithWhere [PASSED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS orders[0m
-2025-02-10 23:29:34 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS products[0m
-2025-02-10 23:29:34 INFO  Logger - [94mDatabase connection pool closed.[0m
-2025-02-10 23:29:34 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-10 23:29:34 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
-2025-02-10 23:29:34 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
-2025-02-10 23:29:34 INFO  Logger - [94mTotal Execution Time is: 0 Min 1 Sec 302 Mills[0m
-2025-02-10 23:29:34 INFO  Logger - [94m------------------------------------------[0m
-2025-02-10 23:29:34 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-10 23:29:34 INFO  Logger - [94m------------------------------------------[0m
+2025-02-10 23:43:38 INFO  Logger - [94mGetting Timestamp: 2025-02-10[0m
+2025-02-10 23:43:38 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-10 23:43:38 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-10 23:43:39 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-02-10 23:43:39 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-02-10 23:43:39 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-10 23:43:39 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-02-10 23:43:39 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-10 23:43:39 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
+2025-02-10 23:43:39 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)[0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testAdvancedTransactions [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name = 'trans1'[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Main transaction should be committed - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testAdvancedTransactions [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testBatchOperations [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should insert all records - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Batch insert should complete within 5 seconds[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name LIKE 'batch%'[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should find all batch inserted records - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperations [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testCacheManagement [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should return cached column names - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mCache cleared for table: test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should reload cache after clearing - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved column data types for table: test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: INTEGER - Should cache column types[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should cache correct type - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testCacheManagement [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testComplexQueries [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test1')[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test2')[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table LIMIT 1 OFFSET 0[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have first record[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is false: false - Should not have second record[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testComplexQueries [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testConfigurationValidation [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: SQLite database path cannot be empty - Should throw exception for empty path[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for empty path[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: Server address cannot be empty - Should throw exception for invalid MySQL config[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for invalid MySQL config[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testConfigurationValidation [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testConnectionPoolBehavior [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Underlying connections should be reused from pool - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have idle connections[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have no active connections - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolBehavior [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testConnectionPoolManagement [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: HikariDataSource (HikariPool-1) - DataSource should be initialized[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: No active connections initially - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Total connections within limit[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: HikariProxyConnection@1115349385 wrapping org.sqlite.jdbc4.JDBC4Connection@72f8ae0c - Should get connection from pool[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is false: false - Connection should be open[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolManagement [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testConnectionValidation [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid initially[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: PRAGMA locking_mode = EXCLUSIVE[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: BEGIN EXCLUSIVE[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid under lock[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: COMMIT[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testConnectionValidation [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved column names for table: nonexistent_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should handle nonexistent table gracefully[0m
+2025-02-10 23:43:40 ERROR Logger - [91mQuery execution failed: Invalid SQL syntax: [SQLITE_ERROR] SQL error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:40 ERROR Logger - [91mSQL State: null[0m
+2025-02-10 23:43:40 ERROR Logger - [91mError Code: 0[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide meaningful error message: query execution failed: invalid sql syntax: [sqlite_error] sql error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should return empty result for nonexistent table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testErrorRecovery [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should recover and execute valid query[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid after error[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testErrorRecovery [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testMetadataOperations [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Object is not null: {name=TEXT, id=INTEGER} - Column types should not be null[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have at least 2 columns[0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved primary keys for table: test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should identify primary key[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Cached types should match - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testMetadataOperations [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testProviderConfiguration [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide validation error[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should validate SQLite path[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testProviderConfiguration [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testResourceManagement [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - All queries should complete[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testResourceManagement [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testTransactionManagement [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Transaction should complete successfully[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTransaction rolled back.[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should rollback on exception - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testTransactionManagement [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mDatabase connection pool closed.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS orders[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS products[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE products (id INTEGER PRIMARY KEY,name TEXT NOT NULL,price REAL,stock INTEGER,description TEXT,active BOOLEAN DEFAULT 1)[0m
+2025-02-10 23:43:40 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE orders (order_id INTEGER PRIMARY KEY,product_id INTEGER,quantity INTEGER,order_date TEXT,FOREIGN KEY(product_id) REFERENCES products(id))[0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testAggregateQueries [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as total FROM products[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have 3 products - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT AVG(price) as avg_price FROM products[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Average price should be around 15.75[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT stock > 50 as high_stock, COUNT(*) as count FROM products GROUP BY high_stock[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have 2 products with high stock - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testAggregateQueries [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testBatchOperationsWithDifferentTypes [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should insert 3 records - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT name, price, stock FROM products WHERE name LIKE 'Test Product%'[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Price should be exact - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Stock should be exact - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperationsWithDifferentTypes [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testComplexFilters [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT name, price FROM products WHERE price BETWEEN 10 AND 30 AND stock >= 50 ORDER BY price DESC, name ASC[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should find three products - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: First product should be Product B (highest price) - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Second product should be Product C (medium price) - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Third product should be Product A (lowest price) - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testComplexFilters [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testDeleteOperations [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: INSERT INTO products (name, price, stock) VALUES ('Temp Product', 9.99, 10)[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: DELETE FROM products WHERE name = 'Temp Product'[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as count FROM products WHERE name = 'Temp Product'[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Record should be deleted - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testDeleteOperations [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testJoinQueries [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: INSERT INTO orders (product_id, quantity, order_date) VALUES (1, 5, '2024-02-10')[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: INSERT INTO orders (product_id, quantity, order_date) VALUES (2, 3, '2024-02-10')[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT p.name, o.quantity FROM products p INNER JOIN orders o ON p.id = o.product_id[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have 2 orders - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product A order[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product B order[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testJoinQueries [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testTableMetadata [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved column data types for table: products[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: ID should be INTEGER - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Price should be REAL - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Name should be TEXT - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved primary keys for table: products[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have one primary key - Long values are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Primary key should be id - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [94mRetrieved foreign keys for table: orders[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assert: Should have foreign key to products - Strings are equal[0m
+2025-02-10 23:43:40 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:40 INFO  Logger - [92m[PASSED] TESTCASE testTableMetadata [PASSED][0m
+2025-02-10 23:43:40 INFO  Logger - [94m[START] TESTCASE testUpdateOperations [STARTED][0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: UPDATE products SET active = 1[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: UPDATE products SET stock = CASE WHEN name = 'Product A' THEN 100 WHEN name = 'Product B' THEN 50 WHEN name = 'Product C' THEN 75 END[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted update successfully: UPDATE products SET stock = stock + 10 WHERE name = 'Product A'[0m
+2025-02-10 23:43:40 INFO  Logger - [94mExecuted query successfully: SELECT stock FROM products WHERE name = 'Product A'[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Stock should be updated - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: UPDATE products SET active = 0 WHERE name IN ('Product B', 'Product C')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) as count FROM products WHERE active = 0[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should update exactly two rows - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testUpdateOperations [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testAdvancedTransactions [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name = 'trans1'[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Main transaction should be committed - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testAdvancedTransactions [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testBatchOperations [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should insert all records - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Batch insert should complete within 5 seconds[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name LIKE 'batch%'[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should find all batch inserted records - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperations [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testCacheManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should return cached column names - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mCache cleared for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should reload cache after clearing - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column data types for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: INTEGER - Should cache column types[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should cache correct type - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testCacheManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testComplexQueries [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test1')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test2')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table LIMIT 1 OFFSET 0[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have first record[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is false: false - Should not have second record[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testComplexQueries [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConfigurationValidation [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: SQLite database path cannot be empty - Should throw exception for empty path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for empty path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: Server address cannot be empty - Should throw exception for invalid MySQL config[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for invalid MySQL config[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConfigurationValidation [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionPoolBehavior [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Underlying connections should be reused from pool - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have idle connections[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should have no active connections - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolBehavior [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionPoolManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: HikariDataSource (HikariPool-2) - DataSource should be initialized[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: No active connections initially - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Total connections within limit[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: HikariProxyConnection@1152524191 wrapping org.sqlite.jdbc4.JDBC4Connection@655a01d8 - Should get connection from pool[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is false: false - Connection should be open[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionValidation [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid initially[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: PRAGMA locking_mode = EXCLUSIVE[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: BEGIN EXCLUSIVE[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid under lock[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: COMMIT[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionValidation [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: nonexistent_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should handle nonexistent table gracefully[0m
+2025-02-10 23:43:41 ERROR Logger - [91mQuery execution failed: Invalid SQL syntax: [SQLITE_ERROR] SQL error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:41 ERROR Logger - [91mSQL State: null[0m
+2025-02-10 23:43:41 ERROR Logger - [91mError Code: 0[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide meaningful error message: query execution failed: invalid sql syntax: [sqlite_error] sql error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should return empty result for nonexistent table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testErrorRecovery [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should recover and execute valid query[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid after error[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testErrorRecovery [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testMetadataOperations [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: {name=TEXT, id=INTEGER} - Column types should not be null[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have at least 2 columns[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved primary keys for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should identify primary key[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Cached types should match - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testMetadataOperations [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testProviderConfiguration [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide validation error[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should validate SQLite path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testProviderConfiguration [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testResourceManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - All queries should complete[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testResourceManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testTransactionManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Transaction should complete successfully[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction rolled back.[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should rollback on exception - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testTransactionManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testSelectWithWhere [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: DELETE FROM orders[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: DELETE FROM products[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT name, price FROM products WHERE price > 20[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should find one product above $20 - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should find Product B[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testSelectWithWhere [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS orders[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS products[0m
+2025-02-10 23:43:41 INFO  Logger - [94mDatabase connection pool closed.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE edge_cases (id INTEGER PRIMARY KEY,unicode_text TEXT,long_text TEXT,numeric_value REAL,binary_data BLOB)[0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testBinaryDataHandling [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should insert binary data record - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT binary_data FROM edge_cases WHERE id = last_insert_rowid()[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Binary data should be preserved exactly[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testBinaryDataHandling [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testLongTextHandling [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT length(long_text) as text_length FROM edge_cases WHERE id = last_insert_rowid()[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Long text should be stored completely[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testLongTextHandling [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testNumericPrecision [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT numeric_value FROM edge_cases WHERE numeric_value > 0 ORDER BY numeric_value[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Small number should be preserved - Values are equal within delta 0.000000[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Large number should be preserved - Values are equal within delta 10000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000000[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testNumericPrecision [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testUnicodeHandling [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: INSERT INTO edge_cases (unicode_text) VALUES ('Hello, 世界! Привет мир! مرحبا بالعالم!')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT unicode_text FROM edge_cases WHERE id = last_insert_rowid()[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Unicode text should be preserved - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testUnicodeHandling [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testAdvancedTransactions [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name = 'trans1'[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Main transaction should be committed - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testAdvancedTransactions [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testBatchOperations [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should insert all records - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Batch insert should complete within 5 seconds[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name LIKE 'batch%'[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should find all batch inserted records - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperations [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testCacheManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should return cached column names - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mCache cleared for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should reload cache after clearing - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column data types for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: INTEGER - Should cache column types[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should cache correct type - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testCacheManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testComplexQueries [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test1')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test2')[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table LIMIT 1 OFFSET 0[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have first record[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is false: false - Should not have second record[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testComplexQueries [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConfigurationValidation [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: SQLite database path cannot be empty - Should throw exception for empty path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for empty path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: Server address cannot be empty - Should throw exception for invalid MySQL config[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for invalid MySQL config[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConfigurationValidation [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionPoolBehavior [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Underlying connections should be reused from pool - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have idle connections[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should have no active connections - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolBehavior [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionPoolManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: HikariDataSource (HikariPool-3) - DataSource should be initialized[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: No active connections initially - Long values are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Total connections within limit[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: HikariProxyConnection@275609562 wrapping org.sqlite.jdbc4.JDBC4Connection@95eb320 - Should get connection from pool[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is false: false - Connection should be open[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testConnectionValidation [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid initially[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: PRAGMA locking_mode = EXCLUSIVE[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: BEGIN EXCLUSIVE[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid under lock[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: COMMIT[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testConnectionValidation [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved column names for table: nonexistent_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should handle nonexistent table gracefully[0m
+2025-02-10 23:43:41 ERROR Logger - [91mQuery execution failed: Invalid SQL syntax: [SQLITE_ERROR] SQL error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:41 ERROR Logger - [91mSQL State: null[0m
+2025-02-10 23:43:41 ERROR Logger - [91mError Code: 0[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide meaningful error message: query execution failed: invalid sql syntax: [sqlite_error] sql error or missing database (near ";": syntax error)[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should return empty result for nonexistent table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testErrorRecovery [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should recover and execute valid query[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid after error[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testErrorRecovery [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testMetadataOperations [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Object is not null: {name=TEXT, id=INTEGER} - Column types should not be null[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have at least 2 columns[0m
+2025-02-10 23:43:41 INFO  Logger - [94mRetrieved primary keys for table: test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should identify primary key[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Cached types should match - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testMetadataOperations [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testProviderConfiguration [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide validation error[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Should validate SQLite path[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testProviderConfiguration [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testResourceManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - All queries should complete[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testResourceManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94m[START] TESTCASE testTransactionManagement [STARTED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Condition is true: true - Transaction should complete successfully[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 23:43:41 INFO  Logger - [94mTransaction rolled back.[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assert: Should rollback on exception - Strings are equal[0m
+2025-02-10 23:43:41 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 23:43:41 INFO  Logger - [92m[PASSED] TESTCASE testTransactionManagement [PASSED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mExecuted update successfully: DROP TABLE IF EXISTS edge_cases[0m
+2025-02-10 23:43:41 INFO  Logger - [94mDatabase connection pool closed.[0m
+2025-02-10 23:43:41 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-10 23:43:41 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
+2025-02-10 23:43:41 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
+2025-02-10 23:43:41 INFO  Logger - [94mTotal Execution Time is: 0 Min 2 Sec 455 Mills[0m
+2025-02-10 23:43:41 INFO  Logger - [94m------------------------------------------[0m
+2025-02-10 23:43:41 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-02-10 23:43:41 INFO  Logger - [94m------------------------------------------[0m

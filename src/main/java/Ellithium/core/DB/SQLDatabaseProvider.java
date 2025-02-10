@@ -114,7 +114,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
             Reporter.log("Failed to load SQLite JDBC driver", LogLevel.ERROR);
-            throw new RuntimeException("SQLite JDBC driver not found", e);
+            throw new SQLRuntimeException("SQLite JDBC driver not found", e);
         }
 
         // Initialize the connection pool
@@ -221,13 +221,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
             T result = callback.execute(conn);
             commitTransaction();
             return result;
+        } catch (SQLException e) {
+            rollbackTransaction();
+            throw e;
         } catch (Exception e) {
             rollbackTransaction();
-            if (e instanceof SQLException) {
-                throw (SQLException) e;
-            } else {
-                throw new SQLException("Transaction failed", e);
-            }
+            throw new SQLException("Transaction failed", e);
         }
     }
     @Override
@@ -346,6 +345,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
 
     public List<String> getColumnNames(String tableName) {
+        validateTableName(tableName);
         return columnNamesCache.get(tableName, key -> {
             List<String> columnNames = new ArrayList<>();
             try (Connection connection = dataSource.getConnection();
@@ -381,17 +381,17 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
     public int getRowCount(String tableName) {
         return rowCountCache.get(tableName, key -> {
-            String query = "SELECT COUNT(*) FROM " + tableName;
             int rowCount = 0;
+            String query = "SELECT COUNT(*) FROM ?";
             try (Connection connection = dataSource.getConnection();
-                 Statement statement = connection.createStatement();
-                 ResultSet resultSet = statement.executeQuery(query)) {
-
-                if (resultSet.next()) {
-                    rowCount = resultSet.getInt(1);
+                 PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, tableName);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    if (resultSet.next()) {
+                        rowCount = resultSet.getInt(1);
+                    }
                 }
                 Reporter.log("Row count for table " + tableName + ": " + rowCount, LogLevel.INFO_BLUE);
-
             } catch (SQLException e) {
                 Reporter.log("Failed to retrieve row count for table: " + tableName, LogLevel.ERROR);
                 Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
@@ -402,6 +402,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
 
     public Map<String, String> getColumnDataTypes(String tableName) {
+        validateTableName(tableName);
         return columnDataTypesCache.get(tableName, key -> {
             Map<String, String> columnDataTypes = new HashMap<>();
             try (Connection connection = dataSource.getConnection();
@@ -422,6 +423,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
 
     public List<String> getPrimaryKeys(String tableName) {
+        validateTableName(tableName);
         return primaryKeysCache.get(tableName, key -> {
             List<String> primaryKeys = new ArrayList<>();
             try (Connection connection = dataSource.getConnection();
@@ -442,6 +444,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
 
     public Map<String, String> getForeignKeys(String tableName) {
+        validateTableName(tableName);
         return foreignKeysCache.get(tableName, key -> {
             Map<String, String> foreignKeys = new HashMap<>();
             try (Connection connection = dataSource.getConnection();
@@ -632,5 +635,15 @@ public class SQLDatabaseProvider implements AutoCloseable {
             throw new IllegalArgumentException("Multiple SQL statements are not allowed");
         }
         return sanitized;
+    }
+
+    private void validateTableName(String tableName) {
+        if (tableName == null || tableName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Table name cannot be null or empty");
+        }
+        // Add regex pattern to ensure table name contains only valid characters
+        if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
+            throw new IllegalArgumentException("Invalid table name format");
+        }
     }
 }
