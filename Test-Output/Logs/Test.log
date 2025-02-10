@@ -1,202 +1,130 @@
-2025-02-09 21:56:59 INFO  Logger - [94mGetting Timestamp: 2025-02-09[0m
-2025-02-09 21:56:59 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-09 21:56:59 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-09 21:56:59 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-09 21:56:59 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-09 21:56:59 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-09 21:56:59 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
-2025-02-09 21:56:59 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
-2025-02-09 21:56:59 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:56:59 INFO  Logger - [94m[START] TESTCASE testArrayOperations [STARTED][0m
-2025-02-09 21:56:59 INFO  Logger - [94mCreating array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [94mAppending to JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [94mInserting into JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:56:59 INFO  Logger - [92mValue found in arraysrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mValue found in arraysrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mArray operations test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testArrayOperations [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testArrayOperationsInDepth [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mAppending to JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mInserting into JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mAppending to JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mValue found in arraysrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mValue found in arraysrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mValue found in arraysrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [94mRemoving from JSON array at path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mChecking array contains value in path: itemssrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is false[0m
-2025-02-09 21:57:00 INFO  Logger - [92mArray operations test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testArrayOperationsInDepth [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testBackupAndNullRemoval [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mComparing JSON files: src/test/resources/TestData/test.json and src/test/resources/TestData/test.json.backup-1739131020099[0m
-2025-02-09 21:57:00 INFO  Logger - [92mComparison result: truenull[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully created backup at: src/test/resources/TestData/test.json.backup-1739131020099[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully removed null valuessrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mBackup and null removal test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testBackupAndNullRemoval [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testCompareJsonFiles [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mComparing JSON files: src/test/resources/TestData/test.json and src/test/resources/TestData/compare.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mComparison result: truenull[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON comparison test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testCompareJsonFiles [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testGetJsonKeyValue [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mReading value for key: name from JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully read value for key: name from JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON key value test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testGetJsonKeyValue [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testGetNestedJsonData [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mAttempting to read nested JSON data from file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-09 21:57:00 INFO  Logger - [92mNested JSON test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testGetNestedJsonData [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testJsonBackupAndRestoration [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mComparing JSON files: src/test/resources/TestData/test.json and src/test/resources/TestData/test.json.backup-1739131020208[0m
-2025-02-09 21:57:00 INFO  Logger - [92mComparison result: truenull[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully created backup at: src/test/resources/TestData/test.json.backup-1739131020208[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-09 21:57:00 INFO  Logger - [94mSetting value for key: testKey in JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully updated JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert: Backup should contain original value - Strings are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mBackup and restore test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testJsonBackupAndRestoration [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testJsonFormatting [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully formatted JSON filesrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON formatting test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testJsonFormatting [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testKeyOccurrences [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully counted key occurrencessrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mKey occurrences test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testKeyOccurrences [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testMergeJsonFiles [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mMerging JSON files: src/test/resources/TestData/test.json and src/test/resources/TestData/compare.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully merged JSON files to: src/test/resources/TestData/merged.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON merge test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testMergeJsonFiles [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testNavigateAndModifyNestedStructure [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mModifying nested path: address.streetsrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully modified JSON structuresrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mReading from nested path: address.streetsrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully read nested valuesrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mNested structure navigation test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testNavigateAndModifyNestedStructure [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testNullValueHandling [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully removed null valuessrc/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is false[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mNull value handling test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testNullValueHandling [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testParseJsonToList [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mParse JSON to list test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testParseJsonToList [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testParseJsonToObject [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mParse to object test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testParseJsonToObject [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testSetJsonData [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mAttempting to write JSON data to file: src/test/resources/TestData/output.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mCreated new JSON file: src/test/resources/TestData/output.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully wrote data to JSON file: src/test/resources/TestData/output.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mAttempting to read JSON data from file: src/test/resources/TestData/output.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully read JSON file: src/test/resources/TestData/output.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON write test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testSetJsonData [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testSetJsonKeyValue [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mSetting value for key: name in JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully updated JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mReading value for key: name from JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully read value for key: name from JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON key update test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testSetJsonKeyValue [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testUpdateNestedJsonKey [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mUpdating nested JSON key in file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mSuccessfully updated nested key in JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [94mAttempting to read nested JSON data from file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Object is not null[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert: Street value should be updated - Objects are equal[0m
-2025-02-09 21:57:00 INFO  Logger - [92mNested key update test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testUpdateNestedJsonKey [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest setup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [94m[START] TESTCASE testValidateJsonKeys [STARTED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mValidating keys in JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mAll required keys are present in JSON file: src/test/resources/TestData/test.json[0m
-2025-02-09 21:57:00 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-09 21:57:00 INFO  Logger - [92mJSON key validation test passed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - [92m[PASSED] TESTCASE testValidateJsonKeys [PASSED][0m
-2025-02-09 21:57:00 INFO  Logger - [92mTest cleanup completed successfully[0m
-2025-02-09 21:57:00 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-09 21:57:00 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
-2025-02-09 21:57:00 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
-2025-02-09 21:57:00 INFO  Logger - [94mTotal Execution Time is: 0 Min 0 Sec 882 Mills[0m
-2025-02-09 21:57:00 INFO  Logger - [94m------------------------------------------[0m
-2025-02-09 21:57:00 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-09 21:57:00 INFO  Logger - [94m------------------------------------------[0m
+2025-02-10 22:40:26 INFO  Logger - [94mGetting Timestamp: 2025-02-10[0m
+2025-02-10 22:40:26 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-10 22:40:26 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-10 22:40:26 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-02-10 22:40:26 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-02-10 22:40:26 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-10 22:40:26 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-02-10 22:40:26 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-10 22:40:26 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
+2025-02-10 22:40:26 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [94mInitialized SQLDatabaseProvider with HikariCP connection pool.[0m
+2025-02-10 22:40:27 INFO  Logger - [94mTable created successfully with SQL: CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)[0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testAdvancedTransactions [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 22:40:27 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 22:40:27 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name = 'trans1'[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Main transaction should be committed - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testAdvancedTransactions [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testBatchOperations [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should insert all records - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Batch insert should complete within 5 seconds[0m
+2025-02-10 22:40:27 INFO  Logger - [94mExecuted query successfully: SELECT COUNT(*) FROM test_table WHERE name LIKE 'batch%'[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should find all batch inserted records - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testBatchOperations [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testCacheManagement [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should return cached column names - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [94mCache cleared for table: test_table[0m
+2025-02-10 22:40:27 INFO  Logger - [94mRetrieved column names for table: test_table[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should reload cache after clearing - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [94mRetrieved column data types for table: test_table[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Object is not null: INTEGER - Should cache column types[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should cache correct type - Strings are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testCacheManagement [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testComplexQueries [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test1')[0m
+2025-02-10 22:40:27 INFO  Logger - [94mExecuted update successfully: INSERT INTO test_table (name) VALUES ('test2')[0m
+2025-02-10 22:40:27 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table LIMIT 1 OFFSET 0[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have first record[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is false: false - Should not have second record[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testComplexQueries [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testConfigurationValidation [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: SQLite database path cannot be empty - Should throw exception for empty path[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for empty path[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Object is not null: java.lang.IllegalArgumentException: Server address cannot be empty - Should throw exception for invalid MySQL config[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have correct error message for invalid MySQL config[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testConfigurationValidation [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testConnectionPoolBehavior [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Underlying connections should be reused from pool - Strings are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have idle connections[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Should have no active connections - Long values are equal[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:27 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolBehavior [PASSED][0m
+2025-02-10 22:40:27 INFO  Logger - [94m[START] TESTCASE testConnectionPoolManagement [STARTED][0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Object is not null: HikariDataSource (HikariPool-1) - DataSource should be initialized[0m
+2025-02-10 22:40:27 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: No active connections initially - Long values are equal[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Total connections within limit[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Object is not null: HikariProxyConnection@1016625178 wrapping org.sqlite.jdbc4.JDBC4Connection@6c9320c2 - Should get connection from pool[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is false: false - Connection should be open[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testConnectionPoolManagement [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testConnectionValidation [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should be valid initially[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted update successfully: PRAGMA locking_mode = EXCLUSIVE[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted update successfully: BEGIN EXCLUSIVE[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid under lock[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted update successfully: COMMIT[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testConnectionValidation [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testErrorHandling [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mRetrieved column names for table: nonexistent_table[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should handle nonexistent table gracefully[0m
+2025-02-10 22:40:28 ERROR Logger - [91mQuery execution failed: Invalid SQL syntax: [SQLITE_ERROR] SQL error or missing database (near ";": syntax error)[0m
+2025-02-10 22:40:28 ERROR Logger - [91mSQL State: null[0m
+2025-02-10 22:40:28 ERROR Logger - [91mError Code: 0[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide meaningful error message: query execution failed: invalid sql syntax: [sqlite_error] sql error or missing database (near ";": syntax error)[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should return empty result for nonexistent table[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testErrorHandling [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testErrorRecovery [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should recover and execute valid query[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Connection should remain valid after error[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testErrorRecovery [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testMetadataOperations [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Object is not null: {name=TEXT, id=INTEGER} - Column types should not be null[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should have at least 2 columns[0m
+2025-02-10 22:40:28 INFO  Logger - [94mRetrieved primary keys for table: test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should identify primary key[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Cached types should match - Strings are equal[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testMetadataOperations [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testProviderConfiguration [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should provide validation error[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Should validate SQLite path[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testProviderConfiguration [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testResourceManagement [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [94mExecuted query successfully: SELECT * FROM test_table[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - All queries should complete[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testResourceManagement [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94m[START] TESTCASE testTransactionManagement [STARTED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 22:40:28 INFO  Logger - [94mTransaction committed successfully.[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Condition is true: true - Transaction should complete successfully[0m
+2025-02-10 22:40:28 INFO  Logger - [94mTransaction started.[0m
+2025-02-10 22:40:28 INFO  Logger - [94mTransaction rolled back.[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assert: Should rollback on exception - Strings are equal[0m
+2025-02-10 22:40:28 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
+2025-02-10 22:40:28 INFO  Logger - [92m[PASSED] TESTCASE testTransactionManagement [PASSED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mDatabase connection pool closed.[0m
+2025-02-10 22:40:28 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-10 22:40:28 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
+2025-02-10 22:40:28 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
+2025-02-10 22:40:28 INFO  Logger - [94mTotal Execution Time is: 0 Min 1 Sec 280 Mills[0m
+2025-02-10 22:40:28 INFO  Logger - [94m------------------------------------------[0m
+2025-02-10 22:40:28 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-02-10 22:40:28 INFO  Logger - [94m------------------------------------------[0m
