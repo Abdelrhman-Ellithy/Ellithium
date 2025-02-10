@@ -1005,5 +1005,32 @@ public class AssertionExecutor {
             softAssert.fail(message, throwable);
             Reporter.log("Soft Assert: " + message, LogLevel.ERROR, " - Forced failure with throwable");
         }
+
+        public void assertEquals(double actual, double expected, String message) {
+            softAssert.assertEquals(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+        public void assertEquals(byte[] actual, byte[] expected, String message) {
+            softAssert.assertEquals(actual, expected, message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+        public void assertEquals(double actual, double expected) {
+            softAssert.assertEquals(actual, expected);
+            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+
+        public void assertEquals(byte[] actual, byte[] expected) {
+            softAssert.assertEquals(actual, expected);
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+
+        public void assertEquals(List actual, List expected, String message) {
+            softAssert.assertEquals(actual, expected,message);
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+        }
+        public void assertEquals(List actual, List expected) {
+            softAssert.assertEquals(actual, expected);
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - Long values are equal");
+        }
     }
 }

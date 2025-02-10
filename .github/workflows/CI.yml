@@ -44,8 +44,86 @@ jobs:
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
       - name: Run Helper Tests
-        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
+        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
+        
+  DataBase-Tests:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        java-version: [21]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'zulu'
+      
+      - name: Maven Dependency Cache
+        uses: actions/cache@v3
+        id: maven-cache
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/Ellithium
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Download Dependencies
+        if: steps.maven-cache.outputs.cache-hit != 'true'
+        run: mvn dependency:go-offline
+      
+      - name: Clean up previous test output
+        run: |
+          rm -rf Test-Output/Reports/*
+          rm -rf Test-Output/Logs/*
+          rm -rf Test-Output/ScreenShots/Failed/*
+          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
+      - name: Run Helper Tests
+        run: mvn test -Dtest="SQLiteDBTest,SQLiteDBEdgeCasesTest,SQLiteDBAdvancedTest"
+
+
+  API-Tests:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        java-version: [21]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'zulu'
+      
+      - name: Maven Dependency Cache
+        uses: actions/cache@v3
+        id: maven-cache
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/Ellithium
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Download Dependencies
+        if: steps.maven-cache.outputs.cache-hit != 'true'
+        run: mvn dependency:go-offline
+      
+      - name: Clean up previous test output
+        run: |
+          rm -rf Test-Output/Reports/*
+          rm -rf Test-Output/Logs/*
+          rm -rf Test-Output/ScreenShots/Failed/*
+          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
+
+      - name: Run API Tests
+        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
   UI-Basic-Tests:
     runs-on: macos-latest
     strategy:
@@ -162,42 +240,3 @@ jobs:
 
       - name: Run UI BDD Tests
         run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
-
-  API-Tests:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        java-version: [21]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v3
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        run: |
-          rm -rf Test-Output/Reports/*
-          rm -rf Test-Output/Logs/*
-          rm -rf Test-Output/ScreenShots/Failed/*
-          find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-
-      - name: Run API Tests
-        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=all -DforkCount=5 -DreuseForks=true -DthreadCount=5 -DdataProviderThreadCount=5
