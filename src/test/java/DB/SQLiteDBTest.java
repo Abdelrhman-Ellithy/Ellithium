@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class SQLiteDBTest extends NonBDDSetup {
-    private SQLDatabaseProvider provider;
-    private static final String DB_PATH = "src/test/resources/TestData/test_provider.db";
-    private AssertionExecutor.soft softAssert;
+    protected SQLDatabaseProvider provider;
+    protected static final String DB_PATH = "src/test/resources/TestData/test_provider.db";
+    protected AssertionExecutor.soft softAssert;
 
     @BeforeMethod
     public void beforeEachTest() {
@@ -37,44 +37,35 @@ public class SQLiteDBTest extends NonBDDSetup {
         if (dbFile.exists()) dbFile.delete();
         new File("src/test/resources/TestData").mkdirs();
         provider = new SQLDatabaseProvider(SQLDBType.SQLITE, DB_PATH);
-        
-        // Create a simple test table
         provider.createTable("CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)");
     }
 
     @Test
     public void testConnectionPoolManagement() throws SQLException {
-        // Test connection pool initialization
         softAssert.assertNotNull(provider.getDataSource(), "DataSource should be initialized");
         softAssert.assertTrue(provider.isConnectionValid(), "Connection should be valid");
 
-        // Test pool statistics
         var stats = provider.getPoolStatistics();
         softAssert.assertEquals(stats.getActiveConnections(), 0, "No active connections initially");
         softAssert.assertTrue(stats.getTotalConnections() <= 10, "Total connections within limit");
-
-        // Test connection acquisition and release
         try (Connection conn = provider.getDataSource().getConnection()) {
             softAssert.assertNotNull(conn, "Should get connection from pool");
             softAssert.assertFalse(conn.isClosed(), "Connection should be open");
         }
-
         softAssert.assertAll();
     }
 
     @Test
     public void testCacheManagement() throws SQLException {
-        // Test column name caching
+
         List<String> columnNames = provider.getColumnNames("test_table");
         List<String> cachedColumnNames = provider.getColumnNames("test_table");
         softAssert.assertEquals(columnNames, cachedColumnNames, "Should return cached column names");
 
-        // Test cache invalidation
         provider.clearCacheForTable("test_table");
         List<String> newColumnNames = provider.getColumnNames("test_table");
         softAssert.assertEquals(newColumnNames, columnNames, "Should reload cache after clearing");
 
-        // Test metadata caching
         Map<String, String> columnTypes = provider.getColumnDataTypes("test_table");
         softAssert.assertNotNull(columnTypes.get("id"), "Should cache column types");
         softAssert.assertEquals(columnTypes.get("id"), "INTEGER", "Should cache correct type");
@@ -88,7 +79,6 @@ public class SQLiteDBTest extends NonBDDSetup {
         List<String> columns = provider.getColumnNames("nonexistent_table");
         softAssert.assertTrue(columns.isEmpty(), "Should handle nonexistent table gracefully");
 
-        // Test invalid SQL with proper error handling
         try {
             provider.executeQuery("SELECT * FROM test_table WHERE;");
             softAssert.fail("Should throw exception for invalid SQL");
@@ -103,7 +93,6 @@ public class SQLiteDBTest extends NonBDDSetup {
             );
         }
 
-        // Test query to nonexistent table
         try {
             CachedRowSet result = provider.executeQuery("SELECT * FROM nonexistent_table");
             softAssert.assertTrue(!result.next(), "Should return empty result for nonexistent table");
@@ -122,7 +111,7 @@ public class SQLiteDBTest extends NonBDDSetup {
 
     @Test
     public void testTransactionManagement() throws SQLException {
-        // Test transaction isolation
+
         try {
             provider.executeInTransaction(conn -> {
                 conn.createStatement().executeUpdate("INSERT INTO test_table (name) VALUES ('test')");
@@ -133,7 +122,6 @@ public class SQLiteDBTest extends NonBDDSetup {
             softAssert.fail("Transaction should not fail: " + e.getMessage());
         }
 
-        // Test transaction rollback
         try {
             provider.executeInTransaction(conn -> {
                 throw new SQLException("Test rollback");
@@ -148,10 +136,7 @@ public class SQLiteDBTest extends NonBDDSetup {
 
     @Test
     public void testConnectionValidation() {
-        // Test connection validation
         softAssert.assertTrue(provider.isConnectionValid(), "Connection should be valid initially");
-
-        // Test connection after temporary database lock
         try {
             provider.executeUpdate("PRAGMA locking_mode = EXCLUSIVE");
             provider.executeUpdate("BEGIN EXCLUSIVE");
@@ -166,11 +151,10 @@ public class SQLiteDBTest extends NonBDDSetup {
 
     @Test
     public void testResourceManagement() throws InterruptedException {
-        // Test concurrent resource usage
+
         int threadCount = 5;
         CountDownLatch latch = new CountDownLatch(threadCount);
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
@@ -181,7 +165,6 @@ public class SQLiteDBTest extends NonBDDSetup {
                 }
             });
         }
-
         softAssert.assertTrue(latch.await(5, TimeUnit.SECONDS), "All queries should complete");
         executor.shutdown();
         softAssert.assertAll();
@@ -223,16 +206,11 @@ public class SQLiteDBTest extends NonBDDSetup {
 
     @Test(groups = "metadata")
     public void testMetadataOperations() throws SQLException {
-        // Test schema information retrieval
         Map<String, String> columnTypes = provider.getColumnDataTypes("test_table");
         softAssert.assertNotNull(columnTypes, "Column types should not be null");
         softAssert.assertTrue(columnTypes.size() >= 2, "Should have at least 2 columns");
-
-        // Test primary key information
         List<String> primaryKeys = provider.getPrimaryKeys("test_table");
         softAssert.assertTrue(primaryKeys.contains("id"), "Should identify primary key");
-
-        // Test cached metadata retrieval
         Map<String, String> cachedTypes = provider.getColumnDataTypes("test_table");
         softAssert.assertEquals(cachedTypes.toString(), columnTypes.toString(), "Cached types should match");
 
