@@ -6,7 +6,7 @@ import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import static org.testng.Assert.*;
+import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
 public class CSVHelperTests extends NonBDDSetup {
     private static final String TEST_CSV = "src/test/resources/TestData/test.csv";
