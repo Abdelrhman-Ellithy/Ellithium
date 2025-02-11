@@ -10,7 +10,12 @@ import java.util.*;
 
 public class ExcelHelper {
 
-    // Method to get Excel data
+    /**
+     * Reads Excel data from a given file and sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @return List of maps representing the rows.
+     */
     public static List<Map<String, String>> getExcelData(String filePath, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
         Reporter.log("Attempting to read Excel data from file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -44,7 +49,12 @@ public class ExcelHelper {
         return data;
     }
 
-    // Method to set Excel data
+    /**
+     * Writes data to the specified Excel file and sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param data List of maps containing the data.
+     */
     public static void setExcelData(String filePath, String sheetName, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath );
@@ -101,7 +111,13 @@ public class ExcelHelper {
         }
     }
 
-    // Utility method to get a specific column
+    /**
+     * Retrieves data from a specific column in an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnIndex Index of the column.
+     * @return List of cell values as strings.
+     */
     public static List<String> getColumnData(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(filePath );
@@ -121,7 +137,14 @@ public class ExcelHelper {
         return columnData;
     }
 
-    // Utility method to get a specific cell value
+    /**
+     * Reads cell data from a given Excel file.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Row index.
+     * @param columnIndex Column index.
+     * @return The cell value as a string.
+     */
     public static String getCellData(String filePath, String sheetName, int rowIndex, int columnIndex) {
         try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -141,7 +164,13 @@ public class ExcelHelper {
         return "";
     }
 
-    // Utility method to read row by index
+    /**
+     * Reads an entire row from an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Row index.
+     * @return List of cell values as strings.
+     */
     public static List<String> getRowData(String filePath, String sheetName, int rowIndex) {
         List<String> rowData = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(filePath );
@@ -163,6 +192,11 @@ public class ExcelHelper {
         return rowData;
     }
 
+    /**
+     * Utility method to convert a cell value to a string.
+     * @param cell The cell to convert.
+     * @return The cell value as a string.
+     */
     private static String getCellValueAsString(Cell cell) {
         if (cell == null) {
             return "";
@@ -202,6 +236,13 @@ public class ExcelHelper {
         }
     }
 
+    /**
+     * Reads a specific column from an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnIndex Column index.
+     * @return List of cell values from the column.
+     */
     public static List<String> readColumn(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -223,6 +264,14 @@ public class ExcelHelper {
         return columnData;
     }
 
+    /**
+     * Reads a specific cell from an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Row index.
+     * @param columnIndex Column index.
+     * @return Cell value as a string.
+     */
     public static String readCell(String filePath, String sheetName, int rowIndex, int columnIndex) {
         String cellValue = "";
         Reporter.log("Attempting to read cell from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -244,6 +293,14 @@ public class ExcelHelper {
         }
         return cellValue;
     }
+
+    /**
+     * Reads a row from an Excel sheet and returns it as a map.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Row index.
+     * @return Map representing the row.
+     */
     public static Map<String, String> readRow(String filePath, String sheetName, int rowIndex) {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
@@ -270,6 +327,14 @@ public class ExcelHelper {
         return rowData;
     }
 
+    /**
+     * Writes a value to a specific cell in an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Row index.
+     * @param columnIndex Column index.
+     * @param value Value to write.
+     */
     public static void writeCell(String filePath, String sheetName, int rowIndex, int columnIndex, String value) {
         Reporter.log("Attempting to write to a cell in Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath );
@@ -310,7 +375,15 @@ public class ExcelHelper {
             }
         }
     }
-    // Method to replace column data
+
+    /**
+     * Replaces data in a specific column of an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnName Name of the column.
+     * @param oldValue Value to be replaced.
+     * @param newValue New value to set.
+     */
     public static void replaceColumnData(String filePath, String sheetName, String columnName, String oldValue, String newValue) {
         try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -350,7 +423,12 @@ public class ExcelHelper {
         }
     }
 
-    // Method to append data
+    /**
+     * Appends new rows of data to an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param newRows New rows data.
+     */
     public static void appendData(String filePath, String sheetName, List<Map<String, String>> newRows) {
         try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -382,7 +460,12 @@ public class ExcelHelper {
         }
     }
 
-    // Method to delete a row
+    /**
+     * Deletes a row from an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param rowIndex Index of the row to delete.
+     */
     public static void deleteRow(String filePath, String sheetName, int rowIndex) {
         try (FileInputStream fis = new FileInputStream(filePath );
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -410,6 +493,15 @@ public class ExcelHelper {
             Reporter.log("Error while deleting row: " + e.getMessage(), LogLevel.ERROR);
         }
     }
+
+    /**
+     * Filters rows in an Excel sheet based on a column's filter value.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnIndex Column index.
+     * @param filterValue Value to filter by.
+     * @return List of rows matching the filter.
+     */
     public static List<Row> filterRows(String filePath, String sheetName, int columnIndex, String filterValue) {
         List<Row> filteredRows = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(filePath);
@@ -434,6 +526,12 @@ public class ExcelHelper {
         return filteredRows;
     }
 
+    /**
+     * Deletes a column from an Excel sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnIndex Index of the column to delete.
+     */
     public static void deleteColumn(String filePath, String sheetName, int columnIndex) {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = WorkbookFactory.create(fis)) {
@@ -457,6 +555,14 @@ public class ExcelHelper {
             Reporter.log("Error while deleting column: " + e.getMessage(), LogLevel.ERROR);
         }
     }
+
+    /**
+     * Sorts rows in an Excel sheet based on a specified column.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param columnIndex Column index used for sorting.
+     * @param ascending true for ascending order; false for descending.
+     */
     public static void sortRows(String filePath, String sheetName, int columnIndex, boolean ascending) {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = WorkbookFactory.create(fis)) {
@@ -497,6 +603,11 @@ public class ExcelHelper {
         }
     }
 
+    /**
+     * Copies a row from the source to the target row.
+     * @param sourceRow The source row.
+     * @param targetRow The target row.
+     */
     private static void copyRow(Row sourceRow, Row targetRow) {
         for (int i = sourceRow.getFirstCellNum(); i < sourceRow.getLastCellNum(); i++) {
             Cell newCell = targetRow.createCell(i);
@@ -505,6 +616,12 @@ public class ExcelHelper {
             }
         }
     }
+
+    /**
+     * Merges multiple Excel files into one.
+     * @param filePaths List of Excel file paths.
+     * @param outputFilePath Output file path.
+     */
     public static void mergeExcelFiles(List<String> filePaths, String outputFilePath) {
         try (Workbook outputWorkbook = new XSSFWorkbook()) {
             Sheet outputSheet = outputWorkbook.createSheet("Merged Data");
@@ -535,6 +652,14 @@ public class ExcelHelper {
             Reporter.log("Error while merging Excel files: " + e.getMessage(), LogLevel.ERROR);
         }
     }
+
+    /**
+     * Validates the file structure of an Excel sheet based on expected headers.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param expectedHeaders List of expected header names.
+     * @return true if structure is valid; false otherwise.
+     */
     public static boolean validateFileStructure(String filePath, String sheetName, List<String> expectedHeaders) {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = WorkbookFactory.create(fis)) {
@@ -567,7 +692,10 @@ public class ExcelHelper {
     }
 
     /**
-     * Check if a sheet is empty
+     * Checks if a sheet in an Excel file is empty.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @return true if empty; false otherwise.
      */
     public static boolean isSheetEmpty(String filePath, String sheetName) {
         try (FileInputStream fis = new FileInputStream(filePath);
@@ -589,7 +717,9 @@ public class ExcelHelper {
     }
 
     /**
-     * Create a new sheet in an Excel file
+     * Creates a new sheet in an Excel file.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the new sheet.
      */
     public static void createSheet(String filePath, String sheetName) {
         try (FileInputStream fis = new FileInputStream(filePath);

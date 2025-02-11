@@ -9,6 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
+/**
+ * Helper class to handle reading, writing, and updating properties files while preserving key order.
+ */
 public class PropertyHelper {
 
     private static final Object LOCK = new Object();
@@ -55,6 +58,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Ensures a file exists at the specified path, creating it if needed.
+     * @param filePath the file path.
+     * @throws IOException if file operations fail.
+     */
     private static void ensureFileExists(String filePath) throws IOException {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -66,8 +74,13 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Loads properties from a file.
+     * @param filePath the file path.
+     * @return Properties object loaded from file.
+     * @throws IOException if reading the file fails.
+     */
     private static Properties loadProperties(String filePath) throws IOException {
-        // Use LinkedProperties to preserve key order
         Properties prop = new LinkedProperties();
         ensureFileExists(filePath);
         try (FileInputStream fis = new FileInputStream(filePath)) {
@@ -76,6 +89,12 @@ public class PropertyHelper {
         return prop;
     }
 
+    /**
+     * Saves the given properties to a file.
+     * @param filePath the file path.
+     * @param prop Properties to save.
+     * @throws IOException if writing to the file fails.
+     */
     private static void saveProperties(String filePath, Properties prop) throws IOException {
         ensureFileExists(filePath);
         try (FileOutputStream fos = new FileOutputStream(filePath)) {
@@ -83,6 +102,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Retrieves the value for a specific key from a properties file.
+     * @param filePath the properties file path.
+     * @param key key to retrieve.
+     * @return the property value or null.
+     */
     public static String getDataFromProperties(String filePath, String key) {
         try {
             Properties prop = loadProperties(filePath);
@@ -93,6 +118,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Sets a key-value pair in the properties file.
+     * @param filePath the properties file path.
+     * @param key property key.
+     * @param value property value.
+     */
     public static void setDataToProperties(String filePath, String key, String value) {
         synchronized (LOCK) {
             try {
@@ -107,6 +138,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Loads all properties from a file.
+     * @param filePath the properties file path.
+     * @return Properties object.
+     */
     public static Properties getAllProperties(String filePath) {
         try {
             return loadProperties(filePath);
@@ -117,6 +153,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Removes a key from the properties file.
+     * @param filePath the properties file path.
+     * @param key key to remove.
+     */
     public static void removeKeyFromProperties(String filePath, String key) {
         try {
             Properties prop = loadProperties(filePath);
@@ -133,6 +174,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Checks if a key exists in the properties file.
+     * @param filePath the properties file path.
+     * @param key key to check.
+     * @return true if the key exists, false otherwise.
+     */
     public static boolean keyExists(String filePath, String key) {
         try {
             Properties prop = loadProperties(filePath);
@@ -146,6 +193,13 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Retrieves the value for a specific key from a properties file, or returns a default value if the key does not exist.
+     * @param filePath the properties file path.
+     * @param key key to retrieve.
+     * @param defaultValue default value to return if the key does not exist.
+     * @return the property value or the default value.
+     */
     public static String getOrDefault(String filePath, String key, String defaultValue) {
         try {
             Properties prop = loadProperties(filePath);
@@ -159,6 +213,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Updates multiple properties in the properties file.
+     * @param filePath the properties file path.
+     * @param properties Properties object containing the key-value pairs to update.
+     */
     public static void updateMultipleProperties(String filePath, Properties properties) {
         try {
             Properties prop = loadProperties(filePath);
@@ -171,6 +230,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Adds or updates properties from a Map in the properties file.
+     * @param filePath the properties file path.
+     * @param map Map containing the key-value pairs to add or update.
+     */
     public static void addOrUpdatePropertiesFromMap(String filePath, Map<String, String> map) {
         try {
             Properties prop = loadProperties(filePath);
@@ -183,6 +247,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Retrieves properties as a Map from the properties file.
+     * @param filePath the properties file path.
+     * @return Map containing the properties.
+     */
     public static Map<String, String> getPropertiesAsMap(String filePath) {
         Map<String, String> map = new HashMap<>();
         try {
@@ -196,6 +265,11 @@ public class PropertyHelper {
         return map;
     }
 
+    /**
+     * Updates properties from a Map in the properties file.
+     * @param filePath the properties file path.
+     * @param updates Map containing the key-value pairs to update.
+     */
     public static void updatePropertiesFromMap(String filePath, Map<String, String> updates) {
         try {
             Properties prop = loadProperties(filePath);
@@ -212,6 +286,11 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Adds new properties from a Map in the properties file.
+     * @param filePath the properties file path.
+     * @param newProperties Map containing the key-value pairs to add.
+     */
     public static void addNewPropertiesFromMap(String filePath, Map<String, String> newProperties) {
         try {
             Properties prop = loadProperties(filePath);
@@ -228,6 +307,10 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Creates a backup of the properties file.
+     * @param filePath the properties file path.
+     */
     public static void backupProperties(String filePath) {
         try {
             Path source = Path.of(filePath);
@@ -240,6 +323,10 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Restores the properties file from a backup.
+     * @param filePath the properties file path.
+     */
     public static void restoreFromBackup(String filePath) {
         try {
             Path backup = Path.of(filePath + ".backup");
@@ -256,6 +343,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Loads properties from a file with a specified encoding.
+     * @param filePath the file path.
+     * @param encoding the encoding to use.
+     * @return Properties object loaded from file.
+     */
     public static Properties loadWithEncoding(String filePath, String encoding) {
         Properties prop = new Properties();
         try (InputStreamReader reader = new InputStreamReader(
@@ -269,6 +362,12 @@ public class PropertyHelper {
         return prop;
     }
 
+    /**
+     * Saves properties to a file with a specified encoding.
+     * @param filePath the file path.
+     * @param prop Properties to save.
+     * @param encoding the encoding to use.
+     */
     public static void saveWithEncoding(String filePath, Properties prop, String encoding) {
         try (OutputStreamWriter writer = new OutputStreamWriter(
                 new FileOutputStream(filePath), encoding)) {
@@ -280,6 +379,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Compares properties between two files and returns the differences.
+     * @param file1Path the first file path.
+     * @param file2Path the second file path.
+     * @return Map containing the differences, with keys and their respective values in both files.
+     */
     public static Map<String, String[]> compareProperties(String file1Path, String file2Path) {
         Map<String, String[]> differences = new HashMap<>();
         Properties prop1 = getAllProperties(file1Path);
@@ -302,6 +407,12 @@ public class PropertyHelper {
         return differences;
     }
 
+    /**
+     * Retrieves keys matching a specific pattern from the properties file.
+     * @param filePath the properties file path.
+     * @param pattern the pattern to match.
+     * @return Set of keys matching the pattern.
+     */
     public static Set<String> getKeysMatchingPattern(String filePath, String pattern) {
         Properties prop = getAllProperties(filePath);
         Set<String> matchingKeys = new HashSet<>();
@@ -315,6 +426,10 @@ public class PropertyHelper {
         return matchingKeys;
     }
 
+    /**
+     * Clears all properties in the properties file.
+     * @param filePath the properties file path.
+     */
     public static void clearProperties(String filePath) {
         try (FileOutputStream output = new FileOutputStream(filePath)) {
             Properties prop = new Properties();
@@ -326,11 +441,22 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Retrieves the count of properties in the properties file.
+     * @param filePath the properties file path.
+     * @return the count of properties.
+     */
     public static int getPropertyCount(String filePath) {
         Properties prop = getAllProperties(filePath);
         return prop.size();
     }
 
+    /**
+     * Finds values containing a specific string in the properties file.
+     * @param filePath the properties file path.
+     * @param searchStr the string to search for.
+     * @return List of values containing the search string.
+     */
     public static List<String> findValuesContaining(String filePath, String searchStr) {
         Properties prop = getAllProperties(filePath);
         List<String> matchingValues = new ArrayList<>();
@@ -344,29 +470,36 @@ public class PropertyHelper {
         return matchingValues;
     }
 
+    /**
+     * Validates a property value against a regular expression.
+     * @param filePath the properties file path.
+     * @param key the property key.
+     * @param regex the regular expression to validate against.
+     * @return true if the value matches the regex, false otherwise.
+     */
     public static boolean validatePropertyValue(String filePath, String key, String regex) {
         String value = getDataFromProperties(filePath, key);
         return value != null && value.matches(regex);
     }
 
+    /**
+     * Sorts properties by key in the properties file.
+     * @param filePath the properties file path.
+     */
     public static void sortPropertiesByKey(String filePath) {
         synchronized (LOCK) {
             try {
                 Properties original = loadProperties(filePath);
                 
-                // Create a sorted list of keys
                 List<String> sortedKeys = new ArrayList<>(original.stringPropertyNames());
-                Collections.sort(sortedKeys); // Natural string sorting
+                Collections.sort(sortedKeys);
                 
-                // Create new properties preserving order
                 LinkedProperties sortedProps = new LinkedProperties();
                 
-                // Add properties in sorted order
                 for (String key : sortedKeys) {
                     sortedProps.setProperty(key, original.getProperty(key));
                 }
                 
-                // Save properties using UTF-8 encoding to maintain order
                 try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                         new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
                     sortedProps.store(writer, null);
@@ -380,6 +513,12 @@ public class PropertyHelper {
         }
     }
 
+    /**
+     * Retrieves properties matching a specific value pattern from the properties file.
+     * @param filePath the properties file path.
+     * @param pattern the pattern to match.
+     * @return Map of properties matching the value pattern.
+     */
     public static Map<String, String> getPropertiesMatchingValuePattern(String filePath, String pattern) {
         Properties prop = getAllProperties(filePath);
         Map<String, String> matching = new HashMap<>();
