@@ -1,15 +1,19 @@
 package Ellithium.Utilities.helpers;
+
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+/**
+ * Utility class for handling text file operations such as reading, writing, and processing.
+ */
 public class TextHelper {
+    /**
+     * Reads all lines from a text file.
+     * @param filePath path to the text file.
+     * @return List of strings representing file lines.
+     */
     public static List<String> readTextFile(String filePath) {
         List<String> lines = new ArrayList<>();
         File textFile = new File(filePath);
@@ -36,6 +40,12 @@ public class TextHelper {
         }
         return lines;
     }
+
+    /**
+     * Writes a list of lines to a text file.
+     * @param filePath path to the text file.
+     * @param lines list of strings to write.
+     */
     public static void writeTextFile(String filePath, List<String> lines) {
         Reporter.log("Attempting to write text file: ", LogLevel.INFO_BLUE, filePath);
         File textFile = new File(filePath );
@@ -104,6 +114,7 @@ public class TextHelper {
         Reporter.log("No line with keyword found in text file: ", LogLevel.INFO_YELLOW, filePath);
         return null;
     }
+
     public static void deleteLine(String filePath, String lineToDelete) {
         File textFile = new File(filePath );
         List<String> updatedLines = new ArrayList<>();
@@ -123,6 +134,7 @@ public class TextHelper {
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+
     // Method to read the entire file as a single String
     public static String readFileAsString(String filePath) {
         StringBuilder content = new StringBuilder();
@@ -153,6 +165,7 @@ public class TextHelper {
 
         return content.toString();
     }
+
     // Method to write a String to a text file
     public static void writeStringToFile(String filePath, String content) {
         Reporter.log("Attempting to write String to text file: ", LogLevel.INFO_BLUE, filePath);
@@ -167,6 +180,7 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
+
     // Method to delete all lines containing a specific keyword
     public static void deleteLinesContainingKeyword(String filePath, String keyword) {
         File textFile = new File(filePath );
@@ -188,6 +202,7 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+
     // Method to check if any line in the file contains a specific keyword
     public static boolean containsKeyword(String filePath, String keyword) {
         File textFile = new File(filePath );
@@ -214,6 +229,7 @@ public class TextHelper {
         Reporter.log("Keyword not found in text file: " + keyword, LogLevel.INFO_YELLOW, filePath);
         return false;
     }
+
     // Method to replace a line in a text file
     public static void replaceLineInFile(String filePath, String targetLine, String newLine) {
         File textFile = new File(filePath );
@@ -237,6 +253,7 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+
     public static int countLinesInFile(String filePath) {
         File textFile = new File(filePath);
         int count = 0;
@@ -416,6 +433,7 @@ public class TextHelper {
             return lineNumbers;
         }
     }
+
     public static void insertLineAt(String filePath, int lineNumber, String newLine) {
         Reporter.log("Attempting to insert line at position " + lineNumber + " in: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -512,6 +530,7 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+
     public static long getFileSizeBytes(String filePath) {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -529,6 +548,7 @@ public class TextHelper {
         }
         return file.lastModified();
     }
+
     public static void truncateFile(String filePath, int maxLines) {
         Reporter.log("Truncating file to " + maxLines + " lines: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -539,6 +559,7 @@ public class TextHelper {
             Reporter.log("No truncation needed", LogLevel.INFO_YELLOW, filePath);
         }
     }
+
     public static void removeDuplicateLines(String filePath) {
         Reporter.log("Removing duplicate lines from: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -551,6 +572,7 @@ public class TextHelper {
             Reporter.log("No duplicates found", LogLevel.INFO_YELLOW, filePath);
         }
     }
+
     public static List<String> readLastNLines(String filePath, int n) {
         Reporter.log("Reading last " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -559,6 +581,7 @@ public class TextHelper {
         Reporter.log("Retrieved last " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
         return result;
     }
+
     public static List<String> readFirstNLines(String filePath, int n) {
         Reporter.log("Reading first " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -567,6 +590,7 @@ public class TextHelper {
         Reporter.log("Retrieved first " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
         return result;
     }
+
     public static String readLineNumber(String filePath, int lineNumber) {
         Reporter.log("Attempting to read line " + lineNumber + " from: ", LogLevel.INFO_BLUE, filePath);
         File textFile = new File(filePath);
@@ -602,12 +626,12 @@ public class TextHelper {
             return null;
         }
     }
-    
+
     public static boolean isValidLineNumber(String filePath, int lineNumber) {
         int totalLines = countLinesInFile(filePath);
         return lineNumber > 0 && lineNumber <= totalLines;
     }
-    
+
     public static List<String> searchLinesMatching(String filePath, String regex) {
         Reporter.log("Searching lines matching regex '" + regex + "' in: ", LogLevel.INFO_BLUE, filePath);
         List<String> matches = new ArrayList<>();
@@ -626,7 +650,7 @@ public class TextHelper {
         }
         return matches;
     }
-    
+
     public static void mergeTwoFiles(String firstFile, String secondFile, String outputFile) {
         Reporter.log("Merging files into: ", LogLevel.INFO_BLUE, outputFile);
         List<String> mergedContent = new ArrayList<>();
@@ -637,12 +661,12 @@ public class TextHelper {
         writeTextFile(outputFile, mergedContent);
         Reporter.log("Successfully merged files into: ", LogLevel.INFO_GREEN, outputFile);
     }
-    
+
     public static String getFileExtension(String filePath) {
         int lastDotIndex = filePath.lastIndexOf('.');
         return lastDotIndex > 0 ? filePath.substring(lastDotIndex + 1) : "";
     }
-    
+
     public static void reverseFileContent(String filePath) {
         Reporter.log("Reversing file content: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
@@ -650,7 +674,7 @@ public class TextHelper {
         writeTextFile(filePath, lines);
         Reporter.log("Successfully reversed file content: ", LogLevel.INFO_GREEN, filePath);
     }
-    
+
     public static Map<String, Integer> getWordFrequency(String filePath) {
         Reporter.log("Analyzing word frequency in: ", LogLevel.INFO_BLUE, filePath);
         Map<String, Integer> frequency = new HashMap<>();
@@ -669,7 +693,7 @@ public class TextHelper {
         }
         return frequency;
     }
-    
+
     public static void writeWithEncoding(String filePath, List<String> lines, String charset) {
         Reporter.log("Writing file with encoding " + charset + ": ", LogLevel.INFO_BLUE, filePath);
         try (BufferedWriter writer = new BufferedWriter(
@@ -684,7 +708,7 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
-    
+
     public static List<String> readWithEncoding(String filePath, String charset) {
         Reporter.log("Reading file with encoding " + charset + ": ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = new ArrayList<>();

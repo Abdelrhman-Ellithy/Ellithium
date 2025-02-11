@@ -1,255 +1,457 @@
 package Ellithium.Utilities.generators;
 
-import Ellithium.core.reporting.internal.Colors;
-import Ellithium.core.logging.Logger;
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.reporting.Reporter;
 import com.github.javafaker.Faker;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+/**
+ * Generates random test data using JavaFaker.
+ */
 public class TestDataGenerator {
     private static final Faker faker = new Faker();
 
+    /**
+     * Generates a random full name.
+     * @return A random full name
+     */
     public static String getRandomFullName() {
-        Logger.info(Colors.PURPLE + "Generating random FullName" + Colors.RESET);
+        Reporter.log("Generating random FullName", LogLevel.INFO_BLUE);
         return faker.name().fullName();
     }
+
+    /**
+     * Gets current timestamp in yyyy-MM-dd-h-m-ssa format.
+     * @return Formatted timestamp
+     */
     public static String getTimeStamp() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
-        Logger.info(Colors.BLUE+"Getting Timestamp: " + timestamp+Colors.RESET);
+        Reporter.log("Getting Timestamp: " + timestamp, LogLevel.INFO_BLUE);
         return timestamp;
     }
+
+    /**
+     * Gets current date in yyyy-MM-dd format.
+     * @return Formatted date
+     */
     public static String getDayDateStamp() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        Logger.info(Colors.BLUE+"Getting Timestamp: " + timestamp+Colors.RESET);
+        Reporter.log("Getting Date: " + timestamp, LogLevel.INFO_BLUE);
         return timestamp;
     }
+
+    /**
+     * Generates a random first name.
+     * @return A random first name
+     */
     public static String getRandomFirstName() {
-        Logger.info(Colors.PURPLE + "Generating random FirstName" + Colors.RESET);
+        Reporter.log("Generating random FirstName", LogLevel.INFO_BLUE);
         return faker.name().firstName();
     }
 
+    /**
+     * Generates a random last name.
+     * @return A random last name
+     */
     public static String getRandomLastName() {
-        Logger.info(Colors.PURPLE + "Generating random LastName" + Colors.RESET);
+        Reporter.log("Generating random LastName", LogLevel.INFO_BLUE);
         return faker.name().lastName();
     }
 
+    /**
+     * Generates a random email.
+     * @return A random email
+     */
     public static String getRandomEmail() {
-        Logger.info(Colors.PURPLE + "Generating random Email" + Colors.RESET);
+        Reporter.log("Generating random Email", LogLevel.INFO_BLUE);
         return faker.internet().emailAddress();
     }
 
+    /**
+     * Generates a random phone number.
+     * @return A random phone number
+     */
     public static String getRandomPhoneNumber() {
-        Logger.info(Colors.PURPLE + "Generating random PhoneNumber" + Colors.RESET);
+        Reporter.log("Generating random PhoneNumber", LogLevel.INFO_BLUE);
         return faker.phoneNumber().cellPhone();
     }
 
+    /**
+     * Generates a random address.
+     * @return A random address
+     */
     public static String getRandomAddress() {
-        Logger.info(Colors.PURPLE + "Generating random Address" + Colors.RESET);
+        Reporter.log("Generating random Address", LogLevel.INFO_BLUE);
         return faker.address().fullAddress();
     }
 
+    /**
+     * Generates a random city.
+     * @return A random city
+     */
     public static String getRandomCity() {
-        Logger.info(Colors.PURPLE + "Generating random City" + Colors.RESET);
+        Reporter.log("Generating random City", LogLevel.INFO_BLUE);
         return faker.address().city();
     }
 
+    /**
+     * Generates a random country.
+     * @return A random country
+     */
     public static String getRandomCountry() {
-        Logger.info(Colors.PURPLE + "Generating random Country" + Colors.RESET);
+        Reporter.log("Generating random Country", LogLevel.INFO_BLUE);
         return faker.address().country();
     }
 
+    /**
+     * Generates a random state.
+     * @return A random state
+     */
     public static String getRandomState() {
-        Logger.info(Colors.PURPLE + "Generating random State" + Colors.RESET);
+        Reporter.log("Generating random State", LogLevel.INFO_BLUE);
         return faker.address().state();
     }
 
+    /**
+     * Generates a random zip code.
+     * @return A random zip code
+     */
     public static String getRandomZipCode() {
-        Logger.info(Colors.PURPLE + "Generating random ZipCode" + Colors.RESET);
+        Reporter.log("Generating random ZipCode", LogLevel.INFO_BLUE);
         return faker.address().zipCode();
     }
 
+    /**
+     * Generates a random username.
+     * @return A random username
+     */
     public static String getRandomUsername() {
-        Logger.info(Colors.PURPLE + "Generating random Username" + Colors.RESET);
+        Reporter.log("Generating random Username", LogLevel.INFO_BLUE);
         return faker.name().username();
     }
 
+    /**
+     * Generates a random password.
+     * @return A random password
+     */
     public static String getRandomPassword() {
-        Logger.info(Colors.PURPLE + "Generating random Password" + Colors.RESET);
+        Reporter.log("Generating random Password", LogLevel.INFO_BLUE);
         return faker.internet().password();
     }
 
+    /**
+     * Generates a random company name.
+     * @return A random company name
+     */
     public static String getRandomCompany() {
-        Logger.info(Colors.PURPLE + "Generating random Company" + Colors.RESET);
+        Reporter.log("Generating random Company", LogLevel.INFO_BLUE);
         return faker.company().name();
     }
 
+    /**
+     * Generates a random job title.
+     * @return A random job title
+     */
     public static String getRandomJobTitle() {
-        Logger.info(Colors.PURPLE + "Generating random JobTitle" + Colors.RESET);
+        Reporter.log("Generating random JobTitle", LogLevel.INFO_BLUE);
         return faker.job().title();
     }
 
+    /**
+     * Generates a random website URL.
+     * @return A random website URL
+     */
     public static String getRandomWebsite() {
-        Logger.info(Colors.PURPLE + "Generating random Website" + Colors.RESET);
+        Reporter.log("Generating random Website", LogLevel.INFO_BLUE);
         return faker.internet().url();
     }
 
+    /**
+     * Generates a random IP address.
+     * @return A random IP address
+     */
     public static String getRandomIPAddress() {
-        Logger.info(Colors.PURPLE + "Generating random IPAddress" + Colors.RESET);
+        Reporter.log("Generating random IPAddress", LogLevel.INFO_BLUE);
         return faker.internet().ipV4Address();
     }
 
+    /**
+     * Generates a random birth date.
+     * @return A random birth date
+     */
     public static String getRandomBirthDate() {
-        Logger.info(Colors.PURPLE + "Generating random BirthDate" + Colors.RESET);
+        Reporter.log("Generating random BirthDate", LogLevel.INFO_BLUE);
         return faker.date().birthday().toString();
     }
 
+    /**
+     * Generates a random credit card number.
+     * @return A random credit card number
+     */
     public static String getRandomCreditCardNumber() {
-        Logger.info(Colors.PURPLE + "Generating random CreditCardNumber" + Colors.RESET);
+        Reporter.log("Generating random CreditCardNumber", LogLevel.INFO_BLUE);
         return faker.finance().creditCard();
     }
 
+    /**
+     * Generates a random credit card expiry date.
+     * @return A random credit card expiry date
+     */
     public static String getRandomCreditCardExpiry() {
-        Logger.info(Colors.PURPLE + "Generating random CreditCardExpiry" + Colors.RESET);
+        Reporter.log("Generating random CreditCardExpiry", LogLevel.INFO_BLUE);
         return faker.business().creditCardExpiry();
     }
 
+    /**
+     * Generates a random medicine name.
+     * @return A random medicine name
+     */
     public static String getMedicineName() {
-        Logger.info(Colors.PURPLE + "Generating random MedicineName" + Colors.RESET);
+        Reporter.log("Generating random MedicineName", LogLevel.INFO_BLUE);
         return faker.medical().medicineName();
     }
 
+    /**
+     * Generates a random university name.
+     * @return A random university name
+     */
     public static String getRandomUniversity() {
-        Logger.info(Colors.PURPLE + "Generating random University" + Colors.RESET);
+        Reporter.log("Generating random University", LogLevel.INFO_BLUE);
         return faker.educator().university();
     }
 
+    /**
+     * Generates a random degree name.
+     * @return A random degree name
+     */
     public static String getRandomDegree() {
-        Logger.info(Colors.PURPLE + "Generating random Degree" + Colors.RESET);
+        Reporter.log("Generating random Degree", LogLevel.INFO_BLUE);
         return faker.educator().course();
     }
 
+    /**
+     * Generates a random animal name.
+     * @return A random animal name
+     */
     public static String getRandomAnimal() {
-        Logger.info(Colors.PURPLE + "Generating random Animal" + Colors.RESET);
+        Reporter.log("Generating random Animal", LogLevel.INFO_BLUE);
         return faker.animal().name();
     }
 
+    /**
+     * Generates a random color name.
+     * @return A random color name
+     */
     public static String getRandomColor() {
-        Logger.info(Colors.PURPLE + "Generating random Color" + Colors.RESET);
+        Reporter.log("Generating random Color", LogLevel.INFO_BLUE);
         return faker.color().name();
     }
 
+    /**
+     * Generates a random book title.
+     * @return A random book title
+     */
     public static String getRandomBook() {
-        Logger.info(Colors.PURPLE + "Generating random Book" + Colors.RESET);
+        Reporter.log("Generating random Book", LogLevel.INFO_BLUE);
         return faker.book().title();
     }
 
+    /**
+     * Generates a random sentence.
+     * @return A random sentence
+     */
     public static String getRandomSentence() {
-        Logger.info(Colors.PURPLE + "Generating random Sentence" + Colors.RESET);
+        Reporter.log("Generating random Sentence", LogLevel.INFO_BLUE);
         return faker.lorem().sentence();
     }
 
+    /**
+     * Generates a random paragraph.
+     * @return A random paragraph
+     */
     public static String getRandomParagraph() {
-        Logger.info(Colors.PURPLE + "Generating random Paragraph" + Colors.RESET);
+        Reporter.log("Generating random Paragraph", LogLevel.INFO_BLUE);
         return faker.lorem().paragraph();
     }
 
+    /**
+     * Generates a random quote.
+     * @return A random quote
+     */
     public static String getRandomQuote() {
-        Logger.info(Colors.PURPLE + "Generating random Quote" + Colors.RESET);
+        Reporter.log("Generating random Quote", LogLevel.INFO_BLUE);
         return faker.harryPotter().quote();
     }
 
+    /**
+     * Generates a random country code.
+     * @return A random country code
+     */
     public static String getRandomCountryCode() {
-        Logger.info(Colors.PURPLE + "Generating random CountryCode" + Colors.RESET);
+        Reporter.log("Generating random CountryCode", LogLevel.INFO_BLUE);
         return faker.address().countryCode();
     }
 
+    /**
+     * Generates a random building number.
+     * @return A random building number
+     */
     public static String getRandomBuildingNumber() {
-        Logger.info(Colors.PURPLE + "Generating random BuildingNumber" + Colors.RESET);
+        Reporter.log("Generating random BuildingNumber", LogLevel.INFO_BLUE);
         return faker.address().buildingNumber();
     }
 
+    /**
+     * Generates a random street name.
+     * @return A random street name
+     */
     public static String getRandomStreetName() {
-        Logger.info(Colors.PURPLE + "Generating random StreetName" + Colors.RESET);
+        Reporter.log("Generating random StreetName", LogLevel.INFO_BLUE);
         return faker.address().streetName();
     }
 
+    /**
+     * Generates a random street address.
+     * @return A random street address
+     */
     public static String getRandomStreetAddress() {
-        Logger.info(Colors.PURPLE + "Generating random StreetAddress" + Colors.RESET);
+        Reporter.log("Generating random StreetAddress", LogLevel.INFO_BLUE);
         return faker.address().streetAddress();
     }
 
+    /**
+     * Generates a random latitude.
+     * @return A random latitude
+     */
     public static String getRandomLatitude() {
-        Logger.info(Colors.PURPLE + "Generating random Latitude" + Colors.RESET);
+        Reporter.log("Generating random Latitude", LogLevel.INFO_BLUE);
         return String.valueOf(faker.address().latitude());
     }
 
+    /**
+     * Generates a random longitude.
+     * @return A random longitude
+     */
     public static String getRandomLongitude() {
-        Logger.info(Colors.PURPLE + "Generating random Longitude" + Colors.RESET);
+        Reporter.log("Generating random Longitude", LogLevel.INFO_BLUE);
         return String.valueOf(faker.address().longitude());
     }
 
+    /**
+     * Generates a random time zone.
+     * @return A random time zone
+     */
     public static String getRandomTimeZone() {
-        Logger.info(Colors.PURPLE + "Generating random TimeZone" + Colors.RESET);
+        Reporter.log("Generating random TimeZone", LogLevel.INFO_BLUE);
         return faker.address().timeZone();
     }
 
+    /**
+     * Generates a random bank account number.
+     * @return A random bank account number
+     */
     public static String getRandomBankAccountNumber() {
-        Logger.info(Colors.PURPLE + "Generating random BankAccountNumber" + Colors.RESET);
+        Reporter.log("Generating random BankAccountNumber", LogLevel.INFO_BLUE);
         return faker.finance().iban();
     }
 
+    /**
+     * Generates a random SWIFT code.
+     * @return A random SWIFT code
+     */
     public static String getRandomSWIFTCode() {
-        Logger.info(Colors.PURPLE + "Generating random SWIFTCode" + Colors.RESET);
+        Reporter.log("Generating random SWIFTCode", LogLevel.INFO_BLUE);
         return faker.finance().bic();
     }
 
+    /**
+     * Generates a random company industry.
+     * @return A random company industry
+     */
     public static String getRandomCompanyIndustry() {
-        Logger.info(Colors.PURPLE + "Generating random CompanyIndustry" + Colors.RESET);
+        Reporter.log("Generating random CompanyIndustry", LogLevel.INFO_BLUE);
         return faker.company().industry();
     }
 
+    /**
+     * Generates a random company catch phrase.
+     * @return A random company catch phrase
+     */
     public static String getRandomCompanyCatchPhrase() {
-        Logger.info(Colors.PURPLE + "Generating random CompanyCatchPhrase" + Colors.RESET);
+        Reporter.log("Generating random CompanyCatchPhrase", LogLevel.INFO_BLUE);
         return faker.company().catchPhrase();
     }
 
+    /**
+     * Generates a random product name.
+     * @return A random product name
+     */
     public static String getRandomProductName() {
-        Logger.info(Colors.PURPLE + "Generating random ProductName" + Colors.RESET);
+        Reporter.log("Generating random ProductName", LogLevel.INFO_BLUE);
         return faker.commerce().productName();
     }
 
+    /**
+     * Generates a random product price.
+     * @return A random product price
+     */
     public static String getRandomProductPrice() {
-        Logger.info(Colors.PURPLE + "Generating random ProductPrice" + Colors.RESET);
+        Reporter.log("Generating random ProductPrice", LogLevel.INFO_BLUE);
         return faker.commerce().price();
     }
 
+    /**
+     * Generates a random product material.
+     * @return A random product material
+     */
     public static String getRandomProductMaterial() {
-        Logger.info(Colors.PURPLE + "Generating random ProductMaterial" + Colors.RESET);
+        Reporter.log("Generating random ProductMaterial", LogLevel.INFO_BLUE);
         return faker.commerce().material();
     }
 
+    /**
+     * Generates a random department.
+     * @return A random department
+     */
     public static String getRandomDepartment() {
-        Logger.info(Colors.PURPLE + "Generating random Department" + Colors.RESET);
+        Reporter.log("Generating random Department", LogLevel.INFO_BLUE);
         return faker.commerce().department();
     }
 
+    /**
+     * Generates a random currency code.
+     * @return A random currency code
+     */
     public static String getRandomCurrencyCode() {
-        Logger.info(Colors.PURPLE + "Generating random CurrencyCode" + Colors.RESET);
+        Reporter.log("Generating random CurrencyCode", LogLevel.INFO_BLUE);
         return faker.currency().code();
     }
 
+    /**
+     * Generates a random currency name.
+     * @return A random currency name
+     */
     public static String getRandomCurrencyName() {
-        Logger.info(Colors.PURPLE + "Generating random CurrencyName" + Colors.RESET);
+        Reporter.log("Generating random CurrencyName", LogLevel.INFO_BLUE);
         return faker.currency().name();
     }
 
+    /**
+     * Generates a random country flag emoji.
+     * @return A random country flag emoji
+     */
     public static String getRandomCountryFlagEmoji() {
-        Logger.info(Colors.PURPLE + "Generating random CountryFlagEmoji" + Colors.RESET);
+        Reporter.log("Generating random CountryFlagEmoji", LogLevel.INFO_BLUE);
         return faker.country().flag();
     }
 
+    /**
+     * Generates a random funny name.
+     * @return A random funny name
+     */
     public static String getRandomFunnyName() {
-        Logger.info(Colors.PURPLE + "Generating random FunnyName" + Colors.RESET);
+        Reporter.log("Generating random FunnyName", LogLevel.INFO_BLUE);
         return faker.funnyName().name();
     }
 }

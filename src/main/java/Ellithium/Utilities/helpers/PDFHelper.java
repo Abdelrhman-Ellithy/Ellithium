@@ -15,8 +15,16 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
+/**
+ * Utility class for performing various PDF operations such as reading, writing, merging, and encryption.
+ */
 public class PDFHelper {
 
+    /**
+     * Reads text content from a PDF file.
+     * @param filePath the PDF file path.
+     * @return extracted text as a String.
+     */
     public static String readPdf(String filePath) {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -36,6 +44,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Writes a list of strings as content into a PDF file.
+     * @param filePath the target PDF file path.
+     * @param content list of text lines to be written.
+     */
     public static void writePdf(String filePath, List<String> content) {
         File file = new File(filePath);
         try (PDDocument document = new PDDocument()) {
@@ -81,20 +94,23 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Appends text content to an existing PDF file.
+     * @param filePath the PDF file path.
+     * @param content list of text lines to append.
+     */
     public static void appendToPdf(String filePath, List<String> content) {
         File file = new File(filePath);
         try (PDDocument document = PDDocument.load(file)) {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);
             
-            // Get the last y-position of existing content
             float yPosition = findLastYPosition(page);
             
             PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
             contentStream.beginText();
             contentStream.setFont(PDType1Font.HELVETICA, 12);
             
-            // Start from the calculated position or create new page if needed
-            if (yPosition < 100) { // minimum space needed
+            if (yPosition < 100) {
                 page = new PDPage();
                 document.addPage(page);
                 yPosition = 700;
@@ -130,10 +146,14 @@ public class PDFHelper {
     }
 
     private static float findLastYPosition(PDPage page) {
-        // Default starting position if we can't determine last position
-        return 700;  // You might want to implement more sophisticated position tracking
+        return 700;
     }
 
+    /**
+     * Merges multiple PDF files into one.
+     * @param inputFilePaths list of input PDF file paths.
+     * @param outputFilePath the output merged PDF file path.
+     */
     public static void mergePdfs(List<String> inputFilePaths, String outputFilePath) {
         PDFMergerUtility merger = new PDFMergerUtility();
         merger.setDestinationFileName(outputFilePath);
@@ -149,6 +169,12 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Extracts a single page from a PDF file.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output PDF file path.
+     * @param pageIndex zero-based index of the page to extract.
+     */
     public static void extractPdfPage(String inputFilePath, String outputFilePath, int pageIndex) {
         File file = new File(inputFilePath);
 
@@ -160,7 +186,6 @@ public class PDFHelper {
 
             try (PDDocument outputDocument = new PDDocument()) {
                 PDPage sourcePage = document.getPage(pageIndex);
-                // Import the page directly to the new document
                 outputDocument.importPage(sourcePage);
                 
                 outputDocument.save(outputFilePath);
@@ -172,6 +197,12 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Compares two PDF files by their text content.
+     * @param filePath1 the first PDF file path.
+     * @param filePath2 the second PDF file path.
+     * @return true if contents are equal; otherwise false.
+     */
     public static boolean comparePdfFiles(String filePath1, String filePath2) {
         try (PDDocument doc1 = PDDocument.load(new File(filePath1));
              PDDocument doc2 = PDDocument.load(new File(filePath2))) {
@@ -187,6 +218,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Splits a PDF into individual pages.
+     * @param inputFilePath the source PDF file path.
+     * @param outputDirectoryPath the directory where split pages will be stored.
+     */
     public static void splitPdf(String inputFilePath, String outputDirectoryPath) {
         File inputFile = new File(inputFilePath);
         try (PDDocument document = PDDocument.load(inputFile)) {
@@ -206,6 +242,16 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Adds an image to a PDF file.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the target PDF file path.
+     * @param imagePath the image file path.
+     * @param x the x-coordinate.
+     * @param y the y-coordinate.
+     * @param width image width.
+     * @param height image height.
+     */
     public static void addImageToPdf(String inputFilePath, String outputFilePath, String imagePath, float x, float y, float width, float height) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);
@@ -221,6 +267,13 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Encrypts a PDF file with owner and user passwords.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output encrypted PDF file path.
+     * @param ownerPassword the owner password.
+     * @param userPassword the user password.
+     */
     public static void encryptPdf(String inputFilePath, String outputFilePath, String ownerPassword, String userPassword) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             StandardProtectionPolicy protectionPolicy = new StandardProtectionPolicy(
@@ -236,6 +289,12 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Adds a watermark text to a PDF file.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output PDF file path.
+     * @param watermarkText the watermark text to add.
+     */
     public static void addWatermark(String inputFilePath, String outputFilePath, String watermarkText) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             for (PDPage page : document.getPages()) {
@@ -256,6 +315,13 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Updates the metadata (title and author) of a PDF file.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output PDF file path.
+     * @param title the new title.
+     * @param author the new author.
+     */
     public static void updateMetadata(String inputFilePath, String outputFilePath, String title, String author) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             PDDocumentInformation info = document.getDocumentInformation();
@@ -269,6 +335,12 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Checks whether a PDF file is encrypted.
+     * @param filePath the PDF file path.
+     * @param password the password to attempt opening the file.
+     * @return true if the PDF is encrypted; otherwise false.
+     */
     public static boolean isEncrypted(String filePath, String password) {
         try (PDDocument document = PDDocument.load(new File(filePath), password)) {
             boolean isEncrypted = document.isEncrypted();
@@ -281,6 +353,13 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Removes pages from a PDF file within the specified range.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output PDF file path.
+     * @param startPage starting page index (inclusive).
+     * @param endPage ending page index (inclusive).
+     */
     public static void removePages(String inputFilePath, String outputFilePath, int startPage, int endPage) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             if (startPage < 0 || endPage >= document.getNumberOfPages() || startPage > endPage) {
@@ -290,7 +369,6 @@ public class PDFHelper {
                 return;
             }
 
-            // Create a new document and copy pages except the ones to remove
             try (PDDocument newDocument = new PDDocument()) {
                 for (int i = 0; i < document.getNumberOfPages(); i++) {
                     if (i < startPage || i > endPage) {
@@ -306,6 +384,13 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Rotates a specific page in a PDF file.
+     * @param inputFilePath the source PDF file path.
+     * @param outputFilePath the output PDF file path.
+     * @param pageIndex index of the page to rotate.
+     * @param degrees rotation in degrees.
+     */
     public static void rotatePage(String inputFilePath, String outputFilePath, int pageIndex, int degrees) {
         try (PDDocument document = PDDocument.load(new File(inputFilePath))) {
             PDPage page = document.getPage(pageIndex);
@@ -318,6 +403,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Retrieves the total number of pages in a PDF file.
+     * @param filePath the PDF file path.
+     * @return the page count, or -1 if retrieval fails.
+     */
     public static int getPageCount(String filePath) {
         try (PDDocument document = PDDocument.load(new File(filePath))) {
             return document.getNumberOfPages();
@@ -327,6 +417,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Adds a specified number of blank pages to a PDF file.
+     * @param filePath the PDF file path.
+     * @param numberOfPages number of blank pages to add.
+     */
     public static void addBlankPages(String filePath, int numberOfPages) {
         try (PDDocument document = PDDocument.load(new File(filePath))) {
             for (int i = 0; i < numberOfPages; i++) {
@@ -340,6 +435,12 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Retrieves the dimensions of a particular page in the PDF.
+     * @param filePath the PDF file path.
+     * @param pageIndex index of the page.
+     * @return a PDRectangle representing the page dimensions, or null if unsuccessful.
+     */
     public static PDRectangle getPageDimensions(String filePath, int pageIndex) {
         try (PDDocument document = PDDocument.load(new File(filePath))) {
             if (pageIndex >= 0 && pageIndex < document.getNumberOfPages()) {
@@ -353,6 +454,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Flattens any form fields in the PDF file.
+     * @param inputPath the source PDF file path.
+     * @param outputPath the output PDF file path.
+     */
     public static void flattenFormFields(String inputPath, String outputPath) {
         try (PDDocument document = PDDocument.load(new File(inputPath))) {
             PDAcroForm acroForm = document.getDocumentCatalog().getAcroForm();
@@ -367,6 +473,11 @@ public class PDFHelper {
         }
     }
 
+    /**
+     * Compresses a PDF file.
+     * @param inputPath the source PDF file path.
+     * @param outputPath the output PDF file path.
+     */
     public static void compressPDF(String inputPath, String outputPath) {
         try (PDDocument document = PDDocument.load(new File(inputPath))) {
             document.getDocumentCatalog().setPageMode(PageMode.USE_NONE);
