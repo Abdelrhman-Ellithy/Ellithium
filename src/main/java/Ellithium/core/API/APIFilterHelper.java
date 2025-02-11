@@ -1,4 +1,4 @@
-package Ellithium.config.Internal;
+package Ellithium.core.API;
 
 import Ellithium.core.execution.listener.APIListener;
 import io.restassured.RestAssured;

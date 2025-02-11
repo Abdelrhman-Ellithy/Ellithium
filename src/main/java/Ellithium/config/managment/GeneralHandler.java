@@ -3,7 +3,7 @@ package Ellithium.config.managment;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.interactions.WaitManager;
-import Ellithium.config.Internal.APIFilterHelper;
+import Ellithium.core.API.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
