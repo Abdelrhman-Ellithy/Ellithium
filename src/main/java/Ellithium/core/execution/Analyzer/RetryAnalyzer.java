@@ -2,6 +2,7 @@ package Ellithium.core.execution.Analyzer;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
+import Ellithium.core.logging.Logger;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;
 import Ellithium.core.reporting.Reporter;
@@ -26,7 +27,11 @@ public class RetryAnalyzer implements IRetryAnalyzer {
         return false;
     }
     public static void initRetryCount(){
-        String countStr= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
-        ConfigContext.setRetryCount(Integer.parseInt(countStr));
+        try {
+            String countStr= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
+            ConfigContext.setRetryCount(Integer.parseInt(countStr));
+        }catch (Exception e){
+            Reporter.log("You Need to Add \"retryCountOnFailure\" Key on you config.properties File", LogLevel.ERROR);
+        }
     }
 }
