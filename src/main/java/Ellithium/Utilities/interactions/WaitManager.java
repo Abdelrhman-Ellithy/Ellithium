@@ -29,15 +29,19 @@ public class WaitManager <T extends WebDriver>{
     private  static boolean defaultTimeoutGotFlag=false;
     private  static boolean defaultPollingTimeGotFlag=false;
     public static void initializeTimeoutAndPolling() {
-        if (!defaultTimeoutGotFlag) {
-            initTimeout();
-            defaultTimeoutGotFlag = true;
-            Reporter.log("Initialize default Timeout for Element ", LogLevel.INFO_GREEN);
-        }
-        if (!defaultPollingTimeGotFlag) {
-            initPolling();
-            defaultPollingTimeGotFlag = true;
-            Reporter.log("Initialize default Polling Time for Element ", LogLevel.INFO_GREEN);
+        try {
+            if (!defaultTimeoutGotFlag) {
+                initTimeout();
+                defaultTimeoutGotFlag = true;
+                Reporter.log("Initialize default Timeout for Element ", LogLevel.INFO_GREEN);
+            }
+            if (!defaultPollingTimeGotFlag) {
+                initPolling();
+                defaultPollingTimeGotFlag = true;
+                Reporter.log("Initialize default Polling Time for Element ", LogLevel.INFO_GREEN);
+            }
+        }catch (Exception e){
+            Logger.logException(e);
         }
     }
     private static int parseProperty(String value, int defaultValue, String propertyName) {
@@ -50,7 +54,7 @@ public class WaitManager <T extends WebDriver>{
         }
         return defaultValue;
     }
-    // Initialize default timeout from properties file
+
     private static void initTimeout() {
         try {
             String timeout = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementWaitTimeout");
