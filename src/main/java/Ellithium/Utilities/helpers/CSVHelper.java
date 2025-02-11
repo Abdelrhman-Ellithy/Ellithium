@@ -9,9 +9,16 @@ import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Utility class for handling CSV file operations including reading, writing, and manipulating CSV data.
+ */
 public class CSVHelper {
 
-    // Method to get data from a CSV file and return it as a list of maps
+    /**
+     * Reads data from a CSV file and returns it as a list of maps.
+     * @param filePath Path to the CSV file
+     * @return List of maps where each map represents a row with column name as key
+     */
     public static List<Map<String, String>> getCsvData(String filePath) {
         Reporter.log("Attempting to read CSV data from file: ", LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> data = new ArrayList<>();
@@ -31,12 +38,15 @@ public class CSVHelper {
         return data;
     }
 
-    // Method to write data to a CSV file and create the file if it doesn't exist
+    /**
+     * Writes data to a CSV file, creating the file if it doesn't exist.
+     * @param filePath Path where the CSV file should be created/written
+     * @param data List of maps containing the data to write
+     */
     public static void setCsvData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to CSV file: ", LogLevel.INFO_GREEN, filePath);
         File csvFile = new File(filePath );
         try {
-            // Check if the CSV file exists, if not create a new one
             if (!csvFile.exists()) {
                 csvFile.createNewFile();
                 Reporter.log("Creating new CSV file: ", LogLevel.INFO_GREEN, filePath);
@@ -56,7 +66,13 @@ public class CSVHelper {
         }
     }
 
-    // Helper method to read specific data based on a column value
+    /**
+     * Retrieves specific data from CSV file based on a column value.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column to filter by
+     * @param columnValue Value to match in the column
+     * @return List of matching rows as maps
+     */
     public static List<Map<String, String>> getCsvDataByColumn(String filePath, String columnName, String columnValue) {
         Reporter.log("Fetching CSV data by column: " + columnName + " with value: " + columnValue, LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> filteredData = new ArrayList<>();
@@ -77,7 +93,13 @@ public class CSVHelper {
         }
         return filteredData;
     }
-    // Method to read a specific column by name
+
+    /**
+     * Reads all values from a specific column in the CSV file.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column to read
+     * @return List of values in the specified column
+     */
     public static List<String> readColumn(String filePath, String columnName) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column: " + columnName + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
@@ -93,7 +115,13 @@ public class CSVHelper {
         return columnData;
     }
 
-    // Method to read a specific cell by row and column name
+    /**
+     * Reads a specific cell value from the CSV file.
+     * @param filePath Path to the CSV file
+     * @param rowIndex Index of the row
+     * @param columnName Name of the column
+     * @return Value in the specified cell
+     */
     public static String readCell(String filePath, int rowIndex, String columnName) {
         String cellData = "";
         Reporter.log("Attempting to read cell at row: " + rowIndex + ", column: " + columnName, LogLevel.INFO_GREEN, filePath);
@@ -110,7 +138,12 @@ public class CSVHelper {
         return cellData;
     }
 
-    // Method to read a specific row by index
+    /**
+     * Reads a specific row from the CSV file.
+     * @param filePath Path to the CSV file
+     * @param rowIndex Index of the row to read
+     * @return Map containing the row data
+     */
     public static Map<String, String> readRow(String filePath, int rowIndex) {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row at index: " + rowIndex + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
@@ -127,7 +160,13 @@ public class CSVHelper {
         return rowData;
     }
 
-    // Method to write to a specific cell
+    /**
+     * Writes a value to a specific cell in the CSV file.
+     * @param filePath Path to the CSV file
+     * @param rowIndex Index of the row
+     * @param columnName Name of the column
+     * @param value Value to write
+     */
     public static void writeCell(String filePath, int rowIndex, String columnName, String value) {
         Reporter.log("Attempting to write to cell at row: " + rowIndex + ", column: " + columnName, LogLevel.INFO_GREEN, filePath);
         try {
@@ -141,10 +180,22 @@ public class CSVHelper {
             Reporter.log("Failed to write to cell in CSV file: ", LogLevel.ERROR, filePath);
         }
     }
+
+    /**
+     * Checks if a CSV file exists at the specified path.
+     * @param filePath Path to check
+     * @return true if file exists, false otherwise
+     */
     public static boolean doesFileExist(String filePath) {
         File csvFile = new File(filePath );
         return csvFile.exists();
     }
+
+    /**
+     * Appends data to an existing CSV file.
+     * @param filePath Path to the CSV file
+     * @param data List of maps containing the data to append
+     */
     public static void appendData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to append data to CSV file: ", LogLevel.INFO_GREEN, filePath);
         try (Writer writer = new FileWriter(filePath , true);
@@ -158,6 +209,12 @@ public class CSVHelper {
             Reporter.log("Failed to append data to CSV file: ", LogLevel.ERROR, filePath);
         }
     }
+
+    /**
+     * Deletes a specific row from the CSV file.
+     * @param filePath Path to the CSV file
+     * @param rowIndex Index of the row to delete
+     */
     public static void deleteRow(String filePath, int rowIndex) {
         Reporter.log("Attempting to delete row at index: " + rowIndex, LogLevel.INFO_GREEN, filePath);
         try {
@@ -171,6 +228,12 @@ public class CSVHelper {
             Reporter.log("Failed to delete row from CSV file: ", LogLevel.ERROR, filePath);
         }
     }
+
+    /**
+     * Deletes a specific column from the CSV file.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column to delete
+     */
     public static void deleteColumn(String filePath, String columnName) {
         Reporter.log("Attempting to delete column: " + columnName + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
         try {
@@ -185,6 +248,12 @@ public class CSVHelper {
         }
     }
 
+    /**
+     * Filters CSV data based on multiple conditions.
+     * @param filePath Path to the CSV file
+     * @param conditions Map of column names and values to filter by
+     * @return List of matching rows
+     */
     public static List<Map<String, String>> filterData(String filePath, Map<String, String> conditions) {
         Reporter.log("Attempting to filter data based on conditions: " + conditions, LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> filteredData = new ArrayList<>();
@@ -208,6 +277,14 @@ public class CSVHelper {
         }
         return filteredData;
     }
+
+    /**
+     * Sorts CSV data by a specific column.
+     * @param filePath Path to the CSV file
+     * @param columnName Column to sort by
+     * @param ascending true for ascending order, false for descending
+     * @return Sorted list of data
+     */
     public static List<Map<String, String>> sortData(String filePath, String columnName, boolean ascending) {
         Reporter.log("Attempting to sort data by column: " + columnName, LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> sortedData = getCsvData(filePath);
@@ -219,6 +296,14 @@ public class CSVHelper {
         Reporter.log("Successfully sorted data in CSV file: ", LogLevel.INFO_GREEN, filePath);
         return sortedData;
     }
+
+    /**
+     * Replaces all occurrences of a value in a specific column.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column
+     * @param oldValue Value to replace
+     * @param newValue New value
+     */
     public static void replaceColumnData(String filePath, String columnName, String oldValue, String newValue) {
         Reporter.log("Attempting to replace data in column: " + columnName, LogLevel.INFO_GREEN, filePath);
         try {
@@ -234,6 +319,12 @@ public class CSVHelper {
             Reporter.log("Failed to replace column data in CSV file: ", LogLevel.ERROR, filePath);
         }
     }
+
+    /**
+     * Exports CSV data to a list of lists format.
+     * @param filePath Path to the CSV file
+     * @return List of lists containing the CSV data
+     */
     public static List<List<String>> exportToList(String filePath) {
         Reporter.log("Attempting to export CSV data to list of lists: ", LogLevel.INFO_GREEN, filePath);
         List<List<String>> listData = new ArrayList<>();
@@ -248,6 +339,13 @@ public class CSVHelper {
         }
         return listData;
     }
+
+    /**
+     * Merges two CSV files into one.
+     * @param filePath1 Path to first CSV file
+     * @param filePath2 Path to second CSV file
+     * @param outputFilePath Path for the merged output file
+     */
     public static void mergeCsvFiles(String filePath1, String filePath2, String outputFilePath) {
         Reporter.log("Attempting to merge CSV files: " + filePath1 + " and " + filePath2, LogLevel.INFO_GREEN, outputFilePath);
         try {
@@ -261,6 +359,12 @@ public class CSVHelper {
             Reporter.log("Failed to merge CSV files: ", LogLevel.ERROR, outputFilePath);
         }
     }
+
+    /**
+     * Merges multiple CSV files into one.
+     * @param outputFilePath Path for the merged output file
+     * @param inputFiles List of input file paths to merge
+     */
     public static void mergeCsvFiles(String outputFilePath, List<String> inputFiles) {
         Reporter.log("Merging CSV files into: " + outputFilePath, LogLevel.INFO_GREEN, "");
         List<Map<String, String>> mergedData = new ArrayList<>();
@@ -270,6 +374,13 @@ public class CSVHelper {
         setCsvData(outputFilePath, mergedData);
         Reporter.log("Successfully merged CSV files.", LogLevel.INFO_GREEN, outputFilePath);
     }
+
+    /**
+     * Validates if the CSV file has the expected column structure.
+     * @param filePath Path to the CSV file
+     * @param expectedColumns List of expected column names
+     * @return true if structure is valid, false otherwise
+     */
     public static boolean validateFileStructure(String filePath, List<String> expectedColumns) {
         Reporter.log("Validating structure of CSV file: ", LogLevel.INFO_GREEN, filePath);
         try (Reader reader = new FileReader(filePath );
@@ -281,7 +392,13 @@ public class CSVHelper {
             return false;
         }
     }
-    // Method to update a specific row
+
+    /**
+     * Updates a specific row with new data.
+     * @param filePath Path to the CSV file
+     * @param rowIndex Index of the row to update
+     * @param newData Map containing the new row data
+     */
     public static void updateRow(String filePath, int rowIndex, Map<String, String> newData) {
         List<Map<String, String>> data = getCsvData(filePath);
         if (rowIndex < data.size()) {
@@ -293,7 +410,12 @@ public class CSVHelper {
         }
     }
 
-    // Method to update a column value in all rows
+    /**
+     * Updates all values in a specific column.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column to update
+     * @param newValue New value for all rows in the column
+     */
     public static void updateColumn(String filePath, String columnName, String newValue) {
         List<Map<String, String>> data = getCsvData(filePath);
         for (Map<String, String> row : data) {
@@ -304,9 +426,22 @@ public class CSVHelper {
         setCsvData(filePath, data);
         Reporter.log("Successfully updated column in CSV file.", LogLevel.INFO_GREEN, filePath);
     }
+
+    /**
+     * Gets the total number of rows in the CSV file.
+     * @param filePath Path to the CSV file
+     * @return Number of rows in the file
+     */
     public static int getRowCount(String filePath) {
         return getCsvData(filePath).size();
     }
+
+    /**
+     * Finds duplicate entries in a specific column.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the column to check for duplicates
+     * @return List of duplicate values found
+     */
     public static List<String> findDuplicateEntries(String filePath, String columnName) {
         Reporter.log("Finding duplicates in column: " + columnName, LogLevel.INFO_GREEN, filePath);
         List<String> duplicates = new ArrayList<>();
@@ -324,6 +459,13 @@ public class CSVHelper {
         }
         return duplicates;
     }
+
+    /**
+     * Adds a new column to the CSV file with a default value.
+     * @param filePath Path to the CSV file
+     * @param columnName Name of the new column
+     * @param defaultValue Default value for all rows in the new column
+     */
     public static void addNewColumn(String filePath, String columnName, String defaultValue) {
         Reporter.log("Adding new column: " + columnName, LogLevel.INFO_GREEN, filePath);
         try {
@@ -337,6 +479,13 @@ public class CSVHelper {
             Reporter.log("Failed to add column: " + e.getMessage(), LogLevel.ERROR, filePath);
         }
     }
+
+    /**
+     * Renames a column in the CSV file.
+     * @param filePath Path to the CSV file
+     * @param oldName Current name of the column
+     * @param newName New name for the column
+     */
     public static void renameColumn(String filePath, String oldName, String newName) {
         Reporter.log("Renaming column: " + oldName + " to " + newName, LogLevel.INFO_GREEN, filePath);
         try {
