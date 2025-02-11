@@ -18,7 +18,11 @@ import com.google.gson.JsonPrimitive;
 
 public class JsonHelper {
 
-    // Method to read JSON data and return it as a list of maps
+    /**
+     * Reads JSON data and returns it as a list of maps.
+     * @param filePath Path to the JSON file.
+     * @return List of maps representing the JSON data.
+     */
     public static List<Map<String, String>> getJsonData(String filePath) {
         List<Map<String, String>> data = new ArrayList<>();
         File jsonFile = new File(filePath);
@@ -56,6 +60,11 @@ public class JsonHelper {
         return data;
     }
 
+    /**
+     * Converts a JsonObject to a Map.
+     * @param jsonObject The JsonObject to convert.
+     * @return Map with string key-value pairs.
+     */
     private static Map<String, String> convertJsonObjectToMap(JsonObject jsonObject) {
         Map<String, String> recordMap = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
@@ -69,7 +78,11 @@ public class JsonHelper {
         return recordMap;
     }
 
-    // Method to write a list of maps as JSON data
+    /**
+     * Writes a list of maps as JSON data to a file.
+     * @param filePath Path to the target JSON file.
+     * @param data List of maps containing the data.
+     */
     public static void setJsonData(String filePath, List<Map<String, String>> data) {
         log("Attempting to write JSON data to file: ", LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
@@ -104,7 +117,12 @@ public class JsonHelper {
         }
     }
 
-    // Method to get a value for a specific key from JSON file
+    /**
+     * Retrieves the value for a specific key from a JSON file.
+     * @param filePath Path to the JSON file.
+     * @param key The key to look for.
+     * @return The value corresponding to the key.
+     */
     public static String getJsonKeyValue(String filePath, String key) {
         File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
@@ -131,7 +149,13 @@ public class JsonHelper {
             return null;
         }
     }
-    // Method to set or update a specific key-value pair in JSON file
+
+    /**
+     * Sets or updates a specific key-value pair in a JSON file.
+     * @param filePath Path to the JSON file.
+     * @param key The key to set.
+     * @param value The value to set.
+     */
     public static void setJsonKeyValue(String filePath, String key, String value) {
         File jsonFile = new File(filePath);
 
@@ -161,6 +185,13 @@ public class JsonHelper {
         }
 
     }
+
+    /**
+     * Validates that a JSON file contains all required keys.
+     * @param filePath Path to the JSON file.
+     * @param requiredKeys List of required keys.
+     * @return true if all keys are present, false otherwise.
+     */
     public static boolean validateJsonKeys(String filePath, List<String> requiredKeys) {
         log("Validating keys in JSON file: ", LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
@@ -188,7 +219,12 @@ public class JsonHelper {
         }
         return false;
     }
-    // Method to read nested JSON data and return it as a Map
+
+    /**
+     * Reads nested JSON data and returns it as a map.
+     * @param filePath Path to the JSON file.
+     * @return Map containing the nested JSON data.
+     */
     public static Map<String, Object> getNestedJsonData(String filePath) {
         File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
@@ -213,7 +249,11 @@ public class JsonHelper {
         }
     }
 
-    // Recursive helper method to parse JsonObject into a Map
+    /**
+     * Recursively parses a JsonObject into a Map.
+     * @param jsonObject The JsonObject to parse.
+     * @return Map representing the JSON structure.
+     */
     private static Map<String, Object> parseJsonObject(JsonObject jsonObject) {
         Map<String, Object> map = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
@@ -229,7 +269,11 @@ public class JsonHelper {
         return map;
     }
 
-    // Recursive helper method to parse JsonArray into a List
+    /**
+     * Recursively parses a JsonArray into a List.
+     * @param jsonArray The JsonArray to parse.
+     * @return List representing the JSON array.
+     */
     private static List<Object> parseJsonArray(JsonArray jsonArray) {
         List<Object> list = new ArrayList<>();
         for (JsonElement element : jsonArray) {
@@ -244,7 +288,12 @@ public class JsonHelper {
         return list;
     }
 
-    // Method to compare two JSON files for equality
+    /**
+     * Compares two JSON files for equality.
+     * @param filePath1 Path to the first JSON file.
+     * @param filePath2 Path to the second JSON file.
+     * @return true if the files are equal, false otherwise.
+     */
     public static boolean compareJsonFiles(String filePath1, String filePath2) {
         File file1 = new File(filePath1 );
         File file2 = new File(filePath2 );
@@ -270,7 +319,12 @@ public class JsonHelper {
         }
     }
 
-    // Method to merge JSON data from two files and save to a new file
+    /**
+     * Merges JSON data from two files and writes the merged data to a new file.
+     * @param sourceFilePath1 Path to the first JSON file.
+     * @param sourceFilePath2 Path to the second JSON file.
+     * @param targetFilePath Path for the merged output file.
+     */
     public static void mergeJsonFiles(String sourceFilePath1, String sourceFilePath2, String targetFilePath) {
         File file1 = new File(sourceFilePath1 );
         File file2 = new File(sourceFilePath2 );
@@ -302,7 +356,12 @@ public class JsonHelper {
         }
     }
 
-    // Method to update a nested JSON key with a new value
+    /**
+     * Updates a nested JSON key with a new value.
+     * @param filePath Path to the JSON file.
+     * @param keys List of keys representing the nested path.
+     * @param newValue New value to set.
+     */
     public static void updateNestedJsonKey(String filePath, List<String> keys, String newValue) {
         File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
@@ -339,6 +398,13 @@ public class JsonHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
+
+    /**
+     * Appends a value to a JSON array at a given path.
+     * @param filePath Path to the JSON file.
+     * @param arrayPath List representing the path to the array.
+     * @param value Value to append.
+     */
     public static void appendToJsonArray(String filePath, List<String> arrayPath, String value) {
         log("Appending to JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         modifyJsonStructure(filePath, (jsonObject) -> {
@@ -351,6 +417,13 @@ public class JsonHelper {
         });
     }
 
+    /**
+     * Inserts a value into a JSON array at a specified index.
+     * @param filePath Path to the JSON file.
+     * @param arrayPath List representing the path to the array.
+     * @param index The index at which to insert.
+     * @param value Value to insert.
+     */
     public static void insertIntoJsonArray(String filePath, List<String> arrayPath, int index, String value) {
         log("Inserting into JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         modifyJsonStructure(filePath, (jsonObject) -> {
@@ -374,6 +447,12 @@ public class JsonHelper {
         });
     }
 
+    /**
+     * Removes a value from a JSON array at a specified index.
+     * @param filePath Path to the JSON file.
+     * @param arrayPath List representing the path to the array.
+     * @param index Index of the element to remove.
+     */
     public static void removeFromJsonArray(String filePath, List<String> arrayPath, int index) {
         log("Removing from JSON array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         modifyJsonStructure(filePath, (jsonObject) -> {
@@ -386,6 +465,12 @@ public class JsonHelper {
         });
     }
 
+    /**
+     * Retrieves a value from a nested JSON structure based on a path.
+     * @param filePath Path to the JSON file.
+     * @param pathKeys List of keys representing the nested path.
+     * @return The value at the nested path.
+     */
     public static String getValueFromNestedPath(String filePath, List<String> pathKeys) {
         log("Reading from nested path: " + String.join(".", pathKeys), LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
@@ -427,6 +512,12 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Modifies a value at a nested JSON path.
+     * @param filePath Path to the JSON file.
+     * @param pathKeys List of keys representing the nested path.
+     * @param newValue New value to set.
+     */
     public static void modifyInNestedPath(String filePath, List<String> pathKeys, String newValue) {
         log("Modifying nested path: " + String.join(".", pathKeys), LogLevel.INFO_BLUE, filePath);
         modifyJsonStructure(filePath, (jsonObject) -> {
@@ -454,7 +545,11 @@ public class JsonHelper {
         });
     }
 
-    // Generic modification helper
+    /**
+     * Generic helper to modify a JSON structure.
+     * @param filePath Path to the JSON file.
+     * @param modifier Function that modifies and returns a Boolean.
+     */
     private static void modifyJsonStructure(String filePath, java.util.function.Function<JsonObject, Boolean> modifier) {
         File jsonFile = new File(filePath);
 
@@ -481,7 +576,12 @@ public class JsonHelper {
         }
     }
 
-    // Array navigation helper
+    /**
+     * Navigates to a JSON array at a specified path.
+     * @param root The root JsonObject.
+     * @param path List representing the path.
+     * @return The JsonArray located at the path.
+     */
     private static JsonArray navigateToArray(JsonObject root, List<String> path) {
         JsonElement current = root;
         for(int i = 0; i < path.size(); i++) {
@@ -496,6 +596,11 @@ public class JsonHelper {
         return current.getAsJsonArray();
     }
 
+    /**
+     * Creates a JSON array at a specific path in the JSON structure.
+     * @param filePath Path to the JSON file.
+     * @param arrayPath List representing the path where the array should be created.
+     */
     public static void createArrayAtPath(String filePath, List<String> arrayPath) {
         log("Creating array at path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         modifyJsonStructure(filePath, (jsonObject) -> {
@@ -515,6 +620,13 @@ public class JsonHelper {
         });
     }
 
+    /**
+     * Checks whether a JSON array at a given path contains a value.
+     * @param filePath Path to the JSON file.
+     * @param arrayPath List representing the path to the array.
+     * @param value The value to check.
+     * @return true if the array contains the value, false otherwise.
+     */
     public static boolean arrayContainsValue(String filePath, List<String> arrayPath, String value) {
         log("Checking array contains value in path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
@@ -537,6 +649,13 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Parses JSON from a file into an object of the provided class.
+     * @param filePath Path to the JSON file.
+     * @param classOfT The class to parse the JSON into.
+     * @param <T> Type parameter.
+     * @return Object of type T.
+     */
     public static <T> T parseJsonToObject(String filePath, Class<T> classOfT) {
         try {
             String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
@@ -548,6 +667,13 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Parses JSON from a file into a list of objects of the provided class.
+     * @param filePath Path to the JSON file.
+     * @param classOfT The class representing each object in the list.
+     * @param <T> Type parameter.
+     * @return List of objects of type T.
+     */
     public static <T> List<T> parseJsonToList(String filePath, Class<T> classOfT) {
         try {
             String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
@@ -560,6 +686,11 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Validates whether the JSON file contains valid JSON.
+     * @param filePath Path to the JSON file.
+     * @return true if valid, false otherwise.
+     */
     public static boolean isValidJson(String filePath) {
         try (FileReader reader = new FileReader(filePath)) {
             JsonParser.parseReader(reader);
@@ -570,6 +701,10 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Pretty prints the JSON file.
+     * @param filePath Path to the JSON file.
+     */
     public static void prettyPrintJson(String filePath) {
         try (FileReader reader = new FileReader(filePath)) {
             JsonElement jsonElement = JsonParser.parseReader(reader);
@@ -582,6 +717,11 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Counts occurrences of keys in the JSON file.
+     * @param filePath Path to the JSON file.
+     * @return Map of key occurrences.
+     */
     public static Map<String, Integer> getJsonKeyOccurrences(String filePath) {
         Map<String, Integer> keyOccurrences = new HashMap<>();
         try (FileReader reader = new FileReader(filePath)) {
@@ -595,6 +735,11 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Recursively counts keys in a JSON element.
+     * @param element The JSON element.
+     * @param keyOccurrences Map for counting key occurrences.
+     */
     private static void countKeysRecursively(JsonElement element, Map<String, Integer> keyOccurrences) {
         if (element.isJsonObject()) {
             JsonObject obj = element.getAsJsonObject();
@@ -610,6 +755,10 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Removes null values from the JSON file.
+     * @param filePath Path to the JSON file.
+     */
     public static void removeNullValues(String filePath) {
         try (FileReader reader = new FileReader(filePath)) {
             JsonElement element = JsonParser.parseReader(reader);
@@ -624,6 +773,11 @@ public class JsonHelper {
         }
     }
 
+    /**
+     * Recursively removes null values from a JSON element.
+     * @param element The JSON element.
+     * @return The JSON element with null values removed.
+     */
     private static JsonElement removeNullValuesRecursively(JsonElement element) {
         if (element.isJsonObject()) {
             JsonObject obj = element.getAsJsonObject();
@@ -647,6 +801,11 @@ public class JsonHelper {
         return element;
     }
 
+    /**
+     * Creates a backup of the JSON file.
+     * @param filePath Path to the JSON file.
+     * @return Path to the backup file.
+     */
     public static String backupJsonFile(String filePath) {
         try {
             File sourceFile = new File(filePath);

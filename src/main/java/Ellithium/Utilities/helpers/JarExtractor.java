@@ -6,13 +6,20 @@ import java.util.*;
 import java.util.jar.*;
 
 public class JarExtractor {
+
+    /**
+     * Extracts a folder from a JAR file to the target directory.
+     * @param jarFile The source JAR file.
+     * @param folderPathInJar The path inside the JAR to extract.
+     * @param targetDirectory The target directory.
+     * @return true if extraction is successful, false otherwise.
+     */
     public static boolean extractFolderFromJar(File jarFile, String folderPathInJar, File targetDirectory) {
         if (!jarFile.exists()) {
             System.err.println("JAR file does not exist: " + jarFile.getPath());
             return false;
         }
 
-        // Clean target directory if exists
         if (targetDirectory.exists()) {
             deleteDirectory(targetDirectory);
         }
@@ -79,7 +86,6 @@ public class JarExtractor {
                 processedPaths.put(targetFile.getPath(), true);
             }
 
-            // Then process files
             for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements();) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.getName().startsWith(folderPathInJar) || entry.isDirectory()) {
@@ -90,7 +96,6 @@ public class JarExtractor {
                 String targetPath = entry.getName().substring(folderPathInJar.length());
                 File targetFile = new File(targetDirectory, targetPath);
                 
-                // Handle case where we have both file and directory with same name
                 if (processedPaths.containsKey(targetFile.getPath())) {
                     targetFile = new File(targetFile.getPath() + ".file");
                 }
@@ -122,6 +127,10 @@ public class JarExtractor {
         }
     }
 
+    /**
+     * Deletes a directory and its contents.
+     * @param directory The directory to delete.
+     */
     private static void deleteDirectory(File directory) {
         if (directory.exists()) {
             try {
@@ -135,6 +144,12 @@ public class JarExtractor {
         }
     }
 
+    /**
+     * Extracts a single file from a JAR into the specified output file.
+     * @param jarFile The source JAR file.
+     * @param filePathInJar The file path inside the JAR.
+     * @param outputFile The output file.
+     */
     public static void extractFileFromJar(File jarFile, String filePathInJar, File outputFile) {
         try (JarFile jar = new JarFile(jarFile)) {
             JarEntry entry = jar.getJarEntry(filePathInJar);

@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Provides database operations with connection pooling and caching capabilities.
+ * Supports multiple SQL database types including MySQL, PostgreSQL, SQLite, and Oracle.
+ */
 public class SQLDatabaseProvider implements AutoCloseable {
     private HikariDataSource dataSource;
     private final String userName;
@@ -64,6 +68,15 @@ public class SQLDatabaseProvider implements AutoCloseable {
         dbTypeProperties.put(SQLDBType.ORACLE_SERVICE_NAME, oracleProps);
     }
 
+    /**
+     * Initializes a new database provider for standard SQL databases.
+     * @param dbType The type of database to connect to
+     * @param userName Database username
+     * @param password Database password
+     * @param serverIP Database server IP address
+     * @param port Database port number
+     * @param dataBaseName Name of the database
+     */
     public SQLDatabaseProvider(SQLDBType dbType, String userName, String password, String serverIP, String port, String dataBaseName) {
         validateConfiguration(dbType, userName, password, serverIP, port, dataBaseName);
         this.userName = userName;
@@ -86,6 +99,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
     }
 
+    /**
+     * Initializes a new database provider specifically for SQLite databases.
+     * @param dbType Must be SQLDBType.SQLITE
+     * @param pathToSQLiteDataBase Path to the SQLite database file
+     * @throws IllegalArgumentException if dbType is not SQLite or path is invalid
+     */
     public SQLDatabaseProvider(SQLDBType dbType, String pathToSQLiteDataBase) {
         // Add validation at the start
         if (dbType != SQLDBType.SQLITE) {
@@ -123,6 +142,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
     }
 
+    /**
+     * Creates a HikariCP configuration for the specified database type.
+     * @param dbType The type of database
+     * @param jdbcUrl The JDBC URL for the database
+     * @return Configured HikariConfig object
+     */
     private HikariConfig createHikariConfig(SQLDBType dbType, String jdbcUrl) {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
@@ -163,6 +188,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return config;
     }
 
+    /**
+     * Gets the appropriate validation query for the database type.
+     * @param dbType The type of database
+     * @return SQL query string for validation
+     */
     private String getValidationQuery(SQLDBType dbType) {
         switch (dbType) {
             case MY_SQL:
@@ -181,6 +211,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Starts a new database transaction.
+     * @return Active database connection
+     * @throws SQLException if transaction cannot be started
+     */
     public Connection beginTransaction() throws SQLException {
         Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
@@ -189,6 +224,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return conn;
     }
 
+    /**
+     * Commits the current transaction.
+     * @throws SQLException if commit fails
+     */
     public void commitTransaction() throws SQLException {
         Connection conn = transactionConnection.get();
         if (conn != null) {
@@ -202,6 +241,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Rolls back the current transaction.
+     * @throws SQLException if rollback fails
+     */
     public void rollbackTransaction() throws SQLException {
         Connection conn = transactionConnection.get();
         if (conn != null) {
@@ -215,6 +258,13 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Executes code within a transaction context.
+     * @param callback Code to execute within transaction
+     * @param <T> Return type of the callback
+     * @return Result of the callback execution
+     * @throws SQLException if transaction operations fail
+     */
     public <T> T executeInTransaction(SQLTransactionCallback<T> callback) throws SQLException {
         Connection conn = beginTransaction();
         try {
@@ -229,6 +279,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
             throw new SQLException("Transaction failed", e);
         }
     }
+
+    /**
+     * Closes the database provider and its resources.
+     */
     @Override
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) {
@@ -237,6 +291,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Checks if the database connection is valid.
+     * @return true if connection is valid, false otherwise
+     */
     public boolean isConnectionValid() {
         try (Connection conn = dataSource.getConnection()) {
             return conn.isValid(5);
@@ -246,6 +304,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Gets statistics about the connection pool.
+     * @return HikariPoolStatistics object containing pool metrics
+     * @throws IllegalStateException if pool is not available
+     */
     public HikariPoolStatistics getPoolStatistics() {
         if (dataSource == null || dataSource.isClosed()) {
             throw new IllegalStateException("Connection pool is not available");
@@ -259,8 +322,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
     }
 
     /**
-     * Builds a paginated query for the specified database type.
-     * Note: For SQL Server and Oracle, the baseQuery must include an ORDER BY clause.
+     * Constructs a paginated query based on database type.
+     * @param baseQuery Original SQL query
+     * @param page Page number (0-based)
+     * @param pageSize Number of records per page
+     * @param dbType Database type for pagination syntax
+     * @return Modified query with pagination
      */
     public String buildPaginatedQuery(String baseQuery, int page, int pageSize, SQLDBType dbType) {
         switch (dbType) {
@@ -283,6 +350,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Executes a SQL query and returns the results.
+     * @param query SQL query to execute
+     * @return CachedRowSet containing query results
+     * @throws SQLException if query execution fails
+     */
     public CachedRowSet executeQuery(String query) throws SQLException {
         validateConnection();
         query = sanitizeQuery(query);
@@ -316,12 +389,22 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Validates the current database connection.
+     * @throws IllegalStateException if connection is invalid
+     */
     private void validateConnection() {
         if (!isConnectionValid()) {
             throw new IllegalStateException("Database connection is not valid");
         }
     }
 
+    /**
+     * Handles SQL exceptions with proper logging and wrapping.
+     * @param message Error message
+     * @param e Original SQLException
+     * @throws SQLRuntimeException wrapped exception
+     */
     private void handleSQLException(String message, SQLException e) {
         String errorDetail = e.getMessage() != null ? e.getMessage() : "Unknown error";
         String fullMessage = message + ": " + errorDetail;
@@ -337,6 +420,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         throw new SQLRuntimeException(fullMessage, e);
     }
 
+    /**
+     * Closes the active database connection.
+     * Releases all resources and shuts down the connection pool.
+     */
     public void closeConnection() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
@@ -344,6 +431,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Gets the names of columns in a specific table.
+     * Results are cached for improved performance.
+     * @param tableName The name of the table
+     * @return List of column names
+     */
     public List<String> getColumnNames(String tableName) {
         validateTableName(tableName);
         return columnNamesCache.get(tableName, key -> {
@@ -364,6 +457,14 @@ public class SQLDatabaseProvider implements AutoCloseable {
             return columnNames;
         });
     }
+
+    /**
+     * Gets column names for a table in a specific catalog and schema.
+     * @param catalog The catalog name
+     * @param schema The schema name
+     * @param tableName The table name
+     * @return List of column names
+     */
     public List<String> getColumnNames(String catalog, String schema, String tableName) {
         String cacheKey = String.format("%s.%s.%s", catalog, schema, tableName);
         return columnNamesCache.get(cacheKey, key -> {
@@ -379,6 +480,13 @@ public class SQLDatabaseProvider implements AutoCloseable {
             return columnNames;
         });
     }
+
+    /**
+     * Gets the total number of rows in a table.
+     * Results are cached for improved performance.
+     * @param tableName The name of the table
+     * @return Number of rows in the table
+     */
     public int getRowCount(String tableName) {
         return rowCountCache.get(tableName, key -> {
             int rowCount = 0;
@@ -401,6 +509,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         });
     }
 
+    /**
+     * Gets the data types of columns in a table.
+     * Results are cached for improved performance.
+     * @param tableName The name of the table
+     * @return Map of column names to their SQL data types
+     */
     public Map<String, String> getColumnDataTypes(String tableName) {
         validateTableName(tableName);
         return columnDataTypesCache.get(tableName, key -> {
@@ -422,6 +536,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         });
     }
 
+    /**
+     * Gets the primary key columns of a table.
+     * Results are cached for improved performance.
+     * @param tableName The name of the table
+     * @return List of primary key column names
+     */
     public List<String> getPrimaryKeys(String tableName) {
         validateTableName(tableName);
         return primaryKeysCache.get(tableName, key -> {
@@ -443,6 +563,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         });
     }
 
+    /**
+     * Gets the foreign key relationships of a table.
+     * Results are cached for improved performance.
+     * @param tableName The name of the table
+     * @return Map of foreign key columns to their referenced tables
+     */
     public Map<String, String> getForeignKeys(String tableName) {
         validateTableName(tableName);
         return foreignKeysCache.get(tableName, key -> {
@@ -464,6 +590,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         });
     }
 
+    /**
+     * Executes a batch insert operation.
+     * @param query The SQL insert query with placeholders
+     * @param records List of record values to insert
+     * @return Total number of rows affected
+     */
     public int executeBatchInsert(String query, List<List<Object>> records) {
         int totalRowsAffected = 0;
         try (Connection connection = dataSource.getConnection()) {
@@ -490,6 +622,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return totalRowsAffected;
     }
 
+    /**
+     * Creates a new table in the database.
+     * @param createTableSQL The CREATE TABLE SQL statement
+     */
     public void createTable(String createTableSQL) {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
@@ -501,6 +637,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Clears all cached data for a specific table.
+     * @param tableName The name of the table
+     */
     public void clearCacheForTable(String tableName) {
         columnNamesCache.invalidate(tableName);
         rowCountCache.invalidate(tableName);
@@ -510,6 +650,9 @@ public class SQLDatabaseProvider implements AutoCloseable {
         Reporter.log("Cache cleared for table: " + tableName, LogLevel.INFO_BLUE);
     }
 
+    /**
+     * Clears all cached data for all tables.
+     */
     public void clearAllCaches() {
         columnNamesCache.invalidateAll();
         rowCountCache.invalidateAll();
@@ -519,6 +662,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         Reporter.log("All caches cleared.", LogLevel.INFO_BLUE);
     }
 
+    /**
+     * Executes a query and measures its execution time.
+     * @param query The SQL query to execute
+     * @return CachedRowSet containing the query results
+     * @throws SQLException if query execution fails
+     */
     public CachedRowSet executeQueryWithTiming(String query) throws SQLException {
         long startTime = System.currentTimeMillis();
         CachedRowSet result = executeQuery(query);
@@ -527,6 +676,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Executes an update SQL statement with retry logic for SQLite.
+     * @param sql The SQL update statement
+     * @return true if at least one row was affected, false otherwise
+     */
     public boolean executeUpdate(String sql) {
         try (Connection connection = dataSource.getConnection()) {
             if (dbType == SQLDBType.SQLITE) {
@@ -559,6 +713,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Executes multiple SQL statements as a single transaction.
+     * @param sqlStatements Variable number of SQL statements to execute
+     * @return true if all statements executed successfully, false otherwise
+     */
     public boolean executeUpdates(String... sqlStatements) {
         boolean success = true;
         try (Connection connection = dataSource.getConnection()) {
@@ -581,10 +740,20 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return success;
     }
 
+    /**
+     * Gets the underlying HikariDataSource instance.
+     * @return The configured HikariDataSource
+     */
     public HikariDataSource getDataSource() {
         return dataSource;
     }
 
+    /**
+     * Validates the database configuration parameters.
+     * @param dbType The type of database
+     * @param params Variable array of configuration parameters
+     * @throws IllegalArgumentException if configuration is invalid
+     */
     private void validateConfiguration(SQLDBType dbType, String... params) {
         if (dbType == null) {
             throw new IllegalArgumentException("Database type cannot be null");
@@ -609,6 +778,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Validates a port number string.
+     * @param port The port number as a string
+     * @throws IllegalArgumentException if port is invalid
+     */
     private void validatePort(String port) {
         try {
             int portNum = Integer.parseInt(port);
@@ -620,6 +794,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
     }
 
+    /**
+     * Sanitizes and validates an SQL query.
+     * @param query The SQL query to sanitize
+     * @return The sanitized query
+     * @throws IllegalArgumentException if query is invalid
+     */
     private String sanitizeQuery(String query) {
         if (query == null || query.trim().isEmpty()) {
             throw new IllegalArgumentException("Query cannot be null or empty");
@@ -637,6 +817,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return sanitized;
     }
 
+    /**
+     * Validates a table name.
+     * @param tableName The table name to validate
+     * @throws IllegalArgumentException if table name is invalid
+     */
     private void validateTableName(String tableName) {
         if (tableName == null || tableName.trim().isEmpty()) {
             throw new IllegalArgumentException("Table name cannot be null or empty");

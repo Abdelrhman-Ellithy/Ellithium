@@ -8,7 +8,15 @@ import java.nio.file.*;
 import java.util.*;
 import java.awt.Desktop;
 
+/**
+ * Helper class to execute OS commands and interact with the system.
+ */
 public class CommandExecutor {
+
+    /**
+     * Executes a command synchronously.
+     * @param command the command to execute.
+     */
     public static void executeCommand(String command) {
         Reporter.log("Attempting to execute command: ", LogLevel.INFO_GREEN, command);
         try {
@@ -22,7 +30,11 @@ public class CommandExecutor {
         }
     }
 
-    // Method to execute command in non-blocking manner and return the process object
+    /**
+     * Executes a command asynchronously and returns the running process.
+     * @param command the command to execute.
+     * @return the Process object, or null if execution fails.
+     */
     public static Process executeCommandNonBlocking(String command) {
         Reporter.log("Attempting to execute command in non-blocking mode: ", LogLevel.INFO_GREEN, command);
         try {
@@ -37,6 +49,10 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Opens a file using the default application.
+     * @param filePath the file path.
+     */
     public static void openFile(String filePath) {
         try {
             File file = new File(filePath);
@@ -52,6 +68,11 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Executes an OS-specific open command.
+     * @param filePath the file to open.
+     * @throws IOException if command execution fails.
+     */
     private static void executeOSSpecificOpen(String filePath) throws IOException {
         String[] command;
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -66,6 +87,10 @@ public class CommandExecutor {
         new ProcessBuilder(command).start();
     }
 
+    /**
+     * Retrieves basic system information.
+     * @return String containing system info.
+     */
     public static String getSystemInfo() {
         StringBuilder info = new StringBuilder();
         info.append("OS: ").append(System.getProperty("os.name")).append("\n");
@@ -77,6 +102,10 @@ public class CommandExecutor {
         return info.toString();
     }
 
+    /**
+     * Lists the running processes.
+     * @return List of process descriptions.
+     */
     public static List<String> listProcesses() {
         List<String> processes = new ArrayList<>();
         try {
@@ -99,6 +128,10 @@ public class CommandExecutor {
         return processes;
     }
 
+    /**
+     * Kills a process given its process id.
+     * @param processId the process identifier.
+     */
     public static void killProcess(String processId) {
         try {
             String[] command;
@@ -115,6 +148,10 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Creates a directory at the specified path.
+     * @param path the directory path.
+     */
     public static void createDirectory(String path) {
         try {
             Files.createDirectories(Paths.get(path));
@@ -124,6 +161,10 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Deletes a directory at the specified path.
+     * @param path the directory path.
+     */
     public static void deleteDirectory(String path) {
         try {
             Files.walk(Paths.get(path))
@@ -136,6 +177,11 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Copies a file from source to target.
+     * @param sourcePath the source file path.
+     * @param targetPath the target file path.
+     */
     public static void copyFile(String sourcePath, String targetPath) {
         try {
             Files.copy(Paths.get(sourcePath), Paths.get(targetPath), StandardCopyOption.REPLACE_EXISTING);
@@ -145,6 +191,11 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Executes a command and returns its output.
+     * @param command the command to execute.
+     * @return output from the command execution.
+     */
     public static String executeCommandWithOutput(String command) {
         try {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
@@ -167,10 +218,19 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Retrieves the current environment variables.
+     * @return Map of environment variables.
+     */
     public static Map<String, String> getEnvironmentVariables() {
         return new HashMap<>(System.getenv());
     }
 
+    /**
+     * Sets or updates an environment variable.
+     * @param key variable name.
+     * @param value variable value.
+     */
     public static void setEnvironmentVariable(String key, String value) {
         try {
             if (SystemUtils.IS_OS_WINDOWS) {
@@ -184,6 +244,10 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Executes a script file.
+     * @param scriptPath the script file path.
+     */
     public static void executeScript(String scriptPath) {
         try {
             String[] command;
@@ -206,6 +270,11 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Checks if a process with the given name is running.
+     * @param processName the process name.
+     * @return true if running; otherwise false.
+     */
     public static boolean isProcessRunning(String processName) {
         try {
             String command;
@@ -222,6 +291,11 @@ public class CommandExecutor {
         }
     }
 
+    /**
+     * Returns a configured ProcessBuilder for command execution.
+     * @param command the command arguments.
+     * @return ProcessBuilder instance.
+     */
     private static ProcessBuilder getProcessBuilder(String[] command) {
         List<String> commandList = new ArrayList<>();
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -237,6 +311,11 @@ public class CommandExecutor {
         return new ProcessBuilder(commandList);
     }
 
+    /**
+     * Sanitizes a command string into an array of command arguments.
+     * @param command the input command string.
+     * @return an array of command components.
+     */
     private static String[] sanitizeCommand(String command) {
         return command.split("\\s+");
     }
