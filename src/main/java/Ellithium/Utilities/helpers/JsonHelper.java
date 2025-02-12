@@ -331,7 +331,7 @@ public class JsonHelper {
             return isEqual;
 
         } catch (IOException | JsonSyntaxException e) {
-            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", filePath2);
+            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", filePath2");
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
             return false;
         }

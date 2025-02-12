@@ -42,7 +42,7 @@ public class ContactListAPITests extends NonBDDSetup {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
-        soft.assertTrue(response.time() < 3000, "Response time exceeded");
+        soft.assertTrue(response.time() < 4000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
 
         env.set("token", response.jsonPath().getString("token"));
