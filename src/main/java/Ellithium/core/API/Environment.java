@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
+
 public class Environment {
     private final String name;
     private final String envFilePath;
@@ -32,30 +33,62 @@ public class Environment {
     }
 
     /**
-     * @param key The key of the variable to set
-     * @param value The value to associate with the key
+     * Sets a value in the environment
+     * @param key The variable name
+     * @param value The value to set (supports any object type)
      */
-    public void setVariable(String key, String value) {
+    public void set(String key, String value) {
         if (key == null || key.trim().isEmpty()) {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return;
         }
 
-        String existingValue = JsonHelper.getJsonKeyValue(envFilePath, key);
-        if (existingValue != null && !existingValue.equals(value)) {
-            log("Updating existing value for key: " + key, LogLevel.INFO_BLUE);
+        // Create parent directories if they don't exist
+        File envFile = new File(envFilePath);
+        if (!envFile.getParentFile().exists()) {
+            envFile.getParentFile().mkdirs();
         }
-
         variableCache.put(key, value);
         JsonHelper.setJsonKeyValue(envFilePath, key, value);
-        log("Variable set successfully - Key: " + key + ", Value: " + value, LogLevel.INFO_GREEN);
+        log("Variable set successfully - Key: " + key, LogLevel.INFO_GREEN);
     }
 
     /**
-     * @param key The key of the variable to retrieve
-     * @return The value associated with the key, or null if not found
+     * Gets a value with type conversion
+     * @param key The variable name
+     * @param type The expected return type
      */
-    public String getVariable(String key) {
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key, Class<T> type) {
+        String value = get(key);
+        if (value == null) return null;
+        try {
+            if (type == String.class) {
+                return (T) value;
+            } else if (type == Integer.class) {
+                return (T) Integer.valueOf(value);
+            } else if (type == Double.class) {
+                return (T) Double.valueOf(value);
+            } else if (type == Boolean.class) {
+                value = value.toLowerCase().trim();
+                boolean boolValue = switch (value) {
+                    case "true", "yes", "1", "on", "enabled" -> true;
+                    case "false", "no", "0", "off", "disabled" -> false;
+                    default -> Boolean.parseBoolean(value);
+                };
+                return (T) Boolean.valueOf(boolValue);
+            }
+        } catch (Exception e) {
+            log("Failed to convert value for key: " + key + " to type: " + type.getSimpleName(), LogLevel.ERROR);
+        }
+        return null;
+    }
+
+    /**
+     * Gets a value as string
+     * @param key The variable name
+     */
+    public String get(String key) {
         if (key == null || key.trim().isEmpty()) {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return null;
@@ -79,18 +112,62 @@ public class Environment {
     }
 
     /**
-     * @param key The key to check for existence
-     * @return true if the variable exists, false otherwise
+     * Sets an integer value
      */
-    public boolean hasVariable(String key) {
+    public void set(String key, int value) {
+        set(key, String.valueOf(value));
+    }
+
+    /**
+     * Gets a value as integer
+     */
+    public int getAsInteger(String key) {
+        Integer value = get(key, Integer.class);
+        return value != null ? value : 0;
+    }
+
+    /**
+     * Sets a double value
+     */
+    public void set(String key, double value) {
+        set(key, String.valueOf(value));
+    }
+
+    /**
+     * Gets a value as double
+     */
+    public double getAsDouble(String key) {
+        Double value = get(key, Double.class);
+        return value != null ? value : 0.0;
+    }
+
+    /**
+     * Sets a boolean value
+     */
+    public void set(String key, boolean value) {
+        set(key, String.valueOf(value));
+    }
+
+    /**
+     * Gets a value as boolean
+     */
+    public boolean getAsBoolean(String key) {
+        Boolean value = get(key, Boolean.class);
+        return value != null ? value : false;
+    }
+
+    /**
+     * Checks if key exists
+     */
+    public boolean has(String key) {
         return variableCache.containsKey(key) || 
                JsonHelper.getJsonKeyValue(envFilePath, key) != null;
     }
 
     /**
-     * @param key The key of the variable to remove
+     * Removes a value
      */
-    public void removeVariable(String key) {
+    public void remove(String key) {
         if (key == null || key.trim().isEmpty()) {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return;
@@ -113,9 +190,9 @@ public class Environment {
     }
 
     /**
-     * Clears all variables from both cache and file
+     * Clears all values
      */
-    public void clearAllVariables() {
+    public void clear() {
         variableCache.clear();
         List<Map<String, String>> emptyList = new ArrayList<>();
         JsonHelper.setJsonData(envFilePath, emptyList);
@@ -123,9 +200,9 @@ public class Environment {
     }
 
     /**
-     * @return List of all variable names in both cache and file
+     * Gets all keys
      */
-    public List<String> getAllVariableNames() {
+    public List<String> keys() {
         Set<String> allKeys = new HashSet<>(variableCache.keySet());
         
         Map<String, Object> fileVars = JsonHelper.getNestedJsonData(envFilePath);
@@ -137,9 +214,9 @@ public class Environment {
     }
 
     /**
-     * Refreshes the cache with current file contents
+     * Refreshes the cache
      */
-    public void refreshCache() {
+    public void refresh() {
         variableCache.clear();
         Map<String, Object> fileVars = JsonHelper.getNestedJsonData(envFilePath);
         if (fileVars != null) {
@@ -151,16 +228,16 @@ public class Environment {
     }
 
     /**
-     * @return The name of the environment
+     * Gets environment name
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
     /**
-     * @return The file path of the environment configuration
+     * Gets environment file path
      */
-    public String getFilePath() {
+    public String path() {
         return envFilePath;
     }
 }

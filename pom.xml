@@ -458,6 +458,9 @@
                             <value>Ellithium.core.execution.listener.CustomTestNGListener</value>
                         </property>
                     </properties>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>TestRunner.xml</suiteXmlFile>
+                    </suiteXmlFiles>
                 </configuration>
                 <dependencies>
                     <dependency>
