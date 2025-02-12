@@ -46,17 +46,18 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
     private void stepFinishedHandler( TestStepFinished event) {
         var result=event.getResult().getStatus();
-        if ((event.getTestStep() instanceof PickleStepTestStep) &&(result== Status.FAILED)){
+        if (event.getTestStep() instanceof PickleStepTestStep){
+                if(DriverFactory.getCurrentDriver()!=null&&(result== Status.FAILED)){
                 Reporter.setStepStatus(event.getTestStep().getId().toString(),io.qameta.allure.model.Status.FAILED);
-                if(DriverFactory.getCurrentDriver()!=null){
                     failedScreenShot= testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
-                    if(failedScreenShot!=null ) {
                         Allure.getLifecycle().updateStep(stepResult -> {
-                            Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
+                            if(failedScreenShot!=null ) {
+                                Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
+                                failedScreenShot=null;
+                            }
                             GeneralHandler.AttachLogs();
                             stepResult.setStatus(io.qameta.allure.model.Status.PASSED);
                         });
-                        failedScreenShot=null;
                     }
                     else {
                         Allure.getLifecycle().updateStep(stepResult -> {
@@ -65,7 +66,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
                         });
                     }
             }
-        }
         if(!paramAdded){
             Reporter.addParams(GeneralHandler.getParameters());
             paramAdded=true;

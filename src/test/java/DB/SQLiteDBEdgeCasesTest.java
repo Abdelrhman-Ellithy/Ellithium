@@ -14,7 +14,7 @@ import java.util.List;
 public class SQLiteDBEdgeCasesTest extends SQLiteDBTest {
 
     @BeforeClass(dependsOnMethods = "setup")
-    public void setupEdgeCaseData() throws SQLException {
+    public void setupEdgeCaseData() {
         provider.createTable(
             "CREATE TABLE edge_cases (" +
             "id INTEGER PRIMARY KEY," +
