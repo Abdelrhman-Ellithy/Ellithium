@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="Framework Test" verbose="1" data-provider-thread-count="1" >
-    <test name="Web UI NonBDD Test">
+<suite name="Framework Test" verbose="1" data-provider-thread-count="10" parallel="tests" thread-count="10">
+    <test name="Web UI NonBDD Test" parallel="classes">
         <classes>
             <class name="UI_NonBDD.loginTests"/>
             <class name="UI_NonBDD.DragDropTests"/>
@@ -17,7 +17,7 @@
             <class name="Base.TestRunner"/>
         </classes>
     </test>
-        <test name="File Helpers Test">
+        <test name="File Helpers Test" parallel="classes">
             <classes>
                 <class name="Helpers.CSVHelperTests"/>
                 <class name="Helpers.ExcelHelperTests"/>
@@ -35,7 +35,7 @@
             <class name="DB.SQLiteDBEdgeCasesTest"/>
         </classes>
     </test>
-    <test name="API Tests">
+    <test name="API Tests" parallel="classes">
         <classes>
             <class name="APIs.ContactListAPITests"/>
             <class name="APIs.BookingAPITests"/>
