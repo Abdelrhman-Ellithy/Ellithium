@@ -1579,7 +1579,7 @@ public class AssertionExecutor {
          */
         public void assertEquals(double actual, double expected, String message) {
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Double values are equal");
         }
 
         /**
@@ -1590,7 +1590,7 @@ public class AssertionExecutor {
          */
         public void assertEquals(byte[] actual, byte[] expected, String message) {
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Byte values are equal");
         }
 
         /**
@@ -1600,7 +1600,7 @@ public class AssertionExecutor {
          */
         public void assertEquals(double actual, double expected) {
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - Double values are equal");
         }
 
         /**
@@ -1610,7 +1610,7 @@ public class AssertionExecutor {
          */
         public void assertEquals(byte[] actual, byte[] expected) {
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - Byte values are equal");
         }
 
         /**
@@ -1621,7 +1621,7 @@ public class AssertionExecutor {
          */
         public void assertEquals(List actual, List expected, String message) {
             softAssert.assertEquals(actual, expected,message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - List values are equal");
         }
 
         /**
@@ -1631,7 +1631,16 @@ public class AssertionExecutor {
          */
         public void assertEquals(List actual, List expected) {
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " - List values are equal");
+        }
+
+        public void assertNotEquals(int actual, int expected, String message) {
+            softAssert.assertNotEquals(actual,expected,message);
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " -values are not equal");
+        }
+        public void assertNotEquals(int actual, int expected) {
+            softAssert.assertNotEquals(actual,expected);
+            Reporter.log("Soft Assert: " , LogLevel.INFO_GREEN, " -values are not equal");
         }
     }
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Framework Test" verbose="1" data-provider-thread-count="1" >
+    <test name="Web UI NonBDD Test">
+        <classes>
+            <class name="UI_NonBDD.loginTests"/>
+            <class name="UI_NonBDD.DragDropTests"/>
+            <class name="UI_NonBDD.DropDownTests"/>
+            <class name="UI_NonBDD.AlertsTests"/>
+            <class name="UI_NonBDD.DynamicLoadingPageTests"/>
+            <class name="UI_NonBDD.HorizontalSliderTests"/>
+            <class name="UI_NonBDD.HoverPageTests"/>
+            <class name="UI_NonBDD.AmazonSearchTests"/>
+        </classes>
+    </test>
+    <test name="Web UI BDD Test">
+        <classes>
+            <class name="Base.TestRunner"/>
+        </classes>
+    </test>
+        <test name="File Helpers Test">
+            <classes>
+                <class name="Helpers.CSVHelperTests"/>
+                <class name="Helpers.ExcelHelperTests"/>
+                <class name="Helpers.JarExtractorTests"/>
+                <class name="Helpers.JsonHelperTests"/>
+                <class name="Helpers.PDFHelperTests"/>
+                <class name="Helpers.PropertyHelperTests"/>
+                <class name="Helpers.TextHelperTests"/>
+            </classes>
+        </test>
+    <test name="ِDatabase Test">
+        <classes>
+            <class name="DB.SQLiteDBTest"/>
+            <class name="DB.SQLiteDBAdvancedTest"/>
+            <class name="DB.SQLiteDBEdgeCasesTest"/>
+        </classes>
+    </test>
+    <test name="API Tests">
+        <classes>
+            <class name="APIs.ContactListAPITests"/>
+            <class name="APIs.BookingAPITests"/>
+        </classes>
+    </test>
+</suite>
