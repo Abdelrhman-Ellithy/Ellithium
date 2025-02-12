@@ -171,11 +171,18 @@ public class JsonHelper {
         }
         log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
         try (FileReader reader = new FileReader(jsonFile)) {
-            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-            jsonObject.addProperty(key, value);
+            JsonElement jsonElement = JsonParser.parseReader(reader);
+
+            // Initialize as empty object if file is empty or not a JSON object
+            if (jsonElement == null || !jsonElement.isJsonObject()) {
+                jsonElement = new JsonObject();
+            }
+            JsonObject jsonObj = jsonElement.getAsJsonObject();
+            
+            jsonObj.addProperty(key, value);
 
             try (FileWriter writer = new FileWriter(jsonFile)) {
-                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObj));
                 log("Successfully updated JSON file: ", LogLevel.INFO_GREEN, filePath);
             }
 
@@ -545,11 +552,7 @@ public class JsonHelper {
         });
     }
 
-    /**
-     * Generic helper to modify a JSON structure.
-     * @param filePath Path to the JSON file.
-     * @param modifier Function that modifies and returns a Boolean.
-     */
+    // Generic modification helper
     private static void modifyJsonStructure(String filePath, java.util.function.Function<JsonObject, Boolean> modifier) {
         File jsonFile = new File(filePath);
 
@@ -823,8 +826,7 @@ public class JsonHelper {
                 parentDir.mkdirs();
             }
 
-            // Copy the file and ensure it's exactly the same
-            Files.copy(sourceFile.toPath(), backupFile.toPath());
+        Files.copy(sourceFile.toPath(), backupFile.toPath());
 
             // Verify backup was created and content matches
             if (backupFile.exists() && compareJsonFiles(filePath, backupPath)) {
