@@ -80,13 +80,14 @@ public class JsonHelper {
 
     /**
      * Writes a list of maps as JSON data to a file.
+     * Modified to append new data if file already has data.
      * @param filePath Path to the target JSON file.
      * @param data List of maps containing the data.
      */
     public static void setJsonData(String filePath, List<Map<String, String>> data) {
         log("Attempting to write JSON data to file: ", LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
-
+        
         if (!jsonFile.exists()) {
             try {
                 if (jsonFile.createNewFile()) {
@@ -94,11 +95,22 @@ public class JsonHelper {
                 }
             } catch (IOException e) {
                 log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
             }
         }
 
+        // Read existing content, ensuring it's a JSON array; otherwise, initialize a new array.
         JsonArray jsonArray = new JsonArray();
+        try (FileReader reader = new FileReader(jsonFile)) {
+            JsonElement existingElement = JsonParser.parseReader(reader);
+            if (existingElement != null && existingElement.isJsonArray()) {
+                jsonArray = existingElement.getAsJsonArray();
+            }
+        } catch (Exception ex) {
+            // ...ignore errors and use new jsonArray...
+        }
+
+        // Append new data to existing array.
         for (Map<String, String> record : data) {
             JsonObject jsonObject = new JsonObject();
             for (Map.Entry<String, String> entry : record.entrySet()) {
@@ -110,10 +122,9 @@ public class JsonHelper {
         try (FileWriter writer = new FileWriter(jsonFile)) {
             writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
             log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
-
         } catch (IOException e) {
             log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
 
@@ -320,7 +331,7 @@ public class JsonHelper {
             return isEqual;
 
         } catch (IOException | JsonSyntaxException e) {
-            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", " + filePath2);
+            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", filePath2);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
             return false;
         }
