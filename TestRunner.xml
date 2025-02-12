@@ -12,7 +12,7 @@
             <class name="UI_NonBDD.AmazonSearchTests"/>
         </classes>
     </test>
-    <test name="Web UI BDD Test">
+    <test name="Web UI BDD Test" parallel="methods">
         <classes>
             <class name="Base.TestRunner"/>
         </classes>
@@ -28,7 +28,7 @@
                 <class name="Helpers.TextHelperTests"/>
             </classes>
         </test>
-    <test name="ِDatabase Test">
+    <test name="ِDatabase Test" parallel="classes">
         <classes>
             <class name="DB.SQLiteDBTest"/>
             <class name="DB.SQLiteDBAdvancedTest"/>
