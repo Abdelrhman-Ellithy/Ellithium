@@ -82,7 +82,7 @@ jobs:
           rm -rf Test-Output/ScreenShots/Failed/*
           find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
 
-      - name: Run Helper Tests
+      - name: Run Database Tests
         run: mvn test -Dtest="SQLiteDBTest,SQLiteDBEdgeCasesTest,SQLiteDBAdvancedTest"
 
 
