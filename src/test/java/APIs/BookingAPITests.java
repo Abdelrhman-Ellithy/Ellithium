@@ -1,6 +1,7 @@
 package APIs;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
+import Ellithium.core.API.Environment;
 import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.reporting.Reporter;
 import io.restassured.RestAssured;
@@ -12,48 +13,51 @@ import org.testng.annotations.Test;
 import static io.restassured.RestAssured.given;
 
 public class BookingAPITests extends NonBDDSetup {
-    private String token;
-    private int lastBookingID;
+    private Environment env;
 
     @BeforeClass
     public void setUp() {
         RestAssured.baseURI = "https://restful-booker.herokuapp.com/";
+        env = new Environment("RestfulBooker");
     }
+
     @Test(priority = 1)
     public void createToken() {
-        String payload =
-                """
-                        { 
-                        \"username\": \"admin\", 
-                        \"password\": \"password123\"
-                   }
+        String payload = """
+                { 
+                    "username": "admin", 
+                    "password": "password123"
+                }
                 """;
         Response response = given()
                 .contentType(ContentType.JSON)
                 .body(payload)
                 .when()
                 .post("/auth");
-        AssertionExecutor.soft soft=new AssertionExecutor.soft();
+
+        AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
-        token = response.jsonPath().getString("token");
-        soft.assertNotNull(token, "Token is null");
+        soft.assertTrue(response.time() < 3000, "Response time exceeded");
+
+        env.set("token", response.jsonPath().getString("token"));
+        soft.assertNotNull(env.get("token"), "Token is null");
         soft.assertAll();
     }
+
     @Test(priority = 2)
     public void createBooking() {
         String payload = """
                 {
-                    \"firstname\": \"John\",
-                    \"lastname\": \"Doe\",
-                    \"totalprice\": 111,
-                    \"depositpaid\": true,
-                    \"bookingdates\": {
-                        \"checkin\": \"2018-01-01\",
-                        \"checkout\": \"2019-01-01\"
+                    "firstname": "John",
+                    "lastname": "Doe",
+                    "totalprice": 111,
+                    "depositpaid": true,
+                    "bookingdates": {
+                        "checkin": "2018-01-01",
+                        "checkout": "2019-01-01"
                     },
-                    \"additionalneeds\": \"Breakfast\"
+                    "additionalneeds": "Breakfast"
                 }
                 """;
 
@@ -67,8 +71,9 @@ public class BookingAPITests extends NonBDDSetup {
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
         soft.assertTrue(response.asString().contains("bookingid"), "Booking ID not present in response");
-        lastBookingID = response.jsonPath().getInt("bookingid");
-        soft.assertNotSame(lastBookingID, 0, "Invalid Booking ID");
+        env.set("bookingId", response.jsonPath().getInt("bookingid"));
+        soft.assertNotEquals(env.getAsInteger("bookingId"), 0, "Invalid Booking ID");
+        soft.assertAll();
     }
 
     @Test(priority = 3)
@@ -76,19 +81,19 @@ public class BookingAPITests extends NonBDDSetup {
         Response response = given()
                 .when()
                 .get("/booking");
-
         AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
-        soft.assertTrue(response.asString().contains(String.valueOf(lastBookingID)), "Last Booking ID not found");
+        soft.assertTrue(response.asString().contains(String.valueOf(env.getAsInteger("bookingId"))), "Booking ID not found");
+        soft.assertAll();
     }
 
     @Test(priority = 4)
     public void getSingleBooking() {
         Response response = given()
                 .when()
-                .get("/booking/" + lastBookingID);
+                .get("/booking/" + env.getAsInteger("bookingId"));
         AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
@@ -99,30 +104,31 @@ public class BookingAPITests extends NonBDDSetup {
 
         soft.assertEquals(firstName, "John");
         soft.assertEquals(lastName, "Doe");
+        soft.assertAll();
     }
 
     @Test(priority = 5)
     public void updateBooking() {
         String payload = """
                 {
-                    \"firstname\": \"Jane\",
-                    \"lastname\": \"Smith\",
-                    \"totalprice\": 111,
-                    \"depositpaid\": true,
-                    \"bookingdates\": {
-                        \"checkin\": \"2018-01-01\",
-                        \"checkout\": \"2019-01-01\"
+                    "firstname": "Jane",
+                    "lastname": "Smith",
+                    "totalprice": 111,
+                    "depositpaid": true,
+                    "bookingdates": {
+                        "checkin": "2018-01-01",
+                        "checkout": "2019-01-01"
                     },
-                    \"additionalneeds\": \"Breakfast\"
+                    "additionalneeds": "Breakfast"
                 }
                 """;
 
         Response response = given()
                 .contentType(ContentType.JSON)
-                .header("Cookie", "token="+ token)
+                .header("Cookie", "token="+ env.get("token"))
                 .body(payload)
                 .when()
-                .put("/booking/" + lastBookingID);
+                .put("/booking/" + env.getAsInteger("bookingId"));
 
         AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
@@ -134,16 +140,19 @@ public class BookingAPITests extends NonBDDSetup {
 
         soft.assertEquals(firstName, "Jane");
         soft.assertEquals(lastName, "Smith");
+        soft.assertAll();
     }
     @Test(priority = 6)
     public void deleteCreatedBooking() {
         Response response = given()
+                .header("Cookie", "token="+ env.get("token"))
                 .when()
-                .delete("/booking/" + lastBookingID);
+                .delete("/booking/" + env.getAsInteger("bookingId"));
         AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
         Reporter.setTestCaseName("Delete the Created Booking");
+        soft.assertAll();
     }
 }

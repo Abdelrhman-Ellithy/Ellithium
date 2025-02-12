@@ -6,6 +6,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class loginTests extends BaseTests {
+    LoginPage login;
+
     @DataProvider(name= "invalidLoginData")
             Object[][] getInvalidTestData(){
         return new Object[][]{
@@ -13,7 +15,6 @@ public class loginTests extends BaseTests {
                 {"hamada","SuperSecretPassword!","Your username is invalid"}
         };
     }
-    LoginPage login;
     @Test(priority = 1, dataProvider = "invalidLoginData")
     public void invalidLogin(String username, String password, String expectedMessage){
         login =home.clickFormAuthentication();
