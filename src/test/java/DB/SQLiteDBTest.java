@@ -35,7 +35,6 @@ public class SQLiteDBTest extends NonBDDSetup {
     public void setup() {
         File dbFile = new File(DB_PATH);
         if (dbFile.exists()) dbFile.delete();
-        new File("src/test/resources/TestData").mkdirs();
         provider = new SQLDatabaseProvider(SQLDBType.SQLITE, DB_PATH);
         provider.createTable("CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)");
     }

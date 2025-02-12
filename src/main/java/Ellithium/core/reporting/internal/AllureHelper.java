@@ -26,75 +26,37 @@ public class AllureHelper {
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
-        String lastReportPath = "LastReport";
-        
+        String lastReportPath="LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                // Use normalized paths for cross-platform compatibility
-                String normalizedResultsPath = new File(resultsPath).getAbsolutePath();
-                String normalizedLastReportPath = new File(lastReportPath).getAbsolutePath();
-                
-                // Build the generate command with proper path separators
-                String generateCommand = String.format("%sallure generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
-                        allureBinaryPath,
-                        normalizedLastReportPath,
-                        normalizedResultsPath);
-                
+                String generateCommand = allureBinaryPath + "allure generate --single-file --name \"Test Report\" -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
                 executeCommand(generateCommand);
-                
-                File indexFile = new File(lastReportPath, "index.html");
-                File renamedFile = new File(reportPath, "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html");
-                String fileName = renamedFile.getAbsolutePath(); // Use absolute path
-                
+                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
+                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
+                String fileName=renamedFile.getPath();
                 if (indexFile.exists()) {
                     indexFile.renameTo(renamedFile);
                 }
-                
                 File lastReportDir = new File(lastReportPath);
                 if (lastReportDir.exists()) {
-                    try {
-                        deleteDirectory(lastReportDir);
-                    } catch (IOException e) {
-                        Logger.logException(e);
-                    }
+                    lastReportDir.delete();
                 }
-                
                 String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-                if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
+                if (openFlag != null && openFlag.equalsIgnoreCase("true")){
                     String openCommand;
                     if (SystemUtils.IS_OS_WINDOWS) {
-                        openCommand = "cmd /c start \"\" \"" + fileName + "\"";
-                    } else if (SystemUtils.IS_OS_MAC) {
-                        openCommand = "open \"" + fileName + "\"";
-                    } else if (SystemUtils.IS_OS_LINUX) {
-                        // Try different commands in case one is not available
-                        String[] browsers = {"xdg-open", "google-chrome", "firefox", "sensible-browser"};
-                        openCommand = null;
-                        for (String browser : browsers) {
-                            try {
-                                Process process = Runtime.getRuntime().exec(new String[]{"which", browser});
-                                if (process.waitFor() == 0) {
-                                    openCommand = browser + " \"" + fileName + "\"";
-                                    break;
-                                }
-                            } catch (IOException | InterruptedException e) {
-                                Logger.logException(e);
-                                continue;
-                            }
-                        }
-                        if (openCommand == null) {
-                            Logger.error("No compatible browser found to open the report");
-                            return;
-                        }
+                        openCommand = "start ".concat(fileName);
+                    } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
+                        openCommand = SystemUtils.IS_OS_MAC ? "open ".concat(fileName) : "xdg-open ".concat(fileName);
                     } else {
-                        Logger.error("Unsupported operating system");
-                        return;
+                        openCommand=null;
+                        Logger.error("Unsupported operating system.");
                     }
                     executeCommand(openCommand);
                 }
             } else {
-                Logger.info(Colors.RED + "Failed to resolve Allure binary path." + Colors.RESET);
+                Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
             }
         }
     }

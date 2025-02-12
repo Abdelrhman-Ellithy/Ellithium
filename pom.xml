@@ -362,7 +362,6 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${SQLiteVersion}</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>
