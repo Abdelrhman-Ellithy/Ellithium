@@ -1,262 +1,51 @@
-2025-02-12 12:21:05 INFO  Logger - [94mGetting Date: 2025-02-12[0m
-2025-02-12 12:21:05 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-12 12:21:06 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-12 12:21:06 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-12 12:21:06 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-12 12:21:06 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-12 12:21:06 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
-2025-02-12 12:21:06 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
-2025-02-12 12:21:06 INFO  Logger - [94mSetting value for key: firstName in JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mSuccessfully updated JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mVariable set successfully - Key: firstName[0m
-2025-02-12 12:21:06 INFO  Logger - [94mSetting value for key: lastName in JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mSuccessfully updated JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mVariable set successfully - Key: lastName[0m
-2025-02-12 12:21:06 INFO  Logger - [94mSetting value for key: userEmail in JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mSuccessfully updated JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:06 INFO  Logger - [92mVariable set successfully - Key: userEmail[0m
-2025-02-12 12:21:06 INFO  Logger - [94m[START] TESTCASE loginUser [STARTED][0m
-2025-02-12 12:21:06 INFO  Logger - [94mRetrieved value from cache for key: userEmail[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Method: POST[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/users/login[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Headers: {"Accept":"*/*","Content-Type":"application/json"}[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest ContentType: application/json[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRequest Body: {"password":"********","email":"********"}[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Status Code: 200[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Status Line: HTTP/1.1 200 OK[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Cookies: {"token":"********"}[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"113-HoxwfJtsbUIfJKm+zBGXL/MfDS4\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=w8HzqYd9qO58kipDzTbUVPIivpD%2BoD2te7YM5xHgnPs%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Set-Cookie":"token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWYxNmJkODc5YjI1NjAwMTM3NDc4OGIiLCJpYXQiOjE3MzkzNTU2Njl9.gfTv7W9NtMwut-E-98DwgzligL_E6G-5O1VcoB1Slvk; Max-Age=36000; Path=/; Expires=Wed, 12 Feb 2025 20:21:09 GMT","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=w8HzqYd9qO58kipDzTbUVPIivpD%2BoD2te7YM5xHgnPs%3D","Content-Length":"275","Date":"Wed, 12 Feb 2025 10:21:09 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Body: {"user":"********","token":"********"}[0m
-2025-02-12 12:21:09 INFO  Logger - [94mResponse Time (ms): 1899[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: application/json; charset=utf-8, Actual: application/json; charset=utf-8[0m
-2025-02-12 12:21:09 INFO  Logger - [94mSetting value for key: token in JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSuccessfully updated JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:09 INFO  Logger - [92mVariable set successfully - Key: token[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert: Object is not null: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWYxNmJkODc5YjI1NjAwMTM3NDc4OGIiLCJpYXQiOjE3MzkzNTU2Njl9.gfTv7W9NtMwut-E-98DwgzligL_E6G-5O1VcoB1Slvk - Token not found in response[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: said, Actual: said[0m
-2025-02-12 12:21:09 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: ali, Actual: ali[0m
-2025-02-12 12:21:09 INFO  Logger - [94mRetrieved value from cache for key: userEmail[0m
-2025-02-12 12:21:10 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: testtt@fake.com, Actual: testtt@fake.com[0m
-2025-02-12 12:21:10 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:10 INFO  Logger - [92m[PASSED] TESTCASE loginUser [PASSED][0m
-2025-02-12 12:21:10 INFO  Logger - [94m[START] TESTCASE addContact [STARTED][0m
-2025-02-12 12:21:10 INFO  Logger - [94mRetrieved value from cache for key: firstName[0m
-2025-02-12 12:21:10 INFO  Logger - [94mRetrieved value from cache for key: lastName[0m
-2025-02-12 12:21:10 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Method: POST[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*","Content-Type":"application/json"}[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest ContentType: application/json[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRequest Body: {"firstName":"Amy","lastName":"Smith","email":"********"}[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Status Code: 201[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Status Line: HTTP/1.1 201 Created[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"96-nirOvdscVoTuEy2k0o2cPnNE+w0\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=wwiPXd9oZxdt1aQeFtGlv0jXULyPpjhVMUDG%2BT%2B%2FP1c%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=wwiPXd9oZxdt1aQeFtGlv0jXULyPpjhVMUDG%2BT%2B%2FP1c%3D","Content-Length":"150","Date":"Wed, 12 Feb 2025 10:21:11 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Body: {"owner":"65f16bd879b****-***-****b","firstName":"Amy","lastName":"Smith","__v":0,"_id":"67ac761739e6930013d5211b","email":"********"}[0m
-2025-02-12 12:21:11 INFO  Logger - [94mResponse Time (ms): 1280[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: application/json; charset=utf-8, Actual: application/json; charset=utf-8[0m
-2025-02-12 12:21:11 INFO  Logger - [94mSetting value for key: contactId in JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSuccessfully updated JSON file: src\test\resources\TestData\Environments\ContactList.json[0m
-2025-02-12 12:21:11 INFO  Logger - [92mVariable set successfully - Key: contactId[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRetrieved value from cache for key: contactId[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert: Object is not null: 67ac761739e6930013d5211b - Contact ID not generated[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRetrieved value from cache for key: firstName[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Amy, Actual: Amy[0m
-2025-02-12 12:21:11 INFO  Logger - [94mRetrieved value from cache for key: lastName[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Smith, Actual: Smith[0m
-2025-02-12 12:21:11 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:11 INFO  Logger - [92m[PASSED] TESTCASE addContact [PASSED][0m
-2025-02-12 12:21:11 INFO  Logger - [94m[START] TESTCASE getContactList [STARTED][0m
-2025-02-12 12:21:11 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Method: GET[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*"}[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest ContentType: No Content Type[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRequest Body: No Body[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Status Code: 200[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Status Line: HTTP/1.1 200 OK[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"826-7APir9gRskfj3nqEUWyZWuNSJiI\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=fChD%2BLdwvFXe6fLMILo6wARsMMca00bRoxMaGfJdHpA%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=fChD%2BLdwvFXe6fLMILo6wARsMMca00bRoxMaGfJdHpA%3D","Content-Length":"2086","Date":"Wed, 12 Feb 2025 10:21:12 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Body: [{"owner":"65f16bd879b****-***-****b","firstName":"Abdelrahman","lastName":"Ellithy","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"66367f532e101a0013feae0e","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"Abdelrahman","lastName":"Ellithy","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"66621f42a053b20013ecb37d","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"Amy","lastName":"Smith","__v":0,"_id":"67ac761739e6930013d5211b","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"dcd","lastName":"ahmed","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"66367e342e101a0013feae08","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"hamada","lastName":"ahmed","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"66367e3e0a93760013f0d1e6","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"dcd","lastName":"ali","birthdate":"2003-08-17","phone":"********","city":"zag","__v":0,"_id":"66367a542e101a0013feadf4","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"hamada","lastName":"ali","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"66622161edc6ff0013a13cf9","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"hamada","lastName":"ali","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"666221ffedc6ff0013a13cfa","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"said","lastName":"ali","__v":0,"_id":"65f16bf0036c61001315da2b"},{"owner":"65f16bd879b****-***-****b","firstName":"said","lastName":"hassan","__v":0,"_id":"65f16ff379b****-***-****b"},{"owner":"65f16bd879b****-***-****b","firstName":"ali","lastName":"said","birthdate":"2003-08-17","city":"zag","__v":0,"_id":"666220bca053b20013ecb381","email":"********"},{"owner":"65f16bd879b****-***-****b","firstName":"dcd","lastName":"saocc","__v":0,"_id":"6636751e2e101a0013feadcc"},{"owner":"65f16bd879b****-***-****b","firstName":"ksxksxmks","lastName":"xslmxslx","__v":0,"_id":"6636744c0a93760013f0d1a1"}][0m
-2025-02-12 12:21:12 INFO  Logger - [94mResponse Time (ms): 876[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: application/json; charset=utf-8, Actual: application/json; charset=utf-8[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Abdelrahman, Actual: Abdelrahman[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Ellithy, Actual: Ellithy[0m
-2025-02-12 12:21:12 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:12 INFO  Logger - [92m[PASSED] TESTCASE getContactList [PASSED][0m
-2025-02-12 12:21:12 INFO  Logger - [94m[START] TESTCASE getSingleContact [STARTED][0m
-2025-02-12 12:21:12 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:12 INFO  Logger - [94mRetrieved value from cache for key: contactId[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Method: GET[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts/67ac761739e6930013d5211b[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*"}[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest ContentType: No Content Type[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRequest Body: No Body[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Status Code: 200[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Status Line: HTTP/1.1 200 OK[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"96-nirOvdscVoTuEy2k0o2cPnNE+w0\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=dissXVijbljyjtATvjb1JN1Yh6%2B9vo5RocSFoaskX4A%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=dissXVijbljyjtATvjb1JN1Yh6%2B9vo5RocSFoaskX4A%3D","Content-Length":"150","Date":"Wed, 12 Feb 2025 10:21:13 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Body: {"owner":"65f16bd879b****-***-****b","firstName":"Amy","lastName":"Smith","__v":0,"_id":"67ac761739e6930013d5211b","email":"********"}[0m
-2025-02-12 12:21:13 INFO  Logger - [94mResponse Time (ms): 852[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: application/json; charset=utf-8, Actual: application/json; charset=utf-8[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRetrieved value from cache for key: firstName[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Amy, Actual: Amy[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRetrieved value from cache for key: lastName[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Smith, Actual: Smith[0m
-2025-02-12 12:21:13 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:13 INFO  Logger - [92m[PASSED] TESTCASE getSingleContact [PASSED][0m
-2025-02-12 12:21:13 INFO  Logger - [94m[START] TESTCASE updateContact [STARTED][0m
-2025-02-12 12:21:13 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:13 INFO  Logger - [94mRetrieved value from cache for key: contactId[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Method: PUT[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts/67ac761739e6930013d5211b[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*","Content-Type":"application/json"}[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest ContentType: application/json[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRequest Body: {"firstName":"Asaid","lastName":"ghaly","location":{"country":"USA","city":"Boston, MA"},"email":"********"}[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Status Code: 200[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Status Line: HTTP/1.1 200 OK[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"116-Y68uh1q9B0c2FuHWhDMGoW1R4lo\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=4y%2B5I0sHuvZhadXsgLVJ8CMK6NqRo5%2B45Pl%2BhnNXbuY%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=4y%2B5I0sHuvZhadXsgLVJ8CMK6NqRo5%2B45Pl%2BhnNXbuY%3D","Content-Length":"278","Date":"Wed, 12 Feb 2025 10:21:14 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Body: {"owner":"65f16bd879b****-***-****b","lastName":"ghaly","country":null,"birthdate":null,"city":null,"postalCode":null,"stateProvince":null,"firstName":"Asaid","phone":"********","__v":0,"street1":null,"_id":"67ac761739e6930013d5211b","street2":null,"email":"********"}[0m
-2025-02-12 12:21:14 INFO  Logger - [94mResponse Time (ms): 933[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: application/json; charset=utf-8, Actual: application/json; charset=utf-8[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: Asaid, Actual: Asaid[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: ghaly, Actual: ghaly[0m
-2025-02-12 12:21:14 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:14 INFO  Logger - [92m[PASSED] TESTCASE updateContact [PASSED][0m
-2025-02-12 12:21:14 INFO  Logger - [94m[START] TESTCASE deleteContact [STARTED][0m
-2025-02-12 12:21:14 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:14 INFO  Logger - [94mRetrieved value from cache for key: contactId[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Method: DELETE[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts/67ac761739e6930013d5211b[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*"}[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest ContentType: No Content Type[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Body: No Body[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Status Code: 200[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse ContentType: text/html; charset=utf-8[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Status Line: HTTP/1.1 200 OK[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"f-smqnjm2ArsFbkvZ+qy6N7Dow4bQ\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=JBbpB39AQRBK%2B5E4ZSQzpfU8ltgPLodhwN%2FtnuTVl1M%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=JBbpB39AQRBK%2B5E4ZSQzpfU8ltgPLodhwN%2FtnuTVl1M%3D","Content-Length":"15","Date":"Wed, 12 Feb 2025 10:21:15 GMT","X-Powered-By":"Express","Content-Type":"text/html; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Body: Contact deleted[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Time (ms): 747[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assert: Objects are equal - Expected: text/html; charset=utf-8, Actual: text/html; charset=utf-8[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:15 INFO  Logger - [92m[PASSED] TESTCASE deleteContact [PASSED][0m
-2025-02-12 12:21:15 INFO  Logger - [94m[START] TESTCASE loginWithInvalidCredentials [STARTED][0m
-2025-02-12 12:21:15 INFO  Logger - [94mRetrieved value from cache for key: userEmail[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Method: POST[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/users/login[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Headers: {"Accept":"*/*","Content-Type":"application/json"}[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest ContentType: application/json[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:15 INFO  Logger - [94mRequest Body: {"password":"********","email":"********"}[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Status Code: 401[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse ContentType: [0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Status Line: HTTP/1.1 401 Unauthorized[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=JBbpB39AQRBK%2B5E4ZSQzpfU8ltgPLodhwN%2FtnuTVl1M%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=JBbpB39AQRBK%2B5E4ZSQzpfU8ltgPLodhwN%2FtnuTVl1M%3D","Content-Length":"0","Date":"Wed, 12 Feb 2025 10:21:15 GMT","X-Powered-By":"Express","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Body: [0m
-2025-02-12 12:21:15 INFO  Logger - [94mResponse Time (ms): 836[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:15 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:15 INFO  Logger - [92m[PASSED] TESTCASE loginWithInvalidCredentials [PASSED][0m
-2025-02-12 12:21:15 INFO  Logger - [94m[START] TESTCASE addContactWithLongLastName [STARTED][0m
-2025-02-12 12:21:16 INFO  Logger - [94mRetrieved value from cache for key: token[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Method: POST[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*","Content-Type":"application/json"}[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest ContentType: application/json[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:16 INFO  Logger - [94mRequest Body: {"firstName":"Amy","lastName":"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm","email":"********"}[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Status Code: 400[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Status Line: HTTP/1.1 400 Bad Request[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"310-0dlV7od/oS5q+w/ZVjNnb8J3DdQ\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=qDMmVHNUaarc9dKTEqKE4F5RJLpI85HRWxC6MV9UCjY%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=qDMmVHNUaarc9dKTEqKE4F5RJLpI85HRWxC6MV9UCjY%3D","Content-Length":"784","Date":"Wed, 12 Feb 2025 10:21:16 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Body: {"_message":"Contact validation failed","message":"Contact validation failed: lastName: Path `lastName` (`mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm`) is longer than the maximum allowed length (20).","errors":{"lastName":{"path":"lastName","kind":"maxlength","name":"ValidatorError","message":"Path `lastName` (`mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm`) is longer than the maximum allowed length (20).","value":"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm","properties":{"path":"lastName","maxlength":20,"message":"Path `lastName` (`mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm`) is longer than the maximum allowed length (20).","type":"maxlength","value":"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"}}}}[0m
-2025-02-12 12:21:16 INFO  Logger - [94mResponse Time (ms): 904[0m
-2025-02-12 12:21:16 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:16 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:16 INFO  Logger - [92mSoft Assert: Condition is true[0m
-2025-02-12 12:21:16 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:16 INFO  Logger - [92m[PASSED] TESTCASE addContactWithLongLastName [PASSED][0m
-2025-02-12 12:21:16 INFO  Logger - [94m[START] TESTCASE getContactListUnauthorized [STARTED][0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Method: GET[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest URI: https://thinking-tester-contact-list.herokuapp.com/contacts[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Headers: {"Authorization":"********","Accept":"*/*"}[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Parameters: No Query Params[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Base Path: [0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Proxy Specification: No Proxy[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest ContentType: No Content Type[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Cookies: No Cookies[0m
-2025-02-12 12:21:17 INFO  Logger - [94mRequest Body: No Body[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Status Code: 401[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse ContentType: application/json; charset=utf-8[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Status Line: HTTP/1.1 401 Unauthorized[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Cookies: No Cookies[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Headers: {"Server":"Cowboy","Nel":"{\"max_age\":3600,\"response_headers\":[\"Via\"],\"failure_fraction\":0.05,\"report_to\":\"heroku-nel\",\"success_fraction\":0.005}","Etag":"W/\"20-l84Ae8oPqxLFOfh6GyOldXOyOfM\"","Report-To":"{\"max_age\":3600,\"endpoints\":[{\"url\":\"https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=LeRzASOE53t5%2FqrcrbfrP2Xf75d91ke9yJ8wJfjLsTw%3D\"}],\"group\":\"heroku-nel\"}","Connection":"keep-alive","Reporting-Endpoints":"heroku-nel=https://nel.heroku.com/reports?ts=****-***-****&sid=af571f24-03ee-46d1-9f90-ab9030c2c74c&s=LeRzASOE53t5%2FqrcrbfrP2Xf75d91ke9yJ8wJfjLsTw%3D","Content-Length":"32","Date":"Wed, 12 Feb 2025 10:21:17 GMT","X-Powered-By":"Express","Content-Type":"application/json; charset=utf-8","Via":"1.1 vegur"}[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Body: {"error":"Please authenticate."}[0m
-2025-02-12 12:21:17 INFO  Logger - [94mResponse Time (ms): 827[0m
-2025-02-12 12:21:17 INFO  Logger - [92mSoft Assert:  - Double values are equal[0m
-2025-02-12 12:21:17 INFO  Logger - [92mSoft Assert: Condition is true: true - Response time exceeded[0m
-2025-02-12 12:21:17 INFO  Logger - [92mSoft Assert: Condition is true[0m
-2025-02-12 12:21:17 INFO  Logger - [92mSoft Assertions Completed and Passed. Validating all collected conditions.[0m
-2025-02-12 12:21:17 INFO  Logger - [92m[PASSED] TESTCASE getContactListUnauthorized [PASSED][0m
-2025-02-12 12:21:17 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-12 12:21:17 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
-2025-02-12 12:21:17 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
-2025-02-12 12:21:17 INFO  Logger - [94mTotal Execution Time is: 0 Min 11 Sec 375 Mills[0m
-2025-02-12 12:21:17 INFO  Logger - [94m------------------------------------------[0m
-2025-02-12 12:21:17 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-12 12:21:17 INFO  Logger - [94m------------------------------------------[0m
+2025-02-12 22:50:23 INFO  Logger - [94mGetting Date: 2025-02-12[0m
+2025-02-12 22:50:23 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-12 22:50:23 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-12 22:50:23 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-02-12 22:50:23 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-02-12 22:50:23 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-12 22:50:23 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-02-12 22:50:23 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-12 22:50:23 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
+2025-02-12 22:50:23 INFO  Logger - [95m[ALL TESTS STARTED]: WEB UI BDD TEST [ALL TESTS STARTED][0m
+2025-02-12 22:50:24 INFO  Logger - [96m[START] [94m Scenario User Search query is Accepted [START][0m
+2025-02-12 22:50:24 INFO  Logger - [92mChrome Options Configured[0m
+2025-02-12 22:50:27 INFO  Logger - [92mDriver Created[0m
+2025-02-12 22:50:27 INFO  Logger - [94mNavigating to URL: https://www.noon.com/egypt-en/[0m
+2025-02-12 22:50:30 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 ()[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/catalog/api/v3/u/account-loyalty][0m
+2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
+2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 403 ()[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/customer-v1/customer/addresses][0m
+2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
+2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/mp-identity-api/customer/get][0m
+2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-12 22:50:31 INFO  Logger - [95mLevel: error[0m
+2025-02-12 22:50:31 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
+2025-02-12 22:50:31 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/smartassist/entry-points][0m
+2025-02-12 22:50:31 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-12 22:50:31 INFO  Logger - [94mSent Data: "laptop" into What are you looking for?.[0m
+2025-02-12 22:50:31 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-12 22:50:31 INFO  Logger - [94mAttribute "value" retrieved with value: laptop[0m
+2025-02-12 22:50:31 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-02-12 22:50:31 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-12 22:50:32 INFO  Logger - [94mWebDriver quit[0m
+2025-02-12 22:50:32 INFO  Logger - [92m[PASSED] Scenario User Search query is Accepted [PASSED][0m
+2025-02-12 22:50:32 INFO  Logger - [95m[ALL TESTS COMPLETED]: WEB UI BDD TEST [ALL TESTS COMPLETED][0m
+2025-02-12 22:50:32 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
+2025-02-12 22:50:32 INFO  Logger - [94mTotal Execution Time is: 0 Min 9 Sec 7 Mills[0m
+2025-02-12 22:50:32 INFO  Logger - [94m------------------------------------------[0m
+2025-02-12 22:50:32 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-02-12 22:50:32 INFO  Logger - [94m------------------------------------------[0m
+2025-02-12 22:50:32 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2025-02-12 22:50:32 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2025-02-12 22:50:32 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2025-02-12 22:50:34 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-02-12 22:50:34 INFO  Logger - [94mGetting Timestamp: 2025-02-12-10-50-34PM[0m
+2025-02-12 22:50:34 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-02-12-10-50-34PM.html[0m
+2025-02-12 22:50:34 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
