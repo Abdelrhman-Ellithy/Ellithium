@@ -78,7 +78,7 @@
         <cucumberTsetNG>7.21.1</cucumberTsetNG>
         <restversion>5.5.1</restversion>
         <hamcrestversion>3.0</hamcrestversion>
-        <SQLiteVersion>3.49.0.0</SQLiteVersion>
+        <SQLiteVersion>3.49.1.0</SQLiteVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
