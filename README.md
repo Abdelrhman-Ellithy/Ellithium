@@ -10,13 +10,16 @@
   <tr>
      <td colspan="3" align="center">
         <a href="https://app.codacy.com/gh/Abdelrhman-Ellithy/Ellithium/dashboard" target="_blank">
-         <img alt="Codacy" src="https://img.shields.io/codacy/grade/4d6d48aba396411fa3170184330ba089?style=for-the-badge&color=blue&label=Code%20Quality" width="150">
+         <img alt="Codacy" src="https://img.shields.io/codacy/grade/4d6d48aba396411fa3170184330ba089?style=for-the-badge&color=blue&label=Code%20Quality" width="170">
         </a>
         <a href="https://github.com/Abdelrhman-Ellithy/Ellithium/blob/main/LICENSE" target="_blank">
-            <img alt="License" src="https://img.shields.io/github/license/apache/maven.svg?label=License" width="160">
+            <img alt="License" src="https://img.shields.io/github/license/apache/maven.svg?label=License" width="200">
         </a>
         <a href="https://central.sonatype.com/artifact/io.github.abdelrhman-ellithy/ellithium" target="_blank">
             <img alt="Codacy" src="https://central.sonatype.com/maven-central-logo.svg?" width="200">
+        </a>
+        <a href="https://www.udemy.com/course/master-ellithium-unified-test-automation-framework/?couponCode=DISCOUNT" target="_blank">
+            <img alt="Udemy Course" src="https://5.imimg.com/data5/SELLER/Default/2023/11/358764345/KZ/ZL/SV/12869081/udemy-e-learning.png" width="80">
         </a>
     </td>
   </tr>
