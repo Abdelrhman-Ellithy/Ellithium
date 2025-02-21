@@ -10,7 +10,7 @@ updates:
     target-branch: "main"
 
     
-  - package-ecosystem: "github-WebDriverActions"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
@@ -18,4 +18,3 @@ updates:
       timezone: "Africa/Cairo"
     open-pull-requests-limit: 10
     target-branch: "main"
-    
