@@ -19,7 +19,7 @@
             <img alt="Codacy" src="https://central.sonatype.com/maven-central-logo.svg?" width="200">
         </a>
         <a href="https://www.udemy.com/course/master-ellithium-unified-test-automation-framework/?couponCode=DISCOUNT" target="_blank">
-            <img alt="Udemy Course" src="https://5.imimg.com/data5/SELLER/Default/2023/11/358764345/KZ/ZL/SV/12869081/udemy-e-learning.png" width="80">
+            <img alt="Udemy Course" src="https://5.imimg.com/data5/SELLER/Default/2023/11/358764345/KZ/ZL/SV/12869081/udemy-e-learning.png" width="90" height="30">
         </a>
     </td>
   </tr>
