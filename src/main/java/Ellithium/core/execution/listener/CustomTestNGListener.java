@@ -88,8 +88,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             if(testResult.getStatus()==FAILURE){
             String driverName=ConfigContext.getValue(ConfigContext.getDriverType());
             File screenShot=GeneralHandler.testFailed(driverName,testResult.getName());
-                Reporter.attachScreenshotToReport(screenShot, screenShot.getName(),
-                        driverName,testResult.getName());
+                String description=driverName.toUpperCase() + "-" + driverName +" "+ testResult.getName();
+                Reporter.attachScreenshotToReport(screenShot, screenShot.getName(), description);
             }
         }
         Reporter.addParams(GeneralHandler.getParameters());

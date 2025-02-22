@@ -104,12 +104,11 @@ public class Reporter {
      * Attaches a screenshot to the test report.
      * @param screenshot The screenshot file
      * @param name Screenshot name in the report
-     * @param browserName Browser used for test
-     * @param testName Name of the test
+     * @param description description for the test attachment
      */
-    public static void attachScreenshotToReport(File screenshot, String name, String browserName, String testName){
+    public static void attachScreenshotToReport(File screenshot, String name, String description ){
         try (FileInputStream fis = new FileInputStream(screenshot)) {
-            Allure.description(browserName.toUpperCase() + "-" + testName + " FAILED");
+            Allure.description(description);
             Allure.addAttachment(name, "image/png", fis, ".png");
         }catch (IOException e) {
             Logger.logException(e);
