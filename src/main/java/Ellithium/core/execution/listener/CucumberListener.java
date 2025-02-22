@@ -52,7 +52,8 @@ public class CucumberListener extends AllureCucumber7Jvm {
                     failedScreenShot= testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
                         Allure.getLifecycle().updateStep(stepResult -> {
                             if(failedScreenShot!=null ) {
-                                Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), ConfigContext.getValue(ConfigContext.getDriverType()), ScenarioName);
+                                String description=ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() + "-" + ScenarioName + " FAILED";
+                                Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                                 failedScreenShot=null;
                             }
                             GeneralHandler.AttachLogs();

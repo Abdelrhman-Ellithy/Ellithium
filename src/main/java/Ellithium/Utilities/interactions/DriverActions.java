@@ -1,6 +1,7 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
+import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
@@ -14,6 +15,7 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -943,7 +945,6 @@ public class DriverActions<T extends WebDriver> {
 
         Reporter.log("Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
-
     /**
      * Hovers over an element and clicks another element.
      * @param locatorToHover Element locator to hover
@@ -962,30 +963,28 @@ public class DriverActions<T extends WebDriver> {
 
         Actions action = new Actions(driver);
         action.moveToElement(elementToHover).click(elementToClick).perform();
-
         Reporter.log("Hovered over " + locatorToHover + " and clicked " + locatorToClick, LogLevel.INFO_BLUE);
     }
 
     /**
      * Captures a screenshot and saves it with the specified name.
      * @param screenshotName The name of the screenshot file
-     * @return The path of the saved screenshot file
+     * @return The saved screenshot file
      */
-    public  String captureScreenshot( String screenshotName) {
+    public  File captureScreenshot( String screenshotName) {
         try {
             TakesScreenshot camera = (TakesScreenshot) driver;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-            File screenShotUser = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Captured" + File.separator);
-
-            if (!screenShotUser.exists()) {
-                screenShotUser.mkdirs();
+            File screenShotFolder = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Captured" + File.separator);
+            if (!screenShotFolder.exists()) {
+                screenShotFolder.mkdirs();
             }
-
-            File screenShotFile = new File(screenShotUser.getPath() + screenshotName + "_" + TestDataGenerator.getTimeStamp() + ".png");
+            String name=screenshotName + "-" + TestDataGenerator.getTimeStamp();
+            File screenShotFile = new File(screenShotFolder.getPath() + File.separator + name + ".png");
             Files.move(screenshot, screenShotFile);
-
             Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_BLUE);
-            return screenShotFile.getPath();
+            Reporter.attachScreenshotToReport(screenShotFile,name,"Captured Screenshot");
+            return screenShotFile;
         } catch (Exception e) {
             Reporter.log("Failed to capture screenshot: " + e.getMessage(), LogLevel.ERROR);
             return null;
