@@ -22,13 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeneralHandler {
+    /**
+     * Internally used with The Ellithium Not for General Use.
+     * @param browserName Slider element locator
+     * @param testName X offset to move
+     * @return The saved screenshot file
+     */
     public static File testFailed( String browserName, String testName)  {
         try {
             TakesScreenshot camera =((TakesScreenshot) DriverFactory.getCurrentDriver());
             assert camera != null;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
-            File screenShotFile = new File("Test-Output/ScreenShots/Failed/" + name + ".png");
+            File screenShotFile = new File("Test-Output"+ File.separator +"ScreenShots"+ File.separator +"Failed"+ File.separator + name + ".png");
             Files.move(screenshot, screenShotFile);
             return screenShotFile;
         } catch (IOException e) {

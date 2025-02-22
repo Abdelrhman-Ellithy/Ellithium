@@ -1,51 +1,55 @@
-2025-02-12 22:50:23 INFO  Logger - [94mGetting Date: 2025-02-12[0m
-2025-02-12 22:50:23 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-12 22:50:23 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-12 22:50:23 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-12 22:50:23 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-12 22:50:23 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-12 22:50:23 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-12 22:50:23 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-12 22:50:23 INFO  Logger - [38;5;200m[SUITE STARTED]: FRAMEWORK TEST [SUITE STARTED][0m
-2025-02-12 22:50:23 INFO  Logger - [95m[ALL TESTS STARTED]: WEB UI BDD TEST [ALL TESTS STARTED][0m
-2025-02-12 22:50:24 INFO  Logger - [96m[START] [94m Scenario User Search query is Accepted [START][0m
-2025-02-12 22:50:24 INFO  Logger - [92mChrome Options Configured[0m
-2025-02-12 22:50:27 INFO  Logger - [92mDriver Created[0m
-2025-02-12 22:50:27 INFO  Logger - [94mNavigating to URL: https://www.noon.com/egypt-en/[0m
-2025-02-12 22:50:30 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 ()[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/catalog/api/v3/u/account-loyalty][0m
-2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
-2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 403 ()[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/customer-v1/customer/addresses][0m
-2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-12 22:50:30 INFO  Logger - [95mLevel: error[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-02-12 22:50:30 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/mp-identity-api/customer/get][0m
-2025-02-12 22:50:30 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-12 22:50:31 INFO  Logger - [95mLevel: error[0m
-2025-02-12 22:50:31 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-02-12 22:50:31 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/smartassist/entry-points][0m
-2025-02-12 22:50:31 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-12 22:50:31 INFO  Logger - [94mSent Data: "laptop" into What are you looking for?.[0m
-2025-02-12 22:50:31 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-12 22:50:31 INFO  Logger - [94mAttribute "value" retrieved with value: laptop[0m
-2025-02-12 22:50:31 INFO  Logger - [92mHard Assert:  - Condition is true[0m
-2025-02-12 22:50:31 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-12 22:50:32 INFO  Logger - [94mWebDriver quit[0m
-2025-02-12 22:50:32 INFO  Logger - [92m[PASSED] Scenario User Search query is Accepted [PASSED][0m
-2025-02-12 22:50:32 INFO  Logger - [95m[ALL TESTS COMPLETED]: WEB UI BDD TEST [ALL TESTS COMPLETED][0m
-2025-02-12 22:50:32 INFO  Logger - [38;5;200m[SUITE FINISHED]: FRAMEWORK TEST [SUITE FINISHED][0m
-2025-02-12 22:50:32 INFO  Logger - [94mTotal Execution Time is: 0 Min 9 Sec 7 Mills[0m
-2025-02-12 22:50:32 INFO  Logger - [94m------------------------------------------[0m
-2025-02-12 22:50:32 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-12 22:50:32 INFO  Logger - [94m------------------------------------------[0m
-2025-02-12 22:50:32 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
-2025-02-12 22:50:32 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
-2025-02-12 22:50:32 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
-2025-02-12 22:50:34 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
-2025-02-12 22:50:34 INFO  Logger - [94mGetting Timestamp: 2025-02-12-10-50-34PM[0m
-2025-02-12 22:50:34 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-02-12-10-50-34PM.html[0m
-2025-02-12 22:50:34 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-02-22 08:44:25 INFO  Logger - [94mGetting Date: 2025-02-22[0m
+2025-02-22 08:44:25 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-22 08:44:25 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-02-22 08:44:25 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-02-22 08:44:25 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-02-22 08:44:25 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-22 08:44:25 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-02-22 08:44:25 INFO  Logger - [94m---------------------------------------------[0m
+2025-02-22 08:44:25 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
+2025-02-22 08:44:25 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
+2025-02-22 08:44:26 INFO  Logger - [96m[START] [94m Scenario Only Relative Items Returned in the results [START][0m
+2025-02-22 08:44:26 INFO  Logger - [92mChrome Options Configured[0m
+2025-02-22 08:44:30 INFO  Logger - [92mDriver Created[0m
+2025-02-22 08:44:31 INFO  Logger - [94mNavigating to URL: https://www.noon.com/egypt-en/[0m
+2025-02-22 08:44:36 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/mp-identity-api/customer/get][0m
+2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 403 ()[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/customer-v1/customer/addresses][0m
+2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 ()[0m
+2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/catalog/api/v3/u/account-loyalty][0m
+2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-22 08:44:37 INFO  Logger - [95mLevel: error[0m
+2025-02-22 08:44:37 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
+2025-02-22 08:44:37 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/smartassist/entry-points][0m
+2025-02-22 08:44:37 INFO  Logger - [93mStackTrace: Optional.empty[0m
+2025-02-22 08:44:38 INFO  Logger - [94mSent Data: "laptop" into What are you looking for?.[0m
+2025-02-22 08:44:38 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-22 08:44:38 INFO  Logger - [94mSent Data: "ENTER" into What are you looking for?.[0m
+2025-02-22 08:44:38 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-22 08:44:38 INFO  Logger - [94mWaiting for Element To Disappear: By.xpath: //img[@alt='Loading' and @loading='lazy'][0m
+2025-02-22 08:44:38 INFO  Logger - [94mGetting Attribute from multiple elements located: By.cssSelector: div[data-qa='product-name'][0m
+2025-02-22 08:44:46 ERROR Logger - [91mHard Assert:  - Condition is not true[0m
+2025-02-22 08:44:46 INFO  Logger - [94mGetting Timestamp: 2025-02-22-8-44-46AM[0m
+2025-02-22 08:44:47 INFO  Logger - Log file successfully attached to the Allure report.
+2025-02-22 08:44:47 INFO  Logger - [94mWebDriver quit[0m
+2025-02-22 08:44:47 INFO  Logger - [91m[FAILED] Scenario Only Relative Items Returned in the results [FAILED][0m
+2025-02-22 08:44:48 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
+2025-02-22 08:44:48 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
+2025-02-22 08:44:48 INFO  Logger - [94mTotal Execution Time is: 0 Min 22 Sec 127 Mills[0m
+2025-02-22 08:44:48 INFO  Logger - [94m------------------------------------------[0m
+2025-02-22 08:44:48 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-02-22 08:44:48 INFO  Logger - [94m------------------------------------------[0m
+2025-02-22 08:44:48 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2025-02-22 08:44:48 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2025-02-22 08:44:48 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
+2025-02-22 08:44:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-02-22 08:44:52 INFO  Logger - [94mGetting Timestamp: 2025-02-22-8-44-52AM[0m
+2025-02-22 08:44:52 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-02-22-8-44-52AM.html[0m
+2025-02-22 08:44:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
