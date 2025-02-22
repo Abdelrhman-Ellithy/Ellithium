@@ -50,11 +50,11 @@ public class DriverFactory {
     }
     @SuppressWarnings("unchecked")
     public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
-        return getNewLocalDriver(driverType,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        return getNewLocalDriver(driverType,headlessMode,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
     public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType) {
-        return getNewLocalDriver(driverType,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        return getNewLocalDriver(driverType,HeadlessMode.False,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
     public static <T extends AppiumDriver> T getNewMobileDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
@@ -109,11 +109,11 @@ public class DriverFactory {
     }
     @SuppressWarnings("unchecked")
     public static <T extends RemoteWebDriver> T getNgetNewRemoteDriverewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
     public static <T extends RemoteWebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False,PrivateMode.True,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
     public static <T extends WebDriver> T getCurrentDriver() {
