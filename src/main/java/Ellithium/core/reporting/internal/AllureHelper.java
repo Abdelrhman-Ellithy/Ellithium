@@ -5,13 +5,17 @@ import Ellithium.Utilities.helpers.CommandExecutor;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
 import Ellithium.core.logging.Logger;
+import com.beust.jcommander.internal.Sets;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -30,8 +34,36 @@ public class AllureHelper {
         String lastReportPath="LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
+            File allureExecutable = new File(allureBinaryPath, "allure");
+            if (!SystemUtils.IS_OS_WINDOWS) {
+                if (!allureExecutable.exists()) {
+                    Logger.error("Allure executable not found: " + allureExecutable.getAbsolutePath());
+                    return;
+                }
+                try {
+                    Set<PosixFilePermission> perms = EnumSet.of(
+                            PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_EXECUTE,
+                            PosixFilePermission.GROUP_READ,
+                            PosixFilePermission.GROUP_EXECUTE,
+                            PosixFilePermission.OTHERS_READ,
+                            PosixFilePermission.OTHERS_EXECUTE
+                    );
+                    Files.setPosixFilePermissions(allureExecutable.toPath(), perms);
+                } catch (IOException e) {
+                    Logger.error("Permission setting failed: " + e.getMessage());
+                }
+            }
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate --single-file --name \"Test Report\" -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
+                executeCommand(allureBinaryPath + "allure --version");
+                String absoluteResultsPath = new File(resultsPath).getAbsolutePath();
+                String absoluteOutputPath = new File(lastReportPath).getAbsolutePath();
+                String generateCommand = String.format(
+                        "%s/allure generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
+                        allureBinaryPath,
+                        absoluteOutputPath,
+                        absoluteResultsPath
+                );
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
