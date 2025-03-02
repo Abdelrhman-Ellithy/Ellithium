@@ -1,6 +1,7 @@
 package Ellithium.core.reporting.internal;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
+import Ellithium.Utilities.helpers.CommandExecutor;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
 import Ellithium.core.logging.Logger;
@@ -26,56 +27,34 @@ public class AllureHelper {
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
-        String lastReportPath = "LastReport";
+        String lastReportPath="LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String allureExecutable = allureBinaryPath + "allure";
-                if (!SystemUtils.IS_OS_WINDOWS) {
-                    File allureFile = new File(allureExecutable);
-                    if (!allureFile.canExecute()) {
-                        executeCommand("chmod +x \"" + allureExecutable + "\"");
-                        if (!allureFile.canExecute()) {
-                            Logger.error("Failed to set executable permissions for Allure binary");
-                            return;
-                        }
-                    }
-                }
-                // Construct command with quotes and absolute paths
-                String generateCommand = String.format("\"%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
-                        allureExecutable,
-                        new File(lastReportPath).getAbsolutePath(),
-                        new File(resultsPath).getAbsolutePath());
+                String generateCommand = allureBinaryPath + "allure generate --single-file --name \"Test Report\" -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
                 executeCommand(generateCommand);
-                
-                File indexFile = new File(lastReportPath + File.separator + "index.html");
-                File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html");
+                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
+                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
+                String fileName=renamedFile.getPath();
                 if (indexFile.exists()) {
-                    indexFile.renameTo(renamedFile);
+                    if (indexFile.renameTo(renamedFile)) {
+                        Logger.info("Report renamed to: " + renamedFile.getPath());
+                    } else {
+                        Logger.error("Failed to rename report file.");
+                    }
+                } else {
+                    Logger.error("Generated index.html not found. Allure report generation failed.");
                 }
                 File lastReportDir = new File(lastReportPath);
                 if (lastReportDir.exists()) {
                     lastReportDir.delete();
                 }
                 String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-                if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
-                    String openCommand;
-                    if (SystemUtils.IS_OS_WINDOWS) {
-                        openCommand = "start \"" + renamedFile.getAbsolutePath() + "\"";
-                    } else if (SystemUtils.IS_OS_MAC) {
-                        openCommand = "open \"" + renamedFile.getAbsolutePath() + "\"";
-                    } else if (SystemUtils.IS_OS_LINUX) {
-                        openCommand = "xdg-open \"" + renamedFile.getAbsolutePath() + "\"";
-                    } else {
-                        openCommand = null;
-                        Logger.error("Unsupported operating system.");
-                    }
-                    if (openCommand != null) {
-                        executeCommand(openCommand);
-                    }
+                if (openFlag != null && openFlag.equalsIgnoreCase("true")){
+                    CommandExecutor.openFile(fileName);
                 }
             } else {
-                Logger.info(Colors.RED + "Failed to resolve Allure binary path." + Colors.RESET);
+                Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
             }
         }
     }

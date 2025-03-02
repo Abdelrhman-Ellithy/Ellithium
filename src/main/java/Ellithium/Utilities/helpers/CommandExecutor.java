@@ -7,6 +7,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.awt.Desktop;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Helper class to execute OS commands and interact with the system.
@@ -18,18 +20,29 @@ public class CommandExecutor {
      * @param command the command to execute.
      */
     public static void executeCommand(String command) {
-        Reporter.log("Attempting to execute command: ", LogLevel.INFO_GREEN, command);
+        Reporter.log("Attempting to execute command: " + command, LogLevel.INFO_GREEN);
         try {
-            ProcessBuilder builder = getProcessBuilder(command);
+            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
             int exitCode = process.waitFor();
-            Reporter.log("Command executed successfully. Exit code: ", LogLevel.INFO_GREEN, String.valueOf(exitCode));
+            if (exitCode == 0) {
+                Reporter.log("Command executed successfully. Exit code: " + exitCode, LogLevel.INFO_GREEN);
+            } else {
+                Reporter.log("Command failed. Exit code: " + exitCode, LogLevel.ERROR);
+                Reporter.log("Output: " + output.toString(), LogLevel.DEBUG);
+            }
         } catch (IOException | InterruptedException e) {
-            Reporter.log("Failed to execute command: ", LogLevel.ERROR, command);
+            Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
         }
     }
-
     /**
      * Executes a command asynchronously and returns the running process.
      * @param command the command to execute.
@@ -38,7 +51,7 @@ public class CommandExecutor {
     public static Process executeCommandNonBlocking(String command) {
         Reporter.log("Attempting to execute command in non-blocking mode: ", LogLevel.INFO_GREEN, command);
         try {
-            ProcessBuilder builder = getProcessBuilder(command);
+            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
             Reporter.log("Non-blocking command executed: ", LogLevel.INFO_GREEN, command);
@@ -198,7 +211,7 @@ public class CommandExecutor {
      */
     public static String executeCommandWithOutput(String command) {
         try {
-            ProcessBuilder builder = getProcessBuilder(command);
+            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
             
@@ -296,11 +309,37 @@ public class CommandExecutor {
      * @param command the command arguments.
      * @return ProcessBuilder instance.
      */
-    private static ProcessBuilder getProcessBuilder(String command) {
+    private static ProcessBuilder getProcessBuilder(String[] command) {
+        List<String> commandList = new ArrayList<>();
         if (SystemUtils.IS_OS_WINDOWS) {
-            return new ProcessBuilder("cmd.exe", "/c", command);
+            commandList.add("cmd.exe");
+            commandList.add("/c");
         } else {
-            return new ProcessBuilder("/bin/bash", "-c", command);
+            commandList.add("/bin/bash");
+            commandList.add("-c");
         }
+        for (String arg : command) {
+            commandList.add(arg);
+        }
+        return new ProcessBuilder(commandList);
+    }
+
+    /**
+     * Sanitizes a command string into an array of command arguments.
+     * @param command the input command string.
+     * @return an array of command components.
+     */
+    private static String[] sanitizeCommand(String command) {
+        List<String> tokens = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)");
+        Matcher matcher = pattern.matcher(command);
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                tokens.add(matcher.group(1));
+            } else {
+                tokens.add(matcher.group(2));
+            }
+        }
+        return tokens.toArray(new String[0]);
     }
 }
