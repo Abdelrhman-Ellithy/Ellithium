@@ -4,14 +4,15 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.CommandExecutor;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
+import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
+import Ellithium.core.reporting.Reporter;
 import com.beust.jcommander.internal.Sets;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -118,7 +119,6 @@ public class AllureHelper {
                 extractAllureFolderFromJar(jarFile, allureDirectory);
                 String allureVersion = getDataFromProperties(configFilePath, "allureVersion");
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
-                addAllureToSystemPath(allureBinaryDirectory);
             } catch (IOException e) {
                 Logger.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
                 Logger.logException(e);
@@ -128,35 +128,6 @@ public class AllureHelper {
         return allureBinaryDirectory != null ? allureBinaryDirectory.getAbsolutePath() + File.separator : null;
     }
 
-    private static void addAllureToSystemPath(File allureDirectory) {
-        String path = System.getenv("PATH");
-        String allureBinaryPath = allureDirectory.getAbsolutePath();
-        if (!path.contains(allureBinaryPath)) {
-            System.setProperty("PATH", path + File.pathSeparator + allureBinaryPath);
-            Logger.info(Colors.GREEN + "Added Allure to system PATH for current session: " + allureBinaryPath + Colors.RESET);
-
-            if (SystemUtils.IS_OS_WINDOWS) {
-                String command = "setx PATH \"%PATH%;" + allureBinaryPath + "\"";
-                executeCommand(command);
-                Logger.info(Colors.GREEN + "Allure binary path added to the system PATH (Windows)."+ Colors.RESET);
-            } else if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX) {
-                String shell = System.getenv("SHELL");
-                String shellConfig;
-                if (shell != null && shell.contains("zsh")) {
-                    shellConfig = "~/.zshrc";
-                } else {
-                    shellConfig = "~/.bashrc"; // Fallback to bashrc if SHELL is null or not zsh
-                }
-                String command = "echo 'export PATH=\"$PATH:" + allureBinaryPath + "\"' >> " + shellConfig;
-                executeCommand(command);
-                Logger.info(Colors.GREEN + "Allure binary path added to " + shellConfig + " (Unix-based)." + Colors.RESET);
-            } else {
-                Logger.error(Colors.RED + "Unsupported OS." + Colors.RESET);
-            }
-        } else {
-            Logger.info(Colors.GREEN + "Allure binary path already exists in the system PATH." + Colors.RESET);
-        }
-    }
     public static void deleteAllureResultsDir(){
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
