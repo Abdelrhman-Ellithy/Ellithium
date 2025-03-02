@@ -9,6 +9,7 @@ import org.apache.commons.lang3.SystemUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -30,7 +31,19 @@ public class AllureHelper {
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String generateCommand = allureBinaryPath + "allure generate --single-file --name \"Test Report\" -o ."+File.separator  +lastReportPath + File.separator +" ."+ File.separator + resultsPath+File.separator+"";
+                String allureCommand;
+                if (SystemUtils.IS_OS_WINDOWS) {
+                    allureCommand = allureBinaryPath + "allure";
+                } else {
+                    allureCommand = allureBinaryPath + "allure";
+                    executeCommand("chmod +x " + allureCommand);
+                }
+                
+                String generateCommand = String.format("%s generate --single-file --name \"Test Report\" -o %s %s",
+                    allureCommand,
+                    Paths.get(lastReportPath).toString(),
+                    Paths.get(resultsPath).toString()
+                );
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));

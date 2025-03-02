@@ -363,6 +363,11 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>${SQLiteVersion}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.abdelrhman-ellithy</groupId>
+            <artifactId>ellithium</artifactId>
+            <version>${EllithiumVersion}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
