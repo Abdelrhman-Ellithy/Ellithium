@@ -55,14 +55,12 @@ public class AllureHelper {
                 }
             }
             if (allureBinaryPath != null) {
-                executeCommand(allureBinaryPath + "allure --version");
-                String absoluteResultsPath = new File(resultsPath).getAbsolutePath();
-                String absoluteOutputPath = new File(lastReportPath).getAbsolutePath();
                 String generateCommand = String.format(
-                        "%s/allure generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
+                        "\"%s%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
                         allureBinaryPath,
-                        absoluteOutputPath,
-                        absoluteResultsPath
+                        "allure",
+                        new File(lastReportPath).getAbsolutePath(),
+                        new File(resultsPath).getAbsolutePath()
                 );
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
