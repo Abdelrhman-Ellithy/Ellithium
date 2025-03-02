@@ -1,55 +1,127 @@
-2025-02-22 08:44:25 INFO  Logger - [94mGetting Date: 2025-02-22[0m
-2025-02-22 08:44:25 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-22 08:44:25 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
-2025-02-22 08:44:25 INFO  Logger - [92mInitialize default Timeout for Element [0m
-2025-02-22 08:44:25 INFO  Logger - [92mInitialize default Polling Time for Element [0m
-2025-02-22 08:44:25 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-22 08:44:25 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
-2025-02-22 08:44:25 INFO  Logger - [94m---------------------------------------------[0m
-2025-02-22 08:44:25 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
-2025-02-22 08:44:25 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
-2025-02-22 08:44:26 INFO  Logger - [96m[START] [94m Scenario Only Relative Items Returned in the results [START][0m
-2025-02-22 08:44:26 INFO  Logger - [92mChrome Options Configured[0m
-2025-02-22 08:44:30 INFO  Logger - [92mDriver Created[0m
-2025-02-22 08:44:31 INFO  Logger - [94mNavigating to URL: https://www.noon.com/egypt-en/[0m
-2025-02-22 08:44:36 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/mp-identity-api/customer/get][0m
-2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 403 ()[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/customer-v1/customer/addresses][0m
-2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-22 08:44:36 INFO  Logger - [95mLevel: error[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 404 ()[0m
-2025-02-22 08:44:36 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/catalog/api/v3/u/account-loyalty][0m
-2025-02-22 08:44:36 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-22 08:44:37 INFO  Logger - [95mLevel: error[0m
-2025-02-22 08:44:37 INFO  Logger - [38;5;200mText: Failed to load resource: the server responded with a status of 400 ()[0m
-2025-02-22 08:44:37 INFO  Logger - [38;5;94mURL: Optional[https://www.noon.com/_svc/smartassist/entry-points][0m
-2025-02-22 08:44:37 INFO  Logger - [93mStackTrace: Optional.empty[0m
-2025-02-22 08:44:38 INFO  Logger - [94mSent Data: "laptop" into What are you looking for?.[0m
-2025-02-22 08:44:38 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-22 08:44:38 INFO  Logger - [94mSent Data: "ENTER" into What are you looking for?.[0m
-2025-02-22 08:44:38 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-22 08:44:38 INFO  Logger - [94mWaiting for Element To Disappear: By.xpath: //img[@alt='Loading' and @loading='lazy'][0m
-2025-02-22 08:44:38 INFO  Logger - [94mGetting Attribute from multiple elements located: By.cssSelector: div[data-qa='product-name'][0m
-2025-02-22 08:44:46 ERROR Logger - [91mHard Assert:  - Condition is not true[0m
-2025-02-22 08:44:46 INFO  Logger - [94mGetting Timestamp: 2025-02-22-8-44-46AM[0m
-2025-02-22 08:44:47 INFO  Logger - Log file successfully attached to the Allure report.
-2025-02-22 08:44:47 INFO  Logger - [94mWebDriver quit[0m
-2025-02-22 08:44:47 INFO  Logger - [91m[FAILED] Scenario Only Relative Items Returned in the results [FAILED][0m
-2025-02-22 08:44:48 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
-2025-02-22 08:44:48 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
-2025-02-22 08:44:48 INFO  Logger - [94mTotal Execution Time is: 0 Min 22 Sec 127 Mills[0m
-2025-02-22 08:44:48 INFO  Logger - [94m------------------------------------------[0m
-2025-02-22 08:44:48 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
-2025-02-22 08:44:48 INFO  Logger - [94m------------------------------------------[0m
-2025-02-22 08:44:48 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
-2025-02-22 08:44:48 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
-2025-02-22 08:44:48 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure generate --single-file --name "Test Report" -o .\LastReport\ .\Test-Output/Reports/Allure/allure-results\[0m
-2025-02-22 08:44:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
-2025-02-22 08:44:52 INFO  Logger - [94mGetting Timestamp: 2025-02-22-8-44-52AM[0m
-2025-02-22 08:44:52 INFO  Logger - [92mAttempting to execute command: start Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-02-22-8-44-52AM.html[0m
-2025-02-22 08:44:52 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-03-02 19:16:55 INFO  Logger - [94mGetting Date: 2025-03-02[0m
+2025-03-02 19:16:55 INFO  Logger - [94mReading value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-03-02 19:16:55 INFO  Logger - [92mSuccessfully read value for key: LastRunDate from JSON file: Test-Output\UpdateChecker\checker.json[0m
+2025-03-02 19:16:55 INFO  Logger - [92mInitialize default Timeout for Element [0m
+2025-03-02 19:16:55 INFO  Logger - [92mInitialize default Polling Time for Element [0m
+2025-03-02 19:16:55 INFO  Logger - [94m---------------------------------------------[0m
+2025-03-02 19:16:55 INFO  Logger - [96m------- Ellithium Engine Setup --------------[0m
+2025-03-02 19:16:55 INFO  Logger - [94m---------------------------------------------[0m
+2025-03-02 19:16:55 INFO  Logger - [38;5;200m[SUITE STARTED]: DEFAULT SUITE [SUITE STARTED][0m
+2025-03-02 19:16:55 INFO  Logger - [95m[ALL TESTS STARTED]: ELLITHIUM [ALL TESTS STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testAddBlankPages [STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully added blank pages: src/test/resources/TestData/test.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:56 INFO  Logger - [92m[PASSED] TESTCASE testAddBlankPages [PASSED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testAddWatermark [STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully added watermark to PDF: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:56 INFO  Logger - [92m[PASSED] TESTCASE testAddWatermark [PASSED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testAppendToPdf [STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully appended content to PDF file: src/test/resources/TestData/test.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully read PDF file: src/test/resources/TestData/test.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:56 INFO  Logger - [92m[PASSED] TESTCASE testAppendToPdf [PASSED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testComparePdfFiles [STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully wrote content to PDF file: src/test/resources/TestData/compare.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mComparison result for PDF files: true[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:56 INFO  Logger - [92m[PASSED] TESTCASE testComparePdfFiles [PASSED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testEncryptAndDecryptPdf [STARTED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully wrote content to PDF file: src/test/resources/TestData/sample.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully encrypted PDF: src/test/resources/TestData/encrypted.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mSuccessfully checked encryption status: src/test/resources/TestData/encrypted.pdf[0m
+2025-03-02 19:16:56 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:56 INFO  Logger - [92m[PASSED] TESTCASE testEncryptAndDecryptPdf [PASSED][0m
+2025-03-02 19:16:56 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:56 INFO  Logger - [94m[START] TESTCASE testEncryptAndIsEncrypted [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully encrypted PDF: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully checked encryption status: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully checked encryption status: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mEncryption test passed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testEncryptAndIsEncrypted [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testExtractPage [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully extracted page 0 to: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully read PDF file: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testExtractPage [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testGetPageCount [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testGetPageCount [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testGetPageDimensions [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Object is not null[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert: 0.1 - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert: 0.1 - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testGetPageDimensions [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testMergePdfs [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully wrote content to PDF file: src/test/resources/TestData/compare.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully merged PDF files into: src/test/resources/TestData/merged.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully read PDF file: src/test/resources/TestData/merged.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testMergePdfs [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testReadPdf [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully read PDF file: src/test/resources/TestData/test.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mPDF read test passed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testReadPdf [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testRemovePages [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully removed pages from PDF: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testRemovePages [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testRotatePage [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully rotated page in PDF: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testRotatePage [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testSplitPdf [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully split PDF into individual pages: src/test/resources/TestData/test.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mPDF split test passed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testSplitPdf [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testUpdateMetadata [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully updated PDF metadata: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Objects are equal[0m
+2025-03-02 19:16:57 INFO  Logger - [92mMetadata update test passed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testUpdateMetadata [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mTest setup completed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [94m[START] TESTCASE testWritePdf [STARTED][0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully wrote content to PDF file: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mSuccessfully read PDF file: src/test/resources/TestData/output.pdf[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mHard Assert:  - Condition is true[0m
+2025-03-02 19:16:57 INFO  Logger - [92mPDF write test passed successfully[0m
+2025-03-02 19:16:57 INFO  Logger - [92m[PASSED] TESTCASE testWritePdf [PASSED][0m
+2025-03-02 19:16:57 INFO  Logger - Log file successfully attached to the Allure report.
+2025-03-02 19:16:57 INFO  Logger - [95m[ALL TESTS COMPLETED]: ELLITHIUM [ALL TESTS COMPLETED][0m
+2025-03-02 19:16:57 INFO  Logger - [38;5;200m[SUITE FINISHED]: DEFAULT SUITE [SUITE FINISHED][0m
+2025-03-02 19:16:57 INFO  Logger - [94mTotal Execution Time is: 0 Min 1 Sec 315 Mills[0m
+2025-03-02 19:16:57 INFO  Logger - [94m------------------------------------------[0m
+2025-03-02 19:16:57 INFO  Logger - [96m------- Ellithium Engine TearDown --------[0m
+2025-03-02 19:16:57 INFO  Logger - [94m------------------------------------------[0m
+2025-03-02 19:16:57 INFO  Logger - [92mAllure folder exists at: C:\Users\lenovo\.m2\repository\allure-Ellithium[0m
+2025-03-02 19:16:57 INFO  Logger - [92mFound Allure binary directory: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin[0m
+2025-03-02 19:16:57 INFO  Logger - [92mAttempting to execute command: C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure --version[0m
+2025-03-02 19:16:58 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-03-02 19:16:58 INFO  Logger - [92mAttempting to execute command: "C:\Users\lenovo\.m2\repository\allure-Ellithium\-2.30.0\bin\allure.bat" generate --single-file --name "Test Report" -o "C:\Users\lenovo\IdeaProjects\Ellithium\LastReport" "C:\Users\lenovo\IdeaProjects\Ellithium\Test-Output\Reports\Allure\allure-results"[0m
+2025-03-02 19:17:02 INFO  Logger - [92mCommand executed successfully. Exit code: 0[0m
+2025-03-02 19:17:02 INFO  Logger - [94mGetting Timestamp: 2025-03-02-7-17-02PM[0m
+2025-03-02 19:17:02 INFO  Logger - Report renamed to: Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-03-02-7-17-02PM.html
+2025-03-02 19:17:03 INFO  Logger - [92mSuccessfully opened file: Test-Output\Reports\Allure\allure-report\Ellithium-Test-Report-2025-03-02-7-17-02PM.html[0m
