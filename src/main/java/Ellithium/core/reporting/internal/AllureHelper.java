@@ -4,19 +4,14 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.CommandExecutor;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
-import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
-import Ellithium.core.reporting.Reporter;
-import com.beust.jcommander.internal.Sets;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.EnumSet;
-import java.util.Enumeration;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -57,15 +52,11 @@ public class AllureHelper {
             }
             if (allureBinaryPath != null) {
                 String generateCommand = String.format(
-                        "\"%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
+                        "\"%s\" generate --single-file --name \"Test Report\" -c -o \"%s\" \"%s\"",
                         allureExecutable,
                         new File(lastReportPath).getAbsolutePath(),
                         new File(resultsPath).getAbsolutePath()
                 );
-                executeCommand(String.format(
-                        "\"%s\" --version",
-                        allureExecutable+".bat"
-                ));
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
