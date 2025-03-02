@@ -9,7 +9,6 @@ import org.apache.commons.lang3.SystemUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -28,13 +27,10 @@ public class AllureHelper {
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
         String lastReportPath = "LastReport";
-        
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
                 String allureExecutable = allureBinaryPath + "allure";
-                
-                // For Unix systems, ensure proper permissions
                 if (!SystemUtils.IS_OS_WINDOWS) {
                     File allureFile = new File(allureExecutable);
                     if (!allureFile.canExecute()) {
@@ -45,19 +41,15 @@ public class AllureHelper {
                         }
                     }
                 }
-
-                // Construct the generate command with proper path handling
+                // Construct command with quotes and absolute paths
                 String generateCommand = String.format("\"%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
                         allureExecutable,
-                        Paths.get(lastReportPath).toAbsolutePath(),
-                        Paths.get(resultsPath).toAbsolutePath());
-                
-                Logger.info("Executing Allure generate command: " + generateCommand);
+                        new File(lastReportPath).getAbsolutePath(),
+                        new File(resultsPath).getAbsolutePath());
                 executeCommand(generateCommand);
                 
-                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
-                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
-                String fileName=renamedFile.getPath();
+                File indexFile = new File(lastReportPath + File.separator + "index.html");
+                File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html");
                 if (indexFile.exists()) {
                     indexFile.renameTo(renamedFile);
                 }
@@ -66,20 +58,24 @@ public class AllureHelper {
                     lastReportDir.delete();
                 }
                 String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-                if (openFlag != null && openFlag.equalsIgnoreCase("true")){
+                if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
                     String openCommand;
                     if (SystemUtils.IS_OS_WINDOWS) {
-                        openCommand = "start ".concat(fileName);
-                    } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX) {
-                        openCommand = SystemUtils.IS_OS_MAC ? "open ".concat(fileName) : "xdg-open ".concat(fileName);
+                        openCommand = "start \"" + renamedFile.getAbsolutePath() + "\"";
+                    } else if (SystemUtils.IS_OS_MAC) {
+                        openCommand = "open \"" + renamedFile.getAbsolutePath() + "\"";
+                    } else if (SystemUtils.IS_OS_LINUX) {
+                        openCommand = "xdg-open \"" + renamedFile.getAbsolutePath() + "\"";
                     } else {
-                        openCommand=null;
+                        openCommand = null;
                         Logger.error("Unsupported operating system.");
                     }
-                    executeCommand(openCommand);
+                    if (openCommand != null) {
+                        executeCommand(openCommand);
+                    }
                 }
             } else {
-                Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
+                Logger.info(Colors.RED + "Failed to resolve Allure binary path." + Colors.RESET);
             }
         }
     }
@@ -174,10 +170,10 @@ public class AllureHelper {
         }
     }
     public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
+        boolean result;
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
-        
         try (JarFile jar = new JarFile(jarFile)) {
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
@@ -185,24 +181,18 @@ public class AllureHelper {
                 if (entry.getName().startsWith("allure")) {
                     File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
                     if (entry.isDirectory()) {
-                        targetFile.mkdirs();
+                        result=targetFile.mkdirs();
                     } else {
                         Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        // Set executable permissions for Unix systems
-                        if (!SystemUtils.IS_OS_WINDOWS && 
-                            (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat"))) {
-                            targetFile.setExecutable(true, false);
-                            // Verify permissions were set
-                            if (!targetFile.canExecute()) {
-                                executeCommand("chmod +x \"" + targetFile.getAbsolutePath() + "\"");
-                            }
+                        if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {
+                            targetFile.setExecutable(true);
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-            Logger.error("Failed to extract Allure from JAR: " + e.getMessage());
-            throw new IOException("Failed to extract Allure", e);
+        }
+        catch (Exception e){
+            System.err.println(e.getMessage());
         }
     }
 }
