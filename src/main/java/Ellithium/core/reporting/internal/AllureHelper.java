@@ -57,9 +57,8 @@ public class AllureHelper {
             }
             if (allureBinaryPath != null) {
                 String generateCommand = String.format(
-                        "\"%s%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
-                        allureBinaryPath,
-                        "allure",
+                        "\"%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
+                        allureExecutable,
                         new File(lastReportPath).getAbsolutePath(),
                         new File(resultsPath).getAbsolutePath()
                 );
