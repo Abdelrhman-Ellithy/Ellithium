@@ -62,6 +62,10 @@ public class AllureHelper {
                         new File(lastReportPath).getAbsolutePath(),
                         new File(resultsPath).getAbsolutePath()
                 );
+                executeCommand(String.format(
+                        "\"%s\" --version",
+                        allureExecutable
+                ));
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
