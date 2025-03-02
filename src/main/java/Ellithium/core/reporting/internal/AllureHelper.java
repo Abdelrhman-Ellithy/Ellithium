@@ -58,14 +58,20 @@ public class AllureHelper {
                         new File(resultsPath).getAbsolutePath()
                 );
                 executeCommand(generateCommand);
-                File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
-                File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
-                String fileName=renamedFile.getPath();
+                File indexFile = new File(lastReportPath + File.separator + "index.html");
+                File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-"
+                        + TestDataGenerator.getTimeStamp() + ".html");
                 if (indexFile.exists()) {
-                    if (indexFile.renameTo(renamedFile)) {
+                    try {
+                        File destinationDir = new File(reportPath);
+                        if (!destinationDir.exists() && !destinationDir.mkdirs()) {
+                            Logger.error("Failed to create destination directory: " + reportPath);
+                            return;
+                        }
+                        Files.move(indexFile.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         Logger.info("Report renamed to: " + renamedFile.getPath());
-                    } else {
-                        Logger.error("Failed to rename report file.");
+                    } catch (IOException e) {
+                        Logger.error("Failed to rename report file: " + e.getMessage());
                     }
                 } else {
                     Logger.error("Generated index.html not found. Allure report generation failed.");
