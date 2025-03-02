@@ -20,7 +20,7 @@ public class CommandExecutor {
     public static void executeCommand(String command) {
         Reporter.log("Attempting to execute command: ", LogLevel.INFO_GREEN, command);
         try {
-            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
+            ProcessBuilder builder = getProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
             int exitCode = process.waitFor();
@@ -38,7 +38,7 @@ public class CommandExecutor {
     public static Process executeCommandNonBlocking(String command) {
         Reporter.log("Attempting to execute command in non-blocking mode: ", LogLevel.INFO_GREEN, command);
         try {
-            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
+            ProcessBuilder builder = getProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
             Reporter.log("Non-blocking command executed: ", LogLevel.INFO_GREEN, command);
@@ -198,7 +198,7 @@ public class CommandExecutor {
      */
     public static String executeCommandWithOutput(String command) {
         try {
-            ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
+            ProcessBuilder builder = getProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
             
@@ -296,27 +296,11 @@ public class CommandExecutor {
      * @param command the command arguments.
      * @return ProcessBuilder instance.
      */
-    private static ProcessBuilder getProcessBuilder(String[] command) {
-        List<String> commandList = new ArrayList<>();
+    private static ProcessBuilder getProcessBuilder(String command) {
         if (SystemUtils.IS_OS_WINDOWS) {
-            commandList.add("cmd.exe");
-            commandList.add("/c");
+            return new ProcessBuilder("cmd.exe", "/c", command);
         } else {
-            commandList.add("/bin/bash");
-            commandList.add("-c");
+            return new ProcessBuilder("/bin/bash", "-c", command);
         }
-        for (String arg : command) {
-            commandList.add(arg);
-        }
-        return new ProcessBuilder(commandList);
-    }
-
-    /**
-     * Sanitizes a command string into an array of command arguments.
-     * @param command the input command string.
-     * @return an array of command components.
-     */
-    private static String[] sanitizeCommand(String command) {
-        return command.split("\\s+");
     }
 }
