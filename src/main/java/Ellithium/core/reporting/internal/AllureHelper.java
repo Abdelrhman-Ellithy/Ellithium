@@ -64,7 +64,7 @@ public class AllureHelper {
                 );
                 executeCommand(String.format(
                         "\"%s\" --version",
-                        allureExecutable
+                        allureExecutable+".bat"
                 ));
                 executeCommand(generateCommand);
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
