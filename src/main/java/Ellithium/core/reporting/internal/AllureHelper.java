@@ -27,24 +27,34 @@ public class AllureHelper {
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
-        String lastReportPath="LastReport";
+        String lastReportPath = "LastReport";
+        
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath != null) {
-                String allureCommand;
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    allureCommand = allureBinaryPath + "allure";
-                } else {
-                    allureCommand = allureBinaryPath + "allure";
-                    executeCommand("chmod +x " + allureCommand);
-                }
+                String allureExecutable = allureBinaryPath + "allure";
                 
-                String generateCommand = String.format("%s generate --single-file --name \"Test Report\" -o %s %s",
-                    allureCommand,
-                    Paths.get(lastReportPath).toString(),
-                    Paths.get(resultsPath).toString()
-                );
+                // For Unix systems, ensure proper permissions
+                if (!SystemUtils.IS_OS_WINDOWS) {
+                    File allureFile = new File(allureExecutable);
+                    if (!allureFile.canExecute()) {
+                        executeCommand("chmod +x \"" + allureExecutable + "\"");
+                        if (!allureFile.canExecute()) {
+                            Logger.error("Failed to set executable permissions for Allure binary");
+                            return;
+                        }
+                    }
+                }
+
+                // Construct the generate command with proper path handling
+                String generateCommand = String.format("\"%s\" generate --single-file --name \"Test Report\" -o \"%s\" \"%s\"",
+                        allureExecutable,
+                        Paths.get(lastReportPath).toAbsolutePath(),
+                        Paths.get(resultsPath).toAbsolutePath());
+                
+                Logger.info("Executing Allure generate command: " + generateCommand);
                 executeCommand(generateCommand);
+                
                 File indexFile = new File(lastReportPath.concat(File.separator + "index.html"));
                 File renamedFile = new File(reportPath.concat(File.separator + "Ellithium-Test-Report-" + TestDataGenerator.getTimeStamp() + ".html"));
                 String fileName=renamedFile.getPath();
@@ -164,10 +174,10 @@ public class AllureHelper {
         }
     }
     public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
-        boolean result;
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
+        
         try (JarFile jar = new JarFile(jarFile)) {
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
@@ -175,18 +185,24 @@ public class AllureHelper {
                 if (entry.getName().startsWith("allure")) {
                     File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
                     if (entry.isDirectory()) {
-                        result=targetFile.mkdirs();
+                        targetFile.mkdirs();
                     } else {
                         Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {
-                            targetFile.setExecutable(true);
+                        // Set executable permissions for Unix systems
+                        if (!SystemUtils.IS_OS_WINDOWS && 
+                            (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat"))) {
+                            targetFile.setExecutable(true, false);
+                            // Verify permissions were set
+                            if (!targetFile.canExecute()) {
+                                executeCommand("chmod +x \"" + targetFile.getAbsolutePath() + "\"");
+                            }
                         }
                     }
                 }
             }
-        }
-        catch (Exception e){
-            System.err.println(e.getMessage());
+        } catch (Exception e) {
+            Logger.error("Failed to extract Allure from JAR: " + e.getMessage());
+            throw new IOException("Failed to extract Allure", e);
         }
     }
 }
