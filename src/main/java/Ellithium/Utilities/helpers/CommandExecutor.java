@@ -314,12 +314,11 @@ public class CommandExecutor {
         if (SystemUtils.IS_OS_WINDOWS) {
             commandList.add("cmd.exe");
             commandList.add("/c");
+            Collections.addAll(commandList, command);
         } else {
             commandList.add("/bin/bash");
             commandList.add("-c");
-        }
-        for (String arg : command) {
-            commandList.add(arg);
+            commandList.add(String.join(" ", command));
         }
         return new ProcessBuilder(commandList);
     }
