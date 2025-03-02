@@ -82,7 +82,7 @@ public class AllureHelper {
                 }
                 String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
                 if (openFlag != null && openFlag.equalsIgnoreCase("true")){
-                    CommandExecutor.openFile(fileName);
+                    CommandExecutor.openFile(renamedFile.getPath());
                 }
             } else {
                 Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
