@@ -9,336 +9,84 @@ on:
 jobs:
   Ubuntu-Helper-Tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run Helper Tests
         run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: ubuntu-helper-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: ubuntu-helper-test-results
 
   MacOS-DataBase-Tests:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run Database Tests
         run: mvn test -Dtest="SQLiteDBTest,SQLiteDBEdgeCasesTest,SQLiteDBAdvancedTest"
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: macos-database-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: macos-database-test-results
 
   Windows-API-Tests:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run API Tests
         run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DforkCount=2 -DreuseForks=true -DthreadCount=2 -DdataProviderThreadCount=2
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: windows-api-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: windows-api-test-results
 
   Windows-UI-Basic-Tests:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
         run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: windows-ui-basic-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: windows-ui-basic-test-results
 
   Ubuntu-UI-Actions-Tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: ubuntu-ui-actions-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: ubuntu-ui-actions-test-results
 
   MacOS-UI-BDD-Tests:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/setup
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-      
-      - name: Maven Dependency Cache
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: |
-            ~/.m2/repository
-            !~/.m2/repository/Ellithium
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      
-      - name: Download Dependencies
-        if: steps.maven-cache.outputs.cache-hit != 'true'
-        run: mvn dependency:go-offline
-      
-      - name: Clean up previous test output
-        shell: bash
-        run: |
-          if [[ "$(uname)" == "Linux" || "$(uname)" == "Darwin" ]]; then
-            rm -rf Test-Output/Reports/*
-            rm -rf Test-Output/Logs/*
-            rm -rf Test-Output/ScreenShots/Failed/*
-            find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
-          else
-            cmd.exe /C "rd /s /q Test-Output\\Reports && rd /s /q Test-Output\\Logs && rd /s /q Test-Output\\ScreenShots\\Failed"
-            forfiles /P "Test-Output\\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
-          fi
-
+          java-version: 21
+      - uses: ./.github/actions/cleanup
       - name: Run UI BDD Tests
         run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods -DforkCount=10 -DreuseForks=true -DthreadCount=10 -DdataProviderThreadCount=10
-      - name: Listing Folders
-        run: |
-          echo "Project root directory structure:"
-          find . -type d -maxdepth 1 -print
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: ./.github/actions/test-results
         with:
-          name: macos-ui-bdd-test-results
-          path: Test-Output/*
-          retention-days: 5
+          artifact-name: macos-ui-bdd-test-results

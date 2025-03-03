@@ -1,0 +1,23 @@
+name: 'Cleanup Test Output'
+description: 'Cleans up test output directories'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clean up previous test output (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        rm -rf Test-Output/Reports/*
+        rm -rf Test-Output/Logs/*
+        rm -rf Test-Output/ScreenShots/Failed/*
+        find Test-Output/UpdateChecker/ -type f ! -name 'checker.json' -delete
+
+    - name: Clean up previous test output (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        rd /s /q Test-Output\Reports
+        rd /s /q Test-Output\Logs
+        rd /s /q Test-Output\ScreenShots\Failed
+        forfiles /P "Test-Output\UpdateChecker" /M * /C "cmd /C if @file NEQ checker.json del @path"
