@@ -35,8 +35,8 @@ jobs:
         with:
           artifact-name: macos-database-test-results
 
-  Windows-API-Tests:
-    runs-on: windows-latest
+  MacOS-API-Tests:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -47,10 +47,10 @@ jobs:
         run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DforkCount=2 -DreuseForks=true -DthreadCount=2 -DdataProviderThreadCount=2
       - uses: ./.github/actions/test-results
         with:
-          artifact-name: windows-api-test-results
+          artifact-name: macos-api-test-results
 
-  Windows-UI-Basic-Tests:
-    runs-on: windows-latest
+  MacOS-UI-Basic-Tests:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -61,7 +61,7 @@ jobs:
         run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
         with:
-          artifact-name: windows-ui-basic-test-results
+          artifact-name: macos-ui-basic-test-results
 
   Ubuntu-UI-Actions-Tests:
     runs-on: ubuntu-latest
@@ -71,7 +71,10 @@ jobs:
         with:
           java-version: 21
       - uses: ./.github/actions/cleanup
-      - uses: ./.github/actions/setup-chrome
+      - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+      - run: |
+          ${{ steps.setup-chrome.outputs.chrome-path }} --version
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
