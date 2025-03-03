@@ -13,7 +13,7 @@ public class BaseTests extends NonBDDSetup {
     @BeforeClass
     public void Setup(){
         driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome,
-                HeadlessMode.False, PrivateMode.True,
+                HeadlessMode.False, PrivateMode.False,
                 PageLoadStrategyMode.Normal,
                 WebSecurityMode.SecureMode,
                 SandboxMode.Sandbox);

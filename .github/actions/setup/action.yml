@@ -1,0 +1,32 @@
+name: 'Setup Environment'
+description: 'Sets up Java and Maven dependencies'
+
+inputs:
+  java-version:
+    required: true
+    description: 'Java version to use'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: 'zulu'
+    
+    - name: Maven Dependency Cache
+      uses: actions/cache@v4
+      id: maven-cache
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/Ellithium
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    
+    - name: Download Dependencies
+      if: steps.maven-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: mvn dependency:go-offline

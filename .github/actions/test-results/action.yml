@@ -1,0 +1,24 @@
+name: 'Process Test Results'
+description: 'Lists folders and uploads test results'
+
+inputs:
+  artifact-name:
+    required: true
+    description: 'Name of the artifact to upload'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Listing Folders
+      shell: bash
+      run: |
+        echo "Project root directory structure:"
+        find . -type d -maxdepth 1 -print
+        
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: Test-Output/*
+        retention-days: 5
