@@ -63,23 +63,19 @@ jobs:
         with:
           artifact-name: macos-ui-basic-test-results
 
-  Ubuntu-UI-Actions-Tests:
-    runs-on: ubuntu-latest
+  MacOS-UI-Actions-Tests:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
           java-version: 21
       - uses: ./.github/actions/cleanup
-      - uses: browser-actions/setup-chrome@v1
-        id: setup-chrome
-      - run: |
-          ${{ steps.setup-chrome.outputs.chrome-path }} --version
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
         with:
-          artifact-name: ubuntu-ui-actions-test-results
+          artifact-name: macos-ui-actions-test-results
 
   MacOS-UI-BDD-Tests:
     runs-on: macos-latest
