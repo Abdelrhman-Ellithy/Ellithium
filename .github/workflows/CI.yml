@@ -71,6 +71,7 @@ jobs:
         with:
           java-version: 21
       - uses: ./.github/actions/cleanup
+      - uses: ./.github/actions/setup-chrome
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
