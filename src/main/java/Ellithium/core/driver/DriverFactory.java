@@ -223,11 +223,11 @@ public class DriverFactory {
     }
     private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities){
         return createProxy(
-                            AndroidDriver.class,
-                            new Object[] {remoteAddress,capabilities},
-                            new Class[] {URL.class,Capabilities.class},
-                            new appiumListener()
-                    );
+                AndroidDriver.class,
+                new Object[] {remoteAddress,capabilities},
+                new Class[] {URL.class,Capabilities.class},
+                new appiumListener()
+        );
     }
     private static IOSDriver getDecoratedIOSDriver(URL remoteAddress, Capabilities capabilities){
         return createProxy(
