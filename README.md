@@ -89,7 +89,7 @@ Ellithium supports reading and writing data from various file formats, including
 ### Prerequisites
 
 Ensure you have the following installed:
-- **Java Development Kit (JDK)**: Version 17 or above (21 preferred)
+- **Java Development Kit (JDK)**: 21 preferred
 - **Maven**: 3.8.1 or higher
 
 ## 🏁 Getting Started
