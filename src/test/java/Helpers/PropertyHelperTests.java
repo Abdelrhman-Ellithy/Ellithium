@@ -1,7 +1,6 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.core.base.NonBDDSetup;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
@@ -11,7 +10,7 @@ import Ellithium.core.reporting.Reporter;
 
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class PropertyHelperTests extends NonBDDSetup {
+public class PropertyHelperTests {
     private static final String TEST_FILE = "src/test/resources/TestData/test.properties";
     private static final String BACKUP_FILE = "src/test/resources/TestData/test.properties.backup";
     private static final String COMPARE_FILE = "src/test/resources/TestData/compare.properties";

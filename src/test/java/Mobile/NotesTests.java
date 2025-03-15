@@ -2,12 +2,9 @@ package Mobile;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.driver.DriverFactory;
-import Ellithium.core.driver.MobileDriverType;
 import Ellithium.core.driver.RemoteDriverType;
 import Pages.NotesHomePage;
-import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

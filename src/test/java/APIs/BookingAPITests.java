@@ -2,7 +2,6 @@ package APIs;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.API.Environment;
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.reporting.Reporter;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -12,7 +11,7 @@ import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
 
-public class BookingAPITests extends NonBDDSetup {
+public class BookingAPITests {
     private Environment env;
 
     @BeforeClass

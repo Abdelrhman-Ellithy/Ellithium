@@ -134,15 +134,27 @@ Here is the updated **Getting Started** section formatted for your README file:
         </configuration>
     </plugin>
 
-    <!-- Maven Surefire Plugin for TestNG Execution -->
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.2</version>
         <configuration>
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <testFailureIgnore>true</testFailureIgnore>
             <failIfNoTests>false</failIfNoTests>
+            <systemPropertyVariables>
+                <testng.dtd.http>true</testng.dtd.http>
+            </systemPropertyVariables>
+            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            <trimStackTrace>false</trimStackTrace>
+            <useFile>false</useFile>
+            <encoding>UTF-8</encoding>
+            <properties>
+                <property>
+                    <name>listener</name>
+                    <value>Ellithium.core.execution.listener.CustomTestNGListener</value>
+                </property>
+            </properties>
         </configuration>
     </plugin>
 

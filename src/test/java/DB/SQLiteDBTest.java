@@ -4,7 +4,6 @@ import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.DB.SQLDBType;
 import Ellithium.core.DB.SQLDatabaseProvider;
 import Ellithium.core.DB.SQLRuntimeException;
-import Ellithium.core.base.NonBDDSetup;
 import org.testng.annotations.*;
 
 import javax.sql.rowset.CachedRowSet;
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class SQLiteDBTest extends NonBDDSetup {
+public class SQLiteDBTest {
     protected SQLDatabaseProvider provider;
     protected static final String DB_PATH = "src/test/resources/TestData/test_provider.db";
     protected AssertionExecutor.soft softAssert;

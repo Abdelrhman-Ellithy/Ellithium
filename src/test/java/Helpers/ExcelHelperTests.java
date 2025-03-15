@@ -1,7 +1,6 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.ExcelHelper;
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.apache.poi.ss.usermodel.*;
@@ -12,7 +11,7 @@ import java.nio.file.*;
 import java.util.*;
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class ExcelHelperTests extends NonBDDSetup {
+public class ExcelHelperTests {
     private static final String TEST_DIR = "src/test/resources/TestData/";
     private static final String TEST_EXCEL = TEST_DIR + "test.xlsx";
     private static final String OUTPUT_EXCEL = TEST_DIR + "output.xlsx";

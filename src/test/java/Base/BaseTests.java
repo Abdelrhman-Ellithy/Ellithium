@@ -1,13 +1,11 @@
 package Base;
 
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.driver.*;
 import Pages.HomPage;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-public class BaseTests extends NonBDDSetup {
+public class BaseTests {
    protected WebDriver driver;
    protected HomPage home;
     @BeforeClass

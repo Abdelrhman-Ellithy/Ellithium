@@ -1,14 +1,13 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.TextHelper;
-import Ellithium.core.base.NonBDDSetup;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class TextHelperTests extends NonBDDSetup {
+public class TextHelperTests {
     private static final String TEST_DIR = "src/test/resources/TestData/";
     private static final String TEST_FILE = TEST_DIR + "test.txt";
     private static final String OUTPUT_FILE = TEST_DIR + "output.txt";

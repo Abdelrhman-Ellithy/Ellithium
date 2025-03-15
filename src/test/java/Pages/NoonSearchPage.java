@@ -15,13 +15,13 @@ public class NoonSearchPage {
         driverActions=new DriverActions(driver);
     }
     public void searchItem(String itemName){
-        driverActions.sendData(By.id("searchBar"),itemName );
+        driverActions.sendData(By.name("site-search"),itemName );
     }
     public void clickEnter(){
-        driverActions.sendData(By.id("searchBar"),Keys.ENTER,3,200 );
+        driverActions.sendData(By.name("site-search"),Keys.ENTER,3,200 );
     }
     public String getTextInSearchField(){
-       return driver.findElement(By.id("searchBar")).getAttribute("value");
+       return driver.findElement(By.name("site-search")).getAttribute("value");
     }
     public void clickSortBy(String sortBy) {
          String sortByLower=sortBy.toLowerCase();
