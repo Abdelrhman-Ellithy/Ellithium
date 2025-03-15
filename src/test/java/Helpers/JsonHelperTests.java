@@ -1,7 +1,6 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.JsonHelper;
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;
@@ -20,7 +19,7 @@ import java.util.*;
 
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class JsonHelperTests extends NonBDDSetup {
+public class JsonHelperTests {
     private static final String TEST_DIR = "src/test/resources/TestData/";
     private static final String TEST_JSON = TEST_DIR + "test.json";
     private static final String OUTPUT_JSON = TEST_DIR + "output.json";
