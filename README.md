@@ -112,7 +112,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>2.0.1</Ellithiumversion>
+    <Ellithiumversion>2.0.2</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>
@@ -127,7 +127,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <version>3.14.0</version>
         <configuration>
             <source>21</source>
             <target>21</target>
@@ -162,7 +162,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.5.0</version>
         <executions>
             <execution>
                 <id>intialize</id>
@@ -197,7 +197,7 @@ Here is the updated **Getting Started** section formatted for your README file:
    mvn clean test
    ```
 
-### Option 1: BDD Mode
+### Option 1: BDD Mode With Cucumber
 - **[Demo-Project](https://github.com/Abdelrhman-Ellithy/Noon-Shopping-Website-Manual-Automation-) for setup use after follow the following steps**
 ### Step 1: Create a Test Runner Class
 
@@ -279,21 +279,21 @@ public class BaseStepDefinitions {
     @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
 ```
 
-### Option 2: UI_NonBDD Mode
+### Option 2: default Mode
 - **[Demo-Project](https://github.com/Abdelrhman-Ellithy/The-Internet-Herokuapp) for setup use after follow the following steps**
 ### Step 1: Create a BaseTest Class
 
 - **Create a UI_BDD Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
 
 ```java
-package UI_BDD;
+package UI_NonBDD;
 
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.base.NonBDDSetup;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.*;
 
-public class BaseTests extends NonBDDSetup {
+public class BaseTests {
     WebDriver driver;
 
     // with Web and the Same Logic for Other

@@ -117,7 +117,7 @@ public class AllureHelper {
             }
             try {
                 extractAllureFolderFromJar(jarFile, allureDirectory);
-                String allureVersion = getDataFromProperties(configFilePath, "allureVersion");
+                String allureVersion = ConfigContext.getAllureVersion();
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
             } catch (IOException e) {
                 Logger.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
