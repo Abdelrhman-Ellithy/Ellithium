@@ -1,16 +1,12 @@
 package Base;
 
 import Ellithium.core.driver.DriverFactory;
-import Ellithium.core.driver.DriverType;
 import Ellithium.core.driver.RemoteDriverType;
 import Pages.HomPage;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 

@@ -1,17 +1,14 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.JarExtractor;
-import Ellithium.core.base.NonBDDSetup;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
-
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class JarExtractorTests extends NonBDDSetup {
+public class JarExtractorTests {
     private static final String TEST_DIR = "src/test/resources/TestData/";
     private static final String TEST_JAR = TEST_DIR + "test.jar";
     private static final String EXTRACTED_DIR = TEST_DIR + "extracted/";
