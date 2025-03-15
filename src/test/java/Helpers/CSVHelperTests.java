@@ -1,14 +1,13 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.CSVHelper;
-import Ellithium.core.base.NonBDDSetup;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class CSVHelperTests extends NonBDDSetup {
+public class CSVHelperTests  {
     private static final String TEST_CSV = "src/test/resources/TestData/test.csv";
     private static final String BACKUP_CSV = "src/test/resources/TestData/backup.csv";
     private static final String MERGE_CSV = "src/test/resources/TestData/merge.csv";

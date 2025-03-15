@@ -7,20 +7,24 @@ import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.logging.Logger;
+import io.qameta.allure.testng.AllureTestNg;
 import org.testng.*;
 import org.testng.annotations.ITestAnnotation;
+import org.testng.annotations.Listeners;
+
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.FAILURE;
-
+@Listeners({AllureTestNg.class})
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
+                GeneralHandler.clearTestLogFile();
                 Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }
@@ -92,7 +96,10 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                 Reporter.attachScreenshotToReport(screenShot, screenShot.getName(), description);
             }
         }
-        Reporter.addParams(GeneralHandler.getParameters());
+        if (method.isTestMethod()){
+            GeneralHandler.addAttachments();
+            Reporter.addParams(GeneralHandler.getParameters());
+        }
     }
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {

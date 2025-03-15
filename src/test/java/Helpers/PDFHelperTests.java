@@ -1,7 +1,6 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.PDFHelper;
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -22,7 +21,7 @@ import java.util.List;
 
 import static Ellithium.Utilities.assertion.AssertionExecutor.hard.*;
 
-public class PDFHelperTests extends NonBDDSetup {
+public class PDFHelperTests {
     private static final String TEST_DIR = "src/test/resources/TestData/";
     private static final String TEST_PDF = TEST_DIR + "test.pdf";
     private static final String OUTPUT_PDF = TEST_DIR + "output.pdf";
