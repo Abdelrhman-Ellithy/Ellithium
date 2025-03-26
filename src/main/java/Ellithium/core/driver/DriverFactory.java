@@ -1,6 +1,4 @@
 package Ellithium.core.driver;
-
-import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.listener.appiumListener;
 import Ellithium.core.logging.LogLevel;
@@ -15,11 +13,14 @@ import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
-import org.openqa.selenium.devtools.v85.log.Log;
+import org.openqa.selenium.devtools.v133.network.Network;
+import org.openqa.selenium.devtools.v133.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
+import java.util.Optional;
+
 import static Ellithium.core.driver.MobileDriverType.IOS;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static io.appium.java_client.proxy.Helpers.createProxy;
@@ -240,11 +241,22 @@ public class DriverFactory {
     private static void logDevTools(DevTools devTools){
         devTools.createSession();
         devTools.send(Log.enable());
-        devTools.addListener(Log.entryAdded(), logEntry -> {
-            Logger.info(PURPLE+"Level: "+logEntry.getLevel()+RESET);
-            Logger.info(PINK+"Text: "+logEntry.getText()+RESET);
-            Logger.info((BROWN+"URL: "+logEntry.getUrl())+RESET);
-            Logger.info((YELLOW+"StackTrace: "+logEntry.getStackTrace())+RESET);
+        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
+        devTools.addListener(Network.requestWillBeSent(), request -> {
+            String type = request.getType().toString().toLowerCase();
+            if (type.contains("xhr") || type.contains("fetch")) {
+                Logger.info(PURPLE + "Request URL: " + request.getRequest().getUrl() + RESET);
+                Logger.info(PINK + "Request Method: " + request.getRequest().getMethod() + RESET);
+                Logger.info(PINK +"Request Headers: " + request.getRequest().getHeaders()+ RESET);
+            }
+        });
+        devTools.addListener(Network.responseReceived(), response -> {
+            String type = response.getType().toString().toLowerCase();
+            if (type.contains("xhr") || type.contains("fetch"))  {
+                int status = response.getResponse().getStatus();
+                Logger.info(PINK + "Response Time: "+response.getResponse().getResponseTime()+ RESET);
+                Logger.info(PINK + "Status Code: " + status + RESET);
+            }
         });
     }
 }
