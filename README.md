@@ -274,7 +274,7 @@ public class BaseStepDefinitions {
 ```java
     @default("false") String HeadlessMode,      // can be true or false (Not Supported with Safari)
     @default("Normal") String PageLoadStrategy, // can be Normal or Eager
-    @default("True") String PrivateMode,        // can be true or false
+    @default("False") String PrivateMode,        // can be true or false
     @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox (Not Supported with Safari)
     @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
 ```
@@ -309,7 +309,7 @@ public class BaseTests {
         androidDriver = DriverFactory.getNewMobileDriver(MobileDriverType.Android, new URL("http://localhost:4723"), options);
 
         // for IOS Mobile
-        iosDriver = DriverFactory.getNewDriver(MobileDriverType.IOS, new URL("http://localhost:4723"), options);
+        iosDriver = DriverFactory.getNewMobileDriver(MobileDriverType.IOS, new URL("http://localhost:4723"), options);
 
         // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
         SQLDatabaseProvider db = new SQLDatabaseProvider(

@@ -4,6 +4,7 @@ import Ellithium.Utilities.interactions.DriverActions;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 
 public class NotesHomePage {
     private AndroidDriver driver;
@@ -14,7 +15,7 @@ public class NotesHomePage {
     }
 
     public NotePage addNote(){
-        driverActions.clickOnElement(AppiumBy.id("com.miui.notes:id/content_add"));
+        driverActions.clickOnElement(AppiumBy.id("com.miui.notes:id/note_add"));
         return new NotePage(driver);
     }
 }
