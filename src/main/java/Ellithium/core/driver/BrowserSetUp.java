@@ -1,4 +1,5 @@
 package Ellithium.core.driver;
+import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.Capabilities;
@@ -22,19 +23,23 @@ import java.util.Arrays;
 
 public class BrowserSetUp {
 
-    // Private method to configure browser options and return the WebDriver instance
     public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+        var capabilities=ConfigContext.getCapabilities();
         if (driverType.equals(LocalDriverType.Chrome)) {
             ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+            if(capabilities!=null)chromeOptions.merge(capabilities);
             return new ChromeDriver(chromeOptions);
         } else if (driverType.equals(LocalDriverType.FireFox)) {
             FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+            if(capabilities!=null)firefoxOptions.merge(capabilities);
             return new FirefoxDriver(firefoxOptions);
         } else if (driverType.equals(LocalDriverType.Edge)) {
             EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+            if(capabilities!=null)edgeOptions.merge(capabilities);
             return new EdgeDriver(edgeOptions);
         } else if (driverType.equals(LocalDriverType.Safari)) {
             SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
+            if(capabilities!=null)safariOptions.merge(capabilities);
             return new SafariDriver(safariOptions);
         }
         return null;
