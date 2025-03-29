@@ -6,7 +6,6 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.Logger;
-import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
@@ -26,66 +25,69 @@ public class DriverFactory {
     private static ThreadLocal<WebDriver> WebDriverThread = new ThreadLocal<>();
     private static ThreadLocal<AndroidDriver> AndroidDriverThread = new ThreadLocal<>();
     private static ThreadLocal<IOSDriver> IOSDriverThread = new ThreadLocal<>();
-
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
+    public static <T > T getNewDriver(LocalDriverConfig localDriverConfig){
+        ConfigContext.setCapabilities(localDriverConfig.getCapabilities());
+        ConfigContext.setConfig(
+                localDriverConfig.getLocalDriverType(),localDriverConfig.getHeadlessMode()
+                ,localDriverConfig.getPageLoadStrategy(),localDriverConfig.getPrivateMode(),
+                localDriverConfig.getSandboxMode(),localDriverConfig.getWebSecurityMode()
+        );
+        webSetUp();
+        return (T) WebDriverThread.get();
+    }
+    public static <T > T getNewDriver(RemoteDriverConfig remoteDriverConfig) {
+        ConfigContext.setConfig(
+                remoteDriverConfig.getRemoteDriverType(),remoteDriverConfig.getHeadlessMode(),
+                remoteDriverConfig.getPageLoadStrategy(),remoteDriverConfig.getPrivateMode(),
+                remoteDriverConfig.getSandboxMode(),remoteDriverConfig.getWebSecurityMode());
+        ConfigContext.setCapabilities(remoteDriverConfig.getCapabilities());
+        ConfigContext.setRemoteAddress(remoteDriverConfig.getRemoteAddress());
+        webSetUp();
+        return (T)WebDriverThread.get();
+    }
+    public static <T > T getNewDriver(MobileDriverConfig mobileDriverConfig) {
+        ConfigContext.setDriverType(mobileDriverConfig.getDriverType());
+        ConfigContext.setRemoteAddress(mobileDriverConfig.getRemoteAddress());
+        ConfigContext.setCapabilities(mobileDriverConfig.getCapabilities());
+        return mobileSetup((MobileDriverType) mobileDriverConfig.getDriverType(),mobileDriverConfig.getRemoteAddress(),mobileDriverConfig.getCapabilities());
+    }
+    @SuppressWarnings("unchecked")
+    public static <T > T getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
         ConfigContext.setConfig(driverType,headlessMode,pageLoadStrategyMode,privateMode,sandboxMode,webSecurityMode);
         webSetUp();
         return (T) WebDriverThread.get();
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode) {
+    public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode) {
         return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
+        return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode) {
-        return getNewLocalDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode) {
+        return getNewLocalDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
-        return getNewLocalDriver(driverType,headlessMode,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
+        return getNewLocalDriver(driverType,headlessMode,PrivateMode.False);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T  getNewLocalDriver(LocalDriverType driverType) {
-        return getNewLocalDriver(driverType,HeadlessMode.False,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T> T  getNewLocalDriver(LocalDriverType driverType) {
+        return getNewLocalDriver(driverType,HeadlessMode.False);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends AppiumDriver> T getNewMobileDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
+    public static <T > T getNewMobileDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         ConfigContext.setDriverType(driverType);
         ConfigContext.setRemoteAddress(remoteAddress);
         ConfigContext.setCapabilities(capabilities);
-        switch (driverType){
-            case IOS -> {
-                IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
-                IOSDriverThread.set(localDriver);
-                if(IOSDriverThread!=null){
-                    Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)IOSDriverThread.get();
-                }
-            }
-            case Android -> {
-                AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
-                AndroidDriverThread.set(localDriver);
-                if(IOSDriverThread!=null){
-                    Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)AndroidDriverThread.get();
-                }
-            }
-            default -> {
-                throw new IllegalArgumentException("Wrong Driver Initialization: " + ConfigContext.getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
-            }
-        }
-        Reporter.log("Driver Creation Failed",LogLevel.INFO_RED);
-        return null;
+        return mobileSetup(driverType,remoteAddress,capabilities);
     }
-
     // Remote web Driver Section
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
         ConfigContext.setConfig(driverType,headlessMode,pageLoadStrategyMode,privateMode,sandboxMode,webSecurityMode);
         ConfigContext.setCapabilities(capabilities);
         ConfigContext.setRemoteAddress(remoteAddress);
@@ -93,27 +95,27 @@ public class DriverFactory {
         return (T)WebDriverThread.get();
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode) {
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode, PageLoadStrategyMode.Normal);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNgetNewRemoteDriverewDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.False);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False,PrivateMode.False,PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
+    public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
+        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> T getCurrentDriver() {
+    public static <T> T getCurrentDriver() {
         var driverType=ConfigContext.getDriverType();
         if(driverType!=null){
             if (driverType.equals(MobileDriverType.Android)) {
@@ -142,7 +144,7 @@ public class DriverFactory {
                 }
                 removeDriver();
             } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                WebDriver localDriver = WebDriverThread.get();
+                var localDriver = WebDriverThread.get();
                 if (localDriver != null) {
                     localDriver.quit();
                 }
@@ -195,6 +197,32 @@ public class DriverFactory {
             Reporter.log("Driver Creation Failed", LogLevel.INFO_RED);
         }
     }
+    private static  <T > T mobileSetup(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities){
+        switch (driverType){
+            case IOS -> {
+                IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
+                IOSDriverThread.set(localDriver);
+                if(IOSDriverThread!=null){
+                    Reporter.log("Driver Created", LogLevel.INFO_GREEN);
+                    return (T)IOSDriverThread.get();
+                }
+            }
+            case Android -> {
+                AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
+                AndroidDriverThread.set(localDriver);
+                if(IOSDriverThread!=null){
+                    Reporter.log("Driver Created", LogLevel.INFO_GREEN);
+                    return (T)AndroidDriverThread.get();
+                }
+            }
+            default -> {
+                throw new IllegalArgumentException("Wrong Driver Initialization: " + ConfigContext.getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
+            }
+        }
+        Reporter.log("Driver Creation Failed",LogLevel.INFO_RED);
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     private static WebDriver getDecoratedWebDriver(WebDriver driver){
         return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new seleniumListener()).decorate(driver);
