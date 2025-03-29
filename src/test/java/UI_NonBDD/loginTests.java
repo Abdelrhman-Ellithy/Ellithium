@@ -1,4 +1,5 @@
 package UI_NonBDD;
+import Base.BaseRemote;
 import Base.BaseTests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Pages.LoginPage;

@@ -91,7 +91,7 @@ public class WaitManager <T extends WebDriver>{
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends WebDriver> FluentWait<T> getFluentWait(T driver, int timeoutInSeconds, int pollingEveryInMillis) {
+    public static <T> FluentWait<T> getFluentWait(T driver, int timeoutInSeconds, int pollingEveryInMillis) {
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
             return  new AppiumFluentWait<>(driver)
                     .withTimeout(Duration.ofSeconds(timeoutInSeconds))

@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class BaseRemote {
+
+
    protected WebDriver driver;
    protected HomPage home;
     @BeforeClass
@@ -21,6 +23,6 @@ public class BaseRemote {
     }
     @AfterClass
     public void tareDown(){
-        driver.quit();;
+        DriverFactory.quitDriver();
     }
 }

@@ -2,6 +2,7 @@ package Mobile;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.MobileDriverType;
 import Ellithium.core.driver.RemoteDriverType;
 import Pages.NotesHomePage;
 import io.appium.java_client.android.options.UiAutomator2Options;
@@ -25,7 +26,7 @@ public class NotesTests {
         options.setCapability("appium:automationName", "UIAutomator2");
         options.setCapability("appium:noReset", true);
         options.setCapability("appium:fullReset", false);
-        DriverFactory.getNewRemoteDriver(RemoteDriverType.REMOTE_Chrome,new URL("http://127.0.0.1:4723"),options);
+        DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://127.0.0.1:4723"),options);
         notesHomePage=new NotesHomePage(DriverFactory.getCurrentDriver());
     }
     @Test

@@ -228,7 +228,6 @@ public class APIListener implements Filter {
         } catch (Exception e) {
             Reporter.log("Error logging response time: " + e.getMessage(), LogLevel.ERROR);
         }
-
         return response;
     }
 }
