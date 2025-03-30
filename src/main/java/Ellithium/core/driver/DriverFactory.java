@@ -8,6 +8,8 @@ import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.Logger;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.StepResult;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -18,6 +20,8 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
 import java.util.Optional;
+import java.util.UUID;
+
 import static Ellithium.core.driver.MobileDriverType.IOS;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static io.appium.java_client.proxy.Helpers.createProxy;
@@ -244,24 +248,44 @@ public class DriverFactory {
         );
     }
     private static void logDevTools(DevTools devTools){
-        devTools.createSession();
-        devTools.send(Log.enable());
-        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
-        devTools.addListener(Network.requestWillBeSent(), request -> {
-            String type = request.getType().toString().toLowerCase();
-            if (type.contains("xhr") || type.contains("fetch")) {
-                Logger.info(PURPLE + "Request URL: " + request.getRequest().getUrl() + RESET);
-                Logger.info(PINK + "Request Method: " + request.getRequest().getMethod() + RESET);
-                Logger.info(PINK +"Request Headers: " + request.getRequest().getHeaders()+ RESET);
-            }
-        });
-        devTools.addListener(Network.responseReceived(), response -> {
-            String type = response.getType().toString().toLowerCase();
-            if (type.contains("xhr") || type.contains("fetch"))  {
-                int status = response.getResponse().getStatus();
-                Logger.info(PINK + "Response Time: "+response.getResponse().getResponseTime()+ RESET);
-                Logger.info(PINK + "Status Code: " + status + RESET);
-            }
-        });
+//        devTools.createSession();
+//        devTools.send(Log.enable());
+//        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
+//        devTools.addListener(Network.requestWillBeSent(), request -> {
+//            String type = request.getType().toString().toLowerCase();
+//            if (type.contains("xhr") || type.contains("fetch")) {
+//                    networkRequests(request);
+//            }
+//        });
+//        devTools.addListener(Network.responseReceived(), response -> {
+//            String type = response.getType().toString().toLowerCase();
+//            if (type.contains("xhr") || type.contains("fetch"))  {
+//                    networkResponses(response);
+//            }
+//        });
     }
+    private static void networkRequests(org.openqa.selenium.devtools.v134.network.model.RequestWillBeSent request) {
+        String stepUuid = UUID.randomUUID().toString();
+        Allure.getLifecycle().startStep(stepUuid, new StepResult().setName("Captured Network Requests Sent"));
+        try {
+            Reporter.logReportOnly("Request URL: " + request.getRequest().getUrl(), LogLevel.INFO_GREEN);
+            Reporter.logReportOnly("Request Method: " + request.getRequest().getMethod(), LogLevel.INFO_GREEN);
+            Reporter.logReportOnly("Request Headers: " + request.getRequest().getHeaders(), LogLevel.INFO_GREEN);
+        } finally {
+            Allure.getLifecycle().stopStep(stepUuid);
+        }
+    }
+
+    private static void networkResponses(org.openqa.selenium.devtools.v134.network.model.ResponseReceived response) {
+        String stepUuid = UUID.randomUUID().toString();
+        Allure.getLifecycle().startStep(stepUuid, new StepResult().setName("Captured Network Responses Received"));
+        try {
+            int status = response.getResponse().getStatus();
+            Reporter.logReportOnly("Response Time: " + response.getResponse().getResponseTime(), LogLevel.INFO_GREEN);
+            Reporter.logReportOnly("Status Code: " + status, LogLevel.INFO_GREEN);
+        } finally {
+            Allure.getLifecycle().stopStep(stepUuid);
+        }
+    }
+
 }
