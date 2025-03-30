@@ -26,8 +26,8 @@ public class MobileDriverConfig implements DriverConfigBuilder {
     public MobileDriverConfig() {
         try {
             setRemoteAddress(new URL(DEFAULT_URL));
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating default URL", e);
+        }  catch (Exception e) {
+            Logger.logException(e);
         }
     }
 
