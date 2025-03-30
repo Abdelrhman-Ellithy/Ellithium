@@ -1,7 +1,7 @@
 package Ellithium.core.driver;
 
+import Ellithium.core.logging.Logger;
 import org.openqa.selenium.Capabilities;
-
 import java.net.URL;
 
 /**
@@ -26,8 +26,8 @@ public class MobileDriverConfig implements DriverConfigBuilder {
     public MobileDriverConfig() {
         try {
             setRemoteAddress(new URL(DEFAULT_URL));
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating default URL", e);
+        }  catch (Exception e) {
+            Logger.logException(e);
         }
     }
 
@@ -116,7 +116,8 @@ public class MobileDriverConfig implements DriverConfigBuilder {
         try {
             return remoteAddress != null ? remoteAddress : new URL(DEFAULT_URL);
         } catch (Exception e) {
-            throw new RuntimeException("Error creating default URL", e);
+            Logger.logException(e);
+            return remoteAddress;
         }
     }
 
