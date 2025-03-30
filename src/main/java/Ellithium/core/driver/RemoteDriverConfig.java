@@ -37,12 +37,15 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * Note: remoteAddress and capabilities must be set separately as they are mandatory
      */
     public RemoteDriverConfig() {
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
-        setSandboxMode(SandboxMode.Sandbox);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
-        setDriverType(RemoteDriverType.REMOTE_Chrome);
+        try {
+            initializeConfig(
+                RemoteDriverType.REMOTE_Chrome,
+                new URL("http://localhost:4444/wd/hub"),
+                new org.openqa.selenium.remote.DesiredCapabilities()
+            );
+        } catch (java.net.MalformedURLException e) {
+            throw new RuntimeException("Invalid default remote URL", e);
+        }
     }
 
     /**
@@ -53,14 +56,7 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * @param capabilities WebDriver capabilities
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
-        setSandboxMode(SandboxMode.Sandbox);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
+        initializeConfig(driverType, remoteAddress, capabilities);
     }
 
     /**
@@ -78,9 +74,7 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities,
             HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,
             WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setHeadlessMode(headlessMode);
         setPrivateMode(privateMode);
         setPageLoadStrategy(pageLoadStrategyMode);
@@ -98,14 +92,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             PrivateMode privateMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setPrivateMode(privateMode);
-        setSandboxMode(SandboxMode.Sandbox);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     /**
@@ -118,14 +106,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             SandboxMode sandboxMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setSandboxMode(sandboxMode);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     /**
@@ -138,13 +120,7 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             WebSecurityMode webSecurityMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
-        setSandboxMode(SandboxMode.Sandbox);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setWebSecurityMode(webSecurityMode);
     }
 
@@ -158,14 +134,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
            PageLoadStrategyMode pageLoadStrategyMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setPageLoadStrategy(pageLoadStrategyMode);
-        setPrivateMode(PrivateMode.False);
-        setSandboxMode(SandboxMode.Sandbox);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     /**
@@ -178,14 +148,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             HeadlessMode headlessMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setHeadlessMode(headlessMode);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
-        setSandboxMode(SandboxMode.Sandbox);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     /**
@@ -199,14 +163,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             PrivateMode privateMode, SandboxMode sandboxMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setPrivateMode(privateMode);
         setSandboxMode(sandboxMode);
-        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     /**
@@ -220,13 +179,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             PrivateMode privateMode, WebSecurityMode webSecurityMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setPrivateMode(privateMode);
-        setSandboxMode(SandboxMode.Sandbox);
         setWebSecurityMode(webSecurityMode);
     }
 
@@ -241,12 +195,7 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        setDriverType(driverType);
-        setRemoteAddress(remoteAddress);
-        setCapabilities(capabilities);
-        setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(PageLoadStrategyMode.Normal);
-        setPrivateMode(PrivateMode.False);
+        initializeConfig(driverType, remoteAddress, capabilities);
         setSandboxMode(sandboxMode);
         setWebSecurityMode(webSecurityMode);
     }
@@ -263,14 +212,21 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      */
     public RemoteDriverConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, 
             SandboxMode sandboxMode, WebSecurityMode webSecurityMode,PageLoadStrategyMode pageLoadStrategyMode) {
+        initializeConfig(driverType, remoteAddress, capabilities);
+        setSandboxMode(sandboxMode);
+        setWebSecurityMode(webSecurityMode);
+        setPageLoadStrategy(pageLoadStrategyMode);
+    }
+
+    private void initializeConfig(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         setDriverType(driverType);
         setRemoteAddress(remoteAddress);
         setCapabilities(capabilities);
         setHeadlessMode(HeadlessMode.False);
-        setPageLoadStrategy(pageLoadStrategyMode);
+        setPageLoadStrategy(PageLoadStrategyMode.Normal);
         setPrivateMode(PrivateMode.False);
-        setSandboxMode(sandboxMode);
-        setWebSecurityMode(webSecurityMode);
+        setSandboxMode(SandboxMode.Sandbox);
+        setWebSecurityMode(WebSecurityMode.SecureMode);
     }
 
     // Getters and Setters
@@ -299,7 +255,11 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * @return The URL of the remote server
      */
     public URL getRemoteAddress() {
-        return remoteAddress;
+        try {
+            return remoteAddress!= null ? remoteAddress : new URL("http://localhost:4444/wd/hub");
+        }catch (Exception e){
+            return remoteAddress;
+        }
     }
 
     /**

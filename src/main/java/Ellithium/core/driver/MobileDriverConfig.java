@@ -117,6 +117,7 @@ public class MobileDriverConfig implements DriverConfigBuilder {
             return remoteAddress != null ? remoteAddress : new URL(DEFAULT_URL);
         } catch (Exception e) {
             Logger.logException(e);
+            return remoteAddress;
         }
     }
 
