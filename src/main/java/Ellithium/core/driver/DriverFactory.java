@@ -5,7 +5,6 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.core.logging.Logger;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import io.qameta.allure.Allure;
@@ -14,16 +13,11 @@ import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
-import org.openqa.selenium.devtools.v134.network.Network;
-import org.openqa.selenium.devtools.v134.log.Log;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
-import java.util.Optional;
 import java.util.UUID;
-
 import static Ellithium.core.driver.MobileDriverType.IOS;
-import static Ellithium.core.reporting.internal.Colors.*;
 import static io.appium.java_client.proxy.Helpers.createProxy;
 public class DriverFactory {
     private static ThreadLocal<WebDriver> WebDriverThread = new ThreadLocal<>();
@@ -55,6 +49,16 @@ public class DriverFactory {
         ConfigContext.setRemoteAddress(mobileDriverConfig.getRemoteAddress());
         ConfigContext.setCapabilities(mobileDriverConfig.getCapabilities());
         return mobileSetup((MobileDriverType) mobileDriverConfig.getDriverType(),mobileDriverConfig.getRemoteAddress(),mobileDriverConfig.getCapabilities());
+    }
+    public static <T > T getNewDriver(DriverConfigBuilder driverConfigBuilder) {
+        if(driverConfigBuilder instanceof LocalDriverConfig localDriverConfig){
+            return getNewDriver(localDriverConfig);
+        } else if (driverConfigBuilder instanceof RemoteDriverConfig remoteDriverConfig) {
+            return getNewDriver(remoteDriverConfig);
+        }
+        else {
+            return getNewDriver((MobileDriverConfig) driverConfigBuilder);
+        }
     }
     @SuppressWarnings("unchecked")
     public static <T > T getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {

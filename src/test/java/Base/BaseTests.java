@@ -10,11 +10,17 @@ public class BaseTests {
    protected HomPage home;
     @BeforeClass
     public void Setup(){
-        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome,
+        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
                 HeadlessMode.False, PrivateMode.False,
                 PageLoadStrategyMode.Normal,
                 WebSecurityMode.SecureMode,
                 SandboxMode.Sandbox);
+        driver=DriverFactory.getNewDriver(driverConfig);
+//        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome,
+//                HeadlessMode.False, PrivateMode.False,
+//                PageLoadStrategyMode.Normal,
+//                WebSecurityMode.SecureMode,
+//                SandboxMode.Sandbox);
         home=new HomPage(driver);
     }
     @AfterClass

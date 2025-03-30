@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Ellithium/core/driver/DriverFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Ellithium/core/driver/DriverFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/Base/BaseTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/Base/BaseTests.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Enum" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2lgtFBZIvL9B0pLcMROv5lKqb0I" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/lenovo/Documents/college/Cegedim/Testing/DatabaseTestingDemo/DatabaseTestingDemo&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.build&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\test\java" />
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\test\resources" />
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\test\java\Tests" />
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\test\java\Pages" />
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\main\resources\properties" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\main\resources\properties" />
+      <recent name="C:\Users\lenovo\IdeaProjects\Ellithium\src\main\resources\properties\default" />
+      <recent name="C:\Users\lenovo\IdeaProjects\AutoEllithiumSphere\src\main\resources" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\main\resources\properties\default" />
+      <recent name="C:\Users\lenovo\IdeaProjects\MyFrameWork\src\main\resources" />
+    </key>
+    <key name="ExtractSuperBase.RECENT_KEYS">
+      <recent name="Ellithium.Internal" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="Tests" />
+      <recent name="Base" />
+      <recent name="Pages" />
+      <recent name="Ellithium.com" />
+      <recent name="AutoEllithiumSphere.properties" />
+    </key>
+  </component>
+  <component name="RunManager" selected="TestNG.DBTEst.testDB (1)">
+    <configuration name="Unnamed" type="JarApplication" nameIsGenerated="true">
+      <option name="VM_PARAMETERS" value="-Dotel.java.global-autoconfigure.enabled=true" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\lenovo\IdeaProjects\Ellithium" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <method v="2" />
+    </configuration>
+    <configuration name="C:/Users/lenovo/IdeaProjects/MyFrameWork/TestNGRunner.xml" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="MyFrameWork" />
+      <option name="SUITE_NAME" value="$PROJECT_DIR$/TestNGRunner.xml" />
+      <option name="TEST_OBJECT" value="SUITE" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DBTEst.testDB (1)" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="ellithium" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="Tests" />
+      <option name="MAIN_CLASS_NAME" value="Tests.DBTEst" />
+      <option name="METHOD_NAME" value="testDB" />
+      <option name="TEST_OBJECT" value="METHOD" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DBTEst.testDB" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="ellithium" />
+      <shortenClasspath name="NONE" />
+      <useClassPathOnly />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SUITE_NAME" value="" />
+      <option name="PACKAGE_NAME" value="Tests" />
+      <option name="MAIN_CLASS_NAME" value="Tests.DBTEst" />
+      <option name="METHOD_NAME" value="testDB" />
+      <option name="GROUP_NAME" value="" />
+      <option name="TEST_OBJECT" value="METHOD" />
+      <option name="VM_PARAMETERS" value="-ea -Dotel.java.global-autoconfigure.enabled=true " />
+      <option name="PARAMETERS" value="" />
+      <option name="OUTPUT_DIRECTORY" value="" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <option name="PROPERTIES_FILE" value="" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DBTEst.testDB" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="ellithium" />
+      <shortenClasspath name="NONE" />
+      <useClassPathOnly />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SUITE_NAME" value="" />
+      <option name="PACKAGE_NAME" value="Tests" />
+      <option name="MAIN_CLASS_NAME" value="Tests.DBTEst" />
+      <option name="METHOD_NAME" value="testDB" />
+      <option name="GROUP_NAME" value="" />
+      <option name="TEST_OBJECT" value="METHOD" />
+      <option name="VM_PARAMETERS" value="-ea -Dotel.java.global-autoconfigure.enabled=true " />
+      <option name="PARAMETERS" value="" />
+      <option name="OUTPUT_DIRECTORY" value="" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <option name="PROPERTIES_FILE" value="" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="loginTests" type="TestNG" temporary="true" nameIsGenerated="true">
+      <module name="ellithium" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="Tests" />
+      <option name="MAIN_CLASS_NAME" value="Tests.loginTests" />
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="JAR Application.Unnamed" />
+      <item itemvalue="TestNG.DBTEst.testDB (1)" />
+      <item itemvalue="TestNG.C:/Users/lenovo/IdeaProjects/MyFrameWork/TestNGRunner.xml" />
+      <item itemvalue="TestNG.DBTEst.testDB" />
+      <item itemvalue="TestNG.loginTests" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="TestNG.DBTEst.testDB (1)" />
+        <item itemvalue="TestNG.DBTEst.testDB" />
+        <item itemvalue="TestNG.DBTEst.testDB" />
+        <item itemvalue="TestNG.loginTests" />
+        <item itemvalue="TestNG.C:/Users/lenovo/IdeaProjects/MyFrameWork/TestNGRunner.xml" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ad410b8a-4531-4017-b730-53d4ec142471" name="Changes" comment="" />
+      <created>1725613440446</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1725613440446</updated>
+    </task>
+    <servers />
+  </component>
+</project>
