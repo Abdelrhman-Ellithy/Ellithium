@@ -1,5 +1,6 @@
 package Ellithium.core.driver;
 
+import Ellithium.core.logging.Logger;
 import org.openqa.selenium.Capabilities;
 import java.net.URL;
 
@@ -43,8 +44,8 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
                 new URL("http://localhost:4444/wd/hub"),
                 new org.openqa.selenium.remote.DesiredCapabilities()
             );
-        } catch (java.net.MalformedURLException e) {
-            throw new RuntimeException("Invalid default remote URL", e);
+        } catch (Exception e) {
+            Logger.logException(e);
         }
     }
 
