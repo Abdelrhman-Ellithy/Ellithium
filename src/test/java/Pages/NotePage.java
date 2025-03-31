@@ -15,20 +15,20 @@ public class NotePage {
         driverActions=new DriverActions<>(this.driver);
     }
     public void typeNote(String note){
-        driverActions.sendData(AppiumBy.id("com.miui.notes:id/rich_editor"),note);
+        driverActions.elements().sendData(AppiumBy.id("com.miui.notes:id/rich_editor"),note);
         new KeyEvent(AndroidKey.ENTER);
     }
     public void clickDone(){
-        driverActions.clickOnElement(AppiumBy.accessibilityId("Done"));
+        driverActions.elements().clickOnElement(AppiumBy.accessibilityId("Done"));
     }
     public void setTitle(String title){
-        driverActions.sendData(AppiumBy.id("com.miui.notes:id/note_title"),title);
+        driverActions.elements().sendData(AppiumBy.id("com.miui.notes:id/note_title"),title);
         driver.pressKey(new KeyEvent(AndroidKey.ENTER));
     }
     public String getTitle(){
-        return driverActions.getText(AppiumBy.id("com.miui.notes:id/note_title"));
+        return driverActions.elements().getText(AppiumBy.id("com.miui.notes:id/note_title"));
     }
     public String getNote(){
-        return driverActions.getText(AppiumBy.id("com.miui.notes:id/rich_editor"));
+        return driverActions.elements().getText(AppiumBy.id("com.miui.notes:id/rich_editor"));
     }
 }

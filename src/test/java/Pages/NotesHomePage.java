@@ -15,7 +15,7 @@ public class NotesHomePage {
     }
 
     public NotePage addNote(){
-        driverActions.clickOnElement(AppiumBy.id("com.miui.notes:id/note_add"));
+        driverActions.elements().clickOnElement(AppiumBy.id("com.miui.notes:id/note_add"));
         return new NotePage(driver);
     }
 }
