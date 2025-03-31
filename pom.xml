@@ -363,6 +363,11 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>${SQLiteVersion}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.stephenc.monte</groupId>
+            <artifactId>monte-screen-recorder</artifactId>
+            <version>0.7.7.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
