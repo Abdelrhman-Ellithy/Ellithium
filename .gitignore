@@ -33,8 +33,11 @@ Test-Output/Reports/Cucumber/*
 
 # Screenshots from failed tests
 Test-Output/ScreenShots/Failed/*
+Test-Output/ScreenShots/Captured/*
+Test-Output/RecordedExecutions/*
 !Test-Output/ScreenShots/Failed/.gitkeep
-
+!Test-Output/ScreenShots/Captured/.gitkeep
+!Test-Output/RecordedExecutions/.gitkeep
 # Logs directory
 Test-Output/Logs/*
 !Test-Output/Logs/.gitkeep

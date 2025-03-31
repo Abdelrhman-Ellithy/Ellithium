@@ -8,16 +8,19 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.Colors;
+import io.cucumber.java.ja.但し;
+import io.restassured.http.ContentType;
 
 import static Ellithium.core.reporting.internal.Colors.*;
 import static io.restassured.RestAssured.given;
 
 public class VersionChecker {
     public static String getLatestVersion(){
-        return given().
+        var response= given().
                 baseUri("https://api.github.com").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
-                .when().get("latest")
-                .thenReturn().body().jsonPath().getString("name");
+                    .accept(ContentType.JSON)
+                .when().get("latest");
+        return response.jsonPath().getString("name");
     }
     public static void solveVersion(){
         String path= ConfigContext.getCheckerFilePath();
