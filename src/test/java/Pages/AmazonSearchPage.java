@@ -17,18 +17,18 @@ public class AmazonSearchPage {
     public AmazonSearchPage(WebDriver driver){
         this.driver=driver;
         driverActions=new DriverActions<>(driver);
-        driverActions.navigateToUrl(JsonHelper.getJsonKeyValue("src/test/resources/TestData/TestData.json","baseUrl"));
+        driverActions.navigation().navigateToUrl(JsonHelper.getJsonKeyValue("src/test/resources/TestData/TestData.json","baseUrl"));
     }
     public void searchForItem(String itemName){
-        driverActions.sendData(searchBar, itemName);
+        driverActions.elements().sendData(searchBar, itemName);
     }
     public void clickSearch(){
-        driverActions.clickOnElement(searchBtn);
+        driverActions.elements().clickOnElement(searchBtn);
     }
     public List<String> getItemsNames(){
-        return driverActions.getAttributeFromMultipleElements(searchItemName,"aria-label");
+        return driverActions.elements().getAttributeFromMultipleElements(searchItemName,"aria-label");
     }
     public List<String> getItemsPrices(){
-        return driverActions.getTextFromMultipleElements(searchItemPrice);
+        return driverActions.elements().getTextFromMultipleElements(searchItemPrice);
     }
 }

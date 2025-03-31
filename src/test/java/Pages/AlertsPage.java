@@ -21,19 +21,19 @@ public class AlertsPage {
        driver.findElement(By.xpath("(//button)[3]")).click();
     }
     public void alert_accept(){
-        driverActions.acceptAlert();
+        driverActions.alerts().accept();
     }
     public void alert_Cancel(){
-        driverActions.dismissAlert();
+        driverActions.alerts().dismiss();
     }
     public void sendPrompt(String input){
-        driverActions.sendDataToAlert(input);
+        driverActions.alerts().sendData(input);
     }
     public String getAlertMessage(){
-       return driverActions.getAlertText();
+       return driverActions.alerts().getText();
     }
     public String getResultMessage(){
-        return  driverActions.getText(By.id("result"));
+        return  driverActions.elements().getText(By.id("result"));
     }
 
 }

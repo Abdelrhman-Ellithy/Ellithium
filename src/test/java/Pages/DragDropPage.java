@@ -15,10 +15,10 @@ public class DragDropPage {
     public void dragDropBox(int indexSource, int indexDestination) {
         switch (indexSource) {
             case 1:
-                driverActions.dragAndDrop(By.id("column-a"),By.id("column-b"));
+                driverActions.mouse().dragAndDrop(By.id("column-a"),By.id("column-b"));
                 break;
             case 2:
-                driverActions.dragAndDrop(By.id("column-b"),By.id("column-a"));
+                driverActions.mouse().dragAndDrop(By.id("column-b"),By.id("column-a"));
                 break;
         }
     }
@@ -37,7 +37,7 @@ public class DragDropPage {
                 return "failed";
         }
         By headerLocator = By.xpath("//*[@id='" + parentLocator.toString().split(": ")[1] + "']/header");
-        return driverActions.getText(headerLocator);
+        return driverActions.elements().getText(headerLocator);
     }
 
 

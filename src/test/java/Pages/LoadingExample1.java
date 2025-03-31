@@ -16,9 +16,9 @@ public class LoadingExample1 {
         driverActions=new DriverActions<>(driver);
     }
     public void clickStartBtn()  {
-        driverActions.clickOnElement(By.tagName("button"));
+        driverActions.elements().clickOnElement(By.tagName("button"));
     }
     public String getText(){
-        return driverActions.getText(By.id("finish"));
+        return driverActions.elements().getText(By.id("finish"));
     }
 }

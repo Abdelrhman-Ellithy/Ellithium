@@ -14,41 +14,41 @@ public class HomPage {
     }
     public LoginPage clickFormAuthentication(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Form Authentication"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Form Authentication"));
         return new LoginPage(driver);
     }
     public AlertsPage clickAlerts(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("JavaScript Alerts"));
+        driverActions.elements().clickOnElement(By.partialLinkText("JavaScript Alerts"));
         return new AlertsPage(driver);
     }
     public DropDownPage clickDropDown(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Dropdown"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Dropdown"));
         return new DropDownPage(driver);
 
     }
     public HoverPage clickHover(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Hovers"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Hovers"));
         return new HoverPage(driver);
     }
     public HorizontalSliderPage clickHorizontalSlider(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Horizontal Slider"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Horizontal Slider"));
         return new HorizontalSliderPage(driver);
     }
     public DragDropPage clickDragDrop(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Drag and Drop"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Drag and Drop"));
         return new DragDropPage(driver);
     }
     public DynamicLoadingPage clickDynamicLoading(){
         returnHome();
-        driverActions.clickOnElement(By.partialLinkText("Dynamic Loading"));
+        driverActions.elements().clickOnElement(By.partialLinkText("Dynamic Loading"));
         return new DynamicLoadingPage(driver);
     }
     private void returnHome(){
-        driverActions.navigateToUrl(homeUrl);
+        driverActions.navigation().navigateToUrl(homeUrl);
     }
 }
