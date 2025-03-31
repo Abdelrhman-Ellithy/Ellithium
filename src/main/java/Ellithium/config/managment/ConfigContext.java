@@ -23,8 +23,6 @@ public class ConfigContext {
     private static final Map<PrivateMode, String> PRIVATE_MODE_STRING_MAP;
     private static final Map<PageLoadStrategyMode, String> PAGE_LOAD_STRATEGY_MODE_STRING_MAP;
     private static final Map<SandboxMode, String> SANDBOX_MODE_STRING_MAP;
-
-
     private static final String allureVersion="2.30.0";
     private static final String EllithuiumVersion="2.0.2";
 
@@ -134,9 +132,21 @@ public class ConfigContext {
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
     private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker"+".json";
+    private static final String failedScreenShotPath="Test-Output" + File.separator + "ScreenShots" + File.separator + "Failed";
+    private static final String capturedScreenShotPath="Test-Output" + File.separator + "ScreenShots" + File.separator + "Captured";
+    private static final String recordedExecutionsPath="Test-Output" + File.separator + "RecordedExecutions";
     private static final String checkerFolderPath="Test-Output" + File.separator + "UpdateChecker";
     public static String getCheckerFilePath() {
         return checkerFilePath;
+    }
+    public static String getFailedScreenShotPath() {
+        return failedScreenShotPath;
+    }
+    public static String getCapturedScreenShotPath() {
+        return capturedScreenShotPath;
+    }
+    public static String getRecordedExecutionsPath() {
+        return recordedExecutionsPath;
     }
     public static String getCheckerFolderPath() {
         return checkerFolderPath;
