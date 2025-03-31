@@ -3,7 +3,6 @@ package Ellithium.core.execution.listener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.proxy.MethodCallListener;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
 import java.lang.reflect.Method;
 import java.util.Arrays;

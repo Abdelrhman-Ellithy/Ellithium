@@ -1,13 +1,9 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
-import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
-import io.qameta.allure.Allure;
-import io.qameta.allure.model.Status;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -97,15 +93,6 @@ public class DriverActions<T extends WebDriver> {
     public WebDriverWait generalWait(int timeout) {
         Reporter.log("Getting general Wait For "+ timeout + " seconds", LogLevel.INFO_BLUE);
         return new WebDriverWait(driver, Duration.ofSeconds(timeout));
-    }
-
-    /**
-     * Scrolls the page to bring an element into view.
-     * @param locator Element locator
-     */
-    public void scrollToElement(By locator) {
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", findWebElement( locator));
-        Reporter.log("Scrolling To Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
 
     /**
@@ -213,16 +200,6 @@ public class DriverActions<T extends WebDriver> {
      */
     public  void setImplicitWait( int timeout) {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(timeout));
-    }
-
-    /**
-     * Clicks an element using JavaScript.
-     * @param locator Element locator
-     */
-    public  void javascriptClick( By locator) {
-        WebElement element = findWebElement( locator);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
-        Reporter.log("JavaScript Click On Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
 
     /**
@@ -786,26 +763,7 @@ public class DriverActions<T extends WebDriver> {
         action.moveToElement(element).perform();
     }
 
-    /**
-     * Scrolls to the bottom of the page.
-     */
-    public  void scrollToPageBottom() {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
-        Reporter.log("Scrolled to page bottom", LogLevel.INFO_BLUE);
-    }
 
-    /**
-     * Sets the value of an element using JavaScript.
-     * @param locator Element locator
-     * @param value Value to set
-     */
-    public  void setElementValueUsingJS( By locator, String value) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        WebElement element = findWebElement( locator);
-        js.executeScript("arguments[0].value = arguments[1];", element, value);
-        Reporter.log("Set value using JavaScript: " + value + " on element: " + locator.toString(), LogLevel.INFO_BLUE);
-    }
 
     /**
      * Switches to a frame by name or ID.
@@ -1011,18 +969,6 @@ public class DriverActions<T extends WebDriver> {
                 .perform();
         Reporter.log("Slider moved by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
 
-    }
-
-    /**
-     * Scrolls the page by offset.
-     * @param xOffset X offset to scroll
-     * @param yOffset Y offset to scroll
-     */
-    public  void scrollByOffset( int xOffset, int yOffset) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
-
-        Reporter.log("Scrolled by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
 
     /**
@@ -1604,28 +1550,6 @@ public class DriverActions<T extends WebDriver> {
         return waitForNumberOfElementsToBeLessThan( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
-    /**
-     * Clicks an element using JavaScript with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void javascriptClick( By locator, int timeout) {
-        getFluentWait( timeout, WaitManager.getDefaultPollingTime())
-                .until(ExpectedConditions.elementToBeClickable(locator));
-        javascriptClick( locator);
-    }
-
-    /**
-     * Clicks an element using JavaScript with specified timeout and polling interval.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     */
-    public  void javascriptClick( By locator, int timeout, int pollingEvery) {
-        getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator));
-        javascriptClick( locator);
-    }
 
     /**
      * Waits for specific text to be present in an element with default timeout and polling time.
@@ -1998,37 +1922,10 @@ public class DriverActions<T extends WebDriver> {
     public  void hoverAndClick( By locatorToHover, By locatorToClick) {
         hoverAndClick( locatorToHover, locatorToClick, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
-
-    /**
-     * Sleeps for a specified number of milliseconds.
-     * @param millis Number of milliseconds to sleep
-     */
-    public  void sleepMillis(long millis) {
-        try {
-            Thread.sleep(millis);
-            Reporter.log("Sleeping for " + millis + " milliseconds", LogLevel.INFO_BLUE);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Logger.logException( e);
-            Reporter.log("Sleep interrupted: " + e.getMessage(), LogLevel.ERROR);
-        }
+    public JavaScriptActions JSActions(){
+        return new JavaScriptActions<>(driver);
     }
-
-    /**
-     * Sleeps for a specified number of seconds.
-     * @param seconds Number of seconds to sleep
-     */
-    public  void sleepSeconds(long seconds) {
-        Allure.step("Sleeping for " + seconds + " seconds", Status.PASSED);
-        sleepMillis(seconds * 1000);
-    }
-
-    /**
-     * Sleeps for a specified number of minutes.
-     * @param minutes Number of minutes to sleep
-     */
-    public  void sleepMinutes(long minutes) {
-        Allure.step("Sleeping for " + minutes + " minutes", Status.PASSED);
-        sleepMillis(minutes * 60 * 1000);
+    public Sleep sleep(){
+        return new Sleep();
     }
 }
