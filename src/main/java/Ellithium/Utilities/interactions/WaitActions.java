@@ -5,9 +5,13 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+
+import java.time.Duration;
 import java.util.List;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     public WaitActions(T driver) {
         super(driver);
@@ -774,6 +778,15 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  void waitForElementToDisappear( By locator) {
         waitForElementToDisappear(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+    /**
+     * Creates a WebDriverWait instance with specified timeout.
+     * @param timeout Maximum wait time in seconds
+     * @return WebDriverWait instance
+     */
+    public WebDriverWait getGeneralWait(int timeout) {
+        Reporter.log("Getting general Wait For "+ timeout + " seconds", LogLevel.INFO_BLUE);
+        return new WebDriverWait(driver, Duration.ofSeconds(timeout));
     }
 
 }
