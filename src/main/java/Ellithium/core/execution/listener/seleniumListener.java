@@ -1,5 +1,4 @@
 package Ellithium.core.execution.listener;
-import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
@@ -7,8 +6,6 @@ import java.time.Duration;
 import java.util.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.events.WebDriverListener;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-
 public class seleniumListener implements WebDriverListener {
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
@@ -23,7 +20,7 @@ public class seleniumListener implements WebDriverListener {
         Reporter.log("Sent Data: \"" + stringBuilder + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
     }
    @Override
-   public void beforeGet(WebDriver driver, String url) {
+   public void afterGet(WebDriver driver, String url) {
        Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url);
    }
    @Override

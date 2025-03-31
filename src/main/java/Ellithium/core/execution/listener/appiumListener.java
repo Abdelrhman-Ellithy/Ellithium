@@ -7,119 +7,128 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class appiumListener implements MethodCallListener {
     @Override
     public void afterCall(Object obj, Method method, Object[] args, Object result) {
         String methodName = method.getName();
         switch (methodName) {
-            case    "findElement",
-                    "findElementByAccessibilityId",
-                    "findElementById",
-                    "findElementByClassName",
-                    "findElementByXPath",
-                    "findElements" ->{
-                Reporter.log("findElement/s found using Locator: " + getLocator(args), LogLevel.INFO_BLUE);
+            case "findElement", "findElements" -> {
+                if (args != null && args.length > 0) {
+                    Reporter.log("Finding element using: " + cleanUpLocator(getLocator(args)), LogLevel.INFO_BLUE);
+                }
             }
-
-            case "click" ->
-                    Reporter.log("Clicked on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
-
-            case "sendKeys" -> {
-                String textSent = getTextFromArgs(args);
-                Reporter.log("Sent keys: \"" + textSent + "\" to element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
-            }
-            case "clear" ->
-                    Reporter.log("Cleared text in element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
-
-            case "navigateTo" ->
-                    Reporter.log("Navigated to URL: " + args[0], LogLevel.INFO_BLUE);
-
-            case "back" ->
-                    Reporter.log("Navigated back", LogLevel.INFO_BLUE);
-
-            case "forward" ->
-                    Reporter.log("Navigated forward", LogLevel.INFO_BLUE);
-
-            case "refresh" ->
-                    Reporter.log("Page refreshed", LogLevel.INFO_BLUE);
-
-            case "tap" ->
-                    Reporter.log("Performed tap at: " + Arrays.toString(args), LogLevel.INFO_BLUE);
-
-            case "doubleTap" ->
-                    Reporter.log("Performed double-tap gesture", LogLevel.INFO_BLUE);
-
-            case "longPress" ->
-                    Reporter.log("Performed long press at: " + Arrays.toString(args), LogLevel.INFO_BLUE);
-
-            case "swipe" ->
-                    Reporter.log("Swiped from: " + args[0] + " to " + args[1], LogLevel.INFO_BLUE);
-
-            case "scroll" ->
-                    Reporter.log("Scrolled from: " + args[0] + " to " + args[1], LogLevel.INFO_BLUE);
-
-            case "pinch" ->
-                    Reporter.log("Performed pinch gesture on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
-
-            case "zoom" ->
-                    Reporter.log("Performed zoom gesture on element: " + getElementDescription(args[0]), LogLevel.INFO_BLUE);
-
-            case "pressKey" ->
-                    Reporter.log("Pressed key code: " + args[0], LogLevel.INFO_BLUE);
-
-            case "releaseKey" ->
-                    Reporter.log("Released key code: " + args[0], LogLevel.INFO_BLUE);
-
-            case "getPageSource" ->
-                    Reporter.log("Page source retrieved", LogLevel.INFO_BLUE);
-
             case "quit" ->
                     Reporter.log("Driver quit", LogLevel.INFO_BLUE);
-
             case "close" ->
                     Reporter.log("Driver closed", LogLevel.INFO_BLUE);
             case "getScreenshotAs" ->
                     Reporter.log("Getting Screen Shoot", LogLevel.INFO_BLUE);
 
-            case "getCapabilities","getFileDetector","getSessionId","manage","assertExtensionExists" ->{
+            case "execute", "executeScript" -> {
+                if (args != null && args.length > 0) {
+                    String scriptName = extractScriptName(args);
+                    String scriptDetails = extractScriptDetails(args);
+                    Reporter.log("Executing " + scriptName + " with details: " + scriptDetails, LogLevel.INFO_BLUE);
+                }
             }
-            default ->{
-                Reporter.log( methodName + "with Arguments: " + Arrays.toString(args), LogLevel.INFO_BLUE);
+            default -> {
+                if (!isUtilityMethod(methodName)) {
+                    Reporter.log(methodName + " with Arguments: " + Arrays.toString(args), LogLevel.INFO_BLUE);
+                }
             }
         }
     }
 
-    // Helper to extract locator details from arguments
+    private String cleanUpLocator(String locator) {
+        return locator.replaceAll("By\\.|AppiumBy\\.", "")
+                     .replaceAll("\\{|\\}", "")
+                     .replaceAll("using=", "");
+    }
+
+    private String extractScriptName(Object[] args) {
+        if (args.length >= 2 && args[1] instanceof Map) {
+            Map<?, ?> scriptArgs = (Map<?, ?>) args[1];
+            if (scriptArgs.containsKey("script")) {
+                return scriptArgs.get("script").toString();
+            }
+        }
+        return args[0].toString();
+    }
+
+    private boolean isUtilityMethod(String methodName) {
+        return methodName.equals("getFileDetector") ||
+               methodName.equals("getCapabilities") ||
+               methodName.equals("getSessionId") ||
+               methodName.equals("manage") ||
+               methodName.equals("assertExtensionExists");
+    }
+
     private String getLocator(Object[] args) {
         if (args != null && args.length > 0) {
             Object arg = args[0];
             if (arg instanceof By) {
-                return arg.toString();
+                String locator = arg.toString();
+                return locator.replaceAll("By\\.", "").replaceAll("AppiumBy\\.", "");
             }
         }
         return "Unknown locator";
     }
 
-    // Helper to describe elements for logging
-    private String getElementDescription(Object element) {
-        if (element instanceof WebElement) {
-            WebElement webElement = (WebElement) element;
-            return "TagName: " + webElement.getTagName() + ", Text: " + webElement.getText();
-        }
-        if (element instanceof By) {
-            return element.toString();
-        }
-        return "Unknown element";
-    }
-    private String getTextFromArgs(Object[] args) {
-        if (args != null && args.length > 0 && args[0] instanceof CharSequence[]) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (CharSequence charSequence : (CharSequence[]) args[0]) {
-                stringBuilder.append(charSequence);
+    private String extractScriptDetails(Object[] args) {
+        if (args.length >= 2 && args[1] instanceof Map) {
+            Map<?, ?> scriptArgs = (Map<?, ?>) args[1];
+            // Handle mobile: pressKey script
+            if (scriptArgs.containsKey("script") && "mobile: pressKey".equals(scriptArgs.get("script"))) {
+                if (scriptArgs.containsKey("args")) {
+                    Object scriptParams = scriptArgs.get("args");
+                    if (scriptParams instanceof List && !((List<?>) scriptParams).isEmpty()) {
+                        Object param = ((List<?>) scriptParams).get(0);
+                        if (param instanceof Map) {
+                            Map<?, ?> keyMap = (Map<?, ?>) param;
+                            if (keyMap.containsKey("keycode")) {
+                                int keyCode = ((Number) keyMap.get("keycode")).intValue();
+                                return KEYCODE_MAP.getOrDefault(keyCode, "KEY_" + keyCode);
+                            }
+                        }
+                    }
+                }
             }
-            return stringBuilder.toString();
+            return scriptArgs.toString();
         }
-        return "Unknown text";
+        return Arrays.toString(args);
     }
+    private static final Map<Integer, String> KEYCODE_MAP;
+    static {
+        KEYCODE_MAP = Map.ofEntries(
+                Map.entry(66, "ENTER"),
+                Map.entry(67, "DELETE"),
+                Map.entry(61, "TAB"),
+                Map.entry(62, "SPACE"),
+                Map.entry(19, "DPAD UP"),
+                Map.entry(20, "DPAD DOWN"),
+                Map.entry(21, "DPAD LEFT"),
+                Map.entry(22, "DPAD RIGHT"),
+                Map.entry(92, "PAGE UP"),
+                Map.entry(93, "PAGE DOWN"),
+                Map.entry(111, "ESCAPE"),
+                Map.entry(4, "BACK"),
+                Map.entry(82, "MENU"),
+                Map.entry(84, "SEARCH"),
+                Map.entry(3, "HOME"),
+                Map.entry(7, "0"),
+                Map.entry(8, "1"),
+                Map.entry(9, "2"),
+                Map.entry(10, "3"),
+                Map.entry(11, "4"),
+                Map.entry(12, "5"),
+                Map.entry(13, "6"),
+                Map.entry(14, "7"),
+                Map.entry(15, "8"),
+                Map.entry(16, "9")
+        );
+    }
+
 }
