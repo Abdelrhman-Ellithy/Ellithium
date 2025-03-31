@@ -1,6 +1,7 @@
 package Mobile;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
+import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.MobileDriverType;
 import Ellithium.core.driver.RemoteDriverType;
@@ -15,6 +16,7 @@ import java.net.URL;
 
 public class NotesTests {
     NotesHomePage notesHomePage;
+    ScreenRecorderActions screenRecorderActions;
     @BeforeClass
     public void setUp() throws MalformedURLException {
         UiAutomator2Options options=new UiAutomator2Options();
@@ -28,6 +30,7 @@ public class NotesTests {
         options.setCapability("appium:fullReset", false);
         DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://127.0.0.1:4723"),options);
         notesHomePage=new NotesHomePage(DriverFactory.getCurrentDriver());
+        screenRecorderActions=new ScreenRecorderActions<>(DriverFactory.getCurrentDriver());
     }
     @Test
     public void creteNote(){
@@ -41,6 +44,7 @@ public class NotesTests {
     }
     @AfterClass
     public void tareDown(){
+        screenRecorderActions.stopRecording();
         DriverFactory.quitDriver();
     }
 }
