@@ -28,7 +28,7 @@ public class StartUpLoader {
         testPath = "src" + File.separator + "test" + File.separator + "resources" + File.separator + "TestData";
         checkerFilePath=ConfigContext.getCheckerFilePath();
         checkerFolderPath=ConfigContext.getCheckerFolderPath();
-        ScreenShotPath =  "Test-Output" + File.separator + "ScreenShots" + File.separator + "Failed" ;
+        ScreenShotPath = ConfigContext.getFailedScreenShotPath();
         allurePath = ConfigContext.getAllureFilePath();
         configPath = ConfigContext.getConfigFilePath();
         logPath = ConfigContext.getLogFilePath();
@@ -138,6 +138,22 @@ public class StartUpLoader {
             result=ScreenShotsDirectory.mkdirs();
             if (!result){
                 System.err.println("Failed to Automatically create directory: " + ScreenShotsDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
+        }
+        ScreenShotPath=ConfigContext.getCapturedScreenShotPath();
+        if (!checkFileExists(ScreenShotPath)) {
+            File ScreenShotsDirectory = new File(ScreenShotPath);
+            result=ScreenShotsDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + ScreenShotsDirectory+ " Due to IDE Permissions you need to make it manually");
+            }
+        }
+        String RecordedExecutionsPath =ConfigContext.getRecordedExecutionsPath();
+        if (!checkFileExists(RecordedExecutionsPath)) {
+            File ScreenShotsDirectory = new File(RecordedExecutionsPath);
+            result=ScreenShotsDirectory.mkdirs();
+            if (!result){
+                System.err.println("Failed to Automatically create directory: " + RecordedExecutionsPath+ " Due to IDE Permissions you need to make it manually");
             }
         }
         if (!checkFileExists(testPath)) {
