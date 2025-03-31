@@ -15,16 +15,16 @@ public class DropDownPage {
         driverActions=new DriverActions<>(driver);
     }
     public void dropDownSelect(String option){
-        driverActions.selectDropdownByText(By.cssSelector("select#dropdown"),option);
+        driverActions.select().selectDropdownByText(By.cssSelector("select#dropdown"),option);
     }
     /**
      * @param index starts at 1 ends at 2
      */
     public void dropDownSelect(int index){
-        driverActions.selectDropdownByIndex(By.cssSelector("select#dropdown"),index-1);
+        driverActions.select().selectDropdownByIndex(By.cssSelector("select#dropdown"),index-1);
     }
     public String dropDownGetSelected(){
-        List<String>texts=driverActions.getDropdownSelectedOptions(By.cssSelector("select#dropdown"));
+        List<String>texts=driverActions.select().getDropdownSelectedOptions(By.cssSelector("select#dropdown"));
         return texts.get(0);
     }
 }

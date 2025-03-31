@@ -11,13 +11,13 @@ public class LoginPage {
         driverActions=new DriverActions(driver);
     }
     public void setUserName(String username){
-        driverActions.sendData(By.id("username"),username);
+        driverActions.elements().sendData(By.id("username"),username);
     }
     public void setPassword(String password){
-        driverActions.sendData(By.id("password"),password);
+        driverActions.elements().sendData(By.id("password"),password);
     }
     public SecureAreaPage clickLoginBtn(){
-        driverActions.clickOnElement(By.tagName("button"));
+        driverActions.elements().clickOnElement(By.tagName("button"));
         return new SecureAreaPage(driver);
     }
 
