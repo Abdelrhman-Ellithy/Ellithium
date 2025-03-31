@@ -17,7 +17,7 @@ public class HoverPage {
      */
     public void hoverOverFigure(int index){
         locator="(//div[@class='figure'])["+ Integer.toString(index)+ "]";
-        driverActions.hoverOverElement(By.xpath(locator));
+        driverActions.mouse().hoverOverElement(By.xpath(locator));
     }
     public String getTitle(){
         return driverActions.findWebElement(By.xpath(locator))

@@ -18,10 +18,10 @@ public class DynamicLoadingPage {
     public LoadingExample1 clickExample(int index) {
         switch (index){
             case 2 :
-                driverActions.clickOnElement(By.partialLinkText("Example 2"));
+                driverActions.elements().clickOnElement(By.partialLinkText("Example 2"));
                 return new LoadingExample1(driver) ;
             default:
-                driverActions.clickOnElement(By.partialLinkText("Example 1"));
+                driverActions.elements().clickOnElement(By.partialLinkText("Example 1"));
                 return new LoadingExample1(driver);
         }
     }

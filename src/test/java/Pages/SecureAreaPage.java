@@ -11,6 +11,6 @@ public class SecureAreaPage {
         driverActions=new DriverActions(driver);
     }
     public String getLoginMassega(){
-        return driverActions.getText(By.id("flash"));
+        return driverActions.elements().getText(By.id("flash"));
     }
 }
