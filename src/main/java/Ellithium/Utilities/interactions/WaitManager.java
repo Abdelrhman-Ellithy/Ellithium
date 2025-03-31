@@ -61,17 +61,16 @@ public class WaitManager <T extends WebDriver>{
             defaultTimeout = parseProperty(timeout, 5, "defaultElementWaitTimeout");
         } catch (Exception e) {
             Logger.logException(e);
-            defaultTimeout = 10;  // Assign default if exception occurs
+            defaultTimeout = 60;
         }
     }
-    // Initialize default polling time from properties file
     private static void initPolling() {
         try {
             String polling = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "defaultElementPollingTime");
             defaultPollingTime = parseProperty(polling, 5, "defaultElementPollingTime");
         } catch (Exception e) {
             Logger.logException(e);
-            defaultPollingTime = 200;  // Assign default if exception occurs
+            defaultPollingTime = 50;
         }
     }
     private static final ArrayList<Class<? extends Exception>> expectedExceptions = new ArrayList<>();
