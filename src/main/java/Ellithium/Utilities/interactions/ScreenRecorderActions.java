@@ -1,11 +1,11 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
+import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import org.monte.media.Format;
-import org.monte.media.FormatKeys;
 import org.monte.media.math.Rational;
 import org.monte.screenrecorder.ScreenRecorder;
 import org.openqa.selenium.OutputType;
@@ -18,26 +18,15 @@ import java.io.FileOutputStream;
 
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import static org.monte.media.FormatKeys.*;
 import static org.monte.media.VideoFormatKeys.*;
 
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
-    private ScreenRecorder screenRecorder;
-    private final String recordingsDirectory;
-
+    private static final ThreadLocal<ScreenRecorder> screenRecorder = new ThreadLocal<>();
+    private static final ThreadLocal<String> videoName = new ThreadLocal<>();
+    
     public ScreenRecorderActions(T driver) {
         super(driver);
-        this.recordingsDirectory = "Test-Output" + File.separator + "Recordings" + File.separator;
-        createDirectories();
-    }
-
-    private void createDirectories() {
-        new File(recordingsDirectory + "Screenshots").mkdirs();
-        new File(recordingsDirectory + "Videos").mkdirs();
     }
 
     /**
@@ -49,7 +38,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             TakesScreenshot camera = (TakesScreenshot) driver;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-            File screenShotFolder = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Captured" + File.separator);
+            File screenShotFolder = new File(ConfigContext.getCapturedScreenShotPath() + File.separator);
             if (!screenShotFolder.exists()) {
                 screenShotFolder.mkdirs();
             }
@@ -67,52 +56,57 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Starts video recording of the screen.
-     * @param videoName Name of the video file
-     * @throws Exception if recording fails to start
+     * @param name Name of the video file
      */
-    public void startRecording(String videoName) throws Exception {
+    public void startRecording(String name) {
+        videoName.set(name);
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
-            // Mobile recording
             if (driver instanceof AndroidDriver) {
                 ((AndroidDriver) driver).startRecordingScreen();
             } else {
                 ((IOSDriver) driver).startRecordingScreen();
             }
-            Reporter.log("Started mobile screen recording: " + videoName, LogLevel.INFO_BLUE);
+            Reporter.log("Started mobile screen recording: " + name, LogLevel.INFO_BLUE);
         } else {
-            // Web recording using monte media
-            File videoFolder = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Videos" + File.separator);
+            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath()+ File.separator);
             if (!videoFolder.exists()) {
                 videoFolder.mkdirs();
             }
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            Rectangle captureSize = new Rectangle(0, 0, screenSize.width, screenSize.height);
             GraphicsConfiguration gc = GraphicsEnvironment
                     .getLocalGraphicsEnvironment()
                     .getDefaultScreenDevice()
                     .getDefaultConfiguration();
-
-            Format fileFormat = new Format(MediaTypeKey, FormatKeys.MediaType.FILE, MimeTypeKey, MIME_MP4);
-            Format screenFormat = new Format(MediaTypeKey, FormatKeys.MediaType.VIDEO,
-                    EncodingKey, "h264",
-                    CompressorNameKey, "h264",
+            Rectangle captureSize = new Rectangle(0, 0, 
+                gc.getBounds().width, 
+                gc.getBounds().height);
+            Format fileFormat = new Format(MediaTypeKey, MediaType.FILE, MimeTypeKey, MIME_AVI);
+            Format screenFormat = new Format(MediaTypeKey, MediaType.VIDEO,
+                    EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                    CompressorNameKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
                     DepthKey, 24,
-                    FrameRateKey, Rational.valueOf(30),
+                    FrameRateKey, Rational.valueOf(15),
                     QualityKey, 1.0f,
-                    KeyFrameIntervalKey, 30 * 60);
-            
-            screenRecorder = new ScreenRecorder(gc, captureSize, fileFormat, screenFormat, null, null, videoFolder);
-            screenRecorder.start();
-            Reporter.log("Started web recording: " + videoName, LogLevel.INFO_BLUE);
+                    KeyFrameIntervalKey, 15 * 60);
+            Format mouseFormat = new Format(MediaTypeKey, MediaType.VIDEO,
+                    EncodingKey, "black",
+                    FrameRateKey, Rational.valueOf(30));
+            try {
+                ScreenRecorder recorder = new ScreenRecorder(gc, captureSize,
+                        fileFormat, screenFormat, mouseFormat, null, videoFolder);
+                screenRecorder.set(recorder);
+                recorder.start();
+                Reporter.log("Started web recording: " + name, LogLevel.INFO_BLUE);
+            } catch (Exception e) {
+                Reporter.log("Failed to start recording: " + e.getMessage(), LogLevel.ERROR);
+            }
         }
     }
 
     /**
      * Stops the video recording and saves it with a timestamp.
-     * @param videoName Name of the video file
-     * @throws Exception if recording fails to stop
      */
-    public void stopRecording(String videoName) throws Exception {
+    public void stopRecording() {
+        String name = videoName.get();
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
             String video;
             if (driver instanceof AndroidDriver) {
@@ -120,31 +114,30 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else {
                 video = ((IOSDriver) driver).stopRecordingScreen();
             }
-            
             byte[] videoData = Base64.getDecoder().decode(video);
-            File videoFolder = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Videos" + File.separator);
+            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
             if (!videoFolder.exists()) {
                 videoFolder.mkdirs();
             }
-            
-            String newName = videoName + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
+            String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, newName);
-            
             try (FileOutputStream fos = new FileOutputStream(videoFile)) {
                 fos.write(videoData);
                 Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_BLUE);
             } catch (Exception e) {
                 Reporter.log("Failed to save mobile recording: " + e.getMessage(), LogLevel.ERROR);
-                throw e;
             }
         } else {
-            screenRecorder.stop();
-            File videoFolder = new File("Test-Output" + File.separator + "ScreenShots" + File.separator + "Videos" + File.separator);
+            try {
+                screenRecorder.get().stop();
+            }catch (Exception e){
+                Reporter.log("Failed to save Web recording: " + e.getMessage(), LogLevel.ERROR);
+            }
+            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
             File[] files = videoFolder.listFiles();
-
             if (files != null && files.length > 0) {
                 File lastVideo = files[files.length - 1];
-                String newName = videoName + "-" + TestDataGenerator.getTimeStamp() + ".mp4";  // Changed extension to .mp4
+                String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
                 File renamedVideo = new File(videoFolder, newName);
 
                 if (lastVideo.renameTo(renamedVideo)) {
@@ -156,5 +149,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 Reporter.log("No video file found after recording", LogLevel.ERROR);
             }
         }
+        cleanup();
+    }
+
+    /**
+     * Cleans up ThreadLocal resources
+     */
+    private void cleanup() {
+        videoName.remove();
+        screenRecorder.remove();
     }
 }
