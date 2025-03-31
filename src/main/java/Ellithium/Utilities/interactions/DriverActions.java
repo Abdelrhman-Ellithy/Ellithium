@@ -7,7 +7,6 @@ import com.google.common.io.Files;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
@@ -19,18 +18,15 @@ import java.util.List;
  * Provides a comprehensive set of WebDriver interaction methods with built-in waits and reporting.
  * @param <T> The specific WebDriver type
  */
-public class DriverActions<T extends WebDriver> {
-    private final T driver;
-
+public class DriverActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Creates a new DriverActions instance.
      * @param driver WebDriver instance to wrap
      */
     @SuppressWarnings("unchecked")
     public DriverActions(T driver) {
-        this.driver = driver;
+        super(driver);
     }
-
     /**
      * Sends text data to an element after waiting for it to be visible.
      * @param locator Element locator
@@ -203,443 +199,6 @@ public class DriverActions<T extends WebDriver> {
     }
 
     /**
-     * Waits for an element to disappear from the DOM.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     */
-    public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.invisibilityOfElementLocated(locator));
-        Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
-    }
-
-    /**
-     * Waits for an element to be clickable.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The clickable WebElement
-     */
-    public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator));
-        Reporter.log("Wait For Element To Be Clickable: ",LogLevel.INFO_BLUE,locator.toString());
-        return findWebElement(locator);
-    }
-
-    /**
-     * Waits for an element to be visible.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The visible WebElement
-     */
-    public  WebElement waitForElementToBeVisible( By locator, int timeout, int pollingEvery) {
-        getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        Reporter.log("Wait For Element To Be Visible: ",LogLevel.INFO_BLUE,locator.toString());
-        return findWebElement( locator);
-    }
-
-    /**
-     * Waits for an element to be present in the DOM.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The present WebElement
-     */
-    public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Presence: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.presenceOfElementLocated(locator));
-        return findWebElement( locator);
-    }
-
-    /**
-     * Waits for specific text to be present in an element.
-     * @param locator Element locator
-     * @param text The text to wait for
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The WebElement with the specified text
-     */
-    public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Text: '" + text + "' to be present in Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
-        return findWebElement( locator);
-    }
-
-    /**
-     * Retrieves the value of an attribute from an element.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The attribute value
-     */
-    public  String getAttributeValue( By locator, String attribute, int timeout, int pollingEvery) {
-        Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement( locator).getDomAttribute(attribute);
-    }
-
-    /**
-     * Waits for an element to be selected.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the element is selected, false otherwise
-     */
-    public  boolean waitForElementToBeSelected( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element to be Selected: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeSelected(locator));
-    }
-
-    /**
-     * Waits for an element's attribute to have a specific value.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the attribute has the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.attributeToBe(locator, attribute, value));
-    }
-
-    /**
-     * Waits for an element's attribute to contain a specific value.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the attribute contains the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.attributeContains(locator, attribute, value));
-    }
-
-    /**
-     * Waits for an element to become stale.
-     * @param element The WebElement to wait for
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the element becomes stale, false otherwise
-     */
-    public  boolean waitForElementStaleness( WebElement element, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Staleness: " + element.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.stalenessOf(element));
-    }
-
-    /**
-     * Waits for the page title to contain a specific text.
-     * @param titlePart The text to wait for in the title
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the title contains the text, false otherwise
-     */
-    public  boolean waitForTitleContains( String titlePart, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Title to Contain: '" + titlePart + "'", LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.titleContains(titlePart));
-    }
-
-    /**
-     * Waits for the page URL to contain a specific text.
-     * @param urlPart The text to wait for in the URL
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the URL contains the text, false otherwise
-     */
-    public  boolean waitForUrlContains( String urlPart, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for URL to Contain: '" + urlPart + "'", LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.urlContains(urlPart));
-    }
-
-    /**
-     * Waits for a frame to be available and switches to it.
-     * @param locator Frame locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
-    }
-
-    /**
-     * Waits for a frame to be available by name or ID and switches to it.
-     * @param nameOrId Frame name or ID
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Frame to be Available by Name or ID: '" + nameOrId + "'", LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
-    }
-
-    /**
-     * Waits for a frame to be available by index and switches to it.
-     * @param index Frame index
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Frame to be Available by Index: " + index, LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
-    }
-
-    /**
-     * Waits for an element to be enabled.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the element is enabled, false otherwise
-     */
-    public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator)).isEnabled();
-    }
-
-    /**
-     * Waits for the page title to be a specific text.
-     * @param title The expected title
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the title matches the expected title, false otherwise
-     */
-    public  boolean waitForTitleIs( String title, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Title to be: '" + title + "'", LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.titleIs(title));
-    }
-
-    /**
-     * Waits for the page URL to be a specific URL.
-     * @param url The expected URL
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the URL matches the expected URL, false otherwise
-     */
-    public  boolean waitForUrlToBe( String url, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for URL to be: '" + url + "'", LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.urlToBe(url));
-    }
-
-    /**
-     * Waits for an element's selection state to be a specific state.
-     * @param locator Element locator
-     * @param selected Expected selection state
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the element has the expected selection state, false otherwise
-     */
-    public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
-    }
-
-    /**
-     * Waits for specific text to be present in an element's value attribute.
-     * @param locator Element locator
-     * @param text The text to wait for in the value attribute
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the text is present in the element's value attribute, false otherwise
-     */
-    public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
-    }
-
-    /**
-     * Waits for the number of windows to be a specific number.
-     * @param numberOfWindows The expected number of windows
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the number of windows matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfWindowsToBe( int numberOfWindows, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Windows to be: " + numberOfWindows, LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfWindowsToBe(numberOfWindows));
-    }
-
-    /**
-     * Waits for the number of elements to be more than a specific number.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the number of elements is more than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
-        return size > number;
-    }
-
-    /**
-     * Waits for the number of elements to be less than a specific number.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the number of elements is less than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
-        return size < number;
-    }
-
-    /**
-     * Waits for visibility of all elements located by the given locator.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return List of visible WebElements
-     */
-    public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-    }
-
-    /**
-     * Waits for the number of elements to be a specific number.
-     * @param locator Element locator
-     * @param number The expected number of elements
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return True if the number of elements matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
-        return size == number;
-    }
-
-    /**
-     * Switches to a new window with the specified title.
-     * @param windowTitle The title of the window to switch to
-     */
-    public  void switchToNewWindow( String windowTitle) {
-        String originalWindow = driver.getWindowHandle();
-        for (String windowHandle : driver.getWindowHandles()) {
-            driver.switchTo().window(windowHandle);
-            if (driver.getTitle().equals(windowTitle)) {
-                return;
-            }
-        }
-        driver.switchTo().window(originalWindow);
-    }
-
-    /**
-     * Closes the current window or tab.
-     */
-    public  void closeCurrentWindow() {
-        driver.close();
-    }
-
-    /**
-     * Switches to the original window.
-     * @param originalWindowHandle The handle of the original window
-     */
-    public  void switchToOriginalWindow( String originalWindowHandle) {
-        driver.switchTo().window(originalWindowHandle);
-    }
-
-    /**
-     * Finds a WebElement using the given locator.
-     * @param locator Element locator
-     * @return The found WebElement
-     */
-    public  WebElement findWebElement( By locator) {
-        return driver.findElement(locator);
-    }
-
-    /**
-     * Finds all WebElements matching the given locator.
-     * @param locator Element locator
-     * @return List of found WebElements
-     */
-    public  List<WebElement> findWebElements( By locator) {
-        return driver.findElements(locator);
-    }
-
-    /**
-     * Accepts an alert.
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     */
-    public  void acceptAlert( int timeout, int pollingEvery) {
-        getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().accept();
-    }
-
-    /**
-     * Dismisses an alert.
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     */
-    public  void dismissAlert( int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().dismiss();
-    }
-
-    /**
-     * Gets the text of an alert.
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return The alert text
-     */
-    public  String getAlertText( int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.alertIsPresent());
-        return driver.switchTo().alert().getText();
-    }
-
-    /**
-     * Sends data to an alert.
-     * @param data The data to send
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     */
-    public  void sendDataToAlert( String data, int timeout, int pollingEvery) {
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().sendKeys(data);
-    }
-
-    /**
      * Gets the text from multiple elements.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
@@ -655,17 +214,6 @@ public class DriverActions<T extends WebDriver> {
             texts.add(element.getText());
         }
         return texts;
-    }
-
-    /**
-     * Gets a FluentWait instance with specified timeout and polling interval.
-     * @param timeoutInSeconds Maximum wait time in seconds
-     * @param pollingEveryInMillis Polling interval in milliseconds
-     * @return FluentWait instance
-     */
-    @SuppressWarnings("unchecked")
-    public FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
-            return WaitManager.getFluentWait(driver,timeoutInSeconds,pollingEveryInMillis);
     }
 
     /**
@@ -740,17 +288,6 @@ public class DriverActions<T extends WebDriver> {
     }
 
     /**
-     * Switches to a frame by index.
-     * @param index Frame index
-     * @param timeout Maximum wait time in seconds
-     * @param pollingTime Polling interval in milliseconds
-     */
-    public  void switchToFrameByIndex( int index, int timeout,int pollingTime) {
-        getFluentWait(timeout,pollingTime)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
-    }
-
-    /**
      * Hovers over an element with specified timeout.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
@@ -761,77 +298,6 @@ public class DriverActions<T extends WebDriver> {
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         Actions action = new Actions(driver);
         action.moveToElement(element).perform();
-    }
-
-
-
-    /**
-     * Switches to a frame by name or ID.
-     * @param nameOrID Frame name or ID
-     * @param timeout Maximum wait time in seconds
-     * @param pollingTime Polling interval in milliseconds
-     */
-    public  void switchToFrameByNameOrID( String nameOrID, int timeout,int pollingTime) {
-        getFluentWait(timeout,pollingTime)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrID));
-    }
-
-    /**
-     * Switches to a frame by WebElement.
-     * @param locator Frame locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingTime Polling interval in milliseconds
-     */
-    public  void switchToFrameByElement( By locator, int timeout,int pollingTime) {
-        getFluentWait(timeout,pollingTime)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
-    }
-
-    /**
-     * Switches back to the default content from a frame.
-     */
-    public  void switchToDefaultContent() {
-        driver.switchTo().defaultContent();
-    }
-
-    /**
-     * Switches to a popup window with the specified title.
-     * @param expectedPopupTitle The title of the popup window to switch to
-     * @param timeout Maximum wait time in seconds
-     * @param pollingTime Polling interval in milliseconds
-     */
-    public  void switchToPopupWindow( String expectedPopupTitle, int timeout, int pollingTime) {
-        String mainWindow = driver.getWindowHandle();
-        Reporter.log("Waiting for popup window to appear.", LogLevel.INFO_BLUE);
-
-        boolean windowsAppeared = getFluentWait( timeout, pollingTime)
-                .until(ExpectedConditions.numberOfWindowsToBe(2));
-
-        if (windowsAppeared) {
-            for (String windowHandle : driver.getWindowHandles()) {
-                if (!windowHandle.equals(mainWindow)) {
-                    driver.switchTo().window(windowHandle);
-                    if (driver.getTitle().equals(expectedPopupTitle)) {
-                        Reporter.log("Switched to popup window with title: " + expectedPopupTitle, LogLevel.INFO_BLUE);
-                        return;
-                    }
-                }
-            }
-            Reporter.log("Popup window with title " + expectedPopupTitle + " not found", LogLevel.ERROR);
-            driver.switchTo().window(mainWindow);
-        } else {
-            Reporter.log("Popup window did not appear within the timeout.", LogLevel.ERROR);
-        }
-    }
-
-    /**
-     * Closes the popup window and switches back to the main window.
-     */
-    public  void closePopupWindow() {
-        driver.close();
-        Reporter.log("Popup window closed. Switching back to the main window.", LogLevel.INFO_BLUE);
-        String mainWindow = driver.getWindowHandles().iterator().next();
-        driver.switchTo().window(mainWindow);
     }
 
     /**
@@ -1059,117 +525,6 @@ public class DriverActions<T extends WebDriver> {
         driver.navigate().forward();
     }
 
-    /**
-     * Waits for an element to be selected with default timeout and polling time.
-     * @param locator Element locator
-     * @return True if the element is selected, false otherwise
-     */
-    public  boolean waitForElementToBeSelected( By locator) {
-        return waitForElementToBeSelected( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to be selected with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @return True if the element is selected, false otherwise
-     */
-    public  boolean waitForElementToBeSelected( By locator, int timeout) {
-        return waitForElementToBeSelected( locator, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's attribute to have a specific value with default timeout and polling time.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @return True if the attribute has the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeToBe( By locator, String attribute, String value) {
-        return waitForElementAttributeToBe( locator, attribute, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's attribute to have a specific value with specified timeout.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @param timeout Maximum wait time in seconds
-     * @return True if the attribute has the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout) {
-        return waitForElementAttributeToBe( locator, attribute, value, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's attribute to contain a specific value with default timeout and polling time.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @return True if the attribute contains the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeContains( By locator, String attribute, String value) {
-        return waitForElementAttributeContains( locator, attribute, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's attribute to contain a specific value with specified timeout.
-     * @param locator Element locator
-     * @param attribute Attribute name
-     * @param value Expected attribute value
-     * @param timeout Maximum wait time in seconds
-     * @return True if the attribute contains the expected value, false otherwise
-     */
-    public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout) {
-        return waitForElementAttributeContains( locator, attribute, value, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to become stale with default timeout and polling time.
-     * @param element The WebElement to wait for
-     * @return True if the element becomes stale, false otherwise
-     */
-    public  boolean waitForElementStaleness( WebElement element) {
-        return waitForElementStaleness( element, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to become stale with specified timeout.
-     * @param element The WebElement to wait for
-     * @param timeout Maximum wait time in seconds
-     * @return True if the element becomes stale, false otherwise
-     */
-    public  boolean waitForElementStaleness( WebElement element, int timeout) {
-        return waitForElementStaleness( element, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page title to contain a specific text with default timeout and polling time.
-     * @param titlePart The text to wait for in the title
-     * @return True if the title contains the text, false otherwise
-     */
-    public  boolean waitForTitleContains( String titlePart) {
-        return waitForTitleContains( titlePart, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page title to contain a specific text with specified timeout.
-     * @param titlePart The text to wait for in the title
-     * @param timeout Maximum wait time in seconds
-     * @return True if the title contains the text, false otherwise
-     */
-    public  boolean waitForTitleContains( String titlePart, int timeout) {
-        return waitForTitleContains( titlePart, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page URL to contain a specific text with default timeout and polling time.
-     * @param urlPart The text to wait for in the URL
-     * @return True if the URL contains the text, false otherwise
-     */
-    public  boolean waitForUrlContains( String urlPart) {
-        return waitForUrlContains( urlPart, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
 
     /**
      * Gets the text from multiple elements with default timeout and polling time.
@@ -1256,372 +611,6 @@ public class DriverActions<T extends WebDriver> {
         selectDropdownByTextForMultipleElements( locator, option, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
-    /**
-     * Selects a dropdown option by text for multiple elements with specified timeout.
-     * @param locator Element locator
-     * @param option Option to select
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void selectDropdownByTextForMultipleElements( By locator, String option, int timeout) {
-        selectDropdownByTextForMultipleElements( locator, option, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by index with default timeout and polling time.
-     * @param index Frame index
-     */
-    public  void switchToFrameByIndex( int index) {
-        switchToFrameByIndex( index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by index with specified timeout.
-     * @param index Frame index
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void switchToFrameByIndex( int index, int timeout) {
-        switchToFrameByIndex( index, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by name or ID with default timeout and polling time.
-     * @param nameOrID Frame name or ID
-     */
-    public  void switchToFrameByNameOrID( String nameOrID) {
-        switchToFrameByNameOrID( nameOrID, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by name or ID with specified timeout.
-     * @param nameOrID Frame name or ID
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void switchToFrameByNameOrID( String nameOrID, int timeout) {
-        switchToFrameByNameOrID( nameOrID, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by WebElement with default timeout and polling time.
-     * @param locator Frame locator
-     */
-    public  void switchToFrameByElement( By locator) {
-        switchToFrameByElement( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a frame by WebElement with specified timeout.
-     * @param locator Frame locator
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void switchToFrameByElement( By locator, int timeout) {
-        switchToFrameByElement( locator, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a popup window with the specified title and default timeout and polling time.
-     * @param expectedPopupTitle The title of the popup window to switch to
-     */
-    public  void switchToPopupWindow( String expectedPopupTitle) {
-        switchToPopupWindow( expectedPopupTitle, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Switches to a popup window with the specified title and specified timeout.
-     * @param expectedPopupTitle The title of the popup window to switch to
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void switchToPopupWindow( String expectedPopupTitle, int timeout) {
-        switchToPopupWindow( expectedPopupTitle, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page URL to contain a specific text with specified timeout.
-     * @param urlPart The text to wait for in the URL
-     * @param timeout Maximum wait time in seconds
-     * @return True if the URL contains the text, false otherwise
-     */
-    public  boolean waitForUrlContains( String urlPart, int timeout) {
-        return waitForUrlContains( urlPart, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available and switches to it with default timeout and polling time.
-     * @param locator Frame locator
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator) {
-        return waitForFrameToBeAvailableAndSwitchToIt( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available and switches to it with specified timeout.
-     * @param locator Frame locator
-     * @param timeout Maximum wait time in seconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout) {
-        return waitForFrameToBeAvailableAndSwitchToIt( locator, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available by name or ID and switches to it with default timeout and polling time.
-     * @param nameOrId Frame name or ID
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId) {
-        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(nameOrId, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available by name or ID and switches to it with specified timeout.
-     * @param nameOrId Frame name or ID
-     * @param timeout Maximum wait time in seconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId, int timeout) {
-        return waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( nameOrId, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available by index and switches to it with default timeout and polling time.
-     * @param index Frame index
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index) {
-        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for a frame to be available by index and switches to it with specified timeout.
-     * @param index Frame index
-     * @param timeout Maximum wait time in seconds
-     * @return The WebDriver instance switched to the frame
-     */
-    public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index, int timeout) {
-        return waitForFrameByIndexToBeAvailableAndSwitchToIt( index, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to be enabled with default timeout and polling time.
-     * @param locator Element locator
-     * @return True if the element is enabled, false otherwise
-     */
-    public  boolean waitForElementToBeEnabled( By locator) {
-        return waitForElementToBeEnabled(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to be enabled with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @return True if the element is enabled, false otherwise
-     */
-    public  boolean waitForElementToBeEnabled( By locator, int timeout) {
-        return waitForElementToBeEnabled( locator, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page title to be a specific text with default timeout and polling time.
-     * @param title The expected title
-     * @return True if the title matches the expected title, false otherwise
-     */
-    public  boolean waitForTitleIs( String title) {
-        return waitForTitleIs(title, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page title to be a specific text with specified timeout.
-     * @param title The expected title
-     * @param timeout Maximum wait time in seconds
-     * @return True if the title matches the expected title, false otherwise
-     */
-    public  boolean waitForTitleIs( String title, int timeout) {
-        return waitForTitleIs( title, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page URL to be a specific URL with default timeout and polling time.
-     * @param url The expected URL
-     * @return True if the URL matches the expected URL, false otherwise
-     */
-    public  boolean waitForUrlToBe( String url) {
-        return waitForUrlToBe( url, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the page URL to be a specific URL with specified timeout.
-     * @param url The expected URL
-     * @param timeout Maximum wait time in seconds
-     * @return True if the URL matches the expected URL, false otherwise
-     */
-    public  boolean waitForUrlToBe( String url, int timeout) {
-        return waitForUrlToBe( url, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's selection state to be a specific state with default timeout and polling time.
-     * @param locator Element locator
-     * @param selected Expected selection state
-     * @return True if the element has the expected selection state, false otherwise
-     */
-    public  boolean waitForElementSelectionStateToBe( By locator, boolean selected) {
-        return waitForElementSelectionStateToBe( locator, selected, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element's selection state to be a specific state with specified timeout.
-     * @param locator Element locator
-     * @param selected Expected selection state
-     * @param timeout Maximum wait time in seconds
-     * @return True if the element has the expected selection state, false otherwise
-     */
-    public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout) {
-        return waitForElementSelectionStateToBe( locator, selected, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for specific text to be present in an element's value attribute with default timeout and polling time.
-     * @param locator Element locator
-     * @param text The text to wait for in the value attribute
-     * @return True if the text is present in the element's value attribute, false otherwise
-     */
-    public  boolean waitForTextToBePresentInElementValue( By locator, String text) {
-        return waitForTextToBePresentInElementValue( locator, text, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for specific text to be present in an element's value attribute with specified timeout.
-     * @param locator Element locator
-     * @param text The text to wait for in the value attribute
-     * @param timeout Maximum wait time in seconds
-     * @return True if the text is present in the element's value attribute, false otherwise
-     */
-    public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout) {
-        return waitForTextToBePresentInElementValue( locator, text, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of windows to be a specific number with default timeout and polling time.
-     * @param numberOfWindows The expected number of windows
-     * @return True if the number of windows matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfWindowsToBe( int numberOfWindows) {
-        return waitForNumberOfWindowsToBe( numberOfWindows, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of windows to be a specific number with specified timeout.
-     * @param numberOfWindows The expected number of windows
-     * @param timeout Maximum wait time in seconds
-     * @return True if the number of windows matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfWindowsToBe( int numberOfWindows, int timeout) {
-        return waitForNumberOfWindowsToBe( numberOfWindows, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be more than a specific number with default timeout and polling time.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @return True if the number of elements is more than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number) {
-        return waitForNumberOfElementsToBeMoreThan( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be more than a specific number with specified timeout.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @param timeout Maximum wait time in seconds
-     * @return True if the number of elements is more than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout) {
-        return waitForNumberOfElementsToBeMoreThan( locator, number, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be less than a specific number with default timeout and polling time.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @return True if the number of elements is less than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number) {
-        return waitForNumberOfElementsToBeLessThan( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-
-    /**
-     * Waits for specific text to be present in an element with default timeout and polling time.
-     * @param locator Element locator
-     * @param text The text to wait for
-     * @return The WebElement with the specified text
-     */
-    public  WebElement waitForTextToBePresentInElement( By locator, String text) {
-        return waitForTextToBePresentInElement( locator, text, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for specific text to be present in an element with specified timeout.
-     * @param locator Element locator
-     * @param text The text to wait for
-     * @param timeout Maximum wait time in seconds
-     * @return The WebElement with the specified text
-     */
-    public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout) {
-        return waitForTextToBePresentInElement( locator, text, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be less than a specific number with specified timeout.
-     * @param locator Element locator
-     * @param number The number to compare against
-     * @param timeout Maximum wait time in seconds
-     * @return True if the number of elements is less than the specified number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout) {
-        return waitForNumberOfElementsToBeLessThan( locator, number, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for visibility of all elements located by the given locator with default timeout and polling time.
-     * @param locator Element locator
-     * @return List of visible WebElements
-     */
-    public  List<WebElement> waitForVisibilityOfAllElements( By locator) {
-        return waitForVisibilityOfAllElements( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for visibility of all elements located by the given locator with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @return List of visible WebElements
-     */
-    public  List<WebElement> waitForVisibilityOfAllElements( By locator, int timeout) {
-        return waitForVisibilityOfAllElements( locator, timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be a specific number with default timeout and polling time.
-     * @param locator Element locator
-     * @param number The expected number of elements
-     * @return True if the number of elements matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBe( By locator, int number) {
-        return waitForNumberOfElementsToBe( locator, number, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for the number of elements to be a specific number with specified timeout.
-     * @param locator Element locator
-     * @param number The expected number of elements
-     * @param timeout Maximum wait time in seconds
-     * @return True if the number of elements matches the expected number, false otherwise
-     */
-    public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout) {
-        return waitForNumberOfElementsToBe( locator, number, timeout, WaitManager.getDefaultPollingTime());
-    }
 
     /**
      * Right-clicks on an element with specified timeout.
@@ -1706,70 +695,6 @@ public class DriverActions<T extends WebDriver> {
     }
 
     /**
-     * Accepts an alert with specified timeout.
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void acceptAlert( int timeout) {
-        acceptAlert(timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Accepts an alert with default timeout and polling time.
-     */
-    public  void acceptAlert() {
-        acceptAlert(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Gets the text of an alert with specified timeout.
-     * @param timeout Maximum wait time in seconds
-     * @return The alert text
-     */
-    public  String getAlertText( int timeout){
-        return getAlertText( timeout, WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Gets the text of an alert with default timeout and polling time.
-     * @return The alert text
-     */
-    public  String getAlertText(){
-        return getAlertText(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Dismisses an alert with specified timeout.
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void dismissAlert( int timeout){
-        dismissAlert( timeout,WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Dismisses an alert with default timeout and polling time.
-     */
-    public  void dismissAlert(){
-        dismissAlert(WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Sends data to an alert with specified timeout.
-     * @param data The data to send
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void sendDataToAlert( String data, int timeout){
-        sendDataToAlert(data,timeout,WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Sends data to an alert with default timeout and polling time.
-     * @param data The data to send
-     */
-    public  void sendDataToAlert( String data){
-        sendDataToAlert(data,WaitManager.getDefaultTimeout(),WaitManager.getDefaultPollingTime());
-    }
-
-    /**
      * Clicks an element with specified timeout.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
@@ -1804,40 +729,19 @@ public class DriverActions<T extends WebDriver> {
     public  void selectDropdownByIndex( By locator, int index) {
         selectDropdownByIndex( locator, index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
-
     /**
-     * Waits for an element to be clickable with default timeout and polling time.
+     * Retrieves the value of an attribute from an element.
      * @param locator Element locator
-     * @return The clickable WebElement
+     * @param attribute Attribute name
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @return The attribute value
      */
-    public  WebElement waitForElementToBeClickable( By locator) {
-        return waitForElementToBeClickable( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to be visible with default timeout and polling time.
-     * @param locator Element locator
-     * @return The visible WebElement
-     */
-    public  WebElement waitForElementToBeVisible( By locator) {
-        return waitForElementToBeVisible( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to be present in the DOM with default timeout and polling time.
-     * @param locator Element locator
-     * @return The present WebElement
-     */
-    public  WebElement waitForElementPresence( By locator) {
-        return waitForElementPresence( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Waits for an element to disappear from the DOM with default timeout and polling time.
-     * @param locator Element locator
-     */
-    public  void waitForElementToDisappear( By locator) {
-        waitForElementToDisappear(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    public  String getAttributeValue( By locator, String attribute, int timeout, int pollingEvery) {
+        Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        getFluentWait(timeout,pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        return findWebElement( locator).getDomAttribute(attribute);
     }
 
     /**
@@ -1927,5 +831,36 @@ public class DriverActions<T extends WebDriver> {
     }
     public Sleep sleep(){
         return new Sleep();
+    }
+    public AlertActions alerts() {
+        return new AlertActions<>(driver);
+    }
+
+    public FrameActions frames() {
+        return new FrameActions<>(driver);
+    }
+    
+    public WindowActions windows() {
+        return new WindowActions<>(driver);
+    }
+    
+    public ElementActions elements() {
+        return new ElementActions<>(driver);
+    }
+    
+    public SelectActions select() {
+        return new SelectActions<>(driver);
+    }
+
+    public NavigationActions navigation() {
+        return new NavigationActions<>(driver);
+    }
+
+    public WaitActions waits() {
+        return new WaitActions<>(driver);
+    }
+
+    public MouseActions mouse() {
+        return new MouseActions<>(driver);
     }
 }
