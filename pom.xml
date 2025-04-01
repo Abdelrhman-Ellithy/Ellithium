@@ -90,7 +90,7 @@
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
-        <mavenSurefirePluginVersion>3.5.2</mavenSurefirePluginVersion>
+        <mavenSurefirePluginVersion>3.5.3</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
