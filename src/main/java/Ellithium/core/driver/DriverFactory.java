@@ -8,15 +8,17 @@ import Ellithium.Utilities.helpers.PropertyHelper;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import io.qameta.allure.Allure;
-import io.qameta.allure.model.StepResult;
+import io.qameta.allure.Step;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
+import org.openqa.selenium.devtools.v134.log.Log;
+import org.openqa.selenium.devtools.v134.network.Network;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
-import java.util.UUID;
+import java.util.Optional;
 import static Ellithium.core.driver.MobileDriverType.IOS;
 import static io.appium.java_client.proxy.Helpers.createProxy;
 
@@ -385,55 +387,48 @@ public class DriverFactory {
      * @param devTools DevTools instance to be configured
      */
     private static void logDevTools(DevTools devTools){
-        //        devTools.createSession();
-        //        devTools.send(Log.enable());
-        //        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
-        //        devTools.addListener(Network.requestWillBeSent(), request -> {
-        //            String type = request.getType().toString().toLowerCase();
-        //            if (type.contains("xhr") || type.contains("fetch")) {
-        //                    networkRequests(request);
-        //            }
-        //        });
-        //        devTools.addListener(Network.responseReceived(), response -> {
-        //            String type = response.getType().toString().toLowerCase();
-        //            if (type.contains("xhr") || type.contains("fetch"))  {
-        //                    networkResponses(response);
-        //            }
-        //        });
+//                devTools.createSession();
+//                devTools.send(Log.enable());
+//                devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
+//                devTools.addListener(Network.requestWillBeSent(), request -> {
+//                    String type = request.getType().toString().toLowerCase();
+//                    if (type.contains("xhr") || type.contains("fetch")) {
+//                            networkRequests(request);
+//                    }
+//                });
+//                devTools.addListener(Network.responseReceived(), response -> {
+//                    String type = response.getType().toString().toLowerCase();
+//                    if (type.contains("xhr") || type.contains("fetch"))  {
+//                            networkResponses(response);
+//                    }
+//                });
     }
 
-    /**
-     * Logs network request information to Allure report.
-     *
-     * @param request Network request information
-     */
-    private static void networkRequests(org.openqa.selenium.devtools.v134.network.model.RequestWillBeSent request) {
-        String stepUuid = UUID.randomUUID().toString();
-        Allure.getLifecycle().startStep(stepUuid, new StepResult().setName("Captured Network Requests Sent"));
-        try {
-            Reporter.logReportOnly("Request URL: " + request.getRequest().getUrl(), LogLevel.INFO_GREEN);
-            Reporter.logReportOnly("Request Method: " + request.getRequest().getMethod(), LogLevel.INFO_GREEN);
-            Reporter.logReportOnly("Request Headers: " + request.getRequest().getHeaders(), LogLevel.INFO_GREEN);
-        } finally {
-            Allure.getLifecycle().stopStep(stepUuid);
-        }
-    }
-
-    /**
-     * Logs network response information to Allure report.
-     *
-     * @param response Network response information
-     */
-    private static void networkResponses(org.openqa.selenium.devtools.v134.network.model.ResponseReceived response) {
-        String stepUuid = UUID.randomUUID().toString();
-        Allure.getLifecycle().startStep(stepUuid, new StepResult().setName("Captured Network Responses Received"));
-        try {
-            int status = response.getResponse().getStatus();
-            Reporter.logReportOnly("Response Time: " + response.getResponse().getResponseTime(), LogLevel.INFO_GREEN);
-            Reporter.logReportOnly("Status Code: " + status, LogLevel.INFO_GREEN);
-        } finally {
-            Allure.getLifecycle().stopStep(stepUuid);
-        }
-    }
-
+//    /**
+//     * Logs network request information to Allure report.
+//     *
+//     * @param request Network request information
+//     */
+//    @Step("Captured Network Request")
+//    private static void networkRequests(org.openqa.selenium.devtools.v134.network.model.RequestWillBeSent request) {
+//        Allure.step("Captured Network Requests Sent", () -> {
+//            Reporter.logReportOnly("Request URL: " + request.getRequest().getUrl(), LogLevel.INFO_GREEN);
+//            Reporter.logReportOnly("Request Method: " + request.getRequest().getMethod(), LogLevel.INFO_GREEN);
+//            Reporter.logReportOnly("Request Headers: " + request.getRequest().getHeaders(), LogLevel.INFO_GREEN);
+//        });
+//    }
+//
+//    /**
+//     * Logs network response information to Allure report.
+//     *
+//     * @param response Network response information
+//     */
+//    @Step("Captured Network Response")
+//    private static void networkResponses(org.openqa.selenium.devtools.v134.network.model.ResponseReceived response) {
+//        Allure.step("Captured Network Responses Received", () -> {
+//            int status = response.getResponse().getStatus();
+//            Reporter.logReportOnly("Response Time: " + response.getResponse().getResponseTime(), LogLevel.INFO_GREEN);
+//            Reporter.logReportOnly("Status Code: " + status, LogLevel.INFO_GREEN);
+//        });
+//    }
 }
