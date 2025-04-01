@@ -8,15 +8,18 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
-public class JavaScriptActions<T extends WebDriver> {
-    private final T driver;
+
+import java.io.File;
+
+public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
+
     /**
      * Creates a new DriverActions instance.
      * @param driver WebDriver instance to wrap
      */
     @SuppressWarnings("unchecked")
     public JavaScriptActions(T driver) {
-        this.driver = driver;
+        super(driver);
     }
     /**
      * Clicks an element using JavaScript with specified timeout and polling interval.
@@ -80,23 +83,39 @@ public class JavaScriptActions<T extends WebDriver> {
         Reporter.log("Set value using JavaScript: " + value + " on element: " + locator.toString(), LogLevel.INFO_BLUE);
     }
     /**
-     * Scrolls to the bottom of the page.
+     * Uploads a file using JavaScript with default timeout and polling time.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePath Absolute path to the file to upload
      */
-    public  void scrollToPageBottom() {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
-        Reporter.log("Scrolled to page bottom", LogLevel.INFO_BLUE);
-    }
-    @SuppressWarnings("unchecked")
-    private FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
-        return WaitManager.getFluentWait(driver,timeoutInSeconds,pollingEveryInMillis);
+    public void uploadFileUsingJS(By fileUploadLocator, String filePath) {
+        uploadFileUsingJS(fileUploadLocator, filePath, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     /**
-     * Finds a WebElement using the given locator.
-     * @param locator Element locator
-     * @return The found WebElement
+     * Uploads a file using JavaScript.
+     * Useful when standard sendKeys method doesn't work.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePath Absolute path to the file to upload
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @throws IllegalArgumentException if file does not exist
      */
-    private WebElement findWebElement( By locator) {
-        return driver.findElement(locator);
+    public void uploadFileUsingJS(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new IllegalArgumentException("File does not exist: " + filePath);
+            }
+
+            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
+
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].style.display='block';", uploadElement);
+            uploadElement.sendKeys(file.getAbsolutePath());
+            Reporter.log("File uploaded successfully using JavaScript: " + file.getName(), LogLevel.INFO_BLUE);
+        } catch (Exception e) {
+            Reporter.log("Failed to upload file using JavaScript: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
     }
 }

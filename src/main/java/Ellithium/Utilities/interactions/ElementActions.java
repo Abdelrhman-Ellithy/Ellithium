@@ -7,6 +7,10 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.JavascriptExecutor;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -311,5 +315,82 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<WebElement> getElements(By locator, int timeout) {
         return getElements(locator, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Uploads a file using sendKeys method.
+     * Works with input elements of type 'file'.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePath Absolute path to the file to upload
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @throws IllegalArgumentException if file does not exist
+     */
+    public void uploadFile(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new IllegalArgumentException("File does not exist: " + filePath);
+            }
+            
+            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
+            
+            uploadElement.sendKeys(file.getAbsolutePath());
+            Reporter.log("File uploaded successfully: " + file.getName(), LogLevel.INFO_BLUE);
+        } catch (Exception e) {
+            Reporter.log("Failed to upload file: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
+    }
+
+    /**
+     * Uploads multiple files simultaneously.
+     * Works with input elements that support multiple file uploads.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePaths Array of absolute file paths to upload
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @throws IllegalArgumentException if any file does not exist
+     */
+    public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
+        try {
+            StringBuilder paths = new StringBuilder();
+            for (String filePath : filePaths) {
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    throw new IllegalArgumentException("File does not exist: " + filePath);
+                }
+                paths.append(file.getAbsolutePath()).append("\n");
+            }
+            
+            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
+            
+            uploadElement.sendKeys(paths.toString().trim());
+            Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
+        } catch (Exception e) {
+            Reporter.log("Failed to upload multiple files: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
+    }
+
+    
+    /**
+     * Uploads a file using default timeout and polling time.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePath Absolute path to the file to upload
+     */
+    public void uploadFile(By fileUploadLocator, String filePath) {
+        uploadFile(fileUploadLocator, filePath, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Uploads multiple files with default timeout and polling time.
+     * @param fileUploadLocator Locator for the file input element
+     * @param filePaths Array of absolute file paths to upload
+     */
+    public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths) {
+        uploadMultipleFiles(fileUploadLocator, filePaths, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 }
