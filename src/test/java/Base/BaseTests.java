@@ -9,6 +9,7 @@ import org.testng.annotations.BeforeClass;
 public class BaseTests {
    protected WebDriver driver;
    protected HomPage home;
+   ScreenRecorderActions screenRecorderActions;
     @BeforeClass
     public void Setup()  {
         DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
@@ -23,9 +24,12 @@ public class BaseTests {
 //                WebSecurityMode.SecureMode,
 //                SandboxMode.Sandbox);
         home=new HomPage(driver);
+        screenRecorderActions=new ScreenRecorderActions<>(driver);
+        screenRecorderActions.startRecording("Test Name");
     }
     @AfterClass
     public void tareDown() {
+        screenRecorderActions.stopRecording();
         DriverFactory.quitDriver();
     }
 }

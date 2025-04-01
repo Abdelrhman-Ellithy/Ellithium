@@ -301,7 +301,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
                 break;
             }
         }
-        
         driver.switchTo().window(currentHandle);
         return exists;
     }

@@ -50,8 +50,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * Saves the screenshot with timestamp and attaches it to the test report.
      * @param screenshotName Base name for the screenshot file
      * @return File object of saved screenshot, null if capture fails
-     * @throws IOException if file operations fail
-     * @throws WebDriverException if screenshot capture fails
      */
     public File captureScreenshot(String screenshotName) {
         try {
@@ -101,17 +99,20 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Rectangle captureSize = new Rectangle(0, 0, 
                 gc.getBounds().width, 
                 gc.getBounds().height);
+            
+            // Updated format configuration
             Format fileFormat = new Format(MediaTypeKey, MediaType.FILE, MimeTypeKey, MIME_AVI);
             Format screenFormat = new Format(MediaTypeKey, MediaType.VIDEO,
                     EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
                     CompressorNameKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
                     DepthKey, 24,
                     FrameRateKey, Rational.valueOf(15),
-                    QualityKey, 1.0f,
+                    QualityKey, 0.6f,
                     KeyFrameIntervalKey, 15 * 60);
             Format mouseFormat = new Format(MediaTypeKey, MediaType.VIDEO,
-                    EncodingKey, "black",
+                    EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
                     FrameRateKey, Rational.valueOf(30));
+
             try {
                 ScreenRecorder recorder = new ScreenRecorder(gc, captureSize,
                         fileFormat, screenFormat, mouseFormat, null, videoFolder);

@@ -90,7 +90,7 @@ Ellithium supports reading and writing data from various file formats, including
 
 Ensure you have the following installed:
 - **Java Development Kit (JDK)**: 21 preferred
-- **Maven**: 3.8.1 or higher
+- **Maven**: 3.8.1 or higher (last version 3.9.9 recommended)
 
 ## 🏁 Getting Started
 
@@ -112,7 +112,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>2.0.2</Ellithiumversion>
+    <Ellithiumversion>2.0.3</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>
@@ -137,7 +137,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.2</version>
+        <version>3.5.3</version>
         <configuration>
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <testFailureIgnore>true</testFailureIgnore>
@@ -237,6 +237,7 @@ public class BaseStepDefinitions {
 
     public BaseStepDefinitions() {
 
+
         // for Local Machine Web Execution
         driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
 
@@ -249,6 +250,16 @@ public class BaseStepDefinitions {
         // for IOS Mobile
         iosDriver=DriverFactory.getNewMobileDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
         
+
+        // using config builder (after release 2.03)
+
+        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome, // same for RemoteDriverConfig, MobileDriverConfig
+                HeadlessMode.False, PrivateMode.False,
+                PageLoadStrategyMode.Normal,
+                WebSecurityMode.SecureMode,
+                SandboxMode.Sandbox);
+        driver=DriverFactory.getNewDriver(driverConfig);
+
         // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
        SQLDatabaseProvider db=new SQLDatabaseProvider(
                 SQLDBType.MY_SQL,
@@ -299,6 +310,8 @@ public class BaseTests {
     // with Web and the Same Logic for Other
     @BeforeClass
     public void Setup() {
+
+        
         // for Local Machine Web Execution
         driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
 
@@ -319,6 +332,17 @@ public class BaseTests {
                 serverIp,
                 port,
                 dbName);
+
+        
+        // using config builder (after release 2.03)
+
+        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome, // same for RemoteDriverConfig, MobileDriverConfig
+                HeadlessMode.False, PrivateMode.False,
+                PageLoadStrategyMode.Normal,
+                WebSecurityMode.SecureMode,
+                SandboxMode.Sandbox);
+        driver=DriverFactory.getNewDriver(driverConfig);
+
     }
 
     // for DB SQL Provider [SQLite]
@@ -400,11 +424,11 @@ public class LoginPage {
     }
     public void setUserName(String username){
         //                     locator,         data      , timeout, polling time 
-        driverActions.sendData(By.id("username"),username, 5,           200);
+        driverActions.elements().sendData(By.id("username"),username, 5,           200);
     }
     public void setPassword(String password){
         //                     locator,         data      , timeout
-        driverActions.sendData(By.id("password"),password, 5);
+        driverActions.elements().sendData(By.id("password"),password, 5);
     }
     public SecureAreaPage clickLoginBtn(){
                 //                     locator
