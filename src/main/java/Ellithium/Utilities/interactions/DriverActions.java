@@ -56,4 +56,12 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
     public MouseActions mouse() {
         return new MouseActions<>(driver);
     }
+
+    /**
+     * Provides access to key press and keyboard actions.
+     * @return KeyPressActions instance
+     */
+    public KeyPressActions<T> keyPress() {
+        return new KeyPressActions<>(driver);
+    }
 }
