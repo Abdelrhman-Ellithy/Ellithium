@@ -16,7 +16,7 @@ public class NotePage {
     }
     public void typeNote(String note){
         driverActions.elements().sendData(AppiumBy.id("com.miui.notes:id/rich_editor"),note);
-        new KeyEvent(AndroidKey.ENTER);
+        driver.pressKey(new KeyEvent(AndroidKey.ENTER));
     }
     public void clickDone(){
         driverActions.elements().clickOnElement(AppiumBy.accessibilityId("Done"));

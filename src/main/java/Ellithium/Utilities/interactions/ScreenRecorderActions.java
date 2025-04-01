@@ -21,18 +21,37 @@ import java.io.File;
 import static org.monte.media.FormatKeys.*;
 import static org.monte.media.VideoFormatKeys.*;
 
+/**
+ * Handles screen recording and screenshot functionality for web and mobile testing.
+ * Supports both web browser recording using Monte Media Library and mobile device recording.
+ * @param <T> Type of WebDriver being used (can be web or mobile driver)
+ */
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
+    /**
+     * Thread-safe storage for screen recorder instances
+     */
     private static final ThreadLocal<ScreenRecorder> screenRecorder = new ThreadLocal<>();
+    
+    /**
+     * Thread-safe storage for video names
+     */
     private static final ThreadLocal<String> videoName = new ThreadLocal<>();
     
+    /**
+     * Creates a new ScreenRecorderActions instance.
+     * @param driver WebDriver instance to use for recording/screenshots
+     */
     public ScreenRecorderActions(T driver) {
         super(driver);
     }
 
     /**
-     * Captures a screenshot and saves it with the specified name.
-     * @param screenshotName The name of the screenshot file
-     * @return The saved screenshot file
+     * Captures a screenshot of the current browser window or mobile screen.
+     * Saves the screenshot with timestamp and attaches it to the test report.
+     * @param screenshotName Base name for the screenshot file
+     * @return File object of saved screenshot, null if capture fails
+     * @throws IOException if file operations fail
+     * @throws WebDriverException if screenshot capture fails
      */
     public File captureScreenshot(String screenshotName) {
         try {
@@ -55,8 +74,11 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
-     * Starts video recording of the screen.
-     * @param name Name of the video file
+     * Initiates screen recording with the specified name.
+     * For web browsers: Uses Monte Media Library
+     * For mobile: Uses native device recording capabilities
+     * @param name Base name for the video file
+     * @throws Exception if recording cannot be started
      */
     public void startRecording(String name) {
         videoName.set(name);
@@ -103,7 +125,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
-     * Stops the video recording and saves it with a timestamp.
+     * Stops the current recording and saves it with timestamp.
+     * Handles both web and mobile recording scenarios.
+     * Automatically cleans up ThreadLocal resources after completion.
+     * @throws Exception if recording cannot be stopped or saved
      */
     public void stopRecording() {
         String name = videoName.get();
@@ -153,7 +178,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
-     * Cleans up ThreadLocal resources
+     * Cleans up ThreadLocal resources to prevent memory leaks.
+     * Should be called after recording is complete or in case of failures.
      */
     private void cleanup() {
         videoName.remove();
