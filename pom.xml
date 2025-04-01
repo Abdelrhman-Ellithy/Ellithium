@@ -88,7 +88,7 @@
             gpg -ab target/ellithium-2.0.3-sources.jar
             gpg -ab target/ellithium-2.0.3.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
-            mvn clean deploy -P central,!github -DskipTests -X</deployToMavenCentral>
+            mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.3</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>

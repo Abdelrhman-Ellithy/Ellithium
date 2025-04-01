@@ -432,7 +432,7 @@ public class LoginPage {
     }
     public SecureAreaPage clickLoginBtn(){
                 //                     locator
-        driverActions.clickOnElement(By.tagName("button"));
+        driverActions.elements().clickOnElement(By.tagName("button"));
         return new SecureAreaPage(driver);
     }
 
