@@ -22,9 +22,9 @@ runs:
         path: |
           ~/.m2/repository
           !~/.m2/repository/Ellithium
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          ${{ runner.os }}-maven-
+          maven-
     
     - name: Download Dependencies
       if: steps.maven-cache.outputs.cache-hit != 'true'
