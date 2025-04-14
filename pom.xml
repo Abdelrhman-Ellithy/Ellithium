@@ -68,7 +68,7 @@
         <seleniumVersion>4.31.0</seleniumVersion>
         <testNG>7.11.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
-        <gsonVersion>2.12.1</gsonVersion>
+        <gsonVersion>2.13.0</gsonVersion>
         <log4jVersion>2.24.3</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
