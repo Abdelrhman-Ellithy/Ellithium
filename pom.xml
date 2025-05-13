@@ -61,7 +61,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>2.0.3</EllithiumVersion>
+        <EllithiumVersion>2.0.4</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -83,10 +83,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-2.0.3.jar
-            gpg -ab target/ellithium-2.0.3-javadoc.jar
-            gpg -ab target/ellithium-2.0.3-sources.jar
-            gpg -ab target/ellithium-2.0.3.pom
+            gpg -ab target/ellithium-2.0.4.jar
+            gpg -ab target/ellithium-2.0.4-javadoc.jar
+            gpg -ab target/ellithium-2.0.4-sources.jar
+            gpg -ab target/ellithium-2.0.4.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
