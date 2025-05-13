@@ -76,7 +76,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * For web browsers: Uses Monte Media Library
      * For mobile: Uses native device recording capabilities
      * @param name Base name for the video file
-     * @throws Exception if recording cannot be started
      */
     public void startRecording(String name) {
         videoName.set(name);
@@ -129,7 +128,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * Stops the current recording and saves it with timestamp.
      * Handles both web and mobile recording scenarios.
      * Automatically cleans up ThreadLocal resources after completion.
-     * @throws Exception if recording cannot be stopped or saved
      */
     public void stopRecording() {
         String name = videoName.get();

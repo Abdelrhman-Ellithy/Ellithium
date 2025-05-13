@@ -1,5 +1,4 @@
 package UI_NonBDD;
-import Base.BaseRemote;
 import Base.BaseTests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Pages.LoginPage;
@@ -22,7 +21,7 @@ public class loginTests extends BaseTests {
         login.setUserName(username);
         login.setPassword(password);
         var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
+        String actualMessage=secureAreaPage.getLoginMessage();
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
     @Test(priority = 2)
@@ -31,7 +30,7 @@ public class loginTests extends BaseTests {
         login.setPassword("SuperSecretPassword!");
         login.setUserName("tomsmith");
         var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMassega();
+        String actualMessage=secureAreaPage.getLoginMessage();
         String expectedMessage="You logged into a secure area!";
         AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
     }
