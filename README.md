@@ -97,7 +97,7 @@ Ellithium supports reading and writing data from various file formats, including
 
 For comprehensive documentation and user guides, visit our official documentation site:
 
-- [**User Guide & Documentation**](https://github.com/Abdelrhman-Ellithy/ellithium.github.io) - Complete documentation including:
+- [**User Guide & Documentation**](https://abdelrhman-ellithy.github.io/ellithium.github.io/) - Complete documentation including:
   - Detailed setup instructions
   - Framework architecture
   - API documentation
