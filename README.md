@@ -21,6 +21,9 @@
         <a href="https://www.udemy.com/course/master-ellithium-unified-test-automation-framework/?couponCode=DISCOUNT" target="_blank">
             <img alt="Udemy Course" src="https://5.imimg.com/data5/SELLER/Default/2023/11/358764345/KZ/ZL/SV/12869081/udemy-e-learning.png" width="90" height="30">
         </a>
+        <a href="https://abdelrhman-ellithy.github.io/ellithium.github.io/" target="_blank">
+            <img alt="Documentation" src="https://img.shields.io/badge/Documentation-User%20Guide-blue" width="200">
+        </a>
     </td>
   </tr>
 </table>
@@ -88,6 +91,20 @@ Ellithium supports reading and writing data from various file formats, including
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://docs.qameta.io/allure/" target="_blank"><img src="https://avatars.githubusercontent.com/u/5879127?s=200&v=4" alt="Allure Reports" height="50px"></a> 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://appium.io/docs/en/2.0/" target="_blank"><img src="https://raw.githubusercontent.com/appium/appium/master/packages/appium/docs/overrides/assets/images/appium-logo-horiz.png" alt="Appium" height="50px"></a>
 <br/><br/>
+
+
+## 📚 Documentation
+
+For comprehensive documentation and user guides, visit our official documentation site:
+
+- [**User Guide & Documentation**](https://github.com/Abdelrhman-Ellithy/ellithium.github.io) - Complete documentation including:
+  - Detailed setup instructions
+  - Framework architecture
+  - API documentation
+  - Best practices
+  - Configuration guides
+  - Examples and tutorials
+
 
 ### Prerequisites
 
