@@ -76,7 +76,7 @@
         <ApachePOI>5.4.1</ApachePOI>
         <Cucumber>7.22.2</Cucumber>
         <cucumberTsetNG>7.22.2</cucumberTsetNG>
-        <restversion>5.5.2</restversion>
+        <restversion>5.5.5</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.49.1.0</SQLiteVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
