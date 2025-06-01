@@ -65,7 +65,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <seleniumVersion>4.32.0</seleniumVersion>
+        <seleniumVersion>4.33.0</seleniumVersion>
         <testNG>7.11.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.13.1</gsonVersion>
@@ -74,9 +74,9 @@
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.0</CSV>
         <ApachePOI>5.4.1</ApachePOI>
-        <Cucumber>7.22.2</Cucumber>
-        <cucumberTsetNG>7.22.2</cucumberTsetNG>
-        <restversion>5.5.2</restversion>
+        <Cucumber>7.23.0</Cucumber>
+        <cucumberTsetNG>7.23.0</cucumberTsetNG>
+        <restversion>5.5.5</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.49.1.0</SQLiteVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
@@ -98,7 +98,7 @@
         <HikariCPVersion>6.3.0</HikariCPVersion>
         <caffineVersion>3.2.0</caffineVersion>
         <mysqlVersion>9.3.0</mysqlVersion>
-        <postgresqlVersion>42.7.5</postgresqlVersion>
+        <postgresqlVersion>42.7.6</postgresqlVersion>
         <mssqlVersion>12.10.0.jre11</mssqlVersion>
         <oracleDBVersion>23.8.0.25.04</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
