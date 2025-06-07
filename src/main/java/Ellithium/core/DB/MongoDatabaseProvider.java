@@ -26,6 +26,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     private final Cache<String, Object> queryResultCache;
 
     /**
+     * Primary constructor for production use.
      * Constructs a MongoDatabaseProvider with the specified connection details and cache configuration.
      *
      * @param connectionString the MongoDB connection string
@@ -42,6 +43,23 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
                 .maximumSize(cacheMaxSize)
                 .build();
         Reporter.log("MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
+    }
+    /**
+     * Secondary constructor for **dependency injection, primarily for testing purposes**.
+     * This constructor allows for the injection of pre-configured or mocked
+     * {@link com.mongodb.client.MongoClient}, {@link com.mongodb.client.MongoDatabase},
+     * and {@link com.github.benmanes.caffeine.cache.Cache} instances.
+     * This is particularly useful for unit testing where external dependencies need to be controlled.
+     *
+     * @param mongoClient      the {@link MongoClient} instance to be used by this provider.
+     * @param database         the {@link MongoDatabase} instance to be used for database operations.
+     * @param queryResultCache the {@link Cache} instance for storing and retrieving query results.
+     */
+    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, Cache<String, Object> queryResultCache) {
+        this.mongoClient = mongoClient;
+        this.database = database;
+        this.queryResultCache = queryResultCache;
+        Reporter.log("Dummy MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**

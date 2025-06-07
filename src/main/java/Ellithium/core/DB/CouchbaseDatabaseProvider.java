@@ -24,7 +24,8 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
     private final Cache<String, Object> queryResultCache;
 
     /**
-     * Constructs a CouchbaseDatabaseProvider with the specified connection details and cache configuration.
+     * Primary constructor for production use.
+     * Connects to Couchbase using the provided details and sets up caching.
      *
      * @param host            the Couchbase host
      * @param username        the username
@@ -33,16 +34,70 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
      * @param cacheTtlMinutes the time-to-live for cache entries in minutes
      * @param cacheMaxSize    the maximum number of entries to store in the cache
      */
-    public CouchbaseDatabaseProvider(String host, String username, String password, String bucketName, 
-                                   long cacheTtlMinutes, long cacheMaxSize) {
+    public CouchbaseDatabaseProvider(String host, String username, String password, String bucketName,
+                                     long cacheTtlMinutes, long cacheMaxSize) {
         Reporter.log("Initializing Couchbase connection to " + host, LogLevel.INFO_YELLOW);
-        this.cluster = Cluster.connect(host, username, password);
-        this.bucket = cluster.bucket(bucketName);
-        this.queryResultCache = Caffeine.newBuilder()
+        this.cluster = createCouchbaseCluster(host, username, password);
+        this.bucket = createCouchbaseBucket(this.cluster, bucketName);
+        this.queryResultCache = createCache(cacheTtlMinutes, cacheMaxSize);
+        Reporter.log("Couchbase connection initialized successfully", LogLevel.INFO_YELLOW);
+    }
+
+    /**
+     * Secondary constructor for dependency injection (primarily for testing).
+     * Accepts pre-configured Cluster, Bucket, and Cache instances.
+     * This constructor keeps the public signature clean for production usage
+     * while allowing complete control over dependencies for testing.
+     *
+     * @param cluster         a pre-configured Couchbase Cluster instance
+     * @param bucket          a pre-configured Couchbase Bucket instance
+     * @param queryResultCache a pre-configured Caffeine Cache instance
+     */
+    public CouchbaseDatabaseProvider(Cluster cluster, Bucket bucket, Cache<String, Object> queryResultCache) {
+        if (cluster == null || bucket == null || queryResultCache == null) {
+            throw new IllegalArgumentException("Cluster, Bucket, and Cache cannot be null when using this constructor for dependency injection.");
+        }
+        this.cluster = cluster;
+        this.bucket = bucket;
+        this.queryResultCache = queryResultCache;
+        Reporter.log("Dummy Couchbase initialized successfully", LogLevel.INFO_YELLOW);
+    }
+
+    /**
+     * Helper method to encapsulate Couchbase Cluster creation.
+     *
+     * @param host      the Couchbase host
+     * @param username  the username
+     * @param password  the password
+     * @return a new Cluster instance
+     */
+    private static Cluster createCouchbaseCluster(String host, String username, String password) {
+        return Cluster.connect(host, username, password);
+    }
+
+    /**
+     * Helper method to encapsulate Couchbase Bucket retrieval.
+     *
+     * @param cluster   the Couchbase Cluster instance
+     * @param bucketName the name of the bucket to connect to
+     * @return a new Bucket instance
+     */
+    private static Bucket createCouchbaseBucket(Cluster cluster, String bucketName) {
+        return cluster.bucket(bucketName);
+    }
+
+    /**
+     * Helper method to encapsulate Caffeine Cache creation.
+     *
+     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
+     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @return a new Cache instance
+     */
+    private static Cache<String, Object> createCache(long cacheTtlMinutes, long cacheMaxSize) {
+        return Caffeine.newBuilder()
                 .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
                 .maximumSize(cacheMaxSize)
                 .build();
-        Reporter.log("Couchbase connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
