@@ -43,10 +43,7 @@ public class MongoDatabaseProviderTest {
     private UpdateResult mockUpdateResult;
 
     private MongoDatabaseProvider databaseProvider;
-    private final String TEST_CONNECTION_STRING = "mongodb://localhost:27017";
     private final String TEST_DATABASE = "testDB";
-    private final long CACHE_TTL_MINUTES = 30L;
-    private final long CACHE_MAX_SIZE = 1000L;
     private final String TEST_COLLECTION = "testCollection";
     private final String TEST_DOC_ID = "testDocId";
 
@@ -54,7 +51,6 @@ public class MongoDatabaseProviderTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // Set up default mock behavior
         when(mockMongoClient.getDatabase(TEST_DATABASE)).thenReturn(mockDatabase);
         when(mockDatabase.getCollection(anyString())).thenReturn(mockCollection);
         when(mockCollection.deleteOne(any(Document.class))).thenReturn(mockDeleteResult);
@@ -67,29 +63,7 @@ public class MongoDatabaseProviderTest {
         com.mongodb.client.FindIterable<Document> mockFindIterable = mock(com.mongodb.client.FindIterable.class);
         when(mockCollection.find(any(Document.class))).thenReturn(mockFindIterable);
         when(mockFindIterable.first()).thenReturn(new Document("_id", TEST_DOC_ID));
-
-        databaseProvider = new MongoDatabaseProvider(
-            TEST_CONNECTION_STRING,
-            TEST_DATABASE,
-            CACHE_TTL_MINUTES,
-            CACHE_MAX_SIZE
-        );
-
-        try {
-            Field clientField = MongoDatabaseProvider.class.getDeclaredField("mongoClient");
-            clientField.setAccessible(true);
-            clientField.set(databaseProvider, mockMongoClient);
-
-            Field databaseField = MongoDatabaseProvider.class.getDeclaredField("database");
-            databaseField.setAccessible(true);
-            databaseField.set(databaseProvider, mockDatabase);
-
-            Field cacheField = MongoDatabaseProvider.class.getDeclaredField("queryResultCache");
-            cacheField.setAccessible(true);
-            cacheField.set(databaseProvider, mockCache);
-        } catch (Exception e) {
-            fail("Failed to inject mocks: " + e.getMessage());
-        }
+        databaseProvider = new MongoDatabaseProvider(mockMongoClient,mockDatabase,mockCache);
     }
 
     @Test
