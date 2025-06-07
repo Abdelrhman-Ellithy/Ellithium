@@ -475,9 +475,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${mavenSurefirePluginVersion}</version>
                 <configuration>
-                    <argLine>
-                        -javaagent:"${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar"
-                    </argLine>
                     <encoding>UTF-8</encoding>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <printSummary>false</printSummary> <!-- Suppresses some output -->
