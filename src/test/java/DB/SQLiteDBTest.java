@@ -83,11 +83,11 @@ public class SQLiteDBTest {
         } catch (SQLException | SQLRuntimeException e) {
             String errorMsg = e.getMessage().toLowerCase();
             softAssert.assertTrue(
-                errorMsg.contains("syntax error") || 
-                errorMsg.contains("invalid sql") ||
-                errorMsg.contains("incomplete input") ||
-                errorMsg.contains("sql error"),
-                "Should provide meaningful error message: " + errorMsg
+                    errorMsg.contains("syntax error") ||
+                            errorMsg.contains("invalid sql") ||
+                            errorMsg.contains("incomplete input") ||
+                            errorMsg.contains("sql error"),
+                    "Should provide meaningful error message: " + errorMsg
             );
         }
 
@@ -97,10 +97,10 @@ public class SQLiteDBTest {
         } catch (SQLException | SQLRuntimeException e) {
             String errorMsg = e.getMessage().toLowerCase();
             softAssert.assertTrue(
-                errorMsg.contains("no such table") ||
-                errorMsg.contains("table not found") ||
-                errorMsg.contains("does not exist"),
-                "Should provide meaningful error for missing table: " + errorMsg
+                    errorMsg.contains("no such table") ||
+                            errorMsg.contains("table not found") ||
+                            errorMsg.contains("does not exist"),
+                    "Should provide meaningful error for missing table: " + errorMsg
             );
         }
 
@@ -179,9 +179,9 @@ public class SQLiteDBTest {
         }
         softAssert.assertNotNull(emptyPathException, "Should throw exception for empty path");
         softAssert.assertTrue(
-            emptyPathException != null && 
-            emptyPathException.getMessage().contains("cannot be empty"),
-            "Should have correct error message for empty path"
+                emptyPathException != null &&
+                        emptyPathException.getMessage().contains("cannot be empty"),
+                "Should have correct error message for empty path"
         );
 
         // Test invalid MySQL configuration
@@ -193,10 +193,10 @@ public class SQLiteDBTest {
         }
         softAssert.assertNotNull(invalidMySQLException, "Should throw exception for invalid MySQL config");
         softAssert.assertTrue(
-            invalidMySQLException != null && 
-            (invalidMySQLException.getMessage().contains("port") || 
-             invalidMySQLException.getMessage().contains("address")),
-            "Should have correct error message for invalid MySQL config"
+                invalidMySQLException != null &&
+                        (invalidMySQLException.getMessage().contains("port") ||
+                                invalidMySQLException.getMessage().contains("address")),
+                "Should have correct error message for invalid MySQL config"
         );
 
         softAssert.assertAll();
@@ -225,7 +225,7 @@ public class SQLiteDBTest {
         String baseQuery = "SELECT * FROM test_table";
         String paginatedQuery = provider.buildPaginatedQuery(baseQuery, 0, 1, SQLDBType.SQLITE);
         CachedRowSet result = provider.executeQuery(paginatedQuery);
-        
+
         softAssert.assertTrue(result.next(), "Should have first record");
         softAssert.assertFalse(result.next(), "Should not have second record");
 
@@ -242,7 +242,7 @@ public class SQLiteDBTest {
                 }
                 return true;
             });
-            
+
             // Verify the insert
             CachedRowSet result = provider.executeQuery("SELECT COUNT(*) FROM test_table WHERE name = 'trans1'");
             result.next();
@@ -265,8 +265,8 @@ public class SQLiteDBTest {
 
         long start = System.currentTimeMillis();
         int inserted = provider.executeBatchInsert(
-            "INSERT INTO test_table (name) VALUES (?)",
-            batchData
+                "INSERT INTO test_table (name) VALUES (?)",
+                batchData
         );
         long end = System.currentTimeMillis();
 
@@ -289,13 +289,13 @@ public class SQLiteDBTest {
             CachedRowSet result = provider.executeQuery("SELECT * FROM test_table");
             softAssert.assertTrue(result.next(), "Should recover and execute valid query");
         } catch (SQLException e) {
-            softAssert.assertTrue(e.getMessage().contains("no such table"), 
-                "Should provide meaningful error message");
+            softAssert.assertTrue(e.getMessage().contains("no such table"),
+                    "Should provide meaningful error message");
         }
 
         // Test connection recovery
-        softAssert.assertTrue(provider.isConnectionValid(), 
-            "Connection should remain valid after error");
+        softAssert.assertTrue(provider.isConnectionValid(),
+                "Connection should remain valid after error");
 
         softAssert.assertAll();
     }
@@ -328,8 +328,8 @@ public class SQLiteDBTest {
             new SQLDatabaseProvider(SQLDBType.MY_SQL, null, null, null, "invalid", null);
             softAssert.fail("Should reject invalid configuration");
         } catch (IllegalArgumentException e) {
-            softAssert.assertTrue(e.getMessage().contains("Server address cannot be empty") 
-                || e.getMessage().contains("Invalid port"), "Should provide validation error");
+            softAssert.assertTrue(e.getMessage().contains("Server address cannot be empty")
+                    || e.getMessage().contains("Invalid port"), "Should provide validation error");
         }
 
         // Test SQLite validation
@@ -337,8 +337,8 @@ public class SQLiteDBTest {
             new SQLDatabaseProvider(SQLDBType.SQLITE, "");
             softAssert.fail("Should reject empty SQLite path");
         } catch (IllegalArgumentException e) {
-            softAssert.assertTrue(e.getMessage().contains("cannot be empty"), 
-                "Should validate SQLite path");
+            softAssert.assertTrue(e.getMessage().contains("cannot be empty"),
+                    "Should validate SQLite path");
         }
 
         softAssert.assertAll();
