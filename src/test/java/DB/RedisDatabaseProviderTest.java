@@ -1,6 +1,7 @@
 package DB;
 
 import Ellithium.core.DB.RedisDatabaseProvider;
+import com.github.benmanes.caffeine.cache.Cache;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -8,8 +9,6 @@ import org.testng.annotations.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
-
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,15 +24,14 @@ public class RedisDatabaseProviderTest {
     
     @Mock
     private Jedis mockJedis;
-    
+
+    @Mock
+    private Cache<String, Object> mockCache;
+
     @Mock
     private Pipeline mockPipeline;
 
     private RedisDatabaseProvider redisProvider;
-    private final String TEST_HOST = "localhost";
-    private final int TEST_PORT = 6379;
-    private final long CACHE_TTL_MINUTES = 30L;
-    private final long CACHE_MAX_SIZE = 1000L;
     private final String TEST_KEY = "testKey";
     private final String TEST_VALUE = "testValue";
 
@@ -43,16 +41,7 @@ public class RedisDatabaseProviderTest {
         
         when(mockJedisPool.getResource()).thenReturn(mockJedis);
         when(mockJedis.pipelined()).thenReturn(mockPipeline);
-        
-        redisProvider = new RedisDatabaseProvider(TEST_HOST, TEST_PORT, CACHE_TTL_MINUTES, CACHE_MAX_SIZE);
-        
-        try {
-            Field poolField = RedisDatabaseProvider.class.getDeclaredField("jedisPool");
-            poolField.setAccessible(true);
-            poolField.set(redisProvider, mockJedisPool);
-        } catch (Exception e) {
-            fail("Failed to inject mock pool: " + e.getMessage());
-        }
+        redisProvider = new RedisDatabaseProvider(mockJedisPool, mockCache);
     }
 
     @Test

@@ -46,43 +46,10 @@ public class CouchbaseDatabaseProviderTest {
     @BeforeMethod
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        // Set up default mock behavior for Cluster and Bucket to return other mocks
         when(mockCluster.bucket(anyString())).thenReturn(mockBucket);
         when(mockBucket.defaultCollection()).thenReturn(mockCollection);
         when(mockBucket.collection(anyString())).thenReturn(mockCollection);
-
-        // Create provider with all required parameters
-        databaseProvider = new CouchbaseDatabaseProvider(
-            "dummyHost", 
-            "dummyUser", 
-            "dummyPass", 
-            "dummyBucket",
-            30L, // cacheTtlMinutes
-            1000L // cacheMaxSize
-        );
-
-        // Inject mocks using reflection
-        try {
-            // Inject mockCluster
-            java.lang.reflect.Field clusterField = CouchbaseDatabaseProvider.class.getDeclaredField("cluster");
-            clusterField.setAccessible(true);
-            clusterField.set(databaseProvider, mockCluster);
-
-            // Inject mockBucket
-            java.lang.reflect.Field bucketField = CouchbaseDatabaseProvider.class.getDeclaredField("bucket");
-            bucketField.setAccessible(true);
-            bucketField.set(databaseProvider, mockBucket);
-
-            // Inject mockCache
-            java.lang.reflect.Field cacheField = CouchbaseDatabaseProvider.class.getDeclaredField("queryResultCache");
-            cacheField.setAccessible(true);
-            cacheField.set(databaseProvider, mockCache);
-
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-            fail("Failed to inject mocks using reflection.");
-        }
+        databaseProvider = new CouchbaseDatabaseProvider(mockCluster, mockBucket, mockCache);
     }
 
     @Test

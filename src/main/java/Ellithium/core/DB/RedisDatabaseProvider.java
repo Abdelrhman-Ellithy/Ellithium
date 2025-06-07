@@ -28,6 +28,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
     private final Cache<String, Object> queryResultCache;
 
     /**
+     * Primary constructor for production use.
      * Constructs a RedisDatabaseProvider with the specified connection details and cache configuration.
      *
      * @param host            the Redis host
@@ -37,6 +38,35 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      */
     public RedisDatabaseProvider(String host, int port, long cacheTtlMinutes, long cacheMaxSize) {
         Reporter.log("Initializing Redis connection to " + host + ":" + port, LogLevel.INFO_YELLOW);
+        this.jedisPool = createJedisPool(host, port);
+        this.queryResultCache = createCache(cacheTtlMinutes, cacheMaxSize);
+        Reporter.log("Redis connection initialized successfully", LogLevel.INFO_YELLOW);
+    }
+
+    /**
+     * Secondary constructor for dependency injection (primarily for testing).
+     * Accepts pre-configured JedisPool and Cache instances.
+     * This constructor allows complete control over dependencies for testing
+     * while keeping the public signature clean for production usage.
+     *
+     * @param jedisPool        a pre-configured JedisPool instance
+     * @param queryResultCache a pre-configured Caffeine Cache instance
+     */
+    public RedisDatabaseProvider(JedisPool jedisPool, Cache<String, Object> queryResultCache) {
+        if (jedisPool == null || queryResultCache == null) {
+            throw new IllegalArgumentException("JedisPool and Cache cannot be null when using this constructor for dependency injection.");
+        }
+        this.jedisPool = jedisPool;
+        this.queryResultCache = queryResultCache;
+    }
+    /**
+     * Helper method to encapsulate JedisPool creation logic.
+     *
+     * @param host the Redis host
+     * @param port the Redis port
+     * @return a new JedisPool instance
+     */
+    private static JedisPool createJedisPool(String host, int port) {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(10);
         poolConfig.setMaxIdle(5);
@@ -44,13 +74,21 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
+        return new JedisPool(poolConfig, host, port);
+    }
 
-        this.jedisPool = new JedisPool(poolConfig, host, port);
-        this.queryResultCache = Caffeine.newBuilder()
+    /**
+     * Helper method to encapsulate Caffeine Cache creation.
+     *
+     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
+     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @return a new Cache instance
+     */
+    private static Cache<String, Object> createCache(long cacheTtlMinutes, long cacheMaxSize) {
+        return Caffeine.newBuilder()
                 .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
                 .maximumSize(cacheMaxSize)
                 .build();
-        Reporter.log("Redis connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
