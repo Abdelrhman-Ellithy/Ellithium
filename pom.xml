@@ -79,16 +79,6 @@
         <restversion>5.5.5</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.49.1.0</SQLiteVersion>
-        <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
-        <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
-        <deployToMavenCentral>
-            check version config, readme,
-            gpg -ab target/ellithium-2.0.4.jar
-            gpg -ab target/ellithium-2.0.4-javadoc.jar
-            gpg -ab target/ellithium-2.0.4-sources.jar
-            gpg -ab target/ellithium-2.0.4.pom
-            gpg --keyserver keyserver.ubuntu.com --send-keys
-            mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.3</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
@@ -105,6 +95,17 @@
         <redisDBVersion>6.0.0</redisDBVersion>
         <couchBaseVersion>3.8.2</couchBaseVersion>
         <appiumVersion>9.4.0</appiumVersion>
+        <mockito.version>5.18.0</mockito.version>
+        <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
+        <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
+        <deployToMavenCentral>
+            check version config, readme,
+            gpg -ab target/ellithium-2.0.4.jar
+            gpg -ab target/ellithium-2.0.4-javadoc.jar
+            gpg -ab target/ellithium-2.0.4-sources.jar
+            gpg -ab target/ellithium-2.0.4.pom
+            gpg --keyserver keyserver.ubuntu.com --send-keys
+            mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>
     <repositories>
         <repository>
@@ -367,6 +368,19 @@
             <groupId>com.github.stephenc.monte</groupId>
             <artifactId>monte-screen-recorder</artifactId>
             <version>0.7.7.0</version>
+        </dependency>
+        <!-- Mockito -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- MongoDB Driver -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.11.1</version>
         </dependency>
     </dependencies>
     <build>

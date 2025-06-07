@@ -16,7 +16,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run Helper Tests
-        run: mvn test -Dtest="CSVHelperTests,ExcelHelperTests,JsonHelperTests,PDFHelperTests,PropertyHelperTests,TextHelperTests,JarExtractorTests" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7
+        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-helper-test-results
@@ -30,7 +30,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run Database Tests
-        run: mvn test -Dtest="SQLiteDBTest,SQLiteDBEdgeCasesTest,SQLiteDBAdvancedTest"
+        run: mvn test -Dtest="DB.**.*"
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-database-test-results

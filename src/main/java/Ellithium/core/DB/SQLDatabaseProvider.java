@@ -314,10 +314,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
             throw new IllegalStateException("Connection pool is not available");
         }
         return new HikariPoolStatistics(
-            dataSource.getHikariPoolMXBean().getActiveConnections(),
-            dataSource.getHikariPoolMXBean().getIdleConnections(),
-            dataSource.getHikariPoolMXBean().getTotalConnections(),
-            dataSource.getHikariPoolMXBean().getThreadsAwaitingConnection()
+                dataSource.getHikariPoolMXBean().getActiveConnections(),
+                dataSource.getHikariPoolMXBean().getIdleConnections(),
+                dataSource.getHikariPoolMXBean().getTotalConnections(),
+                dataSource.getHikariPoolMXBean().getThreadsAwaitingConnection()
         );
     }
 
@@ -337,14 +337,14 @@ public class SQLDatabaseProvider implements AutoCloseable {
             case POSTGRES_SQL:
                 return baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
             case SQL_SERVER:
-                return "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" + 
-                       baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " + 
-                       (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
+                return "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" +
+                        baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " +
+                        (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
             case ORACLE_SID:
             case ORACLE_SERVICE_NAME:
-                return "SELECT * FROM (SELECT a.*, ROWNUM rnum FROM (" + baseQuery + 
-                       ") a WHERE ROWNUM <= " + ((page + 1) * pageSize) + 
-                       ") WHERE rnum > " + (page * pageSize);
+                return "SELECT * FROM (SELECT a.*, ROWNUM rnum FROM (" + baseQuery +
+                        ") a WHERE ROWNUM <= " + ((page + 1) * pageSize) +
+                        ") WHERE rnum > " + (page * pageSize);
             default:
                 throw new UnsupportedOperationException("Pagination not supported for database type: " + dbType);
         }
@@ -359,12 +359,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public CachedRowSet executeQuery(String query) throws SQLException {
         validateConnection();
         query = sanitizeQuery(query);
-        
+
         CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-        
+
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
-            
+
             try {
                 ResultSet resultSet = statement.executeQuery(query);
                 rowSet.populate(resultSet);
@@ -372,13 +372,13 @@ public class SQLDatabaseProvider implements AutoCloseable {
                 return rowSet;
             } catch (SQLException e) {
                 String errorMsg = e.getMessage().toLowerCase();
-                if (errorMsg.contains("no such table") || 
-                    errorMsg.contains("table not found") ||
-                    errorMsg.contains("does not exist")) {
+                if (errorMsg.contains("no such table") ||
+                        errorMsg.contains("table not found") ||
+                        errorMsg.contains("does not exist")) {
                     return rowSet; // Return empty result set for missing tables
                 }
                 if (errorMsg.contains("syntax error") ||
-                    errorMsg.contains("sql error")) {
+                        errorMsg.contains("sql error")) {
                     throw new SQLException("Invalid SQL syntax: " + e.getMessage(), e);
                 }
                 throw e;
@@ -408,15 +408,15 @@ public class SQLDatabaseProvider implements AutoCloseable {
     private void handleSQLException(String message, SQLException e) {
         String errorDetail = e.getMessage() != null ? e.getMessage() : "Unknown error";
         String fullMessage = message + ": " + errorDetail;
-        
+
         Reporter.log(fullMessage, LogLevel.ERROR);
         Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
         Reporter.log("Error Code: " + e.getErrorCode(), LogLevel.ERROR);
-        
+
         if (e.getNextException() != null) {
             Reporter.log("Nested Exception: " + e.getNextException().getMessage(), LogLevel.ERROR);
         }
-        
+
         throw new SQLRuntimeException(fullMessage, e);
     }
 
@@ -805,10 +805,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
             throw new IllegalArgumentException("Query cannot be null or empty");
         }
         String sanitized = query.trim();
-        if (sanitized.endsWith("WHERE") || 
-            sanitized.endsWith("FROM") || 
-            sanitized.endsWith("AND") || 
-            sanitized.endsWith("OR")) {
+        if (sanitized.endsWith("WHERE") ||
+                sanitized.endsWith("FROM") ||
+                sanitized.endsWith("AND") ||
+                sanitized.endsWith("OR")) {
             throw new IllegalArgumentException("Invalid SQL syntax: Incomplete or invalid statement");
         }
         if (sanitized.contains(";") && !sanitized.endsWith(";")) {
