@@ -11,25 +11,40 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
-
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 public class Environment {
     private final String name;
     private final String envFilePath;
-    private final Map<String, String> variableCache;
     private static final String ENV_DIR = "src"+File.separator+"test"+File.separator+"resources"
-                                        +File.separator+"TestData"+File.separator+"Environments";
+                                    +File.separator+"TestData"+File.separator+"Environments";
 
     /**
      * @param name The name of the environment to create or load
      */
     public Environment(String name)  {
         this.name = name;
-        this.variableCache = new HashMap<>();
         File envDir = new File(ENV_DIR);
         if (!envDir.exists()) {
             envDir.mkdirs();
         }
         this.envFilePath = ENV_DIR + File.separator + name + ".json";
+    }
+
+    private <T> T withFileLock(String mode, File file, FileLockAction<T> action) {
+        try (RandomAccessFile raf = new RandomAccessFile(file, mode);
+             FileChannel channel = raf.getChannel();
+             FileLock lock = ("rw".equals(mode)) ? channel.lock() : channel.lock(0L, Long.MAX_VALUE, true)) {
+            return action.run();
+        } catch (Exception e) {
+            log("File lock error: " + e.getMessage(), LogLevel.ERROR);
+            throw new RuntimeException(e);
+        }
+    }
+    @FunctionalInterface
+    private interface FileLockAction<T> {
+        T run() throws Exception;
     }
 
     /**
@@ -42,14 +57,14 @@ public class Environment {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return;
         }
-
-        // Create parent directories if they don't exist
         File envFile = new File(envFilePath);
         if (!envFile.getParentFile().exists()) {
             envFile.getParentFile().mkdirs();
         }
-        variableCache.put(key, value);
-        JsonHelper.setJsonKeyValue(envFilePath, key, value);
+        withFileLock("rw", envFile, () -> {
+            JsonHelper.setJsonKeyValue(envFilePath, key, value);
+            return null;
+        });
         log("Variable set successfully - Key: " + key, LogLevel.INFO_GREEN);
     }
 
@@ -93,20 +108,12 @@ public class Environment {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return null;
         }
-
-        String cachedValue = variableCache.get(key);
-        if (cachedValue != null) {
-            log("Retrieved value from cache for key: " + key, LogLevel.INFO_BLUE);
-            return cachedValue;
-        }
-
-        String fileValue = JsonHelper.getJsonKeyValue(envFilePath, key);
+        File envFile = new File(envFilePath);
+        String fileValue = withFileLock("r", envFile, () -> JsonHelper.getJsonKeyValue(envFilePath, key));
         if (fileValue != null) {
-            variableCache.put(key, fileValue);
             log("Retrieved value from file for key: " + key, LogLevel.INFO_BLUE);
             return fileValue;
         }
-
         log("No value found for key: " + key, LogLevel.INFO_RED);
         return null;
     }
@@ -160,8 +167,8 @@ public class Environment {
      * Checks if key exists
      */
     public boolean has(String key) {
-        return variableCache.containsKey(key) || 
-               JsonHelper.getJsonKeyValue(envFilePath, key) != null;
+        File envFile = new File(envFilePath);
+        return withFileLock("r", envFile, () -> JsonHelper.getJsonKeyValue(envFilePath, key) != null);
     }
 
     /**
@@ -172,30 +179,34 @@ public class Environment {
             log("Key cannot be null or empty", LogLevel.ERROR);
             return;
         }
-
-        variableCache.remove(key);
-        Map<String, Object> currentVars = JsonHelper.getNestedJsonData(envFilePath);
-        if (currentVars != null) {
-            currentVars.remove(key);
-            // Convert Map<String, Object> to Map<String, String>
-            Map<String, String> stringVars = new HashMap<>();
-            for (Map.Entry<String, Object> entry : currentVars.entrySet()) {
-                stringVars.put(entry.getKey(), String.valueOf(entry.getValue()));
+        File envFile = new File(envFilePath);
+        withFileLock("rw", envFile, () -> {
+            Map<String, Object> currentVars = JsonHelper.getNestedJsonData(envFilePath);
+            if (currentVars != null) {
+                currentVars.remove(key);
+                Map<String, String> stringVars = new HashMap<>();
+                for (Map.Entry<String, Object> entry : currentVars.entrySet()) {
+                    stringVars.put(entry.getKey(), String.valueOf(entry.getValue()));
+                }
+                List<Map<String, String>> varsList = new ArrayList<>();
+                varsList.add(stringVars);
+                JsonHelper.setJsonData(envFilePath, varsList);
+                log("Variable removed successfully: " + key, LogLevel.INFO_GREEN);
             }
-            List<Map<String, String>> varsList = new ArrayList<>();
-            varsList.add(stringVars);
-            JsonHelper.setJsonData(envFilePath, varsList);
-            log("Variable removed successfully: " + key, LogLevel.INFO_GREEN);
-        }
+            return null;
+        });
     }
 
     /**
      * Clears all values
      */
     public void clear() {
-        variableCache.clear();
-        List<Map<String, String>> emptyList = new ArrayList<>();
-        JsonHelper.setJsonData(envFilePath, emptyList);
+        File envFile = new File(envFilePath);
+        withFileLock("rw", envFile, () -> {
+            List<Map<String, String>> emptyList = new ArrayList<>();
+            JsonHelper.setJsonData(envFilePath, emptyList);
+            return null;
+        });
         log("All variables cleared from environment: " + name, LogLevel.INFO_GREEN);
     }
 
@@ -203,28 +214,13 @@ public class Environment {
      * Gets all keys
      */
     public List<String> keys() {
-        Set<String> allKeys = new HashSet<>(variableCache.keySet());
-        
-        Map<String, Object> fileVars = JsonHelper.getNestedJsonData(envFilePath);
+        File envFile = new File(envFilePath);
+        Map<String, Object> fileVars = withFileLock("r", envFile, () -> JsonHelper.getNestedJsonData(envFilePath));
+        Set<String> allKeys = new HashSet<>();
         if (fileVars != null) {
             allKeys.addAll(fileVars.keySet());
         }
-        
         return new ArrayList<>(allKeys);
-    }
-
-    /**
-     * Refreshes the cache
-     */
-    public void refresh() {
-        variableCache.clear();
-        Map<String, Object> fileVars = JsonHelper.getNestedJsonData(envFilePath);
-        if (fileVars != null) {
-            for (Map.Entry<String, Object> entry : fileVars.entrySet()) {
-                variableCache.put(entry.getKey(), entry.getValue().toString());
-            }
-        }
-        log("Cache refreshed for environment: " + name, LogLevel.INFO_GREEN);
     }
 
     /**
