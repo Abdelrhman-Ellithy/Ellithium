@@ -14,11 +14,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class for performing various PDF operations such as reading, writing, merging, and encryption.
  */
 public class PDFHelper {
+
+    private static final ConcurrentHashMap<String, Object> fileLocks = new ConcurrentHashMap<>();
+    private static Object getFileLock(String filePath) {
+        return fileLocks.computeIfAbsent(filePath, k -> new Object());
+    }
 
     /**
      * Reads text content from a PDF file.
@@ -31,16 +37,17 @@ public class PDFHelper {
             Reporter.log("File does not exist: ", LogLevel.ERROR, filePath);
             return "";
         }
-
-        try (PDDocument document = PDDocument.load(file)) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            String textContent = stripper.getText(document);
-            Reporter.log("Successfully read PDF file: ", LogLevel.INFO_GREEN, filePath);
-            return textContent;
-        } catch (IOException e) {
-            Reporter.log("Failed to read PDF file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
-            return "";
+        synchronized (getFileLock(filePath)) {
+            try (PDDocument document = PDDocument.load(file)) {
+                PDFTextStripper stripper = new PDFTextStripper();
+                String textContent = stripper.getText(document);
+                Reporter.log("Successfully read PDF file: ", LogLevel.INFO_GREEN, filePath);
+                return textContent;
+            } catch (IOException e) {
+                Reporter.log("Failed to read PDF file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+                return "";
+            }
         }
     }
 
@@ -51,18 +58,68 @@ public class PDFHelper {
      */
     public static void writePdf(String filePath, List<String> content) {
         File file = new File(filePath);
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage();
-            document.addPage(page);
-            float yPosition = 700;
-            PDPageContentStream contentStream = null;
+        synchronized (getFileLock(filePath)) {
+            try (PDDocument document = new PDDocument()) {
+                PDPage page = new PDPage();
+                document.addPage(page);
+                float yPosition = 700;
+                PDPageContentStream contentStream = null;
+                try {
+                    contentStream = new PDPageContentStream(document, page);
+                    contentStream.beginText();
+                    contentStream.setFont(PDType1Font.HELVETICA, 12);
+                    contentStream.newLineAtOffset(100, yPosition);
+                    for (String line : content) {
+                        if (yPosition < 100) {
+                            contentStream.endText();
+                            contentStream.close();
+                            page = new PDPage();
+                            document.addPage(page);
+                            contentStream = new PDPageContentStream(document, page);
+                            contentStream.beginText();
+                            contentStream.setFont(PDType1Font.HELVETICA, 12);
+                            yPosition = 700;
+                            contentStream.newLineAtOffset(100, yPosition);
+                        }
+                        contentStream.showText(line);
+                        yPosition -= 15;
+                        contentStream.newLineAtOffset(0, -15);
+                    }
+                    contentStream.endText();
+                } finally {
+                    if (contentStream != null) {
+                        contentStream.close();
+                    }
+                }
+                document.save(file);
+                Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to write PDF file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            }
+        }
+    }
 
-            try {
-                contentStream = new PDPageContentStream(document, page);
+    /**
+     * Appends text content to an existing PDF file.
+     * @param filePath the PDF file path.
+     * @param content list of text lines to append.
+     */
+    public static void appendToPdf(String filePath, List<String> content) {
+        File file = new File(filePath);
+        synchronized (getFileLock(filePath)) {
+            try (PDDocument document = PDDocument.load(file)) {
+                PDPage page = document.getPage(document.getNumberOfPages() - 1);
+                float yPosition = findLastYPosition(page);
+                PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
                 contentStream.beginText();
                 contentStream.setFont(PDType1Font.HELVETICA, 12);
+                if (yPosition < 100) {
+                    page = new PDPage();
+                    document.addPage(page);
+                    yPosition = 700;
+                }
                 contentStream.newLineAtOffset(100, yPosition);
-
                 for (String line : content) {
                     if (yPosition < 100) {
                         contentStream.endText();
@@ -79,69 +136,14 @@ public class PDFHelper {
                     yPosition -= 15;
                     contentStream.newLineAtOffset(0, -15);
                 }
-
                 contentStream.endText();
-            } finally {
-                if (contentStream != null) {
-                    contentStream.close();
-                }
+                contentStream.close();
+                document.save(file);
+                Reporter.log("Successfully appended content to PDF file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to append to PDF file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
             }
-            document.save(file);
-            Reporter.log("Successfully wrote content to PDF file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            Reporter.log("Failed to write PDF file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
-        }
-    }
-
-    /**
-     * Appends text content to an existing PDF file.
-     * @param filePath the PDF file path.
-     * @param content list of text lines to append.
-     */
-    public static void appendToPdf(String filePath, List<String> content) {
-        File file = new File(filePath);
-        try (PDDocument document = PDDocument.load(file)) {
-            PDPage page = document.getPage(document.getNumberOfPages() - 1);
-            
-            float yPosition = findLastYPosition(page);
-            
-            PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
-            contentStream.beginText();
-            contentStream.setFont(PDType1Font.HELVETICA, 12);
-            
-            if (yPosition < 100) {
-                page = new PDPage();
-                document.addPage(page);
-                yPosition = 700;
-            }
-            
-            contentStream.newLineAtOffset(100, yPosition);
-
-            for (String line : content) {
-                if (yPosition < 100) {
-                    contentStream.endText();
-                    contentStream.close();
-                    page = new PDPage();
-                    document.addPage(page);
-                    contentStream = new PDPageContentStream(document, page);
-                    contentStream.beginText();
-                    contentStream.setFont(PDType1Font.HELVETICA, 12);
-                    yPosition = 700;
-                    contentStream.newLineAtOffset(100, yPosition);
-                }
-                contentStream.showText(line);
-                yPosition -= 15;
-                contentStream.newLineAtOffset(0, -15);
-            }
-            
-            contentStream.endText();
-            contentStream.close();
-            document.save(file);
-            Reporter.log("Successfully appended content to PDF file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            Reporter.log("Failed to append to PDF file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
     }
 
