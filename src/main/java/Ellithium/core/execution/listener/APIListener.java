@@ -112,8 +112,7 @@ public class APIListener implements Filter {
             for (Map.Entry<String, String> entry : cookieMap.entrySet()) {
                 json.put(entry.getKey(), entry.getValue());
             }
-        } else if (cookies instanceof Cookies) {
-            Cookies cookieObj = (Cookies) cookies;
+        } else if (cookies instanceof Cookies cookieObj) {
             if (cookieObj.asList().isEmpty()) return "No Cookies";
             for (Cookie cookie : cookieObj.asList()) {
                 json.put(cookie.getName(), cookie.getValue());
