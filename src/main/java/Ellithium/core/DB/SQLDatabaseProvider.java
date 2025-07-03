@@ -152,22 +152,25 @@ public class SQLDatabaseProvider implements AutoCloseable {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
 
+        Properties mergedProps = new Properties();
+
         // SQLite-specific configurations need different pool settings
         if (dbType == SQLDBType.SQLITE) {
             config.setMaximumPoolSize(1);
             config.setMinimumIdle(1);
-            config.setConnectionTimeout(5000); // Lower timeout for SQLite
+            config.setConnectionTimeout(5000);
             config.setIdleTimeout(300000);     // 5 minutes
             config.setMaxLifetime(600000);     // 10 minutes
             config.setAutoCommit(true);        // Important for SQLite
             Properties sqliteProps = new Properties();
             sqliteProps.setProperty("foreign_keys", "ON");
             sqliteProps.setProperty("journal_mode", "WAL");
-            sqliteProps.setProperty("synchronous", "NORMAL"); // Better performance
-            sqliteProps.setProperty("busy_timeout", "10000"); // 10 seconds
-            config.setDataSourceProperties(sqliteProps);
+            sqliteProps.setProperty("synchronous", "NORMAL");
+            sqliteProps.setProperty("busy_timeout", "10000");
+            mergedProps.putAll(sqliteProps);
         } else {
-            // Default pool settings for other databases
+            config.setUsername(userName);
+            config.setPassword(password);
             config.setMaximumPoolSize(10);
             config.setMinimumIdle(5);
             config.setConnectionTimeout(30000);
@@ -177,11 +180,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
 
         config.setValidationTimeout(5000);
         config.setLeakDetectionThreshold(60000);
-
-        // Set database-specific properties
         Properties dbProps = dbTypeProperties.get(dbType);
         if (dbProps != null) {
-            config.setDataSourceProperties(dbProps);
+            mergedProps.putAll(dbProps);
+        }
+        if (!mergedProps.isEmpty()) {
+            config.setDataSourceProperties(mergedProps);
         }
 
         config.setConnectionTestQuery(getValidationQuery(dbType));
@@ -194,21 +198,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @return SQL query string for validation
      */
     private String getValidationQuery(SQLDBType dbType) {
-        switch (dbType) {
-            case MY_SQL:
-            case POSTGRES_SQL:
-            case SQLITE:
-                return "SELECT 1";
-            case SQL_SERVER:
-                return "SELECT 1";
-            case ORACLE_SID:
-            case ORACLE_SERVICE_NAME:
-                return "SELECT 1 FROM DUAL";
-            case IBM_DB2:
-                return "SELECT 1 FROM SYSIBM.SYSDUMMY1";
-            default:
-                return "SELECT 1";
-        }
+        return switch (dbType) {
+            case ORACLE_SID, ORACLE_SERVICE_NAME -> "SELECT 1 FROM DUAL";
+            case IBM_DB2 -> "SELECT 1 FROM SYSIBM.SYSDUMMY1";
+            default -> "SELECT 1";
+        };
     }
 
     /**
@@ -231,11 +225,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public void commitTransaction() throws SQLException {
         Connection conn = transactionConnection.get();
         if (conn != null) {
-            try {
+            try (conn) {
                 conn.commit();
                 Reporter.log("Transaction committed successfully.", LogLevel.INFO_BLUE);
             } finally {
-                conn.close();
                 transactionConnection.remove();
             }
         }
@@ -248,11 +241,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public void rollbackTransaction() throws SQLException {
         Connection conn = transactionConnection.get();
         if (conn != null) {
-            try {
+            try (conn) {
                 conn.rollback();
                 Reporter.log("Transaction rolled back.", LogLevel.INFO_BLUE);
             } finally {
-                conn.close();
                 transactionConnection.remove();
             }
         }
@@ -330,24 +322,16 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @return Modified query with pagination
      */
     public String buildPaginatedQuery(String baseQuery, int page, int pageSize, SQLDBType dbType) {
-        switch (dbType) {
-            case MY_SQL:
-            case SQLITE:
-                return baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
-            case POSTGRES_SQL:
-                return baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
-            case SQL_SERVER:
-                return "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" +
-                        baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " +
-                        (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
-            case ORACLE_SID:
-            case ORACLE_SERVICE_NAME:
-                return "SELECT * FROM (SELECT a.*, ROWNUM rnum FROM (" + baseQuery +
-                        ") a WHERE ROWNUM <= " + ((page + 1) * pageSize) +
-                        ") WHERE rnum > " + (page * pageSize);
-            default:
-                throw new UnsupportedOperationException("Pagination not supported for database type: " + dbType);
-        }
+        return switch (dbType) {
+            case MY_SQL, SQLITE, POSTGRES_SQL -> baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
+            case SQL_SERVER -> "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" +
+                    baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " +
+                    (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
+            case ORACLE_SID, ORACLE_SERVICE_NAME -> "SELECT * FROM (SELECT a.*, ROWNUM rnum FROM (" + baseQuery +
+                    ") a WHERE ROWNUM <= " + ((page + 1) * pageSize) +
+                    ") WHERE rnum > " + (page * pageSize);
+            default -> throw new UnsupportedOperationException("Pagination not supported for database type: " + dbType);
+        };
     }
 
     /**
@@ -475,7 +459,9 @@ public class SQLDatabaseProvider implements AutoCloseable {
                     columnNames.add(columns.getString("COLUMN_NAME"));
                 }
             } catch (SQLException e) {
-                // Handle exception
+                Reporter.log("Failed to retrieve column names for table: " + tableName, LogLevel.ERROR);
+                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
             }
             return columnNames;
         });
@@ -490,14 +476,13 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public int getRowCount(String tableName) {
         return rowCountCache.get(tableName, key -> {
             int rowCount = 0;
-            String query = "SELECT COUNT(*) FROM ?";
+            // Table name is already validated by validateTableName
+            String query = "SELECT COUNT(*) FROM " + tableName;
             try (Connection connection = dataSource.getConnection();
-                 PreparedStatement stmt = connection.prepareStatement(query)) {
-                stmt.setString(1, tableName);
-                try (ResultSet resultSet = stmt.executeQuery()) {
-                    if (resultSet.next()) {
-                        rowCount = resultSet.getInt(1);
-                    }
+                 Statement stmt = connection.createStatement();
+                 ResultSet resultSet = stmt.executeQuery(query)) {
+                if (resultSet.next()) {
+                    rowCount = resultSet.getInt(1);
                 }
                 Reporter.log("Row count for table " + tableName + ": " + rowCount, LogLevel.INFO_BLUE);
             } catch (SQLException e) {
@@ -610,7 +595,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
                 int[] batchResults = statement.executeBatch();
                 connection.commit();
                 for (int rows : batchResults) {
-                    totalRowsAffected += rows > 0 ? rows : 0;
+                    totalRowsAffected += Math.max(rows, 0);
                 }
             } catch (SQLException e) {
                 connection.rollback();
@@ -684,18 +669,16 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public boolean executeUpdate(String sql) {
         try (Connection connection = dataSource.getConnection()) {
             if (dbType == SQLDBType.SQLITE) {
-                int retries = 5;
+                byte retries = 5;
                 while (retries > 0) {
                     try (Statement statement = connection.createStatement()) {
                         int result = statement.executeUpdate(sql);
                         Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
                         return result > 0;
                     } catch (SQLException e) {
-                        if (e.getMessage().contains("database is locked") && --retries > 0) {
+                        if (e.getMessage().contains("database is locked") && (--retries) > 0) {
                             Thread.sleep(1000);
-                            continue;
                         }
-                        throw e;
                     }
                 }
             }
@@ -758,23 +741,20 @@ public class SQLDatabaseProvider implements AutoCloseable {
         if (dbType == null) {
             throw new IllegalArgumentException("Database type cannot be null");
         }
-
-        switch (dbType) {
-            case SQLITE:
-                if (params[0] == null || params[0].trim().isEmpty()) {
-                    throw new IllegalArgumentException("SQLite database path cannot be empty");
-                }
-                break;
-            default:
-                if (params[2] == null || params[2].trim().isEmpty()) { // serverIP
-                    throw new IllegalArgumentException("Server address cannot be empty");
-                }
-                if (params[3] != null) {
-                    validatePort(params[3]);
-                }
-                if (params[4] == null || params[4].trim().isEmpty()) { // database name
-                    throw new IllegalArgumentException("Database name cannot be empty");
-                }
+        if (dbType == SQLDBType.SQLITE) {
+            if (params[0] == null || params[0].trim().isEmpty()) {
+                throw new IllegalArgumentException("SQLite database path cannot be empty");
+            }
+        } else {
+            if (params[2] == null || params[2].trim().isEmpty()) { // serverIP
+                throw new IllegalArgumentException("Server address cannot be empty");
+            }
+            if (params[3] != null) {
+                validatePort(params[3]);
+            }
+            if (params[4] == null || params[4].trim().isEmpty()) { // database name
+                throw new IllegalArgumentException("Database name cannot be empty");
+            }
         }
     }
 
