@@ -16,7 +16,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run Helper Tests
-        run: mvn clean install -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7 "-Dgpg.skip=true"
+        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-helper-test-results
@@ -30,7 +30,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run Database Tests
-        run: mvn clean install -Dtest="DB.**.*" "-Dgpg.skip=true"
+        run: mvn test -Dtest="DB.**.*"
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-database-test-results
@@ -44,7 +44,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run API Tests
-        run: mvn clean install -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DforkCount=2 -DreuseForks=true -DthreadCount=2 -DdataProviderThreadCount=2 "-Dgpg.skip=true"
+        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DforkCount=2 -DreuseForks=true -DthreadCount=2 -DdataProviderThreadCount=2
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-api-test-results
@@ -58,7 +58,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
-        run: mvn clean install -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4 "-Dgpg.skip=true"
+        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-basic-test-results
@@ -72,7 +72,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI Actions Tests
-        run: mvn clean install -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4 "-Dgpg.skip=true"
+        run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-actions-test-results
@@ -86,7 +86,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI BDD Tests
-        run: mvn clean install -Dtest="TestRunner" -Dsurefire.parallel=methods -DforkCount=10 -DreuseForks=true -DthreadCount=10 -DdataProviderThreadCount=10 "-Dgpg.skip=true"
+        run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods -DforkCount=10 -DreuseForks=true -DthreadCount=10 -DdataProviderThreadCount=10
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-bdd-test-results
