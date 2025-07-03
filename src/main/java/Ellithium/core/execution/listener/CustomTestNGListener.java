@@ -15,6 +15,8 @@ import org.testng.annotations.Listeners;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Objects;
+
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.FAILURE;
 @Listeners({AllureTestNg.class})
@@ -93,7 +95,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             String driverName=ConfigContext.getValue(ConfigContext.getDriverType());
             File screenShot=GeneralHandler.testFailed(driverName,testResult.getName());
                 String description=driverName.toUpperCase() + "-" + driverName +" "+ testResult.getName();
-                Reporter.attachScreenshotToReport(screenShot, screenShot.getName(), description);
+                Reporter.attachScreenshotToReport(screenShot, Objects.requireNonNull(screenShot).getName(), description);
             }
         }
         if (method.isTestMethod()){

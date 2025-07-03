@@ -6,15 +6,12 @@ import static Ellithium.Utilities.helpers.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class StartUpLoader {
-    private static String basePath,
+    private static String
                         testPath,
                         ScreenShotPath,
                         allurePath,
@@ -24,7 +21,6 @@ public class StartUpLoader {
                         checkerFolderPath
     ;
     public static void main(String[] args) throws IOException {
-        basePath=ConfigContext.getBasePropertyFolderPath();
         testPath = "src" + File.separator + "test" + File.separator + "resources" + File.separator + "TestData";
         checkerFilePath=ConfigContext.getCheckerFilePath();
         checkerFolderPath=ConfigContext.getCheckerFolderPath();
@@ -117,7 +113,14 @@ public class StartUpLoader {
     }
     public static void TestOutputSolver(){
         boolean result;
-        String allureReportPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");
+        boolean exists=PropertyHelper.keyExists(allurePath,"allure.report.directory");
+        String allureReportPath;
+        if (exists){
+            allureReportPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");
+        }
+        else{
+            allureReportPath= "Test-Output"+File.separator+"Reports"+File.separator+"Allure"+File.separator+"allure-report";
+        }
         if (!checkFileExists(allureReportPath)) {
             File allureReportDirectory = new File(allureReportPath);
             result=allureReportDirectory.mkdirs();
@@ -125,7 +128,14 @@ public class StartUpLoader {
                 System.err.println("Failed to Automatically create directory: " + allureReportPath+ " Due to IDE Permissions you need to make it manually");
             }
         }
-        String allureResultsPath= PropertyHelper.getDataFromProperties(allurePath,"allure.report.directory");
+        exists=PropertyHelper.keyExists(allurePath,"allure.results.directory");
+        String allureResultsPath;
+        if (exists){
+             allureResultsPath= PropertyHelper.getDataFromProperties(allurePath,"allure.results.directory");
+        }
+        else {
+            allureResultsPath="Test-Output"+File.separator+"Reports"+File.separator+"Allure"+File.separator+"allure-results";
+        }
         if (!checkFileExists(allureResultsPath)) {
             File allureResultsDirectory = new File(allureResultsPath);
             result=allureResultsDirectory.mkdirs();
@@ -183,9 +193,16 @@ public class StartUpLoader {
                 System.err.println(e.getMessage());
             }
         }
-        String logFolderPath = PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.basePath");
+        exists=PropertyHelper.keyExists(ConfigContext.getLogFilePath(), "property.basePath");
+        String logFolderPath;
+        if (exists){
+            logFolderPath = PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.basePath");
+        }
+        else{
+            logFolderPath= "Test-Output"+File.separator+"Logs";
+        }
         String logFilePath = logFolderPath.concat(File.separator)
-                .concat(PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.fileName"));
+                .concat(Objects.requireNonNull(PropertyHelper.getDataFromProperties(ConfigContext.getLogFilePath(), "property.fileName")));
         if (!checkFileExists(logFolderPath)) {
             File logDirectory = new File(logFolderPath);
             result=logDirectory.mkdirs();

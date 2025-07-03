@@ -17,53 +17,68 @@ import org.openqa.selenium.remote.LocalFileDetector;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
-
 import java.net.URL;
-import java.util.Arrays;
+import java.util.List;
+
+import static Ellithium.core.driver.LocalDriverType.*;
+import static Ellithium.core.driver.RemoteDriverType.*;
 
 public class BrowserSetUp {
 
     public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         var capabilities=ConfigContext.getCapabilities();
-        if (driverType.equals(LocalDriverType.Chrome)) {
-            ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            if(capabilities!=null)chromeOptions.merge(capabilities);
-            return new ChromeDriver(chromeOptions);
-        } else if (driverType.equals(LocalDriverType.FireFox)) {
-            FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            if(capabilities!=null)firefoxOptions.merge(capabilities);
-            return new FirefoxDriver(firefoxOptions);
-        } else if (driverType.equals(LocalDriverType.Edge)) {
-            EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            if(capabilities!=null)edgeOptions.merge(capabilities);
-            return new EdgeDriver(edgeOptions);
-        } else if (driverType.equals(LocalDriverType.Safari)) {
-            SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-            if(capabilities!=null)safariOptions.merge(capabilities);
-            return new SafariDriver(safariOptions);
+        switch (driverType) {
+            case Chrome -> {
+                ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                if (capabilities != null) chromeOptions.merge(capabilities);
+                return new ChromeDriver(chromeOptions);
+            }
+            case FireFox -> {
+                FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                if (capabilities != null) firefoxOptions.merge(capabilities);
+                return new FirefoxDriver(firefoxOptions);
+            }
+            case Edge -> {
+                EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                if (capabilities != null) edgeOptions.merge(capabilities);
+                return new EdgeDriver(edgeOptions);
+            }
+            case Safari -> {
+                SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
+                if (capabilities != null) safariOptions.merge(capabilities);
+                return new SafariDriver(safariOptions);
+            }
+            default -> {
+                return null;
+            }
         }
-        return null;
     }
     public static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         RemoteWebDriver driver;
-        if (driverType.equals(RemoteDriverType.REMOTE_Chrome)) {
-            ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            capabilities.merge(chromeOptions);
-            driver = new RemoteWebDriver(remoteAddress, capabilities);
-        } else if (driverType.equals(RemoteDriverType.REMOTE_FireFox)) {
-            FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            capabilities.merge(firefoxOptions);
-            driver = new RemoteWebDriver(remoteAddress, capabilities);
-        } else if (driverType.equals(RemoteDriverType.REMOTE_Edge)) {
-            EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-            capabilities.merge(edgeOptions);
-            driver = new RemoteWebDriver(remoteAddress, edgeOptions);
-        } else if (driverType.equals(RemoteDriverType.REMOTE_Safari)) {
-            SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-            capabilities.merge(safariOptions);
-            driver = new RemoteWebDriver(remoteAddress, safariOptions);
-        } else {
-            return null;
+        switch (driverType) {
+            case REMOTE_Chrome -> {
+                ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                capabilities.merge(chromeOptions);
+                driver = new RemoteWebDriver(remoteAddress, capabilities);
+            }
+            case REMOTE_FireFox -> {
+                FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                capabilities.merge(firefoxOptions);
+                driver = new RemoteWebDriver(remoteAddress, capabilities);
+            }
+            case REMOTE_Edge -> {
+                EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
+                capabilities.merge(edgeOptions);
+                driver = new RemoteWebDriver(remoteAddress, edgeOptions);
+            }
+            case REMOTE_Safari -> {
+                SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
+                capabilities.merge(safariOptions);
+                driver = new RemoteWebDriver(remoteAddress, safariOptions);
+            }
+            default -> {
+                return null;
+            }
         }
         driver.setFileDetector(new LocalFileDetector());
         return driver;
@@ -144,7 +159,7 @@ public class BrowserSetUp {
 
         );
         chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
-        chromeOptions.setExperimentalOption("excludeSwitches", Arrays.asList("enable-automation"));
+        chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
         return chromeOptions;
     }

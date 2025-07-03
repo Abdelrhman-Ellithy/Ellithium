@@ -1,10 +1,5 @@
 package Ellithium.core.base;
-import Ellithium.config.managment.ConfigContext;
-import Ellithium.core.execution.listener.CucumberListener;
 import Ellithium.core.execution.listener.CustomTestNGListener;
-import Ellithium.config.managment.GeneralHandler;
-import Ellithium.core.logging.LogLevel;
-import Ellithium.core.reporting.Reporter;
 import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
 import io.qameta.allure.testng.AllureTestNg;
