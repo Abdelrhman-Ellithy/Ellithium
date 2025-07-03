@@ -7,8 +7,14 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ExcelHelper {
+
+    private static final ConcurrentHashMap<String, Object> fileLocks = new ConcurrentHashMap<>();
+    private static Object getFileLock(String filePath) {
+        return fileLocks.computeIfAbsent(filePath, k -> new Object());
+    }
 
     /**
      * Reads Excel data from a given file and sheet.
@@ -19,32 +25,34 @@ public class ExcelHelper {
     public static List<Map<String, String>> getExcelData(String filePath, String sheetName) {
         List<Map<String, String>> data = new ArrayList<>();
         Reporter.log("Attempting to read Excel data from file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
-                return data;
-            }
-
-            Iterator<Row> rowIterator = sheet.iterator();
-            if (rowIterator.hasNext()) {
-                Row headerRow = rowIterator.next();
-                List<String> headers = new ArrayList<>();
-                headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
-                while (rowIterator.hasNext()) {
-                    Row row = rowIterator.next();
-                    Map<String, String> recordMap = new HashMap<>();
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                        recordMap.put(headers.get(i), getCellValueAsString(cell));
-                    }
-                    data.add(recordMap);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
+                    return data;
                 }
+
+                Iterator<Row> rowIterator = sheet.iterator();
+                if (rowIterator.hasNext()) {
+                    Row headerRow = rowIterator.next();
+                    List<String> headers = new ArrayList<>();
+                    headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
+                    while (rowIterator.hasNext()) {
+                        Row row = rowIterator.next();
+                        Map<String, String> recordMap = new HashMap<>();
+                        for (int i = 0; i < headers.size(); i++) {
+                            Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                            recordMap.put(headers.get(i), getCellValueAsString(cell));
+                        }
+                        data.add(recordMap);
+                    }
+                }
+                Reporter.log("Successfully read Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+            } catch (IOException e) {
+                Reporter.log("Failed to read Excel data from file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
             }
-            Reporter.log("Successfully read Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        } catch (IOException e) {
-            Reporter.log("Failed to read Excel data from file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         }
         return data;
     }
@@ -59,53 +67,55 @@ public class ExcelHelper {
         Reporter.log("Attempting to write data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath );
         Workbook workbook = null;
-        try {
-            if (excelFile.exists()) {
-                try (FileInputStream fis = new FileInputStream(excelFile)) {
-                    workbook = new XSSFWorkbook(fis);
+        synchronized (getFileLock(filePath)) {
+            try {
+                if (excelFile.exists()) {
+                    try (FileInputStream fis = new FileInputStream(excelFile)) {
+                        workbook = new XSSFWorkbook(fis);
+                    }
+                } else {
+                    workbook = new XSSFWorkbook();
+                    Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
                 }
-            } else {
-                workbook = new XSSFWorkbook();
-                Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-            }
 
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                sheet = workbook.createSheet(sheetName);
-            }
-
-            int rowNum = sheet.getLastRowNum() + 1;
-
-            if (rowNum == 0 && !data.isEmpty()) {
-                Row headerRow = sheet.createRow(rowNum++);
-                int colNum = 0;
-                for (String key : data.get(0).keySet()) {
-                    Cell cell = headerRow.createCell(colNum++);
-                    cell.setCellValue(key);
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    sheet = workbook.createSheet(sheetName);
                 }
-            }
 
-            for (Map<String, String> record : data) {
-                Row row = sheet.createRow(rowNum++);
-                int colNum = 0;
-                for (String value : record.values()) {
-                    Cell cell = row.createCell(colNum++);
-                    cell.setCellValue(value);
+                int rowNum = sheet.getLastRowNum() + 1;
+
+                if (rowNum == 0 && !data.isEmpty()) {
+                    Row headerRow = sheet.createRow(rowNum++);
+                    int colNum = 0;
+                    for (String key : data.get(0).keySet()) {
+                        Cell cell = headerRow.createCell(colNum++);
+                        cell.setCellValue(key);
+                    }
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(excelFile)) {
-                workbook.write(fos);
-                Reporter.log("Successfully wrote data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-            }
-        } catch (IOException e) {
-            Reporter.log("Failed to write data to Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
-        } finally {
-            if (workbook != null) {
-                try {
-                    workbook.close();
-                } catch (IOException e) {
-                    Reporter.log("Failed to close workbook: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+                for (Map<String, String> record : data) {
+                    Row row = sheet.createRow(rowNum++);
+                    int colNum = 0;
+                    for (String value : record.values()) {
+                        Cell cell = row.createCell(colNum++);
+                        cell.setCellValue(value);
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+                    workbook.write(fos);
+                    Reporter.log("Successfully wrote data to Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+                }
+            } catch (IOException e) {
+                Reporter.log("Failed to write data to Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+            } finally {
+                if (workbook != null) {
+                    try {
+                        workbook.close();
+                    } catch (IOException e) {
+                        Reporter.log("Failed to close workbook: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+                    }
                 }
             }
         }
@@ -246,20 +256,22 @@ public class ExcelHelper {
     public static List<String> readColumn(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
-                return columnData;
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
+                    return columnData;
+                }
+                sheet.forEach(row -> {
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    columnData.add(getCellValueAsString(cell));
+                });
+                Reporter.log("Successfully read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+            } catch (IOException e) {
+                Reporter.log("Failed to read column from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
             }
-            sheet.forEach(row -> {
-                Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                columnData.add(getCellValueAsString(cell));
-            });
-            Reporter.log("Successfully read column from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        } catch (IOException e) {
-            Reporter.log("Failed to read column from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         }
         return columnData;
     }
@@ -275,21 +287,23 @@ public class ExcelHelper {
     public static String readCell(String filePath, String sheetName, int rowIndex, int columnIndex) {
         String cellValue = "";
         Reporter.log("Attempting to read cell from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
-                return cellValue;
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
+                    return cellValue;
+                }
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    cellValue = getCellValueAsString(cell);
+                }
+                Reporter.log("Successfully read cell from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+            } catch (IOException e) {
+                Reporter.log("Failed to read cell from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
             }
-            Row row = sheet.getRow(rowIndex);
-            if (row != null) {
-                Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                cellValue = getCellValueAsString(cell);
-            }
-            Reporter.log("Successfully read cell from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        } catch (IOException e) {
-            Reporter.log("Failed to read cell from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         }
         return cellValue;
     }
@@ -304,25 +318,27 @@ public class ExcelHelper {
     public static Map<String, String> readRow(String filePath, String sheetName, int rowIndex) {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
-                return rowData;
-            }
-            Row headerRow = sheet.getRow(0);
-            Row dataRow = sheet.getRow(rowIndex);
-            if (headerRow != null && dataRow != null) {
-                for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-                    String header = getCellValueAsString(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
-                    String value = getCellValueAsString(dataRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
-                    rowData.put(header, value);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName, LogLevel.ERROR, " does not exist in " + filePath);
+                    return rowData;
                 }
+                Row headerRow = sheet.getRow(0);
+                Row dataRow = sheet.getRow(rowIndex);
+                if (headerRow != null && dataRow != null) {
+                    for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                        String header = getCellValueAsString(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+                        String value = getCellValueAsString(dataRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+                        rowData.put(header, value);
+                    }
+                }
+                Reporter.log("Successfully read row from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+            } catch (IOException e) {
+                Reporter.log("Failed to read row from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
             }
-            Reporter.log("Successfully read row from Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-        } catch (IOException e) {
-            Reporter.log("Failed to read row from Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
         }
         return rowData;
     }
@@ -339,38 +355,40 @@ public class ExcelHelper {
         Reporter.log("Attempting to write to a cell in Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
         File excelFile = new File(filePath );
         Workbook workbook = null;
-        try {
-            if (excelFile.exists()) {
-                try (FileInputStream fis = new FileInputStream(excelFile)) {
-                    workbook = new XSSFWorkbook(fis);
+        synchronized (getFileLock(filePath)) {
+            try {
+                if (excelFile.exists()) {
+                    try (FileInputStream fis = new FileInputStream(excelFile)) {
+                        workbook = new XSSFWorkbook(fis);
+                    }
+                } else {
+                    workbook = new XSSFWorkbook();
+                    Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath);
                 }
-            } else {
-                workbook = new XSSFWorkbook();
-                Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath);
-            }
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                sheet = workbook.createSheet(sheetName);
-            }
-            Row row = sheet.getRow(rowIndex);
-            if (row == null) {
-                row = sheet.createRow(rowIndex);
-            }
-            Cell cell = row.createCell(columnIndex);
-            cell.setCellValue(value);
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    sheet = workbook.createSheet(sheetName);
+                }
+                Row row = sheet.getRow(rowIndex);
+                if (row == null) {
+                    row = sheet.createRow(rowIndex);
+                }
+                Cell cell = row.createCell(columnIndex);
+                cell.setCellValue(value);
 
-            try (FileOutputStream fos = new FileOutputStream(excelFile)) {
-                workbook.write(fos);
-                Reporter.log("Successfully wrote to cell in Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
-            }
-        } catch (IOException e) {
-            Reporter.log("Failed to write to cell in Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
-        } finally {
-            if (workbook != null) {
-                try {
-                    workbook.close();
-                } catch (IOException e) {
-                    Reporter.log("Failed to close workbook: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+                try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+                    workbook.write(fos);
+                    Reporter.log("Successfully wrote to cell in Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
+                }
+            } catch (IOException e) {
+                Reporter.log("Failed to write to cell in Excel file: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+            } finally {
+                if (workbook != null) {
+                    try {
+                        workbook.close();
+                    } catch (IOException e) {
+                        Reporter.log("Failed to close workbook: ", LogLevel.ERROR, filePath + ", sheet: " + sheetName);
+                    }
                 }
             }
         }

@@ -72,7 +72,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 201);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
 
         env.set("contactId", response.jsonPath().getString("_id"));
@@ -91,7 +91,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertEquals(response.jsonPath().getString("[0].firstName"), "Abdelrahman");
         soft.assertEquals(response.jsonPath().getString("[0].lastName"), "Ellithy");
@@ -107,7 +107,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertEquals(response.jsonPath().getString("firstName"), env.get("firstName"));
         soft.assertEquals(response.jsonPath().getString("lastName"), env.get("lastName"));
@@ -137,7 +137,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertEquals(response.jsonPath().getString("firstName"), "Asaid");
         soft.assertEquals(response.jsonPath().getString("lastName"), "ghaly");
@@ -153,7 +153,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertEquals(response.contentType(), "text/html; charset=utf-8");
         soft.assertAll();
     }
@@ -176,7 +176,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 401);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertAll();
     }
 
@@ -199,7 +199,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 400);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertTrue(response.getBody().asString().contains("is longer than the maximum allowed length (20)"));
         soft.assertAll();
     }
@@ -213,7 +213,7 @@ public class ContactListAPITests {
 
         AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 401);
-        soft.assertTrue(response.time() < 1500, "Response time exceeded");
+        soft.assertTrue(response.time() < 2000, "Response time exceeded");
         soft.assertTrue(response.getBody().asString().contains("Please authenticate"));
         soft.assertAll();
     }

@@ -4,8 +4,14 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.jar.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JarExtractor {
+
+    private static final ConcurrentHashMap<String, Object> fileLocks = new ConcurrentHashMap<>();
+    private static Object getFileLock(String filePath) {
+        return fileLocks.computeIfAbsent(filePath, k -> new Object());
+    }
 
     /**
      * Extracts a folder from a JAR file to the target directory.
