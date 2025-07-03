@@ -15,8 +15,15 @@ import java.util.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JsonHelper {
+
+    // In-memory lock registry for file paths
+    private static final ConcurrentHashMap<String, Object> fileLocks = new ConcurrentHashMap<>();
+    private static Object getFileLock(String filePath) {
+        return fileLocks.computeIfAbsent(filePath, k -> new Object());
+    }
 
     /**
      * Reads JSON data and returns it as a list of maps.
@@ -34,28 +41,30 @@ public class JsonHelper {
 
         log("Attempting to read JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement jsonElement = JsonParser.parseReader(reader);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement jsonElement = JsonParser.parseReader(reader);
 
-            if (jsonElement.isJsonArray()) {
-                // Handle JSON array
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement element : jsonArray) {
-                    if (element.isJsonObject()) {
-                        data.add(convertJsonObjectToMap(element.getAsJsonObject()));
+                if (jsonElement.isJsonArray()) {
+                    // Handle JSON array
+                    JsonArray jsonArray = jsonElement.getAsJsonArray();
+                    for (JsonElement element : jsonArray) {
+                        if (element.isJsonObject()) {
+                            data.add(convertJsonObjectToMap(element.getAsJsonObject()));
+                        }
                     }
+                } else if (jsonElement.isJsonObject()) {
+                    // Handle single JSON object
+                    data.add(convertJsonObjectToMap(jsonElement.getAsJsonObject()));
+                } else {
+                    Reporter.log("JSON data in file is neither an array nor an object", LogLevel.ERROR, filePath);
                 }
-            } else if (jsonElement.isJsonObject()) {
-                // Handle single JSON object
-                data.add(convertJsonObjectToMap(jsonElement.getAsJsonObject()));
-            } else {
-                Reporter.log("JSON data in file is neither an array nor an object", LogLevel.ERROR, filePath);
-            }
 
-            log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException | JsonSyntaxException e) {
-            log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+                log("Successfully read JSON file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException | JsonSyntaxException e) {
+                log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
         return data;
     }
@@ -88,43 +97,45 @@ public class JsonHelper {
         log("Attempting to write JSON data to file: ", LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
         
-        if (!jsonFile.exists()) {
-            try {
-                if (jsonFile.createNewFile()) {
-                    log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
+        synchronized (getFileLock(filePath)) {
+            if (!jsonFile.exists()) {
+                try {
+                    if (jsonFile.createNewFile()) {
+                        log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
+                    }
+                } catch (IOException e) {
+                    log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
+                    Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.toString());
                 }
+            }
+
+            // Read existing content, ensuring it's a JSON array; otherwise, initialize a new array.
+            JsonArray jsonArray = new JsonArray();
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement existingElement = JsonParser.parseReader(reader);
+                if (existingElement != null && existingElement.isJsonArray()) {
+                    jsonArray = existingElement.getAsJsonArray();
+                }
+            } catch (Exception ex) {
+                // ...ignore errors and use new jsonArray...
+            }
+
+            // Append new data to existing array.
+            for (Map<String, String> record : data) {
+                JsonObject jsonObject = new JsonObject();
+                for (Map.Entry<String, String> entry : record.entrySet()) {
+                    jsonObject.add(entry.getKey(), new JsonPrimitive(entry.getValue()));
+                }
+                jsonArray.add(jsonObject);
+            }
+
+            try (FileWriter writer = new FileWriter(jsonFile)) {
+                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
+                log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
             } catch (IOException e) {
-                log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+                log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.toString());
             }
-        }
-
-        // Read existing content, ensuring it's a JSON array; otherwise, initialize a new array.
-        JsonArray jsonArray = new JsonArray();
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement existingElement = JsonParser.parseReader(reader);
-            if (existingElement != null && existingElement.isJsonArray()) {
-                jsonArray = existingElement.getAsJsonArray();
-            }
-        } catch (Exception ex) {
-            // ...ignore errors and use new jsonArray...
-        }
-
-        // Append new data to existing array.
-        for (Map<String, String> record : data) {
-            JsonObject jsonObject = new JsonObject();
-            for (Map.Entry<String, String> entry : record.entrySet()) {
-                jsonObject.add(entry.getKey(), new JsonPrimitive(entry.getValue()));
-            }
-            jsonArray.add(jsonObject);
-        }
-
-        try (FileWriter writer = new FileWriter(jsonFile)) {
-            writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
-            log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
         }
     }
 
@@ -140,24 +151,26 @@ public class JsonHelper {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
         }
         log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-            log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
-            var value= jsonObject.get(key);
-            if(value!=null) {
-                return value.getAsString();
-            }
-            else {
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
+                log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
+                var value= jsonObject.get(key);
+                if(value!=null) {
+                    return value.getAsString();
+                }
+                else {
+                    return null;
+                }
+            } catch (FileNotFoundException e) {
+                log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause() != null ? e.getCause().toString() : e.toString());
+                return null;
+            } catch (IOException | JsonSyntaxException e) {
+                log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause() != null ? e.getCause().toString() : e.toString());
                 return null;
             }
-        } catch (FileNotFoundException e) {
-            log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
-            return null;
-        } catch (IOException | JsonSyntaxException e) {
-            log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
-            return null;
         }
     }
 
@@ -170,38 +183,39 @@ public class JsonHelper {
     public static void setJsonKeyValue(String filePath, String key, String value) {
         File jsonFile = new File(filePath);
 
-        if (!jsonFile.exists()) {
-            try {
-                if (jsonFile.createNewFile()) {
-                    log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
+        synchronized (getFileLock(filePath)) {
+            if (!jsonFile.exists()) {
+                try {
+                    if (jsonFile.createNewFile()) {
+                        log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
+                    }
+                } catch (IOException e) {
+                    log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
+                    Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause() != null ? e.getCause().toString() : e.toString());
                 }
+            }
+            log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement jsonElement = JsonParser.parseReader(reader);
+
+                // Initialize as empty object if file is empty or not a JSON object
+                if (jsonElement == null || !jsonElement.isJsonObject()) {
+                    jsonElement = new JsonObject();
+                }
+                JsonObject jsonObj = jsonElement.getAsJsonObject();
+                
+                jsonObj.addProperty(key, value);
+
+                try (FileWriter writer = new FileWriter(jsonFile)) {
+                    writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObj));
+                    log("Successfully updated JSON file: ", LogLevel.INFO_GREEN, filePath);
+                }
+
             } catch (IOException e) {
-                log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
+                log("Failed to update JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause() != null ? e.getCause().toString() : e.toString());
             }
         }
-        log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement jsonElement = JsonParser.parseReader(reader);
-
-            // Initialize as empty object if file is empty or not a JSON object
-            if (jsonElement == null || !jsonElement.isJsonObject()) {
-                jsonElement = new JsonObject();
-            }
-            JsonObject jsonObj = jsonElement.getAsJsonObject();
-            
-            jsonObj.addProperty(key, value);
-
-            try (FileWriter writer = new FileWriter(jsonFile)) {
-                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObj));
-                log("Successfully updated JSON file: ", LogLevel.INFO_GREEN, filePath);
-            }
-
-        } catch (IOException e) {
-            log("Failed to update JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ",LogLevel.ERROR,e.getCause().toString());
-        }
-
     }
 
     /**
