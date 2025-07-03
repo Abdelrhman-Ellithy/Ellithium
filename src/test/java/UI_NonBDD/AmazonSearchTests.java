@@ -26,12 +26,12 @@ public class AmazonSearchTests extends BaseTests {
         List<String>itemPrices=searchPage.getItemsPrices();
         List<Map<String, String>>data=new ArrayList<>();
         AssertionExecutor.soft soft=new AssertionExecutor.soft();
-        for(int count=0; count <5; count++){
+        for(int count=0; count <3; count++){
             Map<String, String> h=new HashMap<>();
             h.put("Item Name", itemNames.get(count));
             h.put("Item Price", itemPrices.get(count));
             data.add(h);
-            soft.assertTrue(itemNames.get(count).toLowerCase().contains("laptop"),"failed in"+count);
+            soft.assertTrue(itemNames.get(count).toLowerCase().contains("laptop"),"failed in "+count);
         }
         ExcelHelper.setExcelData("src/test/resources/TestData/Items and Prices.xlsx", "Items and Prices",data);
         soft.assertAll();

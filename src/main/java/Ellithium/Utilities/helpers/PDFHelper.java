@@ -229,7 +229,6 @@ public class PDFHelper {
         File inputFile = new File(inputFilePath);
         try (PDDocument document = PDDocument.load(inputFile)) {
             String baseName = inputFile.getName().replace(".pdf", "");
-
             for (int i = 0; i < document.getNumberOfPages(); i++) {
                 try (PDDocument singlePageDoc = new PDDocument()) {
                     singlePageDoc.addPage(document.getPage(i));
