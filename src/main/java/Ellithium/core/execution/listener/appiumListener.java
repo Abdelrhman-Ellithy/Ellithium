@@ -48,8 +48,7 @@ public class appiumListener implements MethodCallListener {
     }
 
     private String extractScriptName(Object[] args) {
-        if (args.length >= 2 && args[1] instanceof Map) {
-            Map<?, ?> scriptArgs = (Map<?, ?>) args[1];
+        if (args.length >= 2 && args[1] instanceof Map<?, ?> scriptArgs) {
             if (scriptArgs.containsKey("script")) {
                 return scriptArgs.get("script").toString();
             }
@@ -77,16 +76,13 @@ public class appiumListener implements MethodCallListener {
     }
 
     private String extractScriptDetails(Object[] args) {
-        if (args.length >= 2 && args[1] instanceof Map) {
-            Map<?, ?> scriptArgs = (Map<?, ?>) args[1];
-            // Handle mobile: pressKey script
+        if (args.length >= 2 && args[1] instanceof Map<?, ?> scriptArgs) {
             if (scriptArgs.containsKey("script") && "mobile: pressKey".equals(scriptArgs.get("script"))) {
                 if (scriptArgs.containsKey("args")) {
                     Object scriptParams = scriptArgs.get("args");
                     if (scriptParams instanceof List && !((List<?>) scriptParams).isEmpty()) {
                         Object param = ((List<?>) scriptParams).get(0);
-                        if (param instanceof Map) {
-                            Map<?, ?> keyMap = (Map<?, ?>) param;
+                        if (param instanceof Map<?, ?> keyMap) {
                             if (keyMap.containsKey("keycode")) {
                                 int keyCode = ((Number) keyMap.get("keycode")).intValue();
                                 return KEYCODE_MAP.getOrDefault(keyCode, "KEY_" + keyCode);

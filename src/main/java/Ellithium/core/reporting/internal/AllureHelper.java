@@ -20,8 +20,6 @@ import static Ellithium.Utilities.helpers.PropertyHelper.getDataFromProperties;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 public class AllureHelper {
-    private static File allureDirectory;
-    private static File allureBinaryDirectory;
     public static void allureOpen() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
@@ -91,8 +89,8 @@ public class AllureHelper {
     }
     private static String resolveAllureBinaryPath() {
         String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository" + File.separator + "allure-Ellithium";
-        allureDirectory = new File(allurePath);
-        String configFilePath =ConfigContext.getConfigFilePath();
+        File allureDirectory = new File(allurePath);
+        File allureBinaryDirectory;
         if (allureDirectory.exists()) {
             Logger.info(Colors.GREEN + "Allure folder exists at: " + allurePath + Colors.RESET);
             File[] subDirs = allureDirectory.listFiles(File::isDirectory);
@@ -125,7 +123,7 @@ public class AllureHelper {
                 return null;
             }
         }
-        return allureBinaryDirectory != null ? allureBinaryDirectory.getAbsolutePath() + File.separator : null;
+        return allureBinaryDirectory.getAbsolutePath() + File.separator;
     }
 
     public static void deleteAllureResultsDir(){
@@ -150,7 +148,6 @@ public class AllureHelper {
         }
     }
     public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
-        boolean result;
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
         }
@@ -161,7 +158,7 @@ public class AllureHelper {
                 if (entry.getName().startsWith("allure")) {
                     File targetFile = new File(targetDirectory, entry.getName().substring("allure".length()));
                     if (entry.isDirectory()) {
-                        result=targetFile.mkdirs();
+                        targetFile.mkdirs();
                     } else {
                         Files.copy(jar.getInputStream(entry), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         if (entry.getName().endsWith("allure") || entry.getName().endsWith("allure.bat")) {

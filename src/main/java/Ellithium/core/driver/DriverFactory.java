@@ -4,21 +4,12 @@ import Ellithium.core.execution.listener.appiumListener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.execution.listener.seleniumListener;
-import Ellithium.Utilities.helpers.PropertyHelper;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
-import io.qameta.allure.Allure;
-import io.qameta.allure.Step;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.devtools.DevTools;
-import org.openqa.selenium.devtools.v136.log.Log;
-import org.openqa.selenium.devtools.v136.network.Network;
-import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
-import java.util.Optional;
 import static Ellithium.core.driver.MobileDriverType.IOS;
 import static io.appium.java_client.proxy.Helpers.createProxy;
 
@@ -129,32 +120,26 @@ public class DriverFactory {
         return (T) WebDriverThread.get();
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,WebSecurityMode webSecurityMode) {
         return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
         return getNewLocalDriver(driverType,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode, PrivateMode privateMode) {
         return getNewLocalDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
         return getNewLocalDriver(driverType,headlessMode,PrivateMode.False);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T  getNewLocalDriver(LocalDriverType driverType) {
         return getNewLocalDriver(driverType,HeadlessMode.False);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewMobileDriver(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         ConfigContext.setDriverType(driverType);
         ConfigContext.setRemoteAddress(remoteAddress);
@@ -172,27 +157,22 @@ public class DriverFactory {
         return (T)WebDriverThread.get();
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PrivateMode privateMode) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode, PageLoadStrategyMode.Normal);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.False);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False);
     }
@@ -283,17 +263,6 @@ public class DriverFactory {
         } else {
             localDriver = BrowserSetUp.setupLocalDriver(driverType, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         }
-        String loggerExtensiveTraceModeFlag = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "loggerExtensiveTraceMode");
-        if (loggerExtensiveTraceModeFlag.equalsIgnoreCase("true")) {
-            DevTools devTools;
-            if (driverType.equals(LocalDriverType.Edge)) {
-                devTools = ((EdgeDriver) localDriver).getDevTools();
-                logDevTools(devTools);
-            } else if (driverType.equals(LocalDriverType.Chrome)) {
-                devTools = ((ChromeDriver) localDriver).getDevTools();
-                logDevTools(devTools);
-            }
-        }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
         if (WebDriverThread != null) {
             Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -330,9 +299,7 @@ public class DriverFactory {
                     return (T)AndroidDriverThread.get();
                 }
             }
-            default -> {
-                throw new IllegalArgumentException("Wrong Driver Initialization: " + ConfigContext.getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
-            }
+            default -> throw new IllegalArgumentException("Wrong Driver Initialization: " + ConfigContext.getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
         }
         Reporter.log("Driver Creation Failed",LogLevel.INFO_RED);
         return null;
@@ -344,7 +311,6 @@ public class DriverFactory {
      * @param driver Base WebDriver instance to be decorated
      * @return Decorated WebDriver instance
      */
-    @SuppressWarnings("unchecked")
     private static WebDriver getDecoratedWebDriver(WebDriver driver){
         return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new seleniumListener()).decorate(driver);
     }
@@ -380,55 +346,4 @@ public class DriverFactory {
                 new appiumListener()
         );
     }
-
-    /**
-     * Configures DevTools logging for Chrome and Edge browsers.
-     *
-     * @param devTools DevTools instance to be configured
-     */
-    private static void logDevTools(DevTools devTools){
-//                devTools.createSession();
-//                devTools.send(Log.enable());
-//                devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
-//                devTools.addListener(Network.requestWillBeSent(), request -> {
-//                    String type = request.getType().toString().toLowerCase();
-//                    if (type.contains("xhr") || type.contains("fetch")) {
-//                            networkRequests(request);
-//                    }
-//                });
-//                devTools.addListener(Network.responseReceived(), response -> {
-//                    String type = response.getType().toString().toLowerCase();
-//                    if (type.contains("xhr") || type.contains("fetch"))  {
-//                            networkResponses(response);
-//                    }
-//                });
-    }
-
-//    /**
-//     * Logs network request information to Allure report.
-//     *
-//     * @param request Network request information
-//     */
-//    @Step("Captured Network Request")
-//    private static void networkRequests(org.openqa.selenium.devtools.v134.network.model.RequestWillBeSent request) {
-//        Allure.step("Captured Network Requests Sent", () -> {
-//            Reporter.logReportOnly("Request URL: " + request.getRequest().getUrl(), LogLevel.INFO_GREEN);
-//            Reporter.logReportOnly("Request Method: " + request.getRequest().getMethod(), LogLevel.INFO_GREEN);
-//            Reporter.logReportOnly("Request Headers: " + request.getRequest().getHeaders(), LogLevel.INFO_GREEN);
-//        });
-//    }
-//
-//    /**
-//     * Logs network response information to Allure report.
-//     *
-//     * @param response Network response information
-//     */
-//    @Step("Captured Network Response")
-//    private static void networkResponses(org.openqa.selenium.devtools.v134.network.model.ResponseReceived response) {
-//        Allure.step("Captured Network Responses Received", () -> {
-//            int status = response.getResponse().getStatus();
-//            Reporter.logReportOnly("Response Time: " + response.getResponse().getResponseTime(), LogLevel.INFO_GREEN);
-//            Reporter.logReportOnly("Status Code: " + status, LogLevel.INFO_GREEN);
-//        });
-//    }
 }
