@@ -68,7 +68,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
     private void stepStartedHandler(TestStepStarted event) {
         if (event.getTestStep() instanceof PickleStepTestStep){
-            GeneralHandler.clearTestLogFile();
+            Logger.clearCurrentExecutionLogs();
         }
     }
 }

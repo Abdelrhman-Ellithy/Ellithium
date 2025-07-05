@@ -26,7 +26,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
-                GeneralHandler.clearTestLogFile();
+                Logger.clearCurrentExecutionLogs();
                 Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }

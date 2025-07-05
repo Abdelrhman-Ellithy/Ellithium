@@ -1,6 +1,5 @@
 package Ellithium.config.managment;
 
-import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.API.APIFilterHelper;
@@ -10,17 +9,15 @@ import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,38 +42,13 @@ public class GeneralHandler {
             return null;
         }
     }
-    private static File getLogFile(){
-        String basePath = PropertyHelper.getDataFromProperties(
-                ConfigContext.getLogFilePath(),
-                "property.basePath"
-        );
-        String logFilePath = basePath.concat(File.separator).concat(
-                PropertyHelper.getDataFromProperties(
-                        ConfigContext.getLogFilePath(),
-                        "property.TestCaseLogFile"
-                )
-        );
-        return new File(logFilePath);
-    }
     private static void AttachLogs(){
-        attachFile(getLogFile(),"text/plain",".log");
-    }
-    public static void clearTestLogFile(){
-        try (FileOutputStream fos = new FileOutputStream(getLogFile(), false)) {
+        String logs = Logger.getCurrentExecutionLogs();
+        try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
+            Allure.addAttachment("Execution Log File", "text/plain", logStream, ".log");
+            Logger.info("Execution logs successfully attached to the Allure report.");
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private static void attachFile(File file,String type, String extension){
-        if (!file.exists()) {
-            Reporter.log("Log file not found at: ",LogLevel.ERROR, file.getPath());
-            return;
-        }
-        try (FileInputStream fis = new FileInputStream(file)) {
-            Allure.addAttachment("Execution Log File", type, fis, extension);
-            Logger.info("Log file successfully attached to the Allure report.");
-        } catch (IOException e) {
-            Logger.error("Failed to attach log file: ");
+            Logger.error("Failed to attach execution logs: " + e.getMessage());
         }
     }
 
