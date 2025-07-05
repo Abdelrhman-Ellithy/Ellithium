@@ -263,24 +263,6 @@ public class DriverFactory {
         } else {
             localDriver = BrowserSetUp.setupLocalDriver(driverType, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         }
-//        boolean exists = PropertyHelper.keyExists(ConfigContext.getConfigFilePath(), "loggerExtensiveTraceMode");
-//        String loggerExtensiveTraceModeFlag;
-//        if (exists){
-//            loggerExtensiveTraceModeFlag = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "loggerExtensiveTraceMode");
-//        }
-//        else {
-//            loggerExtensiveTraceModeFlag="true";
-//        }
-//        if (loggerExtensiveTraceModeFlag.equalsIgnoreCase("true")) {
-//            DevTools devTools;
-//            if (driverType.equals(LocalDriverType.Edge)) {
-//                devTools = ((EdgeDriver) localDriver).getDevTools();
-//                logDevTools(devTools);
-//            } else if (driverType.equals(LocalDriverType.Chrome)) {
-//                devTools = ((ChromeDriver) localDriver).getDevTools();
-//                logDevTools(devTools);
-//            }
-//        }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
         if (WebDriverThread != null) {
             Reporter.log("Driver Created", LogLevel.INFO_GREEN);
@@ -364,12 +346,4 @@ public class DriverFactory {
                 new appiumListener()
         );
     }
-
-//    /**
-//     * Configures DevTools logging for Chrome and Edge browsers.
-//     *
-//     * @param devTools DevTools instance to be configured
-//     */
-//    private static void logDevTools(DevTools devTools){
-//    }
 }
