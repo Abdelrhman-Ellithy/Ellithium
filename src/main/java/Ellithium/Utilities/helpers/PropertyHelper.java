@@ -8,11 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Helper class to handle reading, writing, and updating properties files while preserving key order.
  */
 public class PropertyHelper {
+
+    private static final ConcurrentHashMap<String, Object> fileLocks = new ConcurrentHashMap<>();
+    private static Object getFileLock(String filePath) {
+        return fileLocks.computeIfAbsent(filePath, k -> new Object());
+    }
 
     private static final Object LOCK = new Object();
 
@@ -83,8 +89,10 @@ public class PropertyHelper {
     private static Properties loadProperties(String filePath) throws IOException {
         Properties prop = new LinkedProperties();
         ensureFileExists(filePath);
-        try (FileInputStream fis = new FileInputStream(filePath)) {
-            prop.load(fis);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath)) {
+                prop.load(fis);
+            }
         }
         return prop;
     }
@@ -97,8 +105,10 @@ public class PropertyHelper {
      */
     private static void saveProperties(String filePath, Properties prop) throws IOException {
         ensureFileExists(filePath);
-        try (FileOutputStream fos = new FileOutputStream(filePath)) {
-            prop.store(fos, null);
+        synchronized (getFileLock(filePath)) {
+            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                prop.store(fos, null);
+            }
         }
     }
 
@@ -125,7 +135,7 @@ public class PropertyHelper {
      * @param value property value.
      */
     public static void setDataToProperties(String filePath, String key, String value) {
-        synchronized (LOCK) {
+        synchronized (getFileLock(filePath)) {
             try {
                 Properties prop = loadProperties(filePath);
                 prop.setProperty(key, value);
@@ -487,7 +497,7 @@ public class PropertyHelper {
      * @param filePath the properties file path.
      */
     public static void sortPropertiesByKey(String filePath) {
-        synchronized (LOCK) {
+        synchronized (getFileLock(filePath)) {
             try {
                 Properties original = loadProperties(filePath);
                 

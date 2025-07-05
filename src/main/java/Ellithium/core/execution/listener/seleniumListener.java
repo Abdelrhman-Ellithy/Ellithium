@@ -182,11 +182,6 @@ public class seleniumListener implements WebDriverListener {
    }
 
    @Override
-   public void afterSetScriptTimeout(WebDriver.Timeouts timeouts, Duration duration) {
-       Reporter.log("Set script timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills");
-   }
-
-   @Override
    public void afterPageLoadTimeout(WebDriver.Timeouts timeouts, Duration duration) {
        Reporter.log("Set page load timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills");
    }

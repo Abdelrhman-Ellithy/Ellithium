@@ -5,10 +5,7 @@ import Ellithium.core.reporting.Reporter;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides utility methods for performing hard and soft assertions.
@@ -177,7 +174,7 @@ public class AssertionExecutor {
          */
         public static void assertListContainsAll(List<?> actual, List<?> expected) {
             try {
-                Assert.assertTrue(actual.containsAll(expected), "Actual list does not contain all expected elements.");
+                Assert.assertTrue(new HashSet<>(actual).containsAll(expected), "Actual list does not contain all expected elements.");
                 Reporter.log("Hard Assert: ", LogLevel.INFO_GREEN, " - List contains all expected elements");
             } catch (AssertionError e) {
                 Reporter.log("Hard Assert: ", LogLevel.ERROR, " - List does not contain all expected elements");
@@ -723,7 +720,7 @@ public class AssertionExecutor {
          */
         public static void assertListContainsAll(List<?> actual, List<?> expected, String message) {
             try {
-                Assert.assertTrue(actual.containsAll(expected), message);
+                Assert.assertTrue(new HashSet<>(actual).containsAll(expected), message);
                 Reporter.log("Hard Assert: ", LogLevel.INFO_GREEN, " - All elements of the expected list are present in the actual list (Expected: " + expected + ", Actual: " + actual + ")");
             } catch (AssertionError e) {
                 Reporter.log("Hard Assert: ", LogLevel.ERROR, " - Not all elements of the expected list are present in the actual list (Expected: " + expected + ", Actual: " + actual + ")");
@@ -1180,7 +1177,7 @@ public class AssertionExecutor {
          * @param expected the expected list.
          */
         public void assertListContainsAll(List<?> actual, List<?> expected) {
-            softAssert.assertTrue(actual.containsAll(expected), "Actual list does not contain all expected elements.");
+            softAssert.assertTrue(new HashSet<>(actual).containsAll(expected), "Actual list does not contain all expected elements.");
             Reporter.log("Soft Assert: Actual list contains all expected elements - Actual: " + actual , LogLevel.INFO_GREEN, ", Expected: " + expected);
         }
 
@@ -1413,7 +1410,7 @@ public class AssertionExecutor {
          * @param message the message to display if the assertion fails.
          */
         public void assertListContainsAll(List<?> actual, List<?> expected, String message) {
-            softAssert.assertTrue(actual.containsAll(expected), message);
+            softAssert.assertTrue(new HashSet<>(actual).containsAll(expected), message);
             Reporter.log( "Soft Assert List Contains All - Actual: " + actual + " - Expected Elements: " + expected ,LogLevel.INFO_BLUE);
         }
 
@@ -1448,7 +1445,7 @@ public class AssertionExecutor {
          */
         public void assertArrayEquals(int[] actual, int[] expected, String message) {
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log( "Soft Assert Array Equals (int[]) - Expected: " + expected + " - Actual: " + actual, LogLevel.INFO_GREEN);
+            Reporter.log( "Soft Assert Array Equals (int[]) - Expected: " + Arrays.toString(expected) + " - Actual: " + Arrays.toString(actual), LogLevel.INFO_GREEN);
         }
 
         /**

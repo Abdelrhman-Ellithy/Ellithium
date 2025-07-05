@@ -31,15 +31,9 @@ public class CucumberListener extends AllureCucumber7Jvm {
     private void testFinishedHandler(TestCaseFinished event){
         ScenarioName=event.getTestCase().getName();
         switch (event.getResult().getStatus()){
-            case PASSED -> {
-                Logger.info(GREEN  +"[PASSED] Scenario " + ScenarioName+ " [PASSED]" + RESET);
-            }
-            case FAILED -> {
-                Logger.info(RED + "[FAILED] Scenario " + ScenarioName + " [FAILED]" + RESET);
-            }
-            case SKIPPED -> {
-                Logger.info(YELLOW + "[SKIPPED] Scenario " + ScenarioName + " [SKIPPED]" + RESET);
-            }
+            case PASSED -> Logger.info(GREEN  +"[PASSED] Scenario " + ScenarioName+ " [PASSED]" + RESET);
+            case FAILED -> Logger.info(RED + "[FAILED] Scenario " + ScenarioName + " [FAILED]" + RESET);
+            case SKIPPED -> Logger.info(YELLOW + "[SKIPPED] Scenario " + ScenarioName + " [SKIPPED]" + RESET);
         }
         paramAdded=false;
 
@@ -74,7 +68,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
     private void stepStartedHandler(TestStepStarted event) {
         if (event.getTestStep() instanceof PickleStepTestStep){
-            GeneralHandler.clearTestLogFile();
+            Logger.clearCurrentExecutionLogs();
         }
     }
 }

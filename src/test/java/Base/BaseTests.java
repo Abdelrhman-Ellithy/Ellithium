@@ -12,17 +12,12 @@ public class BaseTests {
    ScreenRecorderActions screenRecorderActions;
     @BeforeClass
     public void Setup()  {
-        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
+        LocalDriverConfig driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
                 HeadlessMode.False, PrivateMode.False,
                 PageLoadStrategyMode.Normal,
                 WebSecurityMode.SecureMode,
                 SandboxMode.Sandbox);
         driver=DriverFactory.getNewDriver(driverConfig);
-//        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome,
-//                HeadlessMode.False, PrivateMode.False,
-//                PageLoadStrategyMode.Normal,
-//                WebSecurityMode.SecureMode,
-//                SandboxMode.Sandbox);
         home=new HomPage(driver);
         screenRecorderActions=new ScreenRecorderActions<>(driver);
         screenRecorderActions.startRecording("Test Name");
