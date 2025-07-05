@@ -10,7 +10,6 @@ import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
@@ -23,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GeneralHandler {
     /**
@@ -51,29 +51,28 @@ public class GeneralHandler {
                 "property.basePath"
         );
         String logFilePath = basePath.concat(File.separator).concat(
-                PropertyHelper.getDataFromProperties(
+                Objects.requireNonNull(PropertyHelper.getDataFromProperties(
                         ConfigContext.getLogFilePath(),
                         "property.TestCaseLogFile"
-                )
+                ))
         );
         return new File(logFilePath);
     }
     private static void AttachLogs(){
-        attachFile(getLogFile(),"text/plain",".log");
+        attachFile(getLogFile());
     }
     public static void clearTestLogFile(){
         try (FileOutputStream fos = new FileOutputStream(getLogFile(), false)) {
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
-    private static void attachFile(File file,String type, String extension){
+    private static void attachFile(File file){
         if (!file.exists()) {
             Reporter.log("Log file not found at: ",LogLevel.ERROR, file.getPath());
             return;
         }
         try (FileInputStream fis = new FileInputStream(file)) {
-            Allure.addAttachment("Execution Log File", type, fis, extension);
+            Allure.addAttachment("Execution Log File", "text/plain", fis, ".log");
             Logger.info("Log file successfully attached to the Allure report.");
         } catch (IOException e) {
             Logger.error("Failed to attach log file: ");

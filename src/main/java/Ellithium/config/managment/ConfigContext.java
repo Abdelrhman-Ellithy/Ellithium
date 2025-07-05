@@ -24,7 +24,7 @@ public class ConfigContext {
     private static final Map<PageLoadStrategyMode, String> PAGE_LOAD_STRATEGY_MODE_STRING_MAP;
     private static final Map<SandboxMode, String> SANDBOX_MODE_STRING_MAP;
     private static final String allureVersion="2.30.0";
-    private static final String EllithuiumVersion="2.1.0";
+    private static final String EllithuiumVersion="2.1.1";
 
     public static String getAllureVersion() {
         return allureVersion;
