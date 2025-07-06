@@ -91,9 +91,10 @@ Ellithium supports reading and writing data from various file formats, including
   <a href="https://testng.org/doc/" target="_blank"><img src="https://545767148-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MdBdUMSCcMYTyNwZf80%2Fuploads%2Fgit-blob-7e5b23257dbb5cc3262c56840d5cf9fa85b27dce%2Ftestng.png?alt=media" alt="TestNG" style="height:50px; width:auto; max-width:120px;"></a>
   <a href="https://docs.qameta.io/allure/" target="_blank"><img src="https://avatars.githubusercontent.com/u/5879127?s=200&v=4" alt="Allure Reports" style="height:50px; width:auto; max-width:120px;"></a>
   <a href="https://appium.io/docs/en/2.0/" target="_blank"><img src="https://raw.githubusercontent.com/appium/appium/master/packages/appium/docs/overrides/assets/images/appium-logo-horiz.png" alt="Appium" style="height:50px; width:auto; max-width:120px;"></a>
+  <a href="https://github.com/brettwooldridge/HikariCP" target="_blank"><img src="https://github.com/brettwooldridge/HikariCP/raw/dev/logo.png" alt="HikariCP" style="height:50px; width:auto; max-width:120px;"></a>
 </div>
 <br/>
-
+<div style="display: flex; flex-wrap: wrap; gap: 20px; 
 
 ## 📚 Documentation
 
