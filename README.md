@@ -94,7 +94,6 @@ Ellithium supports reading and writing data from various file formats, including
   <a href="https://github.com/brettwooldridge/HikariCP" target="_blank"><img src="https://github.com/brettwooldridge/HikariCP/raw/dev/logo.png" alt="HikariCP" style="height:50px; width:auto; max-width:120px;"></a>
 </div>
 <br/>
-<div style="display: flex; flex-wrap: wrap; gap: 20px; 
 
 ## 📚 Documentation
 
