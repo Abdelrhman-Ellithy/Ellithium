@@ -75,7 +75,7 @@
         <CSV>1.14.0</CSV>
         <ApachePOI>5.4.1</ApachePOI>
         <Cucumber>7.26.0</Cucumber>
-        <cucumberTsetNG>7.25.0</cucumberTsetNG>
+        <cucumberTsetNG>7.26.0</cucumberTsetNG>
         <restversion>5.5.5</restversion>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.2.0</SQLiteVersion>
@@ -85,7 +85,7 @@
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>2.29.1</AllureJVMVersion>
-        <HikariCPVersion>6.3.0</HikariCPVersion>
+        <HikariCPVersion>6.3.1</HikariCPVersion>
         <caffineVersion>3.2.2</caffineVersion>
         <mysqlVersion>9.3.0</mysqlVersion>
         <postgresqlVersion>42.7.7</postgresqlVersion>
