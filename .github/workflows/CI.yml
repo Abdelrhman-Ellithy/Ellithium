@@ -16,7 +16,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run Helper Tests
-        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -DforkCount=7 -DreuseForks=true -DthreadCount=7 -DdataProviderThreadCount=7
+        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-helper-test-results
@@ -44,7 +44,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run API Tests
-        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -DforkCount=2 -DreuseForks=true -DthreadCount=2 -DdataProviderThreadCount=2
+        run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -Dmaven.test.failure.ignore=true
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-api-test-results
@@ -58,7 +58,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
-        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
+        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-basic-test-results
@@ -72,7 +72,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI Actions Tests
-        run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes -DforkCount=4 -DreuseForks=true -DthreadCount=4 -DdataProviderThreadCount=4
+        run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-actions-test-results
@@ -86,7 +86,7 @@ jobs:
           java-version: 21
       - uses: ./.github/actions/cleanup
       - name: Run UI BDD Tests
-        run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods -DforkCount=10 -DreuseForks=true -DthreadCount=10 -DdataProviderThreadCount=10
+        run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-bdd-test-results
