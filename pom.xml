@@ -72,7 +72,7 @@
         <log4jVersion>2.25.1</log4jVersion>
         <AllureVersion>2.29.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
-        <CSV>1.14.0</CSV>
+        <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
         <Cucumber>7.27.0</Cucumber>
         <cucumberTsetNG>7.27.0</cucumberTsetNG>
