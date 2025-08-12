@@ -10,7 +10,7 @@ jobs:
   Ubuntu-Helper-Tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
@@ -24,7 +24,7 @@ jobs:
   Ubuntu-DataBase-Tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
@@ -38,7 +38,7 @@ jobs:
   Ubuntu-API-Tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
@@ -52,7 +52,7 @@ jobs:
   MacOS-UI-Basic-Tests:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
@@ -66,7 +66,7 @@ jobs:
   MacOS-UI-Actions-Tests:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
@@ -80,7 +80,7 @@ jobs:
   MacOS-UI-BDD-Tests:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           java-version: 21
