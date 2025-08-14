@@ -6,9 +6,7 @@ import Ellithium.core.API.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
-import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
-import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
@@ -20,8 +18,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
 public class GeneralHandler {
     /**
      * Internally used with The Ellithium Not for General Use.
