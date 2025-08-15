@@ -6,23 +6,20 @@ import Ellithium.core.API.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
-import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
-import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class GeneralHandler {
+    
     /**
      * Internally used with The Ellithium Not for General Use.
      * @param browserName Slider element locator
@@ -43,6 +40,7 @@ public class GeneralHandler {
             return null;
         }
     }
+    
     private static void AttachLogs(){
         String logs = Logger.getCurrentExecutionLogs();
         try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
@@ -57,12 +55,14 @@ public class GeneralHandler {
     public static void addAttachments(){
         GeneralHandler.AttachLogs();
     }
+    
     public static void StartRoutine(){
         VersionChecker.solveVersion();
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
         RetryAnalyzer.initRetryCount();
     }
+    
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
         DriverType type=ConfigContext.getDriverType();

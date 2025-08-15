@@ -25,22 +25,31 @@ public class CommandExecutor {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                }
-            }
+            String output = captureProcessOutput(process);
             int exitCode = process.waitFor();
-            if (exitCode == 0) {
-                Reporter.log("Command executed successfully. Exit code: " + exitCode, LogLevel.INFO_GREEN);
-            } else {
-                Reporter.log("Command failed. Exit code: " + exitCode, LogLevel.ERROR);
-                Reporter.log("Output: " + output.toString(), LogLevel.DEBUG);
-            }
+            logCommandResult(command, exitCode, output);
         } catch (IOException | InterruptedException e) {
             Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
+        }
+    }
+    
+    private static String captureProcessOutput(Process process) throws IOException {
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append(System.lineSeparator());
+            }
+        }
+        return output.toString();
+    }
+    
+    private static void logCommandResult(String command, int exitCode, String output) {
+        if (exitCode == 0) {
+            Reporter.log("Command executed successfully. Exit code: " + exitCode, LogLevel.INFO_GREEN);
+        } else {
+            Reporter.log("Command failed. Exit code: " + exitCode, LogLevel.ERROR);
+            Reporter.log("Output: " + output, LogLevel.DEBUG);
         }
     }
     /**
@@ -106,12 +115,12 @@ public class CommandExecutor {
      */
     public static String getSystemInfo() {
         StringBuilder info = new StringBuilder();
-        info.append("OS: ").append(System.getProperty("os.name")).append("\n");
-        info.append("OS Version: ").append(System.getProperty("os.version")).append("\n");
-        info.append("Architecture: ").append(System.getProperty("os.arch")).append("\n");
-        info.append("Java Version: ").append(System.getProperty("java.version")).append("\n");
-        info.append("User Name: ").append(System.getProperty("user.name")).append("\n");
-        info.append("User Home: ").append(System.getProperty("user.home")).append("\n");
+        info.append("OS: ").append(System.getProperty("os.name")).append(System.lineSeparator());
+        info.append("OS Version: ").append(System.getProperty("os.version")).append(System.lineSeparator());
+        info.append("Architecture: ").append(System.getProperty("os.arch")).append(System.lineSeparator());
+        info.append("Java Version: ").append(System.getProperty("java.version")).append(System.lineSeparator());
+        info.append("User Name: ").append(System.getProperty("user.name")).append(System.lineSeparator());
+        info.append("User Home: ").append(System.getProperty("user.home")).append(System.lineSeparator());
         return info.toString();
     }
 
@@ -214,20 +223,37 @@ public class CommandExecutor {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
-            
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                }
-            }
-            
+            String output = captureProcessOutput(process);
             process.waitFor();
-            return output.toString();
+            return output;
         } catch (IOException | InterruptedException e) {
             Reporter.log("Failed to execute command with output: ", LogLevel.ERROR, command);
             return null;
+        }
+    }
+    
+    public static void executeScript(String scriptPath) {
+        try {
+            String[] command = buildScriptCommand(scriptPath);
+            Process process = new ProcessBuilder(command).start();
+            process.waitFor();
+            Reporter.log("Successfully executed script: ", LogLevel.INFO_GREEN, scriptPath);
+        } catch (IOException | InterruptedException e) {
+            Reporter.log("Failed to execute script: ", LogLevel.ERROR, scriptPath);
+        }
+    }
+    
+    private static String[] buildScriptCommand(String scriptPath) {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            if (scriptPath.endsWith(".bat") || scriptPath.endsWith(".cmd")) {
+                return new String[]{"cmd", "/c", scriptPath};
+            } else if (scriptPath.endsWith(".ps1")) {
+                return new String[]{"powershell", "-File", scriptPath};
+            } else {
+                throw new IllegalArgumentException("Unsupported script type");
+            }
+        } else {
+            return new String[]{"/bin/bash", scriptPath};
         }
     }
 
@@ -254,32 +280,6 @@ public class CommandExecutor {
             Reporter.log("Successfully set environment variable: ", LogLevel.INFO_GREEN, key);
         } catch (Exception e) {
             Reporter.log("Failed to set environment variable: ", LogLevel.ERROR, key);
-        }
-    }
-
-    /**
-     * Executes a script file.
-     * @param scriptPath the script file path.
-     */
-    public static void executeScript(String scriptPath) {
-        try {
-            String[] command;
-            if (SystemUtils.IS_OS_WINDOWS) {
-                if (scriptPath.endsWith(".bat") || scriptPath.endsWith(".cmd")) {
-                    command = new String[]{"cmd", "/c", scriptPath};
-                } else if (scriptPath.endsWith(".ps1")) {
-                    command = new String[]{"powershell", "-File", scriptPath};
-                } else {
-                    throw new IllegalArgumentException("Unsupported script type");
-                }
-            } else {
-                command = new String[]{"/bin/bash", scriptPath};
-            }
-            Process process = new ProcessBuilder(command).start();
-            process.waitFor();
-            Reporter.log("Successfully executed script: ", LogLevel.INFO_GREEN, scriptPath);
-        } catch (IOException | InterruptedException e) {
-            Reporter.log("Failed to execute script: ", LogLevel.ERROR, scriptPath);
         }
     }
 

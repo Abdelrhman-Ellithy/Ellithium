@@ -1,11 +1,7 @@
 package Ellithium.Utilities.interactions;
 
-import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.core.logging.LogLevel;
-import Ellithium.core.reporting.Reporter;
-import com.google.common.io.Files;
+import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.*;
-import java.io.File;
 /**
  * Provides a comprehensive set of WebDriver interaction methods with built-in waits and reporting.
  * @param <T> The specific WebDriver type
@@ -15,7 +11,6 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
      * Creates a new DriverActions instance.
      * @param driver WebDriver instance to wrap
      */
-    @SuppressWarnings("unchecked")
     public DriverActions(T driver) {
         super(driver);
     }
@@ -56,12 +51,10 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
     public MouseActions mouse() {
         return new MouseActions<>(driver);
     }
-
-    /**
-     * Provides access to key press and keyboard actions.
-     * @return KeyPressActions instance
-     */
-    public KeyPressActions<T> keyPress() {
-        return new KeyPressActions<>(driver);
+    public AndroidActions androidActions() {
+        return new AndroidActions<>((AppiumDriver) driver);
+    }
+    public IOSActions iosActions() {
+        return new IOSActions((AppiumDriver) driver);
     }
 }

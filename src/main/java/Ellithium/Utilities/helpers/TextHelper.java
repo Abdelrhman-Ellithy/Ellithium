@@ -140,10 +140,8 @@ public class TextHelper {
         }
     }
 
-    // Method to read the entire file as a single String
     public static String readFileAsString(String filePath) {
-        StringBuilder content = new StringBuilder();
-        File textFile = new File(filePath );
+        File textFile = new File(filePath);
 
         if (!textFile.exists()) {
             Reporter.log("Text file does not exist: ", LogLevel.ERROR, filePath);
@@ -153,21 +151,25 @@ public class TextHelper {
         Reporter.log("Attempting to read entire text file as a String: ", LogLevel.INFO_BLUE, filePath);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
-            String line;
-            boolean firstLine = true;
-            while ((line = reader.readLine()) != null) {
-                if (!firstLine) {
-                    content.append(System.lineSeparator());
-                }
-                content.append(line);
-                firstLine = false;
-            }
-            Reporter.log("Successfully read text file as a String: ", LogLevel.INFO_GREEN, filePath);
+            return readFileContentWithProperLineSeparators(reader);
         } catch (IOException e) {
             Reporter.log("Failed to read text file as a String: ", LogLevel.ERROR, filePath);
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            return null;
         }
-
+    }
+    
+    private static String readFileContentWithProperLineSeparators(BufferedReader reader) throws IOException {
+        StringBuilder content = new StringBuilder();
+        String line;
+        boolean firstLine = true;
+        while ((line = reader.readLine()) != null) {
+            if (!firstLine) {
+                content.append(System.lineSeparator());
+            }
+            content.append(line);
+            firstLine = false;
+        }
         return content.toString();
     }
 
