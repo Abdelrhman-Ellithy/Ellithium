@@ -91,7 +91,8 @@ public class NotificationSender {
             if (isHtml) {
                 message.setContent(body, "text/html; charset=UTF-8");
             } else {
-                message.setText(body);
+                String encodedBody = body.replace("\n", "\r\n");
+                message.setText(encodedBody);
             }
             
             Transport.send(message);
