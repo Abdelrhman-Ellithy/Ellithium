@@ -75,6 +75,8 @@ public class NotificationSender {
             mailProps.put("mail.smtp.starttls.enable", "true");
             mailProps.put("mail.smtp.host", smtpHost);
             mailProps.put("mail.smtp.port", smtpPort);
+            mailProps.put("mail.mime.charset", "UTF-8");
+            mailProps.put("mail.mime.encoding", "UTF-8");
             
             Session session = Session.getInstance(mailProps, new Authenticator() {
                 @Override
@@ -84,15 +86,20 @@ public class NotificationSender {
             });
             
             Message message = new MimeMessage(session);
+            
+            // Set proper encoding for all email components
             message.setFrom(new InternetAddress(fromEmail));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject(subject);
             
             if (isHtml) {
-                message.setContent(body, "text/html; charset=UTF-8");
+                // For HTML content, ensure proper encoding
+                String encodedHtmlBody = encodeHtmlContent(body);
+                message.setContent(encodedHtmlBody, "text/html; charset=UTF-8");
             } else {
-                String encodedBody = body.replace("\n", "\r\n");
-                message.setText(encodedBody);
+                // For plain text, ensure proper newline encoding
+                String encodedTextBody = encodeTextContent(body);
+                message.setText(encodedTextBody);
             }
             
             Transport.send(message);
@@ -104,6 +111,40 @@ public class NotificationSender {
             Reporter.log("Failed to send email notification: " + e.getMessage(), LogLevel.ERROR);
             return false;
         }
+    }
+    
+    /**
+     * Encodes HTML content for proper email transmission.
+     * @param htmlContent The HTML content to encode
+     * @return Properly encoded HTML content
+     */
+    private String encodeHtmlContent(String htmlContent) {
+        if (htmlContent == null) {
+            return "";
+        }
+        
+        // Ensure proper HTML encoding and newline handling
+        return htmlContent
+            .replace("\n", "\r\n")
+            .replace("\r\r\n", "\r\n")
+            .trim();
+    }
+    
+    /**
+     * Encodes plain text content for proper email transmission.
+     * @param textContent The text content to encode
+     * @return Properly encoded text content
+     */
+    private String encodeTextContent(String textContent) {
+        if (textContent == null) {
+            return "";
+        }
+        
+        // Ensure proper newline encoding for email transmission
+        return textContent
+            .replace("\n", "\r\n")
+            .replace("\r\r\n", "\r\n")
+            .trim();
     }
     
     /**

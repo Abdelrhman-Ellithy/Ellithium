@@ -355,24 +355,29 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
         try {
-            StringBuilder paths = new StringBuilder();
-            for (String filePath : filePaths) {
-                File file = new File(filePath);
-                if (!file.exists()) {
-                    throw new IllegalArgumentException("File does not exist: " + filePath);
-                }
-                paths.append(file.getAbsolutePath()).append("\n");
-            }
+            String pathsString = buildFilePathsString(filePaths);
             
             WebElement uploadElement = getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
             
-            uploadElement.sendKeys(paths.toString().trim());
+            uploadElement.sendKeys(pathsString);
             Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
         } catch (Exception e) {
             Reporter.log("Failed to upload multiple files: " + e.getMessage(), LogLevel.ERROR);
             throw e;
         }
+    }
+    
+    private String buildFilePathsString(String[] filePaths) {
+        StringBuilder paths = new StringBuilder();
+        for (String filePath : filePaths) {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new IllegalArgumentException("File does not exist: " + filePath);
+            }
+            paths.append(file.getAbsolutePath()).append(System.lineSeparator());
+        }
+        return paths.toString().trim();
     }
 
     
