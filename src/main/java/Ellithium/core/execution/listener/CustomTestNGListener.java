@@ -24,6 +24,15 @@ import static org.testng.ITestResult.FAILURE;
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
+    private NotificationIntegrationHandler notificationHandler;
+    
+    /**
+     * Constructor initializes the notification handler.
+     */
+    public CustomTestNGListener() {
+        this.notificationHandler = new NotificationIntegrationHandler();
+    }
+    
     @Override
     public void onTestStart(ITestResult result) {
         if (!(result.getName().equals("runScenario"))) {
@@ -58,7 +67,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
         
         // Collect test results for overall execution summary
-        NotificationIntegrationHandler.collectTestResults(context);
+        notificationHandler.collectTestResults(context);
     }
     @Override
     public void onStart(ISuite suite) {
@@ -79,7 +88,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         ConfigContext.setOnExecution(true);
         
         // Initialize notification integration system
-        NotificationIntegrationHandler.initializeNotificationSystem();
+        notificationHandler.initializeNotificationSystem();
     }
     @Override
     public void onExecutionFinish() {
@@ -94,7 +103,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
-        NotificationIntegrationHandler.sendExecutionCompletionNotifications();
+        notificationHandler.sendExecutionCompletionNotifications();
     }
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
