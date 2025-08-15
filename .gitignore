@@ -4,6 +4,9 @@ target/*
 !**/src/test/**/target/
 Ellithium.pptx
 website/
+NOTIFICATION_README.md
+docker-entrypoint.sh
+Dockerfile
 
 # Test Output Management
 Test-Output/*

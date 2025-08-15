@@ -6,6 +6,7 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
+import Ellithium.core.reporting.notification.NotificationIntegrationHandler;
 import Ellithium.core.logging.Logger;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.*;
@@ -55,6 +56,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
+        
+        // Collect test results for overall execution summary
+        NotificationIntegrationHandler.collectTestResults(context);
     }
     @Override
     public void onStart(ISuite suite) {
@@ -73,6 +77,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
+        
+        // Initialize notification integration system
+        NotificationIntegrationHandler.initializeNotificationSystem();
     }
     @Override
     public void onExecutionFinish() {
@@ -87,6 +94,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
+        NotificationIntegrationHandler.sendExecutionCompletionNotifications();
     }
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
