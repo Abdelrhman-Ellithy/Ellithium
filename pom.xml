@@ -538,18 +538,21 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
                 <includes>
                     <include>**/*.properties</include> <!-- Include all properties files -->
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources/properties</directory>
+                <filtering>true</filtering>
                 <includes>
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>
             </resource>
             <resource>
                 <directory>.allure</directory>
+                <filtering>false</filtering>
                 <includes>
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>
