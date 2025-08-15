@@ -77,6 +77,8 @@ public class NotificationSender {
             mailProps.put("mail.smtp.port", smtpPort);
             mailProps.put("mail.mime.charset", "UTF-8");
             mailProps.put("mail.mime.encoding", "UTF-8");
+            mailProps.put("mail.smtp.allow8bitmime", "true");
+            mailProps.put("mail.smtp.allowutf8", "true");
             
             Session session = Session.getInstance(mailProps, new Authenticator() {
                 @Override
@@ -88,9 +90,9 @@ public class NotificationSender {
             Message message = new MimeMessage(session);
             
             // Set proper encoding for all email components
-            message.setFrom(new InternetAddress(fromEmail));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-            message.setSubject(subject);
+            message.setFrom(createEncodedInternetAddress(fromEmail));
+            message.setRecipients(Message.RecipientType.TO, createEncodedInternetAddresses(toEmail));
+            message.setSubject(encodeEmailSubject(subject));
             
             if (isHtml) {
                 // For HTML content, ensure proper encoding
@@ -111,6 +113,78 @@ public class NotificationSender {
             Reporter.log("Failed to send email notification: " + e.getMessage(), LogLevel.ERROR);
             return false;
         }
+    }
+    
+    /**
+     * Creates a properly encoded InternetAddress for the from field.
+     * @param email The email address to encode
+     * @return Properly encoded InternetAddress
+     * @throws Exception if address creation fails
+     */
+    private InternetAddress createEncodedInternetAddress(String email) throws Exception {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email address cannot be null or empty");
+        }
+        
+        // Clean and validate email address
+        String cleanEmail = email.trim();
+        if (!isValidEmailFormat(cleanEmail)) {
+            throw new IllegalArgumentException("Invalid email format: " + cleanEmail);
+        }
+        
+        return new InternetAddress(cleanEmail);
+    }
+    
+    /**
+     * Creates properly encoded InternetAddresses for recipients.
+     * @param emails Comma-separated email addresses
+     * @return Array of properly encoded InternetAddresses
+     * @throws Exception if address creation fails
+     */
+    private InternetAddress[] createEncodedInternetAddresses(String emails) throws Exception {
+        if (emails == null || emails.trim().isEmpty()) {
+            throw new IllegalArgumentException("Recipient emails cannot be null or empty");
+        }
+        
+        String[] emailArray = emails.split(",");
+        InternetAddress[] addresses = new InternetAddress[emailArray.length];
+        
+        for (int i = 0; i < emailArray.length; i++) {
+            addresses[i] = createEncodedInternetAddress(emailArray[i].trim());
+        }
+        
+        return addresses;
+    }
+    
+    /**
+     * Validates email address format.
+     * @param email The email address to validate
+     * @return true if valid format, false otherwise
+     */
+    private boolean isValidEmailFormat(String email) {
+        if (email == null) return false;
+        
+        // Basic email validation pattern
+        String emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        return email.matches(emailPattern);
+    }
+    
+    /**
+     * Encodes email subject for proper transmission.
+     * @param subject The subject to encode
+     * @return Properly encoded subject
+     */
+    private String encodeEmailSubject(String subject) {
+        if (subject == null) {
+            return "";
+        }
+        
+        // Ensure proper encoding and handle special characters
+        return subject
+            .replace("\n", " ")
+            .replace("\r", " ")
+            .replace("\t", " ")
+            .trim();
     }
     
     /**

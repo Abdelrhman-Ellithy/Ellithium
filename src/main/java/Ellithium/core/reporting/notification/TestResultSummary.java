@@ -99,31 +99,35 @@ public class TestResultSummary {
      */
     public String generateSummaryMessage() {
         StringBuilder message = new StringBuilder();
-        message.append("🚀 *Ellithium Test Execution Summary*\n\n");
-        message.append("*Date:* ").append(getFormattedExecutionDate()).append("\n");
-        message.append("*Duration:* ").append(getFormattedExecutionTime()).append("\n\n");
+        message.append("🚀 *Ellithium Test Execution Summary*").append(System.lineSeparator()).append(System.lineSeparator());
+        message.append("*Date:* ").append(getFormattedExecutionDate()).append(System.lineSeparator());
+        message.append("*Duration:* ").append(getFormattedExecutionTime()).append(System.lineSeparator()).append(System.lineSeparator());
         
-        message.append("*Test Results:*\n");
-        message.append("✅ Passed: ").append(passedTests).append("\n");
-        message.append("❌ Failed: ").append(failedTests).append("\n");
-        message.append("⏭️ Skipped: ").append(skippedTests).append("\n");
-        message.append("📊 Total: ").append(totalTests).append("\n");
-        message.append("📈 Success Rate: ").append(String.format("%.1f%%", getSuccessRate())).append("\n\n");
+        message.append("*Test Results:*").append(System.lineSeparator());
+        message.append("✅ Passed: ").append(passedTests).append(System.lineSeparator());
+        message.append("❌ Failed: ").append(failedTests).append(System.lineSeparator());
+        message.append("⏭️ Skipped: ").append(skippedTests).append(System.lineSeparator());
+        message.append("📊 Total: ").append(totalTests).append(System.lineSeparator());
+        message.append("📈 Success Rate: ").append(String.format("%.1f%%", getSuccessRate())).append(System.lineSeparator()).append(System.lineSeparator());
         
         if (hasFailures()) {
-            message.append("*Failed Tests:*\n");
-            for (ITestResult failedTest : failedTestResults) {
-                String testName = failedTest.getName();
-                String className = failedTest.getTestClass().getName();
-                Throwable throwable = failedTest.getThrowable();
-                String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
-                
-                message.append("• ").append(testName).append(" (").append(className).append(")\n");
-                message.append("  Error: ").append(errorMessage).append("\n\n");
-            }
+            message.append("*Failed Tests:*").append(System.lineSeparator());
+            appendFailedTestsToMessage(message);
         }
         
         return message.toString();
+    }
+    
+    private void appendFailedTestsToMessage(StringBuilder message) {
+        for (ITestResult failedTest : failedTestResults) {
+            String testName = failedTest.getName();
+            String className = failedTest.getTestClass().getName();
+            Throwable throwable = failedTest.getThrowable();
+            String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
+            
+            message.append("• ").append(testName).append(" (").append(className).append(")").append(System.lineSeparator());
+            message.append("  Error: ").append(errorMessage).append(System.lineSeparator()).append(System.lineSeparator());
+        }
     }
     
     /**

@@ -115,12 +115,12 @@ public class CommandExecutor {
      */
     public static String getSystemInfo() {
         StringBuilder info = new StringBuilder();
-        info.append("OS: ").append(System.getProperty("os.name")).append("\n");
-        info.append("OS Version: ").append(System.getProperty("os.version")).append("\n");
-        info.append("Architecture: ").append(System.getProperty("os.arch")).append("\n");
-        info.append("Java Version: ").append(System.getProperty("java.version")).append("\n");
-        info.append("User Name: ").append(System.getProperty("user.name")).append("\n");
-        info.append("User Home: ").append(System.getProperty("user.home")).append("\n");
+        info.append("OS: ").append(System.getProperty("os.name")).append(System.lineSeparator());
+        info.append("OS Version: ").append(System.getProperty("os.version")).append(System.lineSeparator());
+        info.append("Architecture: ").append(System.getProperty("os.arch")).append(System.lineSeparator());
+        info.append("Java Version: ").append(System.getProperty("java.version")).append(System.lineSeparator());
+        info.append("User Name: ").append(System.getProperty("user.name")).append(System.lineSeparator());
+        info.append("User Home: ").append(System.getProperty("user.home")).append(System.lineSeparator());
         return info.toString();
     }
 
