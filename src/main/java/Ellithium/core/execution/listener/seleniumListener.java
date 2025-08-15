@@ -9,6 +9,11 @@ import org.openqa.selenium.support.events.WebDriverListener;
 public class seleniumListener implements WebDriverListener {
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
+        String sentData = buildSentDataString(keysToSend);
+        Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
+    }
+    
+    private String buildSentDataString(CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
         for (CharSequence charSequence : keysToSend) {
             if (charSequence instanceof Keys) {
@@ -17,7 +22,7 @@ public class seleniumListener implements WebDriverListener {
                 stringBuilder.append(charSequence);
             }
         }
-        Reporter.log("Sent Data: \"" + stringBuilder + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
+        return stringBuilder.toString();
     }
    @Override
    public void afterGet(WebDriver driver, String url) {

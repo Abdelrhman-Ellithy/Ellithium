@@ -98,11 +98,9 @@ public class TestResultSummary {
      * @return Formatted summary message
      */
     public String generateSummaryMessage() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        
         StringBuilder message = new StringBuilder();
         message.append("🚀 *Ellithium Test Execution Summary*\n\n");
-        message.append("*Date:* ").append(dateFormat.format(executionDate)).append("\n");
+        message.append("*Date:* ").append(getFormattedExecutionDate()).append("\n");
         message.append("*Duration:* ").append(getFormattedExecutionTime()).append("\n\n");
         
         message.append("*Test Results:*\n");
@@ -133,7 +131,6 @@ public class TestResultSummary {
      * @return HTML-formatted email body
      */
     public String generateHtmlEmailBody() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String status = hasFailures() ? "FAILED" : "PASSED";
         String statusColor = hasFailures() ? "#dc3545" : "#28a745";
         String statusIcon = hasFailures() ? "❌" : "✅";
@@ -149,7 +146,7 @@ public class TestResultSummary {
         appendHeaderSection(html, status, statusColor, statusIcon);
         appendSummaryTable(html);
         appendProgressSection(html);
-        appendExecutionInfoSection(html, dateFormat);
+        appendExecutionInfoSection(html);
         appendFailedTestsSection(html);
         
         // Close HTML structure
@@ -281,7 +278,8 @@ public class TestResultSummary {
         html.append("</div>");
     }
     
-    private void appendExecutionInfoSection(StringBuilder html, SimpleDateFormat dateFormat) {
+    private void appendExecutionInfoSection(StringBuilder html) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         html.append("<div class=\"execution-info\">");
         html.append("<h3>📊 Execution Details</h3>");
         html.append("<table class=\"execution-table\">");
@@ -358,6 +356,11 @@ public class TestResultSummary {
         html.append("</div>");
         html.append("</body>");
         html.append("</html>");
+    }
+    
+    private String getFormattedExecutionDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(executionDate);
     }
     
     /**
