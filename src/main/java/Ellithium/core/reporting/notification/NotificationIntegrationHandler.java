@@ -10,22 +10,43 @@ import java.util.Set;
 /**
  * Handles integration between the notification system and TestNG listeners.
  * Manages test result collection and notification sending at execution completion.
+ * Follows proper object-oriented design with dependency injection.
  */
 public class NotificationIntegrationHandler {
     
-    // Static variables to collect overall execution results
-    private static int totalTestsExecuted = 0;
-    private static int passedTestsExecuted = 0;
-    private static int failedTestsExecuted = 0;
-    private static int skippedTestsExecuted = 0;
-    private static Set<ITestResult> allFailedResults = new HashSet<>();
-    private static long executionStartTime = 0;
+    private final NotificationConfig config;
+    private final NotificationSender sender;
+    
+    // Instance variables to collect overall execution results
+    private int totalTestsExecuted = 0;
+    private int passedTestsExecuted = 0;
+    private int failedTestsExecuted = 0;
+    private int skippedTestsExecuted = 0;
+    private Set<ITestResult> allFailedResults = new HashSet<>();
+    private long executionStartTime = 0;
+    
+    /**
+     * Constructor that accepts dependencies.
+     * @param config The notification configuration
+     * @param sender The notification sender
+     */
+    public NotificationIntegrationHandler(NotificationConfig config, NotificationSender sender) {
+        this.config = config;
+        this.sender = sender;
+    }
+    
+    /**
+     * Default constructor that uses singleton instances.
+     */
+    public NotificationIntegrationHandler() {
+        this(NotificationConfig.getInstance(), new NotificationSender());
+    }
     
     /**
      * Initializes the notification integration system.
      * Should be called at the start of test execution.
      */
-    public static void initializeNotificationSystem() {
+    public void initializeNotificationSystem() {
         executionStartTime = System.currentTimeMillis();
         totalTestsExecuted = 0;
         passedTestsExecuted = 0;
@@ -40,7 +61,7 @@ public class NotificationIntegrationHandler {
      * Collects test results from a test context for overall execution tracking.
      * @param context The TestNG test context
      */
-    public static void collectTestResults(ITestContext context) {
+    public void collectTestResults(ITestContext context) {
         totalTestsExecuted += context.getPassedTests().size() + context.getFailedTests().size() + context.getSkippedTests().size();
         passedTestsExecuted += context.getPassedTests().size();
         failedTestsExecuted += context.getFailedTests().size();
@@ -56,8 +77,8 @@ public class NotificationIntegrationHandler {
      * Sends test completion notifications based on overall execution results.
      * This method should be called at the end of all test execution.
      */
-    public static void sendExecutionCompletionNotifications() {
-        if (!NotificationConfig.isNotificationEnabled()) {
+    public void sendExecutionCompletionNotifications() {
+        if (!config.isNotificationEnabled()) {
             Logger.info("Notifications are disabled. Skipping notification sending.");
             return;
         }
@@ -83,20 +104,20 @@ public class NotificationIntegrationHandler {
             String notificationReason = "";
             
             // Check if any tests failed
-            if (summary.hasFailures() && NotificationConfig.shouldSendOnFailure()) {
+            if (summary.hasFailures() && config.shouldSendOnFailure()) {
                 shouldSendNotification = true;
                 notificationReason = "Test failures detected";
             }
             
             // Check if failure rate exceeds threshold
-            if (summary.exceedsFailureThreshold(NotificationConfig.getFailureThreshold())) {
+            if (summary.exceedsFailureThreshold(config.getFailureThreshold())) {
                 shouldSendNotification = true;
                 notificationReason = "Failure rate (" + String.format("%.1f%%", summary.getFailureRate()) + 
-                                  "%) exceeds threshold (" + NotificationConfig.getFailureThreshold() + "%)";
+                                  "%) exceeds threshold (" + config.getFailureThreshold() + "%)";
             }
             
             // Check if notifications should be sent on completion
-            if (NotificationConfig.shouldSendOnCompletion()) {
+            if (config.shouldSendOnCompletion()) {
                 shouldSendNotification = true;
                 notificationReason = "Test execution completed";
             }
@@ -109,7 +130,7 @@ public class NotificationIntegrationHandler {
                 String message = summary.generateSummaryMessage();
                 
                 // Send notifications
-                boolean notificationSent = NotificationSender.sendNotifications(subject, message);
+                boolean notificationSent = sender.sendNotifications(subject, message);
                 
                 if (notificationSent) {
                     Logger.info("Execution completion notification sent successfully");
@@ -124,5 +145,69 @@ public class NotificationIntegrationHandler {
             Logger.error("Error sending execution completion notifications: " + e.getMessage());
             // Don't let notification errors break the test execution
         }
+    }
+    
+    /**
+     * Gets the notification configuration.
+     * @return The NotificationConfig instance
+     */
+    public NotificationConfig getConfig() {
+        return config;
+    }
+    
+    /**
+     * Gets the notification sender.
+     * @return The NotificationSender instance
+     */
+    public NotificationSender getSender() {
+        return sender;
+    }
+    
+    /**
+     * Gets the total number of tests executed.
+     * @return Total tests executed
+     */
+    public int getTotalTestsExecuted() {
+        return totalTestsExecuted;
+    }
+    
+    /**
+     * Gets the number of passed tests.
+     * @return Number of passed tests
+     */
+    public int getPassedTestsExecuted() {
+        return passedTestsExecuted;
+    }
+    
+    /**
+     * Gets the number of failed tests.
+     * @return Number of failed tests
+     */
+    public int getFailedTestsExecuted() {
+        return failedTestsExecuted;
+    }
+    
+    /**
+     * Gets the number of skipped tests.
+     * @return Number of skipped tests
+     */
+    public int getSkippedTestsExecuted() {
+        return skippedTestsExecuted;
+    }
+    
+    /**
+     * Gets the set of all failed test results.
+     * @return Set of failed test results
+     */
+    public Set<ITestResult> getAllFailedResults() {
+        return new HashSet<>(allFailedResults);
+    }
+    
+    /**
+     * Gets the execution start time.
+     * @return Execution start time in milliseconds
+     */
+    public long getExecutionStartTime() {
+        return executionStartTime;
     }
 }

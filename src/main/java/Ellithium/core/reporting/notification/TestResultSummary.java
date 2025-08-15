@@ -123,7 +123,8 @@ public class TestResultSummary {
      * @return Email subject
      */
     public String generateEmailSubject() {
-        String prefix = NotificationConfig.getProperty(NotificationConfig.EMAIL_SUBJECT_PREFIX);
+        NotificationConfig config = NotificationConfig.getInstance();
+        String prefix = config.getEmailSubjectPrefix();
         String status = hasFailures() ? "FAILED" : "PASSED";
         return prefix + " - Test Execution - " + status + " (" + passedTests + "/" + totalTests + ")";
     }

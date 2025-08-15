@@ -1,6 +1,7 @@
 package Ellithium.core.reporting.notification;
 
 import Ellithium.core.logging.LogLevel;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.slack.api.Slack;
 import com.slack.api.webhook.WebhookResponse;
@@ -12,8 +13,26 @@ import java.util.Properties;
 
 /**
  * Handles sending notifications via email and Slack.
+ * Follows proper object-oriented design with dependency injection.
  */
 public class NotificationSender {
+    
+    private final NotificationConfig config;
+    
+    /**
+     * Constructor that accepts NotificationConfig dependency.
+     * @param config The notification configuration
+     */
+    public NotificationSender(NotificationConfig config) {
+        this.config = config;
+    }
+    
+    /**
+     * Default constructor that uses the singleton NotificationConfig instance.
+     */
+    public NotificationSender() {
+        this(NotificationConfig.getInstance());
+    }
     
     /**
      * Sends an email notification with test results.
@@ -21,26 +40,26 @@ public class NotificationSender {
      * @param body The email body
      * @return true if email was sent successfully
      */
-    public static boolean sendEmail(String subject, String body) {
-        if (!NotificationConfig.isEmailEnabled()) {
+    public boolean sendEmail(String subject, String body) {
+        if (!config.isEmailEnabled()) {
             Reporter.log("Email notifications are disabled", LogLevel.INFO_BLUE);
             return false;
         }
         
         // Validate email configuration before attempting to send
-        if (!NotificationConfig.validateEmailConfiguration()) {
+        if (!config.validateEmailConfiguration()) {
             Reporter.log("Email notification cancelled due to incomplete configuration", LogLevel.ERROR);
             return false;
         }
         
         try {
-            // Get email configuration
-            String smtpHost = NotificationConfig.getProperty(NotificationConfig.EMAIL_SMTP_HOST);
-            String smtpPort = NotificationConfig.getProperty(NotificationConfig.EMAIL_SMTP_PORT);
-            String username = NotificationConfig.getProperty(NotificationConfig.EMAIL_SMTP_USERNAME);
-            String password = NotificationConfig.getProperty(NotificationConfig.EMAIL_SMTP_PASSWORD);
-            String fromEmail = NotificationConfig.getProperty(NotificationConfig.EMAIL_FROM);
-            String toEmail = NotificationConfig.getProperty(NotificationConfig.EMAIL_TO);
+            // Get email configuration using proper getters
+            String smtpHost = config.getSmtpHost();
+            String smtpPort = config.getSmtpPort();
+            String username = config.getSmtpUsername();
+            String password = config.getSmtpPassword();
+            String fromEmail = config.getFromEmail();
+            String toEmail = config.getToEmail();
             
             // Set up mail properties
             Properties mailProps = new Properties();
@@ -81,22 +100,22 @@ public class NotificationSender {
      * @param message The Slack message
      * @return true if Slack message was sent successfully
      */
-    public static boolean sendSlackMessage(String message) {
-        if (!NotificationConfig.isSlackEnabled()) {
+    public boolean sendSlackMessage(String message) {
+        if (!config.isSlackEnabled()) {
             Reporter.log("Slack notifications are disabled", LogLevel.INFO_BLUE);
             return false;
         }
         
         // Validate Slack configuration before attempting to send
-        if (!NotificationConfig.validateSlackConfiguration()) {
+        if (!config.validateSlackConfiguration()) {
             Reporter.log("Slack notification cancelled due to incomplete configuration", LogLevel.ERROR);
             return false;
         }
         
         try {
-            String webhookUrl = NotificationConfig.getProperty(NotificationConfig.SLACK_WEBHOOK_URL);
-            String channel = NotificationConfig.getProperty(NotificationConfig.SLACK_CHANNEL);
-            String username = NotificationConfig.getProperty(NotificationConfig.SLACK_USERNAME);
+            String webhookUrl = config.getSlackWebhookUrl();
+            String channel = config.getSlackChannel();
+            String username = config.getSlackUsername();
             
             // Create Slack client
             Slack slack = Slack.getInstance();
@@ -128,7 +147,7 @@ public class NotificationSender {
      * @param username The username to post as
      * @return The JSON payload string
      */
-    private static String buildSlackPayload(String message, String channel, String username) {
+    private String buildSlackPayload(String message, String channel, String username) {
         StringBuilder payload = new StringBuilder();
         payload.append("{");
         payload.append("\"channel\": \"").append(channel).append("\",");
@@ -144,7 +163,7 @@ public class NotificationSender {
      * @param input The input string
      * @return The escaped string
      */
-    private static String escapeJsonString(String input) {
+    private String escapeJsonString(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")
                    .replace("\"", "\\\"")
@@ -159,20 +178,28 @@ public class NotificationSender {
      * @param message The message content
      * @return true if at least one notification was sent successfully
      */
-    public static boolean sendNotifications(String subject, String message) {
+    public boolean sendNotifications(String subject, String message) {
         boolean emailSent = false;
         boolean slackSent = false;
         
         // Send email notification
-        if (NotificationConfig.isEmailEnabled()) {
+        if (config.isEmailEnabled()) {
             emailSent = sendEmail(subject, message);
         }
         
         // Send Slack notification
-        if (NotificationConfig.isSlackEnabled()) {
+        if (config.isSlackEnabled()) {
             slackSent = sendSlackMessage(message);
         }
         
         return emailSent || slackSent;
+    }
+    
+    /**
+     * Gets the notification configuration.
+     * @return The NotificationConfig instance
+     */
+    public NotificationConfig getConfig() {
+        return config;
     }
 }
