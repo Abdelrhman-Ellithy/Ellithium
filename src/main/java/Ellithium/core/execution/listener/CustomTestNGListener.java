@@ -119,15 +119,13 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        if (testResult.getStatus() == FAILURE) {
-            if (DriverFactory.getCurrentDriver() != null) {
+        if ((testResult.getStatus() == FAILURE) && (DriverFactory.getCurrentDriver() != null)) {
                 Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
                 File failedScreenShot = GeneralHandler.testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), method.getTestMethod().getMethodName());
                 if (failedScreenShot != null) {
                     String description = ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
-            }
         }
         GeneralHandler.addAttachments();
     }
