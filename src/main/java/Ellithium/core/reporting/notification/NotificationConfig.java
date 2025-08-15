@@ -315,6 +315,12 @@ public class NotificationConfig {
         if (smtpHost.isEmpty() || smtpPort.isEmpty() || username.isEmpty() || 
             password.isEmpty() || fromEmail.isEmpty() || toEmail.isEmpty()) {
             Logger.error("Email configuration incomplete. Missing required properties.");
+            Logger.error("SMTP Host: " + (smtpHost.isEmpty() ? "MISSING" : "SET"));
+            Logger.error("SMTP Port: " + (smtpPort.isEmpty() ? "MISSING" : "SET"));
+            Logger.error("Username: " + (username.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(username)));
+            Logger.error("Password: " + (password.isEmpty() ? "MISSING" : "SET"));
+            Logger.error("From Email: " + (fromEmail.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(fromEmail)));
+            Logger.error("To Email: " + (toEmail.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(toEmail)));
             return false;
         }
         
@@ -336,6 +342,9 @@ public class NotificationConfig {
         
         if (webhookUrl.isEmpty() || channel.isEmpty() || username.isEmpty()) {
             Logger.error("Slack configuration incomplete. Missing required properties.");
+            Logger.error("Webhook URL: " + (webhookUrl.isEmpty() ? "MISSING" : "SET"));
+            Logger.error("Channel: " + (channel.isEmpty() ? "MISSING" : "SET"));
+            Logger.error("Username: " + (username.isEmpty() ? "MISSING" : "SET"));
             return false;
         }
         

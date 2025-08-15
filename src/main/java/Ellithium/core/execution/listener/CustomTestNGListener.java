@@ -6,7 +6,8 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
-import Ellithium.core.reporting.notification.NotificationIntegrationHandler;
+import Ellithium.core.reporting.notification.TestResultCollector;
+import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.*;
@@ -24,13 +25,14 @@ import static org.testng.ITestResult.FAILURE;
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
-    private NotificationIntegrationHandler notificationHandler;
+    private TestResultCollector testResultCollector;
     
     /**
-     * Constructor initializes the notification handler.
+     * Constructor initializes the test result collector.
      */
     public CustomTestNGListener() {
-        this.notificationHandler = new NotificationIntegrationHandler();
+        // Use the shared test result collector instance
+        this.testResultCollector = TestResultCollectorManager.getInstance().getTestResultCollector();
     }
     
     @Override
@@ -67,7 +69,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
         
         // Collect test results for overall execution summary
-        notificationHandler.collectTestResults(context);
+        testResultCollector.collectTestResults(context);
     }
     @Override
     public void onStart(ISuite suite) {
@@ -87,8 +89,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
         
-        // Initialize notification integration system
-        notificationHandler.initializeNotificationSystem();
+        // Initialize test result collection system
+        testResultCollector.initializeTestResultCollection();
     }
     @Override
     public void onExecutionFinish() {
@@ -103,22 +105,23 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
-        notificationHandler.sendExecutionCompletionNotifications();
+        
+        // Send execution completion notifications
+        TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
     }
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        if(method.isTestMethod() && (!testResult.getName().equals("runScenario")) && (DriverFactory.getCurrentDriver()!=null)){
-            if(testResult.getStatus()==FAILURE){
-            String driverName=ConfigContext.getValue(ConfigContext.getDriverType());
-            File screenShot=GeneralHandler.testFailed(driverName,testResult.getName());
-                String description=driverName.toUpperCase() + "-" + driverName +" "+ testResult.getName();
-                Reporter.attachScreenshotToReport(screenShot, Objects.requireNonNull(screenShot).getName(), description);
+        if (testResult.getStatus() == FAILURE) {
+            if (DriverFactory.getCurrentDriver() != null) {
+                Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
+                File failedScreenShot = GeneralHandler.testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), method.getTestMethod().getMethodName());
+                if (failedScreenShot != null) {
+                    String description = ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
+                    Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
+                }
             }
         }
-        if (method.isTestMethod()){
-            GeneralHandler.addAttachments();
-            Reporter.addParams(GeneralHandler.getParameters());
-        }
+        GeneralHandler.addAttachments();
     }
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {

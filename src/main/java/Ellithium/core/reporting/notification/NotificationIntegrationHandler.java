@@ -8,11 +8,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Handles integration between the notification system and TestNG listeners.
+ * Handles integration between the notification system and test frameworks.
  * Manages test result collection and notification sending at execution completion.
  * Follows proper object-oriented design with dependency injection.
+ * Implements TestResultCollector interface for framework-agnostic result collection.
  */
-public class NotificationIntegrationHandler {
+public class NotificationIntegrationHandler implements TestResultCollector {
     
     private final NotificationConfig config;
     private final NotificationSender sender;
@@ -42,11 +43,8 @@ public class NotificationIntegrationHandler {
         this(NotificationConfig.getInstance(), new NotificationSender());
     }
     
-    /**
-     * Initializes the notification integration system.
-     * Should be called at the start of test execution.
-     */
-    public void initializeNotificationSystem() {
+    @Override
+    public void initializeTestResultCollection() {
         executionStartTime = System.currentTimeMillis();
         totalTestsExecuted = 0;
         passedTestsExecuted = 0;
@@ -54,13 +52,10 @@ public class NotificationIntegrationHandler {
         skippedTestsExecuted = 0;
         allFailedResults.clear();
         
-        Logger.info("Notification integration system initialized");
+        Logger.info("Test result collection system initialized");
     }
     
-    /**
-     * Collects test results from a test context for overall execution tracking.
-     * @param context The TestNG test context
-     */
+    @Override
     public void collectTestResults(ITestContext context) {
         totalTestsExecuted += context.getPassedTests().size() + context.getFailedTests().size() + context.getSkippedTests().size();
         passedTestsExecuted += context.getPassedTests().size();
@@ -68,7 +63,32 @@ public class NotificationIntegrationHandler {
         skippedTestsExecuted += context.getSkippedTests().size();
         allFailedResults.addAll(context.getFailedTests().getAllResults());
         
-        Logger.info("Collected test results from context: " + context.getName() + 
+        Logger.info("Collected TestNG test results from context: " + context.getName() + 
+                   " (Total: " + totalTestsExecuted + ", Passed: " + passedTestsExecuted + 
+                   ", Failed: " + failedTestsExecuted + ", Skipped: " + skippedTestsExecuted + ")");
+    }
+    
+    @Override
+    public void collectCucumberTestResult(String scenarioName, String status, long executionTime) {
+        totalTestsExecuted++;
+        
+        switch (status.toUpperCase()) {
+            case "PASSED":
+                passedTestsExecuted++;
+                break;
+            case "FAILED":
+                failedTestsExecuted++;
+                // For Cucumber, we can't easily get ITestResult, so we'll track count only
+                break;
+            case "SKIPPED":
+                skippedTestsExecuted++;
+                break;
+            default:
+                Logger.warn("Unknown Cucumber test status: " + status);
+                break;
+        }
+        
+        Logger.info("Collected Cucumber test result: " + scenarioName + " - " + status + 
                    " (Total: " + totalTestsExecuted + ", Passed: " + passedTestsExecuted + 
                    ", Failed: " + failedTestsExecuted + ", Skipped: " + skippedTestsExecuted + ")");
     }
@@ -128,9 +148,10 @@ public class NotificationIntegrationHandler {
                 // Generate notification content
                 String subject = summary.generateEmailSubject();
                 String message = summary.generateSummaryMessage();
+                String htmlMessage = summary.generateHtmlEmailBody();
                 
                 // Send notifications
-                boolean notificationSent = sender.sendNotifications(subject, message);
+                boolean notificationSent = sender.sendNotifications(subject, message, htmlMessage);
                 
                 if (notificationSent) {
                     Logger.info("Execution completion notification sent successfully");
@@ -147,6 +168,26 @@ public class NotificationIntegrationHandler {
         }
     }
     
+    @Override
+    public int getTotalTestsExecuted() {
+        return totalTestsExecuted;
+    }
+    
+    @Override
+    public int getPassedTestsExecuted() {
+        return passedTestsExecuted;
+    }
+    
+    @Override
+    public int getFailedTestsExecuted() {
+        return failedTestsExecuted;
+    }
+    
+    @Override
+    public int getSkippedTestsExecuted() {
+        return skippedTestsExecuted;
+    }
+    
     /**
      * Gets the notification configuration.
      * @return The NotificationConfig instance
@@ -161,38 +202,6 @@ public class NotificationIntegrationHandler {
      */
     public NotificationSender getSender() {
         return sender;
-    }
-    
-    /**
-     * Gets the total number of tests executed.
-     * @return Total tests executed
-     */
-    public int getTotalTestsExecuted() {
-        return totalTestsExecuted;
-    }
-    
-    /**
-     * Gets the number of passed tests.
-     * @return Number of passed tests
-     */
-    public int getPassedTestsExecuted() {
-        return passedTestsExecuted;
-    }
-    
-    /**
-     * Gets the number of failed tests.
-     * @return Number of failed tests
-     */
-    public int getFailedTestsExecuted() {
-        return failedTestsExecuted;
-    }
-    
-    /**
-     * Gets the number of skipped tests.
-     * @return Number of skipped tests
-     */
-    public int getSkippedTestsExecuted() {
-        return skippedTestsExecuted;
     }
     
     /**

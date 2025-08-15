@@ -37,10 +37,21 @@ public class NotificationSender {
     /**
      * Sends an email notification with test results.
      * @param subject The email subject
-     * @param body The email body
+     * @param body The email body (can be plain text or HTML)
      * @return true if email was sent successfully
      */
     public boolean sendEmail(String subject, String body) {
+        return sendEmail(subject, body, false);
+    }
+    
+    /**
+     * Sends an email notification with test results.
+     * @param subject The email subject
+     * @param body The email body
+     * @param isHtml true if the body contains HTML content
+     * @return true if email was sent successfully
+     */
+    public boolean sendEmail(String subject, String body, boolean isHtml) {
         if (!config.isEmailEnabled()) {
             Reporter.log("Email notifications are disabled", LogLevel.INFO_BLUE);
             return false;
@@ -81,12 +92,18 @@ public class NotificationSender {
             message.setFrom(new InternetAddress(fromEmail));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject(subject);
-            message.setText(body);
+            
+            // Set content type based on whether it's HTML or plain text
+            if (isHtml) {
+                message.setContent(body, "text/html; charset=UTF-8");
+            } else {
+                message.setText(body);
+            }
             
             // Send message
             Transport.send(message);
             
-            Reporter.log("Email notification sent successfully to " + toEmail, LogLevel.INFO_GREEN);
+            Reporter.log("Email notification sent successfully to " + EmailObfuscator.obfuscate(toEmail), LogLevel.INFO_GREEN);
             return true;
             
         } catch (Exception e) {
@@ -175,24 +192,35 @@ public class NotificationSender {
     /**
      * Sends both email and Slack notifications.
      * @param subject The email subject
-     * @param message The message content
+     * @param message The message content for Slack
+     * @param htmlMessage The HTML message content for email
      * @return true if at least one notification was sent successfully
      */
-    public boolean sendNotifications(String subject, String message) {
+    public boolean sendNotifications(String subject, String message, String htmlMessage) {
         boolean emailSent = false;
         boolean slackSent = false;
         
-        // Send email notification
+        // Send email notification with HTML content
         if (config.isEmailEnabled()) {
-            emailSent = sendEmail(subject, message);
+            emailSent = sendEmail(subject, htmlMessage, true);
         }
         
-        // Send Slack notification
+        // Send Slack notification with plain text
         if (config.isSlackEnabled()) {
             slackSent = sendSlackMessage(message);
         }
         
         return emailSent || slackSent;
+    }
+    
+    /**
+     * Sends both email and Slack notifications (backward compatibility).
+     * @param subject The email subject
+     * @param message The message content
+     * @return true if at least one notification was sent successfully
+     */
+    public boolean sendNotifications(String subject, String message) {
+        return sendNotifications(subject, message, message);
     }
     
     /**
