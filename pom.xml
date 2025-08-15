@@ -299,6 +299,28 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssqlVersion}</version>
         </dependency>
+        
+        <!-- JavaMail API for email notifications -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>javax.mail-api</artifactId>
+            <version>1.6.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <!-- Slack SDK for Slack notifications -->
+        <dependency>
+            <groupId>com.slack.api</groupId>
+            <artifactId>slack-api-client</artifactId>
+            <version>1.40.0</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- Oracle JDBC Driver -->
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
@@ -516,18 +538,21 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
                 <includes>
                     <include>**/*.properties</include> <!-- Include all properties files -->
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources/properties</directory>
+                <filtering>true</filtering>
                 <includes>
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>
             </resource>
             <resource>
                 <directory>.allure</directory>
+                <filtering>false</filtering>
                 <includes>
                     <include>**/*</include> <!-- Include all properties files -->
                 </includes>

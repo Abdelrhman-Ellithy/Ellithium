@@ -13,12 +13,13 @@ import io.qameta.allure.Step;
 import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
 public class GeneralHandler {
+    
     /**
      * Internally used with The Ellithium Not for General Use.
      * @param browserName Slider element locator
@@ -39,6 +40,7 @@ public class GeneralHandler {
             return null;
         }
     }
+    
     private static void AttachLogs(){
         String logs = Logger.getCurrentExecutionLogs();
         try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
@@ -53,12 +55,14 @@ public class GeneralHandler {
     public static void addAttachments(){
         GeneralHandler.AttachLogs();
     }
+    
     public static void StartRoutine(){
         VersionChecker.solveVersion();
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
         RetryAnalyzer.initRetryCount();
     }
+    
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
         DriverType type=ConfigContext.getDriverType();
