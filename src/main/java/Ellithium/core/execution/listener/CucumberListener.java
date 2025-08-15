@@ -17,6 +17,7 @@ import static Ellithium.core.reporting.internal.Colors.*;
  * Cucumber listener that integrates with the Ellithium framework.
  * Extends AllureCucumber7Jvm for Allure reporting integration.
  * Collects test results for notification system integration.
+ * This listener is responsible for counting Cucumber scenarios only.
  */
 public class CucumberListener extends AllureCucumber7Jvm {
     private static String scenarioName;
@@ -53,9 +54,12 @@ public class CucumberListener extends AllureCucumber7Jvm {
         }
         
         // Collect test result for notification system
+        // This ensures Cucumber scenarios are counted only once
         try {
             TestResultCollectorManager.getInstance().getTestResultCollector()
                 .collectCucumberTestResult(scenarioName, status, scenarioExecutionTime);
+            
+            Logger.info("Cucumber scenario result collected: " + scenarioName + " - " + status);
         } catch (Exception e) {
             Logger.warn("Failed to collect Cucumber test result for notification system: " + e.getMessage());
         }

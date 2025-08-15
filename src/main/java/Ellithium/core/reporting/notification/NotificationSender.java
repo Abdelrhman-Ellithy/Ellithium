@@ -57,14 +57,12 @@ public class NotificationSender {
             return false;
         }
         
-        // Validate email configuration before attempting to send
         if (!config.validateEmailConfiguration()) {
             Reporter.log("Email notification cancelled due to incomplete configuration", LogLevel.ERROR);
             return false;
         }
         
         try {
-            // Get email configuration using proper getters
             String smtpHost = config.getSmtpHost();
             String smtpPort = config.getSmtpPort();
             String username = config.getSmtpUsername();
@@ -72,14 +70,12 @@ public class NotificationSender {
             String fromEmail = config.getFromEmail();
             String toEmail = config.getToEmail();
             
-            // Set up mail properties
             Properties mailProps = new Properties();
             mailProps.put("mail.smtp.auth", "true");
             mailProps.put("mail.smtp.starttls.enable", "true");
             mailProps.put("mail.smtp.host", smtpHost);
             mailProps.put("mail.smtp.port", smtpPort);
             
-            // Create session
             Session session = Session.getInstance(mailProps, new Authenticator() {
                 @Override
                 protected PasswordAuthentication getPasswordAuthentication() {
@@ -87,20 +83,17 @@ public class NotificationSender {
                 }
             });
             
-            // Create message
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(fromEmail));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject(subject);
             
-            // Set content type based on whether it's HTML or plain text
             if (isHtml) {
                 message.setContent(body, "text/html; charset=UTF-8");
             } else {
                 message.setText(body);
             }
             
-            // Send message
             Transport.send(message);
             
             Reporter.log("Email notification sent successfully to " + EmailObfuscator.obfuscate(toEmail), LogLevel.INFO_GREEN);
@@ -123,7 +116,6 @@ public class NotificationSender {
             return false;
         }
         
-        // Validate Slack configuration before attempting to send
         if (!config.validateSlackConfiguration()) {
             Reporter.log("Slack notification cancelled due to incomplete configuration", LogLevel.ERROR);
             return false;
@@ -134,13 +126,10 @@ public class NotificationSender {
             String channel = config.getSlackChannel();
             String username = config.getSlackUsername();
             
-            // Create Slack client
             Slack slack = Slack.getInstance();
             
-            // Build the message payload
             String payload = buildSlackPayload(message, channel, username);
             
-            // Send the message
             WebhookResponse response = slack.send(webhookUrl, payload);
             
             if (response.getCode() == 200) {
@@ -200,12 +189,10 @@ public class NotificationSender {
         boolean emailSent = false;
         boolean slackSent = false;
         
-        // Send email notification with HTML content
         if (config.isEmailEnabled()) {
             emailSent = sendEmail(subject, htmlMessage, true);
         }
         
-        // Send Slack notification with plain text
         if (config.isSlackEnabled()) {
             slackSent = sendSlackMessage(message);
         }

@@ -6,6 +6,7 @@ import org.testng.ITestResult;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.lang.reflect.Method;
 
 /**
  * Handles integration between the notification system and test frameworks.
@@ -18,7 +19,6 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     private final NotificationConfig config;
     private final NotificationSender sender;
     
-    // Instance variables to collect overall execution results
     private int totalTestsExecuted = 0;
     private int passedTestsExecuted = 0;
     private int failedTestsExecuted = 0;
@@ -57,15 +57,40 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     
     @Override
     public void collectTestResults(ITestContext context) {
-        totalTestsExecuted += context.getPassedTests().size() + context.getFailedTests().size() + context.getSkippedTests().size();
-        passedTestsExecuted += context.getPassedTests().size();
-        failedTestsExecuted += context.getFailedTests().size();
-        skippedTestsExecuted += context.getSkippedTests().size();
-        allFailedResults.addAll(context.getFailedTests().getAllResults());
+        int testngTests = 0;
+        int testngPassed = 0;
+        int testngFailed = 0;
+        int testngSkipped = 0;
+        for (ITestResult result : context.getPassedTests().getAllResults()) {
+            if (!isCucumberTest(result)) {
+                testngPassed++;
+                testngTests++;
+            }
+        }
+        
+        for (ITestResult result : context.getFailedTests().getAllResults()) {
+            if (!isCucumberTest(result)) {
+                testngFailed++;
+                testngTests++;
+                allFailedResults.add(result);
+            }
+        }
+        
+        for (ITestResult result : context.getSkippedTests().getAllResults()) {
+            if (!isCucumberTest(result)) {
+                testngSkipped++;
+                testngTests++;
+            }
+        }
+        
+        totalTestsExecuted += testngTests;
+        passedTestsExecuted += testngPassed;
+        failedTestsExecuted += testngFailed;
+        skippedTestsExecuted += testngSkipped;
         
         Logger.info("Collected TestNG test results from context: " + context.getName() + 
-                   " (Total: " + totalTestsExecuted + ", Passed: " + passedTestsExecuted + 
-                   ", Failed: " + failedTestsExecuted + ", Skipped: " + skippedTestsExecuted + ")");
+                   " (TestNG Tests: " + testngTests + ", Passed: " + testngPassed + 
+                   ", Failed: " + testngFailed + ", Skipped: " + testngSkipped + ")");
     }
     
     @Override
@@ -78,7 +103,6 @@ public class NotificationIntegrationHandler implements TestResultCollector {
                 break;
             case "FAILED":
                 failedTestsExecuted++;
-                // For Cucumber, we can't easily get ITestResult, so we'll track count only
                 break;
             case "SKIPPED":
                 skippedTestsExecuted++;
@@ -93,6 +117,41 @@ public class NotificationIntegrationHandler implements TestResultCollector {
                    ", Failed: " + failedTestsExecuted + ", Skipped: " + skippedTestsExecuted + ")");
     }
     
+    @Override
+    public boolean isCucumberTest(ITestResult result) {
+        if (result == null) {
+            return false;
+        }
+        String testName = result.getName();
+        if (testName == null) {
+            return false;
+        }
+        if ("runScenario".equals(testName)) {
+            return true;
+        }
+        Class<?> testClass = result.getTestClass().getRealClass();
+        if (testClass != null) {
+            String className = testClass.getName();
+            if (className.toLowerCase().contains("cucumber") || 
+                className.toLowerCase().contains("feature") ||
+                className.toLowerCase().contains("stepdef")) {
+                return true;
+            }
+        }
+        Method testMethod = result.getMethod().getConstructorOrMethod().getMethod();
+        if (testMethod != null) {
+            if (testMethod.isAnnotationPresent(io.cucumber.java.en.Given.class) ||
+                testMethod.isAnnotationPresent(io.cucumber.java.en.When.class) ||
+                testMethod.isAnnotationPresent(io.cucumber.java.en.Then.class) ||
+                testMethod.isAnnotationPresent(io.cucumber.java.en.And.class) ||
+                testMethod.isAnnotationPresent(io.cucumber.java.en.But.class)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     /**
      * Sends test completion notifications based on overall execution results.
      * This method should be called at the end of all test execution.
@@ -104,12 +163,10 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         }
         
         try {
-            // Calculate total execution time
             long totalExecutionTime = System.currentTimeMillis() - executionStartTime;
             
             Logger.info("Preparing execution completion notification for " + totalTestsExecuted + " tests");
             
-            // Create test result summary from overall execution data
             TestResultSummary summary = new TestResultSummary(
                 totalTestsExecuted, 
                 passedTestsExecuted, 
@@ -119,24 +176,20 @@ public class NotificationIntegrationHandler implements TestResultCollector {
                 allFailedResults
             );
             
-            // Determine if notifications should be sent
             boolean shouldSendNotification = false;
             String notificationReason = "";
             
-            // Check if any tests failed
             if (summary.hasFailures() && config.shouldSendOnFailure()) {
                 shouldSendNotification = true;
                 notificationReason = "Test failures detected";
             }
             
-            // Check if failure rate exceeds threshold
             if (summary.exceedsFailureThreshold(config.getFailureThreshold())) {
                 shouldSendNotification = true;
                 notificationReason = "Failure rate (" + String.format("%.1f%%", summary.getFailureRate()) + 
                                   "%) exceeds threshold (" + config.getFailureThreshold() + "%)";
             }
             
-            // Check if notifications should be sent on completion
             if (config.shouldSendOnCompletion()) {
                 shouldSendNotification = true;
                 notificationReason = "Test execution completed";
@@ -145,12 +198,10 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             if (shouldSendNotification) {
                 Logger.info("Sending execution completion notification: " + notificationReason);
                 
-                // Generate notification content
                 String subject = summary.generateEmailSubject();
                 String message = summary.generateSummaryMessage();
                 String htmlMessage = summary.generateHtmlEmailBody();
                 
-                // Send notifications
                 boolean notificationSent = sender.sendNotifications(subject, message, htmlMessage);
                 
                 if (notificationSent) {
@@ -164,7 +215,6 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             
         } catch (Exception e) {
             Logger.error("Error sending execution completion notifications: " + e.getMessage());
-            // Don't let notification errors break the test execution
         }
     }
     

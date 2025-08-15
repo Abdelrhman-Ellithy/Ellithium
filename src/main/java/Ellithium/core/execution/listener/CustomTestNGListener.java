@@ -37,48 +37,58 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestStart(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.clearCurrentExecutionLogs();
-                Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.clearCurrentExecutionLogs();
+            Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }
+    
     @Override
     public void onTestFailure(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
+    
     @Override
     public void onTestSuccess(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
-            }
-    }
-    @Override
-    public void onTestSkipped(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
         }
     }
+    
+    @Override
+    public void onTestSkipped(ITestResult result) {
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
+        }
+    }
+    
     @Override
     public void onStart(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
     }
+    
     @Override
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
-        
-        // Collect test results for overall execution summary
         testResultCollector.collectTestResults(context);
     }
+    
     @Override
     public void onStart(ISuite suite) {
         Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
     }
+    
     @Override
     public void onFinish(ISuite suite) {
         Logger.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
     }
+    
     @Override
     public void onExecutionStart() {
         GeneralHandler.StartRoutine();
@@ -88,10 +98,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
-        
-        // Initialize test result collection system
         testResultCollector.initializeTestResultCollection();
     }
+    
     @Override
     public void onExecutionFinish() {
         ConfigContext.setOnExecution(false);
@@ -105,10 +114,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
-        
-        // Send execution completion notifications
         TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
     }
+    
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
         if (testResult.getStatus() == FAILURE) {
@@ -123,6 +131,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         GeneralHandler.addAttachments();
     }
+    
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
         annotation.setRetryAnalyzer(RetryAnalyzer.class);
