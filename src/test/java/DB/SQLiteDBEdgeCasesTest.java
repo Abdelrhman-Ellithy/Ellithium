@@ -1,8 +1,6 @@
 package DB;
 
-import Ellithium.Utilities.assertion.AssertionExecutor;
-import Ellithium.core.DB.SQLDBType;
-import Ellithium.core.DB.SQLDatabaseProvider;
+
 import org.testng.annotations.*;
 
 import javax.sql.rowset.CachedRowSet;

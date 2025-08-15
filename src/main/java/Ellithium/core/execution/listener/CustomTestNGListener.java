@@ -6,6 +6,8 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
+import Ellithium.core.reporting.notification.TestResultCollector;
+import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;
 import io.qameta.allure.testng.AllureTestNg;
 import org.testng.*;
@@ -23,47 +25,70 @@ import static org.testng.ITestResult.FAILURE;
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
+    private TestResultCollector testResultCollector;
+    
+    /**
+     * Constructor initializes the test result collector.
+     */
+    public CustomTestNGListener() {
+        // Use the shared test result collector instance
+        this.testResultCollector = TestResultCollectorManager.getInstance().getTestResultCollector();
+    }
+    
     @Override
     public void onTestStart(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.clearCurrentExecutionLogs();
-                Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.clearCurrentExecutionLogs();
+            Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
         }
     }
+    
     @Override
     public void onTestFailure(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
+    
     @Override
     public void onTestSuccess(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
-            }
-    }
-    @Override
-    public void onTestSkipped(ITestResult result) {
-        if (!(result.getName().equals("runScenario"))) {
-                Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
         }
     }
+    
+    @Override
+    public void onTestSkipped(ITestResult result) {
+        // Only log non-Cucumber tests to avoid duplicate logging
+        if (!testResultCollector.isCucumberTest(result)) {
+            Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
+        }
+    }
+    
     @Override
     public void onStart(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
     }
+    
     @Override
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
+        testResultCollector.collectTestResults(context);
     }
+    
     @Override
     public void onStart(ISuite suite) {
         Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
     }
+    
     @Override
     public void onFinish(ISuite suite) {
         Logger.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
     }
+    
     @Override
     public void onExecutionStart() {
         GeneralHandler.StartRoutine();
@@ -73,7 +98,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
+        testResultCollector.initializeTestResultCollection();
     }
+    
     @Override
     public void onExecutionFinish() {
         ConfigContext.setOnExecution(false);
@@ -87,22 +114,22 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
         AllureHelper.allureOpen();
+        TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
     }
+    
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        if(method.isTestMethod() && (!testResult.getName().equals("runScenario")) && (DriverFactory.getCurrentDriver()!=null)){
-            if(testResult.getStatus()==FAILURE){
-            String driverName=ConfigContext.getValue(ConfigContext.getDriverType());
-            File screenShot=GeneralHandler.testFailed(driverName,testResult.getName());
-                String description=driverName.toUpperCase() + "-" + driverName +" "+ testResult.getName();
-                Reporter.attachScreenshotToReport(screenShot, Objects.requireNonNull(screenShot).getName(), description);
-            }
+        if ((testResult.getStatus() == FAILURE) && (DriverFactory.getCurrentDriver() != null)) {
+                Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
+                File failedScreenShot = GeneralHandler.testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), method.getTestMethod().getMethodName());
+                if (failedScreenShot != null) {
+                    String description = ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
+                    Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
+                }
         }
-        if (method.isTestMethod()){
-            GeneralHandler.addAttachments();
-            Reporter.addParams(GeneralHandler.getParameters());
-        }
+        GeneralHandler.addAttachments();
     }
+    
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
         annotation.setRetryAnalyzer(RetryAnalyzer.class);

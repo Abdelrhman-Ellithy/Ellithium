@@ -2,6 +2,7 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
 import io.appium.java_client.android.nativekey.KeyEvent;
@@ -11,7 +12,7 @@ import org.openqa.selenium.*;
  * Handles Android KeyEvents and iOS key press operations.
  * @param <T> Type of WebDriver being used
  */
-public class KeyPressActions<T extends WebDriver> extends BaseActions<T> {
+public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
     public KeyPressActions(T driver) {
         super(driver);
     }

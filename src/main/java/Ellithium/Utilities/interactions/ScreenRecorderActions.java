@@ -152,25 +152,27 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 Reporter.log("Failed to save mobile recording: " + e.getMessage(), LogLevel.ERROR);
             }
         } else {
+            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
+            if (!videoFolder.exists()) {
+                videoFolder.mkdirs();
+            }
             try {
                 screenRecorder.get().stop();
-            }catch (Exception e){
-                Reporter.log("Failed to save Web recording: " + e.getMessage(), LogLevel.ERROR);
-            }
-            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
-            File[] files = videoFolder.listFiles();
-            if (files != null && files.length > 0) {
-                File lastVideo = files[files.length - 1];
-                String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
-                File renamedVideo = new File(videoFolder, newName);
-
-                if (lastVideo.renameTo(renamedVideo)) {
-                    Reporter.log("Video recording saved: " + renamedVideo.getPath(), LogLevel.INFO_BLUE);
+                java.util.List<File> createdFiles = screenRecorder.get().getCreatedMovieFiles();
+                if (createdFiles != null && !createdFiles.isEmpty()) {
+                    File recordedFile = createdFiles.get(0);
+                    String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
+                    File mp4File = new File(videoFolder, newName);
+                    if (recordedFile.renameTo(mp4File)) {
+                        Reporter.log("Video recording saved: " + mp4File.getPath(), LogLevel.INFO_BLUE);
+                    } else {
+                        Reporter.log("Failed to rename video file to mp4", LogLevel.ERROR);
+                    }
                 } else {
-                    Reporter.log("Failed to rename video file", LogLevel.ERROR);
+                    Reporter.log("No video file found after recording", LogLevel.ERROR);
                 }
-            } else {
-                Reporter.log("No video file found after recording", LogLevel.ERROR);
+            } catch (Exception e) {
+                Reporter.log("Failed to save Web recording: " + e.getMessage(), LogLevel.ERROR);
             }
         }
         cleanup();
