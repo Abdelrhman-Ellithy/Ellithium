@@ -61,6 +61,8 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         int testngPassed = 0;
         int testngFailed = 0;
         int testngSkipped = 0;
+        
+        // Process passed tests
         for (ITestResult result : context.getPassedTests().getAllResults()) {
             if (!isCucumberTest(result)) {
                 testngPassed++;
@@ -68,6 +70,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             }
         }
         
+        // Process failed tests
         for (ITestResult result : context.getFailedTests().getAllResults()) {
             if (!isCucumberTest(result)) {
                 testngFailed++;
@@ -76,6 +79,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             }
         }
         
+        // Process skipped tests
         for (ITestResult result : context.getSkippedTests().getAllResults()) {
             if (!isCucumberTest(result)) {
                 testngSkipped++;
@@ -83,6 +87,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             }
         }
         
+        // Update totals
         totalTestsExecuted += testngTests;
         passedTestsExecuted += testngPassed;
         failedTestsExecuted += testngFailed;
@@ -122,34 +127,44 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         if (result == null) {
             return false;
         }
+        
+        return isCucumberTestByName(result) || 
+               isCucumberTestByClass(result) || 
+               isCucumberTestByAnnotation(result);
+    }
+    
+    private boolean isCucumberTestByName(ITestResult result) {
         String testName = result.getName();
-        if (testName == null) {
+        return testName != null && "runScenario".equals(testName);
+    }
+    
+    private boolean isCucumberTestByClass(ITestResult result) {
+        Class<?> testClass = result.getTestClass().getRealClass();
+        if (testClass == null) {
             return false;
         }
-        if ("runScenario".equals(testName)) {
-            return true;
-        }
-        Class<?> testClass = result.getTestClass().getRealClass();
-        if (testClass != null) {
-            String className = testClass.getName();
-            if (className.toLowerCase().contains("cucumber") || 
-                className.toLowerCase().contains("feature") ||
-                className.toLowerCase().contains("stepdef")) {
-                return true;
-            }
-        }
+        
+        String className = testClass.getName().toLowerCase();
+        return className.contains("cucumber") || 
+               className.contains("feature") ||
+               className.contains("stepdef");
+    }
+    
+    private boolean isCucumberTestByAnnotation(ITestResult result) {
         Method testMethod = result.getMethod().getConstructorOrMethod().getMethod();
-        if (testMethod != null) {
-            if (testMethod.isAnnotationPresent(io.cucumber.java.en.Given.class) ||
-                testMethod.isAnnotationPresent(io.cucumber.java.en.When.class) ||
-                testMethod.isAnnotationPresent(io.cucumber.java.en.Then.class) ||
-                testMethod.isAnnotationPresent(io.cucumber.java.en.And.class) ||
-                testMethod.isAnnotationPresent(io.cucumber.java.en.But.class)) {
-                return true;
-            }
+        if (testMethod == null) {
+            return false;
         }
         
-        return false;
+        return hasCucumberAnnotation(testMethod);
+    }
+    
+    private boolean hasCucumberAnnotation(Method method) {
+        return method.isAnnotationPresent(io.cucumber.java.en.Given.class) ||
+               method.isAnnotationPresent(io.cucumber.java.en.When.class) ||
+               method.isAnnotationPresent(io.cucumber.java.en.Then.class) ||
+               method.isAnnotationPresent(io.cucumber.java.en.And.class) ||
+               method.isAnnotationPresent(io.cucumber.java.en.But.class);
     }
     
     /**

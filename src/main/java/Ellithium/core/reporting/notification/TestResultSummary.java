@@ -139,19 +139,42 @@ public class TestResultSummary {
         String statusIcon = hasFailures() ? "❌" : "✅";
         
         StringBuilder html = new StringBuilder();
+        
+        // Build HTML structure
+        appendHtmlHeader(html);
+        appendHtmlStyles(html);
+        appendHtmlBodyStart(html);
+        
+        // Build content sections
+        appendHeaderSection(html, status, statusColor, statusIcon);
+        appendSummaryTable(html);
+        appendProgressSection(html);
+        appendExecutionInfoSection(html, dateFormat);
+        appendFailedTestsSection(html);
+        
+        // Close HTML structure
+        appendHtmlBodyEnd(html);
+        
+        return html.toString();
+    }
+    
+    private void appendHtmlHeader(StringBuilder html) {
         html.append("<!DOCTYPE html>");
         html.append("<html lang=\"en\">");
         html.append("<head>");
         html.append("<meta charset=\"UTF-8\">");
         html.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
         html.append("<title>Ellithium Test Execution Report</title>");
+    }
+    
+    private void appendHtmlStyles(StringBuilder html) {
         html.append("<style>");
         html.append("body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }");
         html.append(".container { max-width: 900px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }");
         html.append(".header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }");
         html.append(".header h1 { margin: 0; font-size: 28px; font-weight: 300; }");
         html.append(".header .subtitle { margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; }");
-        html.append(".status-badge { display: inline-block; background-color: ").append(statusColor).append("; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 10px; }");
+        html.append(".status-badge { display: inline-block; background-color: var(--status-color); color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 10px; }");
         html.append(".content { padding: 30px; }");
         html.append(".summary-table { width: 100%; border-collapse: collapse; margin: 30px 0; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }");
         html.append(".summary-table th { background-color: #495057; color: white; padding: 15px; text-align: center; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }");
@@ -188,18 +211,23 @@ public class TestResultSummary {
         html.append("@media (max-width: 600px) { .summary-table, .execution-table, .failed-table { font-size: 12px; } .summary-table td, .summary-table th { padding: 10px 5px; } }");
         html.append("</style>");
         html.append("</head>");
+    }
+    
+    private void appendHtmlBodyStart(StringBuilder html) {
         html.append("<body>");
-        
-        // Header
         html.append("<div class=\"container\">");
+    }
+    
+    private void appendHeaderSection(StringBuilder html, String status, String statusColor, String statusIcon) {
         html.append("<div class=\"header\">");
         html.append("<h1>🚀 Ellithium Test Execution Report</h1>");
         html.append("<div class=\"subtitle\">Automated Test Results Summary</div>");
-        html.append("<div class=\"status-badge\">").append(statusIcon).append(" ").append(status).append("</div>");
+        html.append("<div class=\"status-badge\" style=\"--status-color: ").append(statusColor).append(";\">").append(statusIcon).append(" ").append(status).append("</div>");
         html.append("</div>");
-        
         html.append("<div class=\"content\">");
-        
+    }
+    
+    private void appendSummaryTable(StringBuilder html) {
         html.append("<table class=\"summary-table\">");
         html.append("<thead>");
         html.append("<tr>");
@@ -209,29 +237,40 @@ public class TestResultSummary {
         html.append("</tr>");
         html.append("</thead>");
         html.append("<tbody>");
+        
+        // Passed tests row
         html.append("<tr>");
         html.append("<td>✅ Passed Tests</td>");
         html.append("<td class=\"passed\">").append(passedTests).append("<span class=\"label\">Tests</span></td>");
         html.append("<td>").append(String.format("%.1f%%", getSuccessRate())).append("</td>");
         html.append("</tr>");
+        
+        // Failed tests row
         html.append("<tr>");
         html.append("<td>❌ Failed Tests</td>");
         html.append("<td class=\"failed\">").append(failedTests).append("<span class=\"label\">Tests</span></td>");
         html.append("<td>").append(String.format("%.1f%%", getFailureRate())).append("</td>");
         html.append("</tr>");
+        
+        // Skipped tests row
         html.append("<tr>");
         html.append("<td>⏭️ Skipped Tests</td>");
         html.append("<td class=\"skipped\">").append(skippedTests).append("<span class=\"label\">Tests</span></td>");
         html.append("<td>").append(String.format("%.1f%%", totalTests > 0 ? (double) skippedTests / totalTests * 100 : 0.0)).append("</td>");
         html.append("</tr>");
+        
+        // Total tests row
         html.append("<tr>");
         html.append("<td>📊 Total Tests</td>");
         html.append("<td class=\"total\">").append(totalTests).append("<span class=\"label\">Tests</span></td>");
         html.append("<td>100.0%</td>");
         html.append("</tr>");
+        
         html.append("</tbody>");
         html.append("</table>");
-        
+    }
+    
+    private void appendProgressSection(StringBuilder html) {
         html.append("<div class=\"progress-section\">");
         html.append("<h3>📈 Success Rate Progress</h3>");
         html.append("<div class=\"progress-bar\">");
@@ -240,29 +279,44 @@ public class TestResultSummary {
         html.append("</div>");
         html.append("<div class=\"progress-text\">").append(String.format("%.1f%% Success Rate (%d/%d tests passed)", getSuccessRate(), passedTests, totalTests)).append("</div>");
         html.append("</div>");
-        
+    }
+    
+    private void appendExecutionInfoSection(StringBuilder html, SimpleDateFormat dateFormat) {
         html.append("<div class=\"execution-info\">");
         html.append("<h3>📊 Execution Details</h3>");
         html.append("<table class=\"execution-table\">");
+        
+        // Execution Date
         html.append("<tr>");
         html.append("<td>Execution Date:</td>");
         html.append("<td>").append(dateFormat.format(executionDate)).append("</td>");
         html.append("</tr>");
+        
+        // Total Duration
         html.append("<tr>");
         html.append("<td>Total Duration:</td>");
         html.append("<td>").append(getFormattedExecutionTime()).append("</td>");
         html.append("</tr>");
+        
+        // Report Type
         html.append("<tr>");
         html.append("<td>Report Type:</td>");
         html.append("<td>Allure Reports</td>");
         html.append("</tr>");
+        
+        // Execution Status
+        String status = hasFailures() ? "FAILED" : "PASSED";
+        String statusColor = hasFailures() ? "#dc3545" : "#28a745";
         html.append("<tr>");
         html.append("<td>Execution Status:</td>");
         html.append("<td><strong style=\"color: ").append(statusColor).append(";\">").append(status).append("</strong></td>");
         html.append("</tr>");
+        
         html.append("</table>");
         html.append("</div>");
-        
+    }
+    
+    private void appendFailedTestsSection(StringBuilder html) {
         if (hasFailures() && !failedTestResults.isEmpty()) {
             html.append("<div class=\"failed-tests\">");
             html.append("<h3>❌ Failed Test Details</h3>");
@@ -293,19 +347,17 @@ public class TestResultSummary {
             html.append("</table>");
             html.append("</div>");
         }
-        
+    }
+    
+    private void appendHtmlBodyEnd(StringBuilder html) {
         html.append("</div>");
-        
         html.append("<div class=\"footer\">");
         html.append("<p>Generated by Ellithium Test Automation Framework</p>");
         html.append("<p>For detailed reports, please check the Allure HTML report</p>");
         html.append("</div>");
-        
         html.append("</div>");
         html.append("</body>");
         html.append("</html>");
-        
-        return html.toString();
     }
     
     /**
