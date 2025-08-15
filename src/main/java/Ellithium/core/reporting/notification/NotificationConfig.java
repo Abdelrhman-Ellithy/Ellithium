@@ -19,12 +19,10 @@ public class NotificationConfig {
     private Properties properties;
     private boolean propertiesLoaded = false;
     
-    // Notification enable/disable flags
     private static final String NOTIFICATION_ENABLED = "notification.enabled";
     private static final String EMAIL_ENABLED = "notification.email.enabled";
     private static final String SLACK_ENABLED = "notification.slack.enabled";
     
-    // Email configuration
     private static final String EMAIL_SMTP_HOST = "notification.email.smtp.host";
     private static final String EMAIL_SMTP_PORT = "notification.email.smtp.port";
     private static final String EMAIL_SMTP_USERNAME = "notification.email.smtp.username";
@@ -33,12 +31,10 @@ public class NotificationConfig {
     private static final String EMAIL_TO = "notification.email.to";
     private static final String EMAIL_SUBJECT_PREFIX = "notification.email.subject.prefix";
     
-    // Slack configuration
     private static final String SLACK_WEBHOOK_URL = "notification.slack.webhook.url";
     private static final String SLACK_CHANNEL = "notification.slack.channel";
     private static final String SLACK_USERNAME = "notification.slack.username";
     
-    // Trigger configuration
     private static final String FAILURE_THRESHOLD = "notification.failure.threshold";
     private static final String SEND_ON_FAILURE = "notification.send.on.failure";
     private static final String SEND_ON_COMPLETION = "notification.send.on.completion";
@@ -87,11 +83,10 @@ public class NotificationConfig {
             return value;
         }
         
-        // Check if the value contains environment variable placeholders
+
         if (value.contains("${") && value.contains("}")) {
             String resolvedValue = value;
             
-            // Find all environment variable placeholders
             int startIndex = 0;
             while ((startIndex = resolvedValue.indexOf("${", startIndex)) != -1) {
                 int endIndex = resolvedValue.indexOf("}", startIndex);
@@ -100,17 +95,14 @@ public class NotificationConfig {
                 String placeholder = resolvedValue.substring(startIndex, endIndex + 1);
                 String envVarName = resolvedValue.substring(startIndex + 2, endIndex);
                 
-                // Get environment variable value
                 String envVarValue = System.getenv(envVarName);
                 if (envVarValue == null) {
                     Logger.warn("Environment variable '" + envVarName + "' not found. Using placeholder as-is.");
                     envVarValue = placeholder;
                 }
                 
-                // Replace the placeholder
                 resolvedValue = resolvedValue.replace(placeholder, envVarValue);
                 
-                // Move start index to avoid infinite loops
                 startIndex += envVarValue.length();
             }
             

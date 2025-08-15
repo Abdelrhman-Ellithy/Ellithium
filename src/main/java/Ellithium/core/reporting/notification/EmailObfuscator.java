@@ -10,7 +10,6 @@ public final class EmailObfuscator {
      * Private constructor to prevent instantiation.
      */
     private EmailObfuscator() {
-        // Utility class - no instantiation needed
     }
     
     /**
@@ -26,7 +25,7 @@ public final class EmailObfuscator {
         }
         
         if (!email.contains("@")) {
-            return email; // Not a valid email, return as-is
+            return email;
         }
         
         int atIndex = email.indexOf("@");
@@ -34,7 +33,7 @@ public final class EmailObfuscator {
         String domain = email.substring(atIndex);
         
         if (localPart.length() <= 2) {
-            return email; // Too short to obfuscate meaningfully
+            return email;
         }
         
         String obfuscatedLocal = localPart.charAt(0) + "***" + localPart.charAt(localPart.length() - 1);
