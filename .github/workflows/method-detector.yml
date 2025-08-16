@@ -61,37 +61,63 @@ jobs:
           # Create temporary directories for comparison
           mkdir -p /tmp/base /tmp/head
           
-          # Extract Java files from base commit
-          git show $BASE_SHA:src/main/java > /tmp/base/main.java 2>/dev/null || echo "No main source in base"
-          git show $BASE_SHA:src/test/java > /tmp/base/test.java 2>/dev/null || echo "No test source in base"
+          # Extract Java files from base commit with proper error handling
+          if git show $BASE_SHA:src/main/java > /tmp/base/main.java 2>/dev/null; then
+            echo "✅ Successfully extracted main source from base commit"
+          else
+            echo "⚠️ No main source in base commit, creating empty file"
+            touch /tmp/base/main.java
+          fi
           
-          # Extract Java files from head commit
-          git show $HEAD_SHA:src/main/java > /tmp/head/main.java 2>/dev/null || echo "No main source in head"
-          git show $HEAD_SHA:src/test/java > /tmp/head/test.java 2>/dev/null || echo "No test source in head"
+          if git show $BASE_SHA:src/test/java > /tmp/base/test.java 2>/dev/null; then
+            echo "✅ Successfully extracted test source from base commit"
+          else
+            echo "⚠️ No test source in base commit, creating empty file"
+            touch /tmp/base/test.java
+          fi
+          
+          # Extract Java files from head commit with proper error handling
+          if git show $HEAD_SHA:src/main/java > /tmp/head/main.java 2>/dev/null; then
+            echo "✅ Successfully extracted main source from head commit"
+          else
+            echo "⚠️ No main source in head commit, creating empty file"
+            touch /tmp/head/main.java
+          fi
+          
+          if git show $HEAD_SHA:src/test/java > /tmp/head/test.java 2>/dev/null; then
+            echo "✅ Successfully extracted test source from head commit"
+          else
+            echo "⚠️ No test source in head commit, creating empty file"
+            touch /tmp/head/test.java
+          fi
           
           # Function to extract method signatures from Java code
           extract_methods() {
             local file="$1"
-            if [ -f "$file" ]; then
+            if [ -f "$file" ] && [ -s "$file" ]; then
               # Extract method signatures (public, private, protected, package-private)
-              grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*\{?' "$file" | \
-                sed 's/^\s*//' | \
-                sed 's/\s*\{.*$//' | \
-                sed 's/\s*$//' | \
-                sort -u
+              grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*\{?' "$file" 2>/dev/null | \
+                sed 's/^\s*//' 2>/dev/null | \
+                sed 's/\s*\{.*$//' 2>/dev/null | \
+                sed 's/\s*$//' 2>/dev/null | \
+                sort -u 2>/dev/null || echo ""
+            else
+              echo ""
             fi
           }
           
           # Function to extract class declarations
           extract_classes() {
             local file="$1"
-            if [ -f "$file" ]; then
+            if [ -f "$file" ] && [ -s "$file" ]; then
               # Extract class, interface, and enum declarations
-              grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" | \
-                sed 's/^\s*//' | \
-                sed 's/\s*\{.*$//' | \
-                sed 's/\s*$//' | \
-                sort -u
+              grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" 2>/dev/null | \
+                sed 's/^\s*//' 2>/dev/null | \
+                sed 's/\s*\{.*$//' 2>/dev/null | \
+                sed 's/\s*$//' 2>/dev/null | \
+                sort -u 2>/dev/null || echo ""
+            else
+              echo ""
             fi
           }
           
