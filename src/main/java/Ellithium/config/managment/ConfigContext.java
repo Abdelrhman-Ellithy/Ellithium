@@ -24,7 +24,7 @@ public class ConfigContext {
     private static final Map<PageLoadStrategyMode, String> PAGE_LOAD_STRATEGY_MODE_STRING_MAP;
     private static final Map<SandboxMode, String> SANDBOX_MODE_STRING_MAP;
     private static final String allureVersion="2.30.0";
-    private static final String EllithuiumVersion="2.1.1";
+    private static final String EllithuiumVersion="2.2.0";
 
     public static String getAllureVersion() {
         return allureVersion;
@@ -186,7 +186,6 @@ public class ConfigContext {
         ConfigContext.sandboxMode = sandboxMode;
         ConfigContext.webSecurityMode = webSecurityMode;
     }
-
     // Static getters to retrieve configuration values
     public static DriverType getDriverType() {
         return driverType;
@@ -194,19 +193,15 @@ public class ConfigContext {
     public static HeadlessMode getHeadlessMode() {
         return headlessMode;
     }
-
     public static PageLoadStrategyMode getPageLoadStrategy() {
         return pageLoadStrategy;
     }
-
     public static PrivateMode getPrivateMode() {
         return privateMode;
     }
-
     public static SandboxMode getSandboxMode() {
         return sandboxMode;
     }
-
     public static WebSecurityMode getWebSecurityMode() {
         return webSecurityMode;
     }
@@ -216,15 +211,12 @@ public class ConfigContext {
     public static void setHeadlessMode(HeadlessMode headlessMode) {
         ConfigContext.headlessMode = headlessMode;
     }
-
     public static void setPageLoadStrategy(PageLoadStrategyMode pageLoadStrategy) {
         ConfigContext.pageLoadStrategy = pageLoadStrategy;
     }
-
     public static void setPrivateMode(PrivateMode privateMode) {
         ConfigContext.privateMode = privateMode;
     }
-
     public static void setSandboxMode(SandboxMode sandboxMode) {
         ConfigContext.sandboxMode = sandboxMode;
     }

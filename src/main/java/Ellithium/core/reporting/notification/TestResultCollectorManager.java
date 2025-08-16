@@ -1,27 +1,24 @@
 package Ellithium.core.reporting.notification;
 
-import Ellithium.core.logging.Logger;
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.reporting.Reporter;
 
 /**
- * Manager class that provides a singleton instance of TestResultCollector.
- * This ensures that both TestNG and Cucumber listeners share the same test result collection state.
- * Follows the Singleton pattern for managing shared resources.
+ * Singleton manager for TestResultCollector instance.
+ * Ensures shared state between different listeners and prevents test execution blocking.
  */
 public class TestResultCollectorManager {
     
     private static TestResultCollectorManager instance;
     private final NotificationIntegrationHandler testResultCollector;
     
-    /**
-     * Private constructor to enforce singleton pattern.
-     */
     private TestResultCollectorManager() {
         this.testResultCollector = new NotificationIntegrationHandler();
     }
     
     /**
      * Gets the singleton instance of TestResultCollectorManager.
-     * @return The TestResultCollectorManager instance
+     * @return The singleton instance
      */
     public static synchronized TestResultCollectorManager getInstance() {
         if (instance == null) {
@@ -31,7 +28,7 @@ public class TestResultCollectorManager {
     }
     
     /**
-     * Gets the shared test result collector instance.
+     * Gets the TestResultCollector instance.
      * @return The TestResultCollector instance
      */
     public TestResultCollector getTestResultCollector() {
@@ -39,30 +36,15 @@ public class TestResultCollectorManager {
     }
     
     /**
-     * Delegates to the underlying NotificationIntegrationHandler to send execution completion notifications.
-     * This method is called at the end of test execution to send notifications.
+     * Sends execution completion notifications.
+     * @return true if notifications were sent successfully
      */
-    public void sendExecutionCompletionNotifications() {
+    public boolean sendExecutionCompletionNotifications() {
         try {
-            testResultCollector.sendExecutionCompletionNotifications();
+            return testResultCollector.sendExecutionCompletionNotifications();
         } catch (Exception e) {
-            Logger.error("Error in TestResultCollectorManager while sending notifications: " + e.getMessage());
+            Reporter.log("Failed to send execution completion notifications: " + e.getMessage(), LogLevel.ERROR);
+            return false;
         }
-    }
-    
-    /**
-     * Gets the notification configuration.
-     * @return The NotificationConfig instance
-     */
-    public NotificationConfig getNotificationConfig() {
-        return testResultCollector.getConfig();
-    }
-    
-    /**
-     * Gets the notification sender.
-     * @return The NotificationSender instance
-     */
-    public NotificationSender getNotificationSender() {
-        return testResultCollector.getSender();
     }
 }
