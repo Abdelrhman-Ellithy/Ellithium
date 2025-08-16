@@ -72,10 +72,21 @@ jobs:
           echo "modified_classes_count=$MODIFIED_CLASSES" >> $GITHUB_OUTPUT
           echo "files_modified_count=$FILES_MODIFIED" >> $GITHUB_OUTPUT
           
-          # Store full report for release notes
-          echo "change_report<<EOF" >> $GITHUB_OUTPUT
-          echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+                     # Store full report for release notes
+           echo "change_report<<EOF" >> $GITHUB_OUTPUT
+           echo "$OUTPUT" >> $GITHUB_OUTPUT
+           echo "EOF" >> $GITHUB_OUTPUT
+           
+           # Also read the detailed report file directly
+           if [[ -f "$OUTPUT_DIR/analysis/change_report.md" ]]; then
+             echo "change_report_detailed<<EOF" >> $GITHUB_OUTPUT
+             cat "$OUTPUT_DIR/analysis/change_report.md" >> $GITHUB_OUTPUT
+             echo "EOF" >> $GITHUB_OUTPUT
+           else
+             echo "change_report_detailed<<EOF" >> $GITHUB_OUTPUT
+             echo "Detailed report file not found" >> $GITHUB_OUTPUT
+             echo "EOF" >> $GITHUB_OUTPUT
+           fi
           
           # Debug: Show what we're storing
           echo "DEBUG: Stored change report length: $(echo "$OUTPUT" | wc -c) characters"
@@ -83,11 +94,20 @@ jobs:
           echo "$OUTPUT" | head -c 200
           echo "..."
           
-          # Debug: Show what files were generated
-          echo "DEBUG: Generated files in $OUTPUT_DIR:"
-          find "$OUTPUT_DIR" -type f -name "*.txt" -o -name "*.md" | head -10
-          echo "DEBUG: Analysis directory contents:"
-          ls -la "$OUTPUT_DIR/analysis/" 2>/dev/null || echo "No analysis directory found"
+                     # Debug: Show what files were generated
+           echo "DEBUG: Generated files in $OUTPUT_DIR:"
+           find "$OUTPUT_DIR" -type f -name "*.txt" -o -name "*.md" | head -10
+           echo "DEBUG: Analysis directory contents:"
+           ls -la "$OUTPUT_DIR/analysis/" 2>/dev/null || echo "No analysis directory found"
+           
+           # Debug: Show content of key files
+           echo "DEBUG: Content of change_report.md (first 1000 chars):"
+           if [[ -f "$OUTPUT_DIR/analysis/change_report.md" ]]; then
+             head -c 1000 "$OUTPUT_DIR/analysis/change_report.md"
+             echo "..."
+           else
+             echo "change_report.md not found"
+           fi
       
       # Only run release-drafter for PRs and tag pushes (not main branch pushes)
       - name: Release Drafter
@@ -156,9 +176,15 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔍 Detailed Change Analysis" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          # Clean up the output by removing any remaining color codes and formatting
-          CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
-          echo "$CLEAN_REPORT" >> $GITHUB_STEP_SUMMARY
+                     # Use the detailed report instead of the console output
+           DETAILED_REPORT="${{ steps.detect-changes.outputs.change_report_detailed }}"
+           if [[ -n "$DETAILED_REPORT" && "$DETAILED_REPORT" != "Detailed report file not found" ]]; then
+             echo "$DETAILED_REPORT" >> $GITHUB_STEP_SUMMARY
+           else
+             # Fallback to console output if detailed report not available
+             CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
+             echo "$CLEAN_REPORT" >> $GITHUB_STEP_SUMMARY
+           fi
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Copy this content to your manual release notes!**" >> $GITHUB_STEP_SUMMARY
@@ -179,9 +205,15 @@ jobs:
           echo ""
           echo "🔍 DETAILED CHANGE ANALYSIS:"
           echo "========================================="
-          # Clean up the output by removing any remaining color codes and formatting
-          CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
-          echo "$CLEAN_REPORT"
+          # Use the detailed report instead of the console output
+          DETAILED_REPORT="${{ steps.detect-changes.outputs.change_report_detailed }}"
+          if [[ -n "$DETAILED_REPORT" && "$DETAILED_REPORT" != "Detailed report file not found" ]]; then
+            echo "$DETAILED_REPORT"
+          else
+            # Fallback to console output if detailed report not available
+            CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
+            echo "$CLEAN_REPORT"
+          fi
           echo "========================================="
           echo ""
           echo "📋 COPY THE ABOVE DETAILED ANALYSIS FOR YOUR RELEASE NOTES!"
@@ -189,7 +221,7 @@ jobs:
           echo "💡 TIP: This analysis will appear in the workflow logs above."
           echo "💡 TIP: Copy the detailed analysis above for your manual release notes."
           echo ""
-          echo "🔍 DEBUG: Raw change report length: $(echo "${{ steps.detect-changes.outputs.change_report }}" | wc -c) characters"
-          echo "🔍 DEBUG: First 500 chars of report:"
-          echo "${{ steps.detect-changes.outputs.change_report }}" | head -c 500
+          echo "🔍 DEBUG: Detailed report length: $(echo "${{ steps.detect-changes.outputs.change_report_detailed }}" | wc -c) characters"
+          echo "🔍 DEBUG: First 500 chars of detailed report:"
+          echo "${{ steps.detect-changes.outputs.change_report_detailed }}" | head -c 500
           echo "..."
