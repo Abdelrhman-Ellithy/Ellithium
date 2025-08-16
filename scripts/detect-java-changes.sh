@@ -40,9 +40,16 @@ extract_java_elements() {
         return 0
     fi
     
+    # Check if output directory is writable
+    if [[ ! -w "$output_dir" ]]; then
+        print_warning "Output directory not writable: $output_dir"
+        return 1
+    fi
+    
     print_status "Processing $basename_file"
     
-    # Extract methods using robust pattern matching
+    # Extract methods using robust pattern matching with better error handling
+    local methods_file="$output_dir/${basename_file}_methods.txt"
     if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|static|final|synchronized|abstract|native|strictfp)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\([^)]*\)[[:space:]]*(throws[[:space:]]+[^{]*)?[[:space:]]*\{?[[:space:]]*$/ {
         # Clean up the method signature
@@ -50,11 +57,16 @@ extract_java_elements() {
         gsub(/[[:space:]]*\{.*$/, "")  # Remove everything after {
         gsub(/[[:space:]]+/, " ")  # Normalize spaces
         print
-    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null; then
-        print_status "Successfully extracted methods from $basename_file"
+    }' "$file" 2>/dev/null | sort -u > "$methods_file" 2>/dev/null; then
+        if [[ -f "$methods_file" ]] && [[ -s "$methods_file" ]]; then
+            print_status "Successfully extracted methods from $basename_file"
+        else
+            print_warning "Methods file created but appears empty for $basename_file"
+            touch "$methods_file"
+        fi
     else
         print_warning "Failed to extract methods from $basename_file, creating empty file"
-        touch "$output_dir/${basename_file}_methods.txt"
+        touch "$methods_file"
     fi
     
     # Extract method names only
@@ -197,8 +209,17 @@ analyze_changes() {
     print_status "Base SHA: $base_sha"
     print_status "Head SHA: $head_sha"
     
-    # Create output directories
-    mkdir -p "$output_dir"/{base,head,analysis}
+    # Create output directories with better error handling
+    if ! mkdir -p "$output_dir"/{base,head,analysis} 2>/dev/null; then
+        print_error "Failed to create output directories"
+        exit 1
+    fi
+    
+    # Ensure directories are writable
+    if [[ ! -w "$output_dir" ]]; then
+        print_error "Output directory is not writable: $output_dir"
+        exit 1
+    fi
     
     # Extract Java files from both commits
     print_status "Extracting Java source files..."
@@ -254,11 +275,40 @@ analyze_changes() {
         # Clear output file
         > "$output_file" 2>/dev/null || true
         
-        # Try to list files with error handling
+        # Try multiple patterns to find Java files
+        local found_files=false
+        
+        # Pattern 1: Standard Maven structure
         if git ls-tree -r --name-only "$commit" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_file" 2>/dev/null; then
-            print_status "Successfully listed Java files from commit $commit"
-        else
-            print_warning "Failed to list Java files from commit $commit, creating empty list"
+            if [[ -s "$output_file" ]]; then
+                print_status "Successfully listed Java files from commit $commit (Maven structure)"
+                found_files=true
+            fi
+        fi
+        
+        # Pattern 2: If no files found, try broader search
+        if [[ "$found_files" == false ]]; then
+            if git ls-tree -r --name-only "$commit" 2>/dev/null | grep '\.java$' > "$output_file" 2>/dev/null; then
+                if [[ -s "$output_file" ]]; then
+                    print_status "Successfully listed Java files from commit $commit (broad search)"
+                    found_files=true
+                fi
+            fi
+        fi
+        
+        # Pattern 3: If still no files, try to find any Java files in the commit
+        if [[ "$found_files" == false ]]; then
+            if git show "$commit" --name-only 2>/dev/null | grep '\.java$' > "$output_file" 2>/dev/null; then
+                if [[ -s "$output_file" ]]; then
+                    print_status "Successfully listed Java files from commit $commit (commit diff)"
+                    found_files=true
+                fi
+            fi
+        fi
+        
+        # If no files found with any method, create empty list
+        if [[ "$found_files" == false ]]; then
+            print_warning "No Java files found in commit $commit with any method"
             touch "$output_file"
         fi
         
@@ -297,6 +347,20 @@ analyze_changes() {
     # If no files found, create a minimal working set
     if [[ "$base_file_count" -eq 0 ]] && [[ "$head_file_count" -eq 0 ]]; then
         print_warning "No Java files found in either commit, this might indicate a repository issue"
+        print_status "Trying alternative file discovery methods..."
+        
+        # Try to find any Java files in the repository
+        local any_java_files=$(find . -name "*.java" -type f 2>/dev/null | head -5 || true)
+        if [[ -n "$any_java_files" ]]; then
+            print_status "Found Java files in working directory:"
+            echo "$any_java_files" | while read -r found_file; do
+                print_status "  - $found_file"
+            done
+        else
+            print_warning "No Java files found in working directory either"
+        fi
+        
+        # Continue with empty file lists - the script will handle this gracefully
     fi
     
     # Extract content for each Java file with better error handling
@@ -305,10 +369,10 @@ analyze_changes() {
             local output_file="$output_dir/base/$(basename "$file")"
             local file_path="$file"
             
-            # Try to extract the file with multiple fallback methods
+            # Try to extract the file using multiple git show strategies
             local extracted=false
             
-            # Method 1: Try git show
+            # Method 1: Try git show with the full path
             if git show "$base_commit:$file_path" > "$output_file" 2>/dev/null; then
                 if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
                     print_status "Successfully extracted via git show: $file"
@@ -316,15 +380,33 @@ analyze_changes() {
                 fi
             fi
             
-            # Method 2: If git show failed, try to copy from current working directory
-            if [[ "$extracted" == false ]] && [[ -f "$file_path" ]] && [[ -r "$file_path" ]]; then
-                if cp "$file_path" "$output_file" 2>/dev/null; then
-                    print_status "Successfully copied from working directory: $file"
-                    extracted=true
+            # Method 2: If git show failed, try with just the filename (in case path structure changed)
+            if [[ "$extracted" == false ]]; then
+                local filename=$(basename "$file_path")
+                if git show "$base_commit:$filename" > "$output_file" 2>/dev/null; then
+                    if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                        print_status "Successfully extracted via git show (filename only): $filename"
+                        extracted=true
+                    fi
                 fi
             fi
             
-            # Method 3: If both failed, create empty file
+            # Method 3: Try to find the file in the commit with a broader search
+            if [[ "$extracted" == false ]]; then
+                local filename=$(basename "$file_path")
+                # Search for files with the same name in the commit
+                local found_file=$(git ls-tree -r --name-only "$base_commit" 2>/dev/null | grep "/$filename$" | head -1)
+                if [[ -n "$found_file" ]]; then
+                    if git show "$base_commit:$found_file" > "$output_file" 2>/dev/null; then
+                        if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                            print_status "Successfully extracted via git show (found path): $found_file"
+                            extracted=true
+                        fi
+                    fi
+                fi
+            fi
+            
+            # Method 4: If all failed, create empty file
             if [[ "$extracted" == false ]]; then
                 print_warning "Failed to extract: $file, creating empty file"
                 touch "$output_file"
@@ -337,10 +419,10 @@ analyze_changes() {
             local output_file="$output_dir/head/$(basename "$file")"
             local file_path="$file"
             
-            # Try to extract the file with multiple fallback methods
+            # Try to extract the file using multiple git show strategies
             local extracted=false
             
-            # Method 1: Try git show
+            # Method 1: Try git show with the full path
             if git show "$head_sha:$file_path" > "$output_file" 2>/dev/null; then
                 if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
                     print_status "Successfully extracted via git show: $file"
@@ -348,15 +430,33 @@ analyze_changes() {
                 fi
             fi
             
-            # Method 2: If git show failed, try to copy from current working directory
-            if [[ "$extracted" == false ]] && [[ -f "$file_path" ]] && [[ -r "$file_path" ]]; then
-                if cp "$file_path" "$output_file" 2>/dev/null; then
-                    print_status "Successfully copied from working directory: $file"
-                    extracted=true
+            # Method 2: If git show failed, try with just the filename (in case path structure changed)
+            if [[ "$extracted" == false ]]; then
+                local filename=$(basename "$file_path")
+                if git show "$head_sha:$filename" > "$output_file" 2>/dev/null; then
+                    if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                        print_status "Successfully extracted via git show (filename only): $filename"
+                        extracted=true
+                    fi
                 fi
             fi
             
-            # Method 3: If both failed, create empty file
+            # Method 3: Try to find the file in the commit with a broader search
+            if [[ "$extracted" == false ]]; then
+                local filename=$(basename "$file_path")
+                # Search for files with the same name in the commit
+                local found_file=$(git ls-tree -r --name-only "$head_sha" 2>/dev/null | grep "/$filename$" | head -1)
+                if [[ -n "$found_file" ]]; then
+                    if git show "$head_sha:$found_file" > "$output_file" 2>/dev/null; then
+                        if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                            print_status "Successfully extracted via git show (found path): $found_file"
+                            extracted=true
+                        fi
+                    fi
+                fi
+            fi
+            
+            # Method 4: If all failed, create empty file
             if [[ "$extracted" == false ]]; then
                 print_warning "Failed to extract: $file, creating empty file"
                 touch "$output_file"
@@ -374,7 +474,9 @@ analyze_changes() {
             print_status "Processing base file: $basename_file"
             # Add a small delay to prevent overwhelming the system
             sleep 0.1 2>/dev/null || true
-            extract_java_elements "$file" "$output_dir/base" "$basename_file"
+            if ! extract_java_elements "$file" "$output_dir/base" "$basename_file"; then
+                print_warning "Failed to extract elements from $basename_file, continuing with next file"
+            fi
         fi
     done
     
@@ -385,7 +487,9 @@ analyze_changes() {
             print_status "Processing head file: $basename_file"
             # Add a small delay to prevent overwhelming the system
             sleep 0.1 2>/dev/null || true
-            extract_java_elements "$file" "$output_dir/head" "$basename_file"
+            if ! extract_java_elements "$file" "$output_dir/head" "$basename_file"; then
+                print_warning "Failed to extract elements from $basename_file, continuing with next file"
+            fi
         fi
     done
     
@@ -652,6 +756,18 @@ OUTPUT_DIR="$3"
 # Set error handling
 set -euo pipefail
 
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    print_error "Not in a git repository"
+    exit 1
+fi
+
+# Check git status and provide debugging info
+print_status "Git repository status:"
+print_status "Current directory: $(pwd)"
+print_status "Git root: $(git rev-parse --show-toplevel 2>/dev/null || echo 'Unknown')"
+print_status "Git remote: $(git remote get-url origin 2>/dev/null || echo 'No origin remote')"
+
 # Trap errors to provide better error messages
 trap 'print_error "Script failed at line $LINENO. Check the logs above for details."; exit 1' ERR
 
@@ -674,12 +790,6 @@ fi
 # Ensure output directory is writable
 if ! mkdir -p "$OUTPUT_DIR" 2>/dev/null; then
     print_error "Cannot create output directory: $OUTPUT_DIR"
-    exit 1
-fi
-
-# Check if we're in a git repository
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    print_error "Not in a git repository"
     exit 1
 fi
 
