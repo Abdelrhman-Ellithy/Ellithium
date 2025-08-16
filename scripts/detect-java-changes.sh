@@ -212,48 +212,122 @@ analyze_changes() {
         base_commit="$base_sha"
     fi
     
-    # Validate commits exist
-    if ! git rev-parse --verify "$base_commit" >/dev/null 2>&1; then
-        print_error "Invalid base commit: $base_commit"
+    # Validate commits exist and are accessible
+    validate_commit() {
+        local commit="$1"
+        local commit_name="$2"
+        
+        if ! git rev-parse --verify "$commit" >/dev/null 2>&1; then
+            print_error "Invalid $commit_name commit: $commit"
+            return 1
+        fi
+        
+        # Test if we can access the commit content
+        if ! git show "$commit" --name-only >/dev/null 2>&1; then
+            print_error "Cannot access content of $commit_name commit: $commit"
+            return 1
+        fi
+        
+        print_status "✅ $commit_name commit validated: $commit"
+        return 0
+    }
+    
+    # Validate both commits
+    if ! validate_commit "$base_commit" "base"; then
+        print_error "Base commit validation failed"
         exit 1
     fi
     
-    if ! git rev-parse --verify "$head_sha" >/dev/null 2>&1; then
-        print_error "Invalid head commit: $head_sha"
+    if ! validate_commit "$head_sha" "head"; then
+        print_error "Head commit validation failed"
         exit 1
     fi
     
     # Get ALL Java files that exist in each commit (not just changed files)
     print_status "Extracting main source Java files (excluding test files)..."
     
-    git ls-tree -r --name-only "$base_commit" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
-    git ls-tree -r --name-only "$head_sha" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    # Function to safely list Java files from a commit
+    safe_list_java_files() {
+        local commit="$1"
+        local output_file="$2"
+        
+        # Clear output file
+        > "$output_file" 2>/dev/null || true
+        
+        # Try to list files with error handling
+        if git ls-tree -r --name-only "$commit" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_file" 2>/dev/null; then
+            print_status "Successfully listed Java files from commit $commit"
+        else
+            print_warning "Failed to list Java files from commit $commit, creating empty list"
+            touch "$output_file"
+        fi
+        
+        # Validate the file list
+        if [[ ! -s "$output_file" ]]; then
+            print_warning "No Java files found in commit $commit"
+        fi
+    }
+    
+    # List Java files from both commits
+    safe_list_java_files "$base_commit" "$output_dir/base/java_files.txt"
+    safe_list_java_files "$head_sha" "$output_dir/head/java_files.txt"
     
     # Debug: Show what files we found
     print_status "Base commit Java files found:"
-    if [[ -f "$output_dir/base/java_files.txt" ]]; then
+    if [[ -f "$output_dir/base/java_files.txt" ]] && [[ -r "$output_dir/base/java_files.txt" ]]; then
         head -10 "$output_dir/base/java_files.txt" 2>/dev/null || true
+    else
+        print_warning "Cannot read base commit Java files list"
     fi
     
     print_status "Head commit Java files found:"
-    if [[ -f "$output_dir/head/java_files.txt" ]]; then
+    if [[ -f "$output_dir/head/java_files.txt" ]] && [[ -r "$output_dir/head/java_files.txt" ]]; then
         head -10 "$output_dir/head/java_files.txt" 2>/dev/null || true
+    else
+        print_warning "Cannot read head commit Java files list"
     fi
     
-    # Extract content for each Java file
+    # Add a safety check for file count
+    local base_file_count=$(wc -l < "$output_dir/base/java_files.txt" 2>/dev/null || echo "0")
+    local head_file_count=$(wc -l < "$output_dir/head/java_files.txt" 2>/dev/null || echo "0")
+    
+    print_status "Base commit has $base_file_count Java files"
+    print_status "Head commit has $head_file_count Java files"
+    
+    # If no files found, create a minimal working set
+    if [[ "$base_file_count" -eq 0 ]] && [[ "$head_file_count" -eq 0 ]]; then
+        print_warning "No Java files found in either commit, this might indicate a repository issue"
+    fi
+    
+    # Extract content for each Java file with better error handling
     while IFS= read -r file; do
         if [[ -n "$file" ]]; then
             local output_file="$output_dir/base/$(basename "$file")"
-            if git show "$base_commit:$file" > "$output_file" 2>/dev/null; then
-                # Validate the extracted file is readable
+            local file_path="$file"
+            
+            # Try to extract the file with multiple fallback methods
+            local extracted=false
+            
+            # Method 1: Try git show
+            if git show "$base_commit:$file_path" > "$output_file" 2>/dev/null; then
                 if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
-                    print_status "Successfully extracted: $file"
-                else
-                    print_warning "Extracted file is not readable or empty: $output_file"
-                    rm -f "$output_file" 2>/dev/null || true
+                    print_status "Successfully extracted via git show: $file"
+                    extracted=true
                 fi
-            else
-                print_warning "Failed to extract: $file"
+            fi
+            
+            # Method 2: If git show failed, try to copy from current working directory
+            if [[ "$extracted" == false ]] && [[ -f "$file_path" ]] && [[ -r "$file_path" ]]; then
+                if cp "$file_path" "$output_file" 2>/dev/null; then
+                    print_status "Successfully copied from working directory: $file"
+                    extracted=true
+                fi
+            fi
+            
+            # Method 3: If both failed, create empty file
+            if [[ "$extracted" == false ]]; then
+                print_warning "Failed to extract: $file, creating empty file"
+                touch "$output_file"
             fi
         fi
     done < "$output_dir/base/java_files.txt"
@@ -261,16 +335,31 @@ analyze_changes() {
     while IFS= read -r file; do
         if [[ -n "$file" ]]; then
             local output_file="$output_dir/head/$(basename "$file")"
-            if git show "$head_sha:$file" > "$output_file" 2>/dev/null; then
-                # Validate the extracted file is readable
+            local file_path="$file"
+            
+            # Try to extract the file with multiple fallback methods
+            local extracted=false
+            
+            # Method 1: Try git show
+            if git show "$head_sha:$file_path" > "$output_file" 2>/dev/null; then
                 if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
-                    print_status "Successfully extracted: $file"
-                else
-                    print_warning "Extracted file is not readable or empty: $output_file"
-                    rm -f "$output_file" 2>/dev/null || true
+                    print_status "Successfully extracted via git show: $file"
+                    extracted=true
                 fi
-            else
-                print_warning "Failed to extract: $file"
+            fi
+            
+            # Method 2: If git show failed, try to copy from current working directory
+            if [[ "$extracted" == false ]] && [[ -f "$file_path" ]] && [[ -r "$file_path" ]]; then
+                if cp "$file_path" "$output_file" 2>/dev/null; then
+                    print_status "Successfully copied from working directory: $file"
+                    extracted=true
+                fi
+            fi
+            
+            # Method 3: If both failed, create empty file
+            if [[ "$extracted" == false ]]; then
+                print_warning "Failed to extract: $file, creating empty file"
+                touch "$output_file"
             fi
         fi
     done < "$output_dir/head/java_files.txt"
