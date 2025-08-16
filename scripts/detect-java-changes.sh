@@ -331,8 +331,9 @@ analyze_changes() {
         BASE_COMMIT="$base_sha"
     fi
     
-    git show --name-only "$BASE_COMMIT" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
-    git show --name-only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    # Get ALL Java files that exist in each commit (not just changed files)
+    git ls-tree -r --name-only "$BASE_COMMIT" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
+    git ls-tree -r --name-only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
     
     # Debug: Show what files we found
     print_status "Base commit Java files found:"

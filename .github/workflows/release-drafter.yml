@@ -37,20 +37,33 @@ jobs:
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")
           echo "Last tag: $LAST_TAG"
           
+          # Get the current commit SHA
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          echo "Current commit: $CURRENT_COMMIT"
+          
           # Create temporary output directory
           OUTPUT_DIR="/tmp/release_analysis"
           mkdir -p "$OUTPUT_DIR"
           
-          # Run enhanced change detection (script expects 3 params: base_sha, head_sha, output_dir)
-          OUTPUT=$(./scripts/detect-java-changes.sh "$LAST_TAG" "HEAD" "$OUTPUT_DIR")
+          # Run enhanced change detection between the last tag and current commit
+          echo "Comparing $LAST_TAG to $CURRENT_COMMIT"
+          OUTPUT=$(./scripts/detect-java-changes.sh "$LAST_TAG" "$CURRENT_COMMIT" "$OUTPUT_DIR")
           echo "$OUTPUT"
           
-          # Extract key metrics for release notes
-          NEW_METHODS=$(echo "$OUTPUT" | grep "📊 New Methods:" | sed 's/.*📊 New Methods: \([0-9]*\).*/\1/' || echo "0")
-          NEW_CLASSES=$(echo "$OUTPUT" | grep "🏗️ New Classes:" | sed 's/.*🏗️ New Classes: \([0-9]*\).*/\1/' || echo "0")
-          MODIFIED_METHODS=$(echo "$OUTPUT" | grep "🔄 Modified Methods:" | sed 's/.*🔄 Modified Methods: \([0-9]*\).*/\1/' || echo "0")
-          MODIFIED_CLASSES=$(echo "$OUTPUT" | grep "🔄 Modified Classes:" | sed 's/.*🔄 Modified Classes: \([0-9]*\).*/\1/' || echo "0")
-          FILES_MODIFIED=$(echo "$OUTPUT" | grep "📁 Files Modified:" | sed 's/.*📁 Files Modified: \([0-9]*\).*/\1/' || echo "0")
+          # Extract key metrics for release notes with better error handling
+          NEW_METHODS=$(echo "$OUTPUT" | grep "📊 New Methods:" | sed 's/.*📊 New Methods: \([0-9]*\).*/\1/' 2>/dev/null || echo "0")
+          NEW_CLASSES=$(echo "$OUTPUT" | grep "🏗️ New Classes:" | sed 's/.*🏗️ New Classes: \([0-9]*\).*/\1/' 2>/dev/null || echo "0")
+          MODIFIED_METHODS=$(echo "$OUTPUT" | grep "🔄 Modified Methods:" | sed 's/.*🔄 Modified Methods: \([0-9]*\).*/\1/' 2>/dev/null || echo "0")
+          MODIFIED_CLASSES=$(echo "$OUTPUT" | grep "🔄 Modified Classes:" | sed 's/.*🔄 Modified Classes: \([0-9]*\).*/\1/' 2>/dev/null || echo "0")
+          FILES_MODIFIED=$(echo "$OUTPUT" | grep "📁 Files Modified:" | sed 's/.*📁 Files Modified: \([0-9]*\).*/\1/' 2>/dev/null || echo "0")
+          
+          # Debug output
+          echo "Extracted metrics:"
+          echo "  New Methods: $NEW_METHODS"
+          echo "  New Classes: $NEW_CLASSES"
+          echo "  Modified Methods: $MODIFIED_METHODS"
+          echo "  Modified Classes: $MODIFIED_CLASSES"
+          echo "  Files Modified: $FILES_MODIFIED"
           
           # Set outputs for release-drafter
           echo "new_methods_count=$NEW_METHODS" >> $GITHUB_OUTPUT
