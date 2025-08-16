@@ -90,11 +90,17 @@ jobs:
           prerelease: false
       
       - name: Create Enhanced Release Notes
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
         run: |
-          # Get the tag name
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "Creating enhanced release notes for tag: $TAG_NAME"
+          # Determine if this is a tag push or main branch push
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            echo "Creating enhanced release notes for tag: $TAG_NAME"
+          else
+            # For main branch, get the latest tag
+            TAG_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
+            echo "Creating enhanced release notes for latest tag: $TAG_NAME"
+          fi
           
           # Get the change report from our analysis
           CHANGE_REPORT="${{ steps.detect-changes.outputs.change_report }}"
@@ -120,4 +126,44 @@ jobs:
           EOF
           
           # Update the release with enhanced notes
-          gh release edit "$TAG_NAME" --body-file /tmp/enhanced_body.md --repo "$GITHUB_REPOSITORY"
+          gh release edit "$TAG_NAME" --body-file /tmp/enhanced_body.md --repo "$GITHUB_REPOSITORY" || echo "Release not found, will be created when manually published"
+      
+      - name: Output Enhanced Notes for Manual Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "## 🚀 Enhanced Release Notes Generated!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Java Code Changes" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Methods:** ${{ steps.detect-changes.outputs.new_methods_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Classes:** ${{ steps.detect-changes.outputs.new_classes_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Modified Methods:** ${{ steps.detect-changes.outputs.modified_methods_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Modified Classes:** ${{ steps.detect-changes.outputs.modified_classes_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files Modified:** ${{ steps.detect-changes.outputs.files_modified_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Detailed Change Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.detect-changes.outputs.change_report }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Copy this content to your manual release notes!**" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Show Detailed Changes in Workflow Output
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "🚀 ========================================="
+          echo "🚀 ENHANCED JAVA CHANGE DETECTION RESULTS"
+          echo "🚀 ========================================="
+          echo ""
+          echo "📊 SUMMARY STATISTICS:"
+          echo "  • New Methods: ${{ steps.detect-changes.outputs.new_methods_count }}"
+          echo "  • New Classes: ${{ steps.detect-changes.outputs.new_classes_count }}"
+          echo "  • Modified Methods: ${{ steps.detect-changes.outputs.modified_methods_count }}"
+          echo "  • Modified Classes: ${{ steps.detect-changes.outputs.modified_classes_count }}"
+          echo "  • Files Modified: ${{ steps.detect-changes.outputs.files_modified_count }}"
+          echo ""
+          echo "🔍 DETAILED CHANGE ANALYSIS:"
+          echo "========================================="
+          echo "${{ steps.detect-changes.outputs.change_report }}"
+          echo "========================================="
+          echo ""
+          echo "📋 COPY THE ABOVE DETAILED ANALYSIS FOR YOUR RELEASE NOTES!"
