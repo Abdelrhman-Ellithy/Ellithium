@@ -1,0 +1,90 @@
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  update_release_draft:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Make script executable
+        run: chmod +x scripts/detect-java-changes.sh
+      
+      - name: Enhanced Java Change Detection
+        id: detect-changes
+        run: |
+          # Get the last tag for comparison
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")
+          echo "Last tag: $LAST_TAG"
+          
+          # Run enhanced change detection
+          OUTPUT=$(./scripts/detect-java-changes.sh "$LAST_TAG" "HEAD")
+          echo "$OUTPUT"
+          
+          # Extract key metrics for release notes
+          NEW_METHODS=$(echo "$OUTPUT" | grep "📊 New Methods:" | sed 's/.*📊 New Methods: \([0-9]*\).*/\1/')
+          NEW_CLASSES=$(echo "$OUTPUT" | grep "🏗️ New Classes:" | sed 's/.*🏗️ New Classes: \([0-9]*\).*/\1/')
+          MODIFIED_METHODS=$(echo "$OUTPUT" | grep "🔄 Modified Methods:" | sed 's/.*🔄 Modified Methods: \([0-9]*\).*/\1/')
+          MODIFIED_CLASSES=$(echo "$OUTPUT" | grep "🔄 Modified Classes:" | sed 's/.*🔄 Modified Classes: \([0-9]*\).*/\1/')
+          FILES_MODIFIED=$(echo "$OUTPUT" | grep "📁 Files Modified:" | sed 's/.*📁 Files Modified: \([0-9]*\).*/\1/')
+          
+          # Set outputs for release-drafter
+          echo "new_methods_count=$NEW_METHODS" >> $GITHUB_OUTPUT
+          echo "new_classes_count=$NEW_CLASSES" >> $GITHUB_OUTPUT
+          echo "modified_methods_count=$MODIFIED_METHODS" >> $GITHUB_OUTPUT
+          echo "modified_classes_count=$MODIFIED_CLASSES" >> $GITHUB_OUTPUT
+          echo "files_modified_count=$FILES_MODIFIED" >> $GITHUB_OUTPUT
+          
+          # Store full report for release notes
+          echo "change_report<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Release Drafter
+        id: release_drafter
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-name: release-drafter.yml
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          body: |
+            ## 🚀 Enhanced Release Notes
+            
+            ### 📊 Java Code Changes
+            - **New Methods:** ${{ steps.detect-changes.outputs.new_methods_count }}
+            - **New Classes:** ${{ steps.detect-changes.outputs.new_classes_count }}
+            - **Modified Methods:** ${{ steps.detect-changes.outputs.modified_methods_count }}
+            - **Modified Classes:** ${{ steps.detect-changes.outputs.modified_classes_count }}
+            - **Files Modified:** ${{ steps.detect-changes.outputs.files_modified_count }}
+            
+            ### 🔍 Detailed Change Analysis
+            ```
+            ${{ steps.detect-changes.outputs.change_report }}
+            ```
+            
+            ---
+            *Enhanced with Ellithium Java Change Detection*
