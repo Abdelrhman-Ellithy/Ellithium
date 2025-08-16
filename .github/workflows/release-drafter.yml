@@ -37,16 +37,20 @@ jobs:
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")
           echo "Last tag: $LAST_TAG"
           
-          # Run enhanced change detection
-          OUTPUT=$(./scripts/detect-java-changes.sh "$LAST_TAG" "HEAD")
+          # Create temporary output directory
+          OUTPUT_DIR="/tmp/release_analysis"
+          mkdir -p "$OUTPUT_DIR"
+          
+          # Run enhanced change detection (script expects 3 params: base_sha, head_sha, output_dir)
+          OUTPUT=$(./scripts/detect-java-changes.sh "$LAST_TAG" "HEAD" "$OUTPUT_DIR")
           echo "$OUTPUT"
           
           # Extract key metrics for release notes
-          NEW_METHODS=$(echo "$OUTPUT" | grep "📊 New Methods:" | sed 's/.*📊 New Methods: \([0-9]*\).*/\1/')
-          NEW_CLASSES=$(echo "$OUTPUT" | grep "🏗️ New Classes:" | sed 's/.*🏗️ New Classes: \([0-9]*\).*/\1/')
-          MODIFIED_METHODS=$(echo "$OUTPUT" | grep "🔄 Modified Methods:" | sed 's/.*🔄 Modified Methods: \([0-9]*\).*/\1/')
-          MODIFIED_CLASSES=$(echo "$OUTPUT" | grep "🔄 Modified Classes:" | sed 's/.*🔄 Modified Classes: \([0-9]*\).*/\1/')
-          FILES_MODIFIED=$(echo "$OUTPUT" | grep "📁 Files Modified:" | sed 's/.*📁 Files Modified: \([0-9]*\).*/\1/')
+          NEW_METHODS=$(echo "$OUTPUT" | grep "📊 New Methods:" | sed 's/.*📊 New Methods: \([0-9]*\).*/\1/' || echo "0")
+          NEW_CLASSES=$(echo "$OUTPUT" | grep "🏗️ New Classes:" | sed 's/.*🏗️ New Classes: \([0-9]*\).*/\1/' || echo "0")
+          MODIFIED_METHODS=$(echo "$OUTPUT" | grep "🔄 Modified Methods:" | sed 's/.*🔄 Modified Methods: \([0-9]*\).*/\1/' || echo "0")
+          MODIFIED_CLASSES=$(echo "$OUTPUT" | grep "🔄 Modified Classes:" | sed 's/.*🔄 Modified Classes: \([0-9]*\).*/\1/' || echo "0")
+          FILES_MODIFIED=$(echo "$OUTPUT" | grep "📁 Files Modified:" | sed 's/.*📁 Files Modified: \([0-9]*\).*/\1/' || echo "0")
           
           # Set outputs for release-drafter
           echo "new_methods_count=$NEW_METHODS" >> $GITHUB_OUTPUT
