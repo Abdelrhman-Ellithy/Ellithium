@@ -29,30 +29,6 @@ public interface TestResultCollector {
     void initializeTestResultCollection();
     
     /**
-     * Gets the total number of tests executed.
-     * @return Total tests executed
-     */
-    int getTotalTestsExecuted();
-    
-    /**
-     * Gets the number of passed tests.
-     * @return Number of passed tests
-     */
-    int getPassedTestsExecuted();
-    
-    /**
-     * Gets the number of failed tests.
-     * @return Number of failed tests
-     */
-    int getFailedTestsExecuted();
-    
-    /**
-     * Gets the number of skipped tests.
-     * @return Number of skipped tests
-     */
-    int getSkippedTestsExecuted();
-    
-    /**
      * Checks if a test result is from Cucumber execution.
      * This prevents double counting when both TestNG and Cucumber listeners are active.
      * @param result The test result to check
