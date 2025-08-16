@@ -28,7 +28,15 @@ extract_java_elements() {
     local output_dir="$2"
     local basename_file="$3"
     
-    if [[ ! -f "$file" ]]; then
+    # Validate file exists and is readable
+    if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
+        print_warning "File not accessible: $file"
+        return 0
+    fi
+    
+    # Check if file is empty
+    if [[ ! -s "$file" ]]; then
+        print_warning "File is empty: $file"
         return 0
     fi
     
@@ -42,7 +50,7 @@ extract_java_elements() {
         gsub(/[[:space:]]*\{.*$/, "")  # Remove everything after {
         gsub(/[[:space:]]+/, " ")  # Normalize spaces
         print
-    }' "$file" | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null || touch "$output_dir/${basename_file}_methods.txt"
     
     # Extract method names only
     awk '
@@ -94,10 +102,20 @@ extract_java_elements() {
 # Function to safely count lines in a file
 safe_line_count() {
     local file="$1"
-    if [[ -f "$file" ]]; then
+    if [[ -f "$file" ]] && [[ -r "$file" ]]; then
         wc -l < "$file" 2>/dev/null || echo "0"
     else
         echo "0"
+    fi
+}
+
+# Function to safely read file content
+safe_read_file() {
+    local file="$1"
+    if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+        cat "$file" 2>/dev/null || echo ""
+    else
+        echo ""
     fi
 }
 
@@ -106,8 +124,13 @@ safe_combine_files() {
     local pattern="$1"
     local output_file="$2"
     
-    if ls $pattern 1> /dev/null 2>&1; then
-        cat $pattern 2>/dev/null | sort -u > "$output_file" 2>/dev/null || true
+    # Extract directory and filename from pattern
+    local dir_path=$(dirname "$pattern")
+    local file_pattern=$(basename "$pattern")
+    
+    # Use find with proper path handling
+    if [[ -d "$dir_path" ]]; then
+        find "$dir_path" -maxdepth 1 -name "$file_pattern" -type f -exec cat {} + 2>/dev/null | sort -u > "$output_file" 2>/dev/null || true
     else
         touch "$output_file"
     fi
@@ -138,6 +161,17 @@ analyze_changes() {
         base_commit="$base_sha"
     fi
     
+    # Validate commits exist
+    if ! git rev-parse --verify "$base_commit" >/dev/null 2>&1; then
+        print_error "Invalid base commit: $base_commit"
+        exit 1
+    fi
+    
+    if ! git rev-parse --verify "$head_sha" >/dev/null 2>&1; then
+        print_error "Invalid head commit: $head_sha"
+        exit 1
+    fi
+    
     # Get ALL Java files that exist in each commit (not just changed files)
     print_status "Extracting main source Java files (excluding test files)..."
     
@@ -158,13 +192,35 @@ analyze_changes() {
     # Extract content for each Java file
     while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-            git show "$base_commit:$file" > "$output_dir/base/$(basename "$file")" 2>/dev/null || true
+            local output_file="$output_dir/base/$(basename "$file")"
+            if git show "$base_commit:$file" > "$output_file" 2>/dev/null; then
+                # Validate the extracted file is readable
+                if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                    print_status "Successfully extracted: $file"
+                else
+                    print_warning "Extracted file is not readable or empty: $output_file"
+                    rm -f "$output_file" 2>/dev/null || true
+                fi
+            else
+                print_warning "Failed to extract: $file"
+            fi
         fi
     done < "$output_dir/base/java_files.txt"
     
     while IFS= read -r file; do
         if [[ -n "$file" ]]; then
-            git show "$head_sha:$file" > "$output_dir/head/$(basename "$file")" 2>/dev/null || true
+            local output_file="$output_dir/head/$(basename "$file")"
+            if git show "$head_sha:$file" > "$output_file" 2>/dev/null; then
+                # Validate the extracted file is readable
+                if [[ -r "$output_file" ]] && [[ -s "$output_file" ]]; then
+                    print_status "Successfully extracted: $file"
+                else
+                    print_warning "Extracted file is not readable or empty: $output_file"
+                    rm -f "$output_file" 2>/dev/null || true
+                fi
+            else
+                print_warning "Failed to extract: $file"
+            fi
         fi
     done < "$output_dir/head/java_files.txt"
     
@@ -173,16 +229,18 @@ analyze_changes() {
     
     # Process base files
     for file in "$output_dir"/base/*.java; do
-        if [[ -f "$file" ]]; then
+        if [[ -f "$file" ]] && [[ -r "$file" ]]; then
             basename_file=$(basename "$file")
+            print_status "Processing base file: $basename_file"
             extract_java_elements "$file" "$output_dir/base" "$basename_file"
         fi
     done
     
     # Process head files
     for file in "$output_dir"/head/*.java; do
-        if [[ -f "$file" ]]; then
+        if [[ -f "$file" ]] && [[ -r "$file" ]]; then
             basename_file=$(basename "$file")
+            print_status "Processing head file: $basename_file"
             extract_java_elements "$file" "$output_dir/head" "$basename_file"
         fi
     done
@@ -208,28 +266,44 @@ analyze_changes() {
     # Find differences safely
     print_status "Calculating differences..."
     
+    # Ensure analysis files exist before processing
+    touch "$output_dir/analysis/new_methods.txt" "$output_dir/analysis/new_classes.txt" "$output_dir/analysis/new_fields.txt" 2>/dev/null || true
+    touch "$output_dir/analysis/removed_methods.txt" "$output_dir/analysis/removed_classes.txt" "$output_dir/analysis/removed_fields.txt" 2>/dev/null || true
+    
     # New methods
-    comm -23 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/new_methods.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_methods.txt" ]] && [[ -f "$output_dir/base/all_methods.txt" ]]; then
+        comm -23 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/new_methods.txt" 2>/dev/null || true
+    fi
     NEW_METHODS_COUNT=$(safe_line_count "$output_dir/analysis/new_methods.txt")
     
     # New classes
-    comm -23 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/new_classes.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_classes.txt" ]] && [[ -f "$output_dir/base/all_classes.txt" ]]; then
+        comm -23 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/new_classes.txt" 2>/dev/null || true
+    fi
     NEW_CLASSES_COUNT=$(safe_line_count "$output_dir/analysis/new_classes.txt")
     
     # New fields
-    comm -23 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/new_fields.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_fields.txt" ]] && [[ -f "$output_dir/base/all_fields.txt" ]]; then
+        comm -23 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/new_fields.txt" 2>/dev/null || true
+    fi
     NEW_FIELDS_COUNT=$(safe_line_count "$output_dir/analysis/new_fields.txt")
     
     # Removed methods
-    comm -13 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/removed_methods.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_methods.txt" ]] && [[ -f "$output_dir/base/all_methods.txt" ]]; then
+        comm -13 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/removed_methods.txt" 2>/dev/null || true
+    fi
     REMOVED_METHODS_COUNT=$(safe_line_count "$output_dir/analysis/removed_methods.txt")
     
     # Removed classes
-    comm -13 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/removed_classes.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_classes.txt" ]] && [[ -f "$output_dir/base/all_classes.txt" ]]; then
+        comm -13 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/removed_classes.txt" 2>/dev/null || true
+    fi
     REMOVED_CLASSES_COUNT=$(safe_line_count "$output_dir/analysis/removed_classes.txt")
     
     # Removed fields
-    comm -13 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/removed_fields.txt" 2>/dev/null || true
+    if [[ -f "$output_dir/head/all_fields.txt" ]] && [[ -f "$output_dir/base/all_fields.txt" ]]; then
+        comm -13 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/removed_fields.txt" 2>/dev/null || true
+    fi
     REMOVED_FIELDS_COUNT=$(safe_line_count "$output_dir/analysis/removed_fields.txt")
     
     # For now, set modified counts to 0 (can be enhanced later)
@@ -408,9 +482,21 @@ BASE_SHA="$1"
 HEAD_SHA="$2"
 OUTPUT_DIR="$3"
 
+# Set error handling
+set -euo pipefail
+
+# Trap errors to provide better error messages
+trap 'print_error "Script failed at line $LINENO. Check the logs above for details."; exit 1' ERR
+
 # Validate inputs
 if [[ -z "$BASE_SHA" ]] || [[ -z "$HEAD_SHA" ]] || [[ -z "$OUTPUT_DIR" ]]; then
-    print_error "All parameters are required"
+    print_error "All arguments must be non-empty"
+    exit 1
+fi
+
+# Ensure output directory is writable
+if ! mkdir -p "$OUTPUT_DIR" 2>/dev/null; then
+    print_error "Cannot create output directory: $OUTPUT_DIR"
     exit 1
 fi
 
