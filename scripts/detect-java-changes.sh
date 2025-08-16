@@ -43,60 +43,90 @@ extract_java_elements() {
     print_status "Processing $basename_file"
     
     # Extract methods using robust pattern matching
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|static|final|synchronized|abstract|native|strictfp)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\([^)]*\)[[:space:]]*(throws[[:space:]]+[^{]*)?[[:space:]]*\{?[[:space:]]*$/ {
         # Clean up the method signature
         gsub(/^[[:space:]]+/, "")  # Remove leading spaces
         gsub(/[[:space:]]*\{.*$/, "")  # Remove everything after {
         gsub(/[[:space:]]+/, " ")  # Normalize spaces
         print
-    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null || touch "$output_dir/${basename_file}_methods.txt"
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null; then
+        print_status "Successfully extracted methods from $basename_file"
+    else
+        print_warning "Failed to extract methods from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_methods.txt"
+    fi
     
     # Extract method names only
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|static|final|synchronized|abstract|native|strictfp)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\([^)]*\)[[:space:]]*(throws[[:space:]]+[^{]*)?[[:space:]]*\{?[[:space:]]*$/ {
         # Extract just the method name
         match($0, /[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*\(/)
         if (RSTART > 0) {
             print substr($0, RSTART + RLENGTH - 1, RLENGTH - 1)
         }
-    }' "$file" | sort -u > "$output_dir/${basename_file}_method_names.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_method_names.txt" 2>/dev/null; then
+        print_status "Successfully extracted method names from $basename_file"
+    else
+        print_warning "Failed to extract method names from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_method_names.txt"
+    fi
     
     # Extract classes
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|abstract|final)?[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
         gsub(/^[[:space:]]+/, "")
         gsub(/[[:space:]]*\{.*$/, "")
         gsub(/[[:space:]]+/, " ")
         print
-    }' "$file" | sort -u > "$output_dir/${basename_file}_classes.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_classes.txt" 2>/dev/null; then
+        print_status "Successfully extracted classes from $basename_file"
+    else
+        print_warning "Failed to extract classes from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_classes.txt"
+    fi
     
     # Extract class names only
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|abstract|final)?[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
         match($0, /class[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)/)
         if (RSTART > 0) {
             print substr($0, RSTART + 6, RLENGTH - 6)
         }
-    }' "$file" | sort -u > "$output_dir/${basename_file}_class_names.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_class_names.txt" 2>/dev/null; then
+        print_status "Successfully extracted class names from $basename_file"
+    else
+        print_warning "Failed to extract class names from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_class_names.txt"
+    fi
     
     # Extract fields
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|static|final|volatile|transient)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*[=;]/ {
         gsub(/^[[:space:]]+/, "")
         gsub(/[[:space:]]*[=;].*$/, "")
         gsub(/[[:space:]]+/, " ")
         print
-    }' "$file" | sort -u > "$output_dir/${basename_file}_fields.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_fields.txt" 2>/dev/null; then
+        print_status "Successfully extracted fields from $basename_file"
+    else
+        print_warning "Failed to extract fields from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_fields.txt"
+    fi
     
     # Extract field names only
-    awk '
+    if timeout 30 awk '
     /^[[:space:]]*(public|private|protected|static|final|volatile|transient)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*[=;]/ {
         match($0, /[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*[=;]/)
         if (RSTART > 0) {
             print substr($0, RSTART + 1, RLENGTH - 1)
         }
-    }' "$file" | sort -u > "$output_dir/${basename_file}_field_names.txt" 2>/dev/null || true
+    }' "$file" 2>/dev/null | sort -u > "$output_dir/${basename_file}_field_names.txt" 2>/dev/null; then
+        print_status "Successfully extracted field names from $basename_file"
+    else
+        print_warning "Failed to extract field names from $basename_file, creating empty file"
+        touch "$output_dir/${basename_file}_field_names.txt"
+    fi
 }
 
 # Function to safely count lines in a file
@@ -119,6 +149,13 @@ safe_read_file() {
     fi
 }
 
+# Function to safely escape Java content for shell processing
+safe_escape_java_content() {
+    local content="$1"
+    # Escape special characters that could cause shell interpretation issues
+    echo "$content" | sed 's/[(){}[\]]/\\&/g' | sed 's/[<>]/\\&/g' | sed 's/;/\\&/g' 2>/dev/null || echo "$content"
+}
+
 # Function to safely combine files
 safe_combine_files() {
     local pattern="$1"
@@ -128,12 +165,26 @@ safe_combine_files() {
     local dir_path=$(dirname "$pattern")
     local file_pattern=$(basename "$pattern")
     
-    # Use find with proper path handling
+    # Clear output file first
+    > "$output_file" 2>/dev/null || true
+    
+    # Use find with proper path handling and process files one by one
     if [[ -d "$dir_path" ]]; then
-        find "$dir_path" -maxdepth 1 -name "$file_pattern" -type f -exec cat {} + 2>/dev/null | sort -u > "$output_file" 2>/dev/null || true
-    else
-        touch "$output_file"
+        while IFS= read -r -d '' file; do
+            if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+                # Use cat with proper error handling and append to output
+                cat "$file" 2>/dev/null >> "$output_file" || true
+            fi
+        done < <(find "$dir_path" -maxdepth 1 -name "$file_pattern" -type f -print0 2>/dev/null)
+        
+        # Sort and remove duplicates if file has content
+        if [[ -s "$output_file" ]]; then
+            sort -u "$output_file" > "${output_file}.tmp" 2>/dev/null && mv "${output_file}.tmp" "$output_file" 2>/dev/null || true
+        fi
     fi
+    
+    # Ensure file exists even if empty
+    touch "$output_file" 2>/dev/null || true
 }
 
 # Main analysis function
@@ -229,18 +280,22 @@ analyze_changes() {
     
     # Process base files
     for file in "$output_dir"/base/*.java; do
-        if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+        if [[ -f "$file" ]] && [[ -r "$file" ]] && [[ -s "$file" ]]; then
             basename_file=$(basename "$file")
             print_status "Processing base file: $basename_file"
+            # Add a small delay to prevent overwhelming the system
+            sleep 0.1 2>/dev/null || true
             extract_java_elements "$file" "$output_dir/base" "$basename_file"
         fi
     done
     
     # Process head files
     for file in "$output_dir"/head/*.java; do
-        if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+        if [[ -f "$file" ]] && [[ -r "$file" ]] && [[ -s "$file" ]]; then
             basename_file=$(basename "$file")
             print_status "Processing head file: $basename_file"
+            # Add a small delay to prevent overwhelming the system
+            sleep 0.1 2>/dev/null || true
             extract_java_elements "$file" "$output_dir/head" "$basename_file"
         fi
     done
@@ -248,20 +303,43 @@ analyze_changes() {
     # Combine all extracted data safely
     print_status "Combining extracted data..."
     
-    safe_combine_files "$output_dir/base/*_methods.txt" "$output_dir/base/all_methods.txt"
-    safe_combine_files "$output_dir/head/*_methods.txt" "$output_dir/head/all_methods.txt"
-    safe_combine_files "$output_dir/base/*_method_names.txt" "$output_dir/base/all_method_names.txt"
-    safe_combine_files "$output_dir/head/*_method_names.txt" "$output_dir/head/all_method_names.txt"
+    # Function to safely combine files with pattern matching
+    combine_files_safe() {
+        local base_dir="$1"
+        local pattern="$2"
+        local output_file="$3"
+        
+        # Clear output file
+        > "$output_file" 2>/dev/null || true
+        
+        # Find and process files one by one
+        for file in "$base_dir"/$pattern; do
+            if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+                cat "$file" 2>/dev/null >> "$output_file" || true
+            fi
+        done
+        
+        # Sort and deduplicate if file has content
+        if [[ -s "$output_file" ]]; then
+            sort -u "$output_file" > "${output_file}.tmp" 2>/dev/null && mv "${output_file}.tmp" "$output_file" 2>/dev/null || true
+        fi
+    }
     
-    safe_combine_files "$output_dir/base/*_classes.txt" "$output_dir/base/all_classes.txt"
-    safe_combine_files "$output_dir/head/*_classes.txt" "$output_dir/head/all_classes.txt"
-    safe_combine_files "$output_dir/base/*_class_names.txt" "$output_dir/base/all_class_names.txt"
-    safe_combine_files "$output_dir/head/*_class_names.txt" "$output_dir/head/all_class_names.txt"
+    # Combine files using the safe function
+    combine_files_safe "$output_dir/base" "*_methods.txt" "$output_dir/base/all_methods.txt"
+    combine_files_safe "$output_dir/head" "*_methods.txt" "$output_dir/head/all_methods.txt"
+    combine_files_safe "$output_dir/base" "*_method_names.txt" "$output_dir/base/all_method_names.txt"
+    combine_files_safe "$output_dir/head" "*_method_names.txt" "$output_dir/head/all_method_names.txt"
     
-    safe_combine_files "$output_dir/base/*_fields.txt" "$output_dir/base/all_fields.txt"
-    safe_combine_files "$output_dir/head/*_fields.txt" "$output_dir/head/all_fields.txt"
-    safe_combine_files "$output_dir/base/*_field_names.txt" "$output_dir/base/all_field_names.txt"
-    safe_combine_files "$output_dir/head/*_field_names.txt" "$output_dir/head/all_field_names.txt"
+    combine_files_safe "$output_dir/base" "*_classes.txt" "$output_dir/base/all_classes.txt"
+    combine_files_safe "$output_dir/head" "*_classes.txt" "$output_dir/head/all_classes.txt"
+    combine_files_safe "$output_dir/base" "*_class_names.txt" "$output_dir/base/all_class_names.txt"
+    combine_files_safe "$output_dir/head" "*_class_names.txt" "$output_dir/head/all_class_names.txt"
+    
+    combine_files_safe "$output_dir/base" "*_fields.txt" "$output_dir/base/all_fields.txt"
+    combine_files_safe "$output_dir/head" "*_fields.txt" "$output_dir/head/all_fields.txt"
+    combine_files_safe "$output_dir/base" "*_field_names.txt" "$output_dir/base/all_field_names.txt"
+    combine_files_safe "$output_dir/head" "*_field_names.txt" "$output_dir/head/all_field_names.txt"
     
     # Find differences safely
     print_status "Calculating differences..."
@@ -487,6 +565,16 @@ set -euo pipefail
 
 # Trap errors to provide better error messages
 trap 'print_error "Script failed at line $LINENO. Check the logs above for details."; exit 1' ERR
+
+# Add timeout protection for long-running operations
+timeout_handler() {
+    print_error "Operation timed out. This might be due to large files or system issues."
+    exit 1
+}
+
+# Set timeout for the entire script (5 minutes)
+trap timeout_handler ALRM
+readonly SCRIPT_TIMEOUT=300
 
 # Validate inputs
 if [[ -z "$BASE_SHA" ]] || [[ -z "$HEAD_SHA" ]] || [[ -z "$OUTPUT_DIR" ]]; then
