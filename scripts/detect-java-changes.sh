@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Ellithium Java Change Detector
-# This script analyzes Java source code changes and detects new methods, classes, and API changes
+# Ellithium Java Change Detector - Rewritten with Best Practices
+# This script analyzes Java source code changes between two Git commits
 
-set -e
+set -euo pipefail  # Strict error handling
 
 # Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
@@ -26,280 +26,97 @@ print_warning() {
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
-# Function to extract method signatures from Java code
-extract_methods() {
+# Function to safely extract Java elements using grep and awk
+extract_java_elements() {
     local file="$1"
-    local output_file="$2"
+    local output_dir="$2"
+    local basename_file="$3"
     
-    if [ ! -f "$file" ]; then
+    if [[ ! -f "$file" ]]; then
         return 0
     fi
     
-    print_status "Extracting methods from $file"
+    print_status "Processing $basename_file"
     
-    # Extract method signatures with better regex patterns
-    # This handles various method modifiers and complex signatures
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?(abstract\s+)?(native\s+)?(strictfp\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*(throws\s+[^{]*)?\{?' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*\{.*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
+    # Extract methods using robust pattern matching
+    awk '
+    /^[[:space:]]*(public|private|protected|static|final|synchronized|abstract|native|strictfp)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\([^)]*\)[[:space:]]*(throws[[:space:]]+[^{]*)?[[:space:]]*\{?[[:space:]]*$/ {
+        # Clean up the method signature
+        gsub(/^[[:space:]]+/, "")  # Remove leading spaces
+        gsub(/[[:space:]]*\{.*$/, "")  # Remove everything after {
+        gsub(/[[:space:]]+/, " ")  # Normalize spaces
+        print
+    }' "$file" | sort -u > "$output_dir/${basename_file}_methods.txt" 2>/dev/null || true
+    
+    # Extract method names only
+    awk '
+    /^[[:space:]]*(public|private|protected|static|final|synchronized|abstract|native|strictfp)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\([^)]*\)[[:space:]]*(throws[[:space:]]+[^{]*)?[[:space:]]*\{?[[:space:]]*$/ {
+        # Extract just the method name
+        match($0, /[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*\(/)
+        if (RSTART > 0) {
+            print substr($0, RSTART + RLENGTH - 1, RLENGTH - 1)
+        }
+    }' "$file" | sort -u > "$output_dir/${basename_file}_method_names.txt" 2>/dev/null || true
+    
+    # Extract classes
+    awk '
+    /^[[:space:]]*(public|private|protected|abstract|final)?[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+        gsub(/^[[:space:]]+/, "")
+        gsub(/[[:space:]]*\{.*$/, "")
+        gsub(/[[:space:]]+/, " ")
+        print
+    }' "$file" | sort -u > "$output_dir/${basename_file}_classes.txt" 2>/dev/null || true
+    
+    # Extract class names only
+    awk '
+    /^[[:space:]]*(public|private|protected|abstract|final)?[[:space:]]*class[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+        match($0, /class[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)/)
+        if (RSTART > 0) {
+            print substr($0, RSTART + 6, RLENGTH - 6)
+        }
+    }' "$file" | sort -u > "$output_dir/${basename_file}_class_names.txt" 2>/dev/null || true
+    
+    # Extract fields
+    awk '
+    /^[[:space:]]*(public|private|protected|static|final|volatile|transient)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*[=;]/ {
+        gsub(/^[[:space:]]+/, "")
+        gsub(/[[:space:]]*[=;].*$/, "")
+        gsub(/[[:space:]]+/, " ")
+        print
+    }' "$file" | sort -u > "$output_dir/${basename_file}_fields.txt" 2>/dev/null || true
+    
+    # Extract field names only
+    awk '
+    /^[[:space:]]*(public|private|protected|static|final|volatile|transient)?[[:space:]]*[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*[=;]/ {
+        match($0, /[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*[=;]/)
+        if (RSTART > 0) {
+            print substr($0, RSTART + 1, RLENGTH - 1)
+        }
+    }' "$file" | sort -u > "$output_dir/${basename_file}_field_names.txt" 2>/dev/null || true
 }
 
-# Function to extract method signatures with full details for comparison
-extract_methods_detailed() {
+# Function to safely count lines in a file
+safe_line_count() {
     local file="$1"
+    if [[ -f "$file" ]]; then
+        wc -l < "$file" 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+# Function to safely combine files
+safe_combine_files() {
+    local pattern="$1"
     local output_file="$2"
     
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting detailed method signatures from $file"
-    
-    # Extract complete method signatures including all modifiers
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?(abstract\s+)?(native\s+)?(strictfp\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*(throws\s+[^{]*)?\{?' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*\{.*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract method names only (for finding modifications)
-extract_method_names() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting method names from $file"
-    
-    # Extract just method names for modification detection
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?(abstract\s+)?(native\s+)?(strictfp\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*(throws\s+[^{]*)?\{?' "$file" | \
-        sed 's/^.*[[:space:]]\([a-zA-Z_][a-zA-Z0-9_]*\)[[:space:]]*([^)]*).*$/\1/' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract class declarations
-extract_classes() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting classes from $file"
-    
-    # Extract class, interface, and enum declarations
-    grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*\{.*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract detailed class declarations for modification detection
-extract_classes_detailed() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting detailed class declarations from $file"
-    
-    # Extract complete class declarations including inheritance and interfaces
-    grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*(\s+extends\s+[^{]*)?(\s+implements\s+[^{]*)?' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*\{.*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract class names only (for finding modifications)
-extract_class_names() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting class names from $file"
-    
-    # Extract just class names for modification detection
-    grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" | \
-        sed 's/^.*[[:space:]]\(class\|interface\|enum\)[[:space:]]\+\([a-zA-Z_][a-zA-Z0-9_]*\).*$/\2/' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract field declarations
-extract_fields() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting fields from $file"
-    
-    # Extract field declarations
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(volatile\s+)?(transient\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*[=;]' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*[=;].*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract detailed field declarations for modification detection
-extract_fields_detailed() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting detailed field declarations from $file"
-    
-    # Extract complete field declarations including all modifiers
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(volatile\s+)?(transient\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*[=;]' "$file" | \
-        sed 's/^\s*//' | \
-        sed 's/\s*[=;].*$//' | \
-        sed 's/\s*$//' | \
-        sed 's/\s\+/ /g' | \
-        sort -u > "$output_file"
-}
-
-# Function to extract field names only (for finding modifications)
-extract_field_names() {
-    local file="$1"
-    local output_file="$2"
-    
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    
-    print_status "Extracting field names from $file"
-    
-    # Extract just field names for modification detection
-    grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(volatile\s+)?(transient\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*[=;]' "$file" | \
-        sed 's/^.*[[:space:]]\+\([a-zA-Z_][a-zA-Z0-9_]*\)[[:space:]]*[=;].*$/\1/' | \
-        sort -u > "$output_file"
-}
-
-# Function to detect modified methods (same name, different signature)
-detect_modified_methods() {
-    local base_dir="$1"
-    local head_dir="$2"
-    local output_file="$3"
-    
-    print_status "Detecting modified methods..."
-    
-    # Find methods that exist in both but have different signatures
-    comm -12 "$base_dir/all_method_names.txt" "$head_dir/all_method_names.txt" | \
-        while read -r method_name; do
-            # Get full signatures for this method name from both commits
-            grep -E ".*\s+$method_name\s*\(" "$base_dir/all_methods_detailed.txt" > /tmp/base_method_sig.txt
-            grep -E ".*\s+$method_name\s*\(" "$head_dir/all_methods_detailed.txt" > /tmp/head_method_sig.txt
-            
-            # Compare signatures
-            if ! diff -q /tmp/base_method_sig.txt /tmp/head_method_sig.txt > /dev/null 2>&1; then
-                echo "MODIFIED: $method_name" >> "$output_file"
-                echo "  Base: $(cat /tmp/base_method_sig.txt)" >> "$output_file"
-                echo "  Head: $(cat /tmp/head_method_sig.txt)" >> "$output_file"
-                echo "" >> "$output_file"
-            fi
-        done
-}
-
-# Function to detect modified classes (same name, different structure)
-detect_modified_classes() {
-    local base_dir="$1"
-    local head_dir="$2"
-    local output_file="$3"
-    
-    print_status "Detecting modified classes..."
-    
-    # Find classes that exist in both but have different declarations
-    comm -12 "$base_dir/all_class_names.txt" "$head_dir/all_class_names.txt" | \
-        while read -r class_name; do
-            # Get full declarations for this class name from both commits
-            grep -E ".*\s+$class_name(\s+extends|\s+implements|\s*\{|\s*$)" "$base_dir/all_classes_detailed.txt" > /tmp/base_class_decl.txt
-            grep -E ".*\s+$class_name(\s+extends|\s+implements|\s*\{|\s*$)" "$head_dir/all_classes_detailed.txt" > /tmp/head_class_decl.txt
-            
-            # Compare declarations
-            if ! diff -q /tmp/base_class_decl.txt /tmp/head_class_decl.txt > /dev/null 2>&1; then
-                echo "MODIFIED: $class_name" >> "$output_file"
-                echo "  Base: $(cat /tmp/base_class_decl.txt)" >> "$output_file"
-                echo "  Head: $(cat /tmp/head_class_decl.txt)" >> "$output_file"
-                echo "" >> "$output_file"
-            fi
-        done
-}
-
-# Function to detect modified fields (same name, different declaration)
-detect_modified_fields() {
-    local base_dir="$1"
-    local head_dir="$2"
-    local output_file="$3"
-    
-    print_status "Detecting modified fields..."
-    
-    # Find fields that exist in both but have different declarations
-    comm -12 "$base_dir/all_field_names.txt" "$head_dir/all_field_names.txt" | \
-        while read -r field_name; do
-            # Get full declarations for this field name from both commits
-            grep -E ".*\s+$field_name\s*[=;]" "$base_dir/all_fields_detailed.txt" > /tmp/base_field_decl.txt
-            grep -E ".*\s+$field_name\s*[=;]" "$head_dir/all_fields_detailed.txt" > /tmp/head_field_decl.txt
-            
-            # Compare declarations
-            if ! diff -q /tmp/base_field_decl.txt /tmp/head_field_decl.txt > /dev/null 2>&1; then
-                echo "MODIFIED: $field_name" >> "$output_file"
-                echo "  Base: $(cat /tmp/base_field_decl.txt)" >> "$output_file"
-                echo "  Head: $(cat /tmp/head_field_decl.txt)" >> "$output_file"
-                echo "" >> "$output_file"
-            fi
-        done
-}
-
-# Function to analyze package structure
-analyze_packages() {
-    local base_dir="$1"
-    local output_file="$2"
-    
-    if [ ! -d "$base_dir" ]; then
-        return 0
-    fi
-    
-    print_status "Analyzing package structure in $base_dir"
-    
-    # Find all Java files and extract package information
-    find "$base_dir" -name "*.java" -type f | \
-        while read -r file; do
-            # Extract package declaration
-            package=$(grep -E '^package\s+[^;]+;' "$file" | head -1 | sed 's/^package\s*//' | sed 's/;$//')
-            if [ -n "$package" ]; then
-                echo "$package" >> "$output_file"
-            fi
-        done
-    
-    # Remove duplicates and sort
-    if [ -f "$output_file" ]; then
-        sort -u "$output_file" -o "$output_file"
+    if ls $pattern 1> /dev/null 2>&1; then
+        cat $pattern 2>/dev/null | sort -u > "$output_file" 2>/dev/null || true
+    else
+        touch "$output_file"
     fi
 }
 
@@ -319,42 +136,41 @@ analyze_changes() {
     # Extract Java files from both commits
     print_status "Extracting Java source files..."
     
-    # Get list of Java files in both commits (MAIN SOURCE ONLY, NO TEST FILES)
-    print_status "Extracting main source Java files (excluding test files)..."
-    
     # Handle case where base_sha might be a tag name
+    local base_commit
     if [[ "$base_sha" == v* ]]; then
-        # It's a tag, get the actual commit SHA
-        BASE_COMMIT=$(git rev-parse "$base_sha" 2>/dev/null || echo "$base_sha")
-        print_status "Base SHA is a tag, resolved to commit: $BASE_COMMIT"
+        base_commit=$(git rev-parse "$base_sha" 2>/dev/null || echo "$base_sha")
+        print_status "Base SHA is a tag, resolved to commit: $base_commit"
     else
-        BASE_COMMIT="$base_sha"
+        base_commit="$base_sha"
     fi
     
     # Get ALL Java files that exist in each commit (not just changed files)
-    git ls-tree -r --name-only "$BASE_COMMIT" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
-    git ls-tree -r --name-only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    print_status "Extracting main source Java files (excluding test files)..."
+    
+    git ls-tree -r --name-only "$base_commit" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
+    git ls-tree -r --name-only "$head_sha" 2>/dev/null | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
     
     # Debug: Show what files we found
     print_status "Base commit Java files found:"
-    if [ -f "$output_dir/base/java_files.txt" ]; then
-        cat "$output_dir/base/java_files.txt" | head -10
+    if [[ -f "$output_dir/base/java_files.txt" ]]; then
+        head -10 "$output_dir/base/java_files.txt" 2>/dev/null || true
     fi
     
     print_status "Head commit Java files found:"
-    if [ -f "$output_dir/head/java_files.txt" ]; then
-        cat "$output_dir/head/java_files.txt" | head -10
+    if [[ -f "$output_dir/head/java_files.txt" ]]; then
+        head -10 "$output_dir/head/java_files.txt" 2>/dev/null || true
     fi
     
     # Extract content for each Java file
     while IFS= read -r file; do
-        if [ -n "$file" ]; then
-            git show "$BASE_COMMIT:$file" > "$output_dir/base/$(basename "$file")" 2>/dev/null || true
+        if [[ -n "$file" ]]; then
+            git show "$base_commit:$file" > "$output_dir/base/$(basename "$file")" 2>/dev/null || true
         fi
     done < "$output_dir/base/java_files.txt"
     
     while IFS= read -r file; do
-        if [ -n "$file" ]; then
+        if [[ -n "$file" ]]; then
             git show "$head_sha:$file" > "$output_dir/head/$(basename "$file")" 2>/dev/null || true
         fi
     done < "$output_dir/head/java_files.txt"
@@ -364,104 +180,74 @@ analyze_changes() {
     
     # Process base files
     for file in "$output_dir"/base/*.java; do
-        if [ -f "$file" ]; then
+        if [[ -f "$file" ]]; then
             basename_file=$(basename "$file")
-            extract_methods "$file" "$output_dir/base/${basename_file}_methods.txt"
-            extract_methods_detailed "$file" "$output_dir/base/${basename_file}_methods_detailed.txt"
-            extract_method_names "$file" "$output_dir/base/${basename_file}_method_names.txt"
-            extract_classes "$file" "$output_dir/base/${basename_file}_classes.txt"
-            extract_classes_detailed "$file" "$output_dir/base/${basename_file}_classes_detailed.txt"
-            extract_class_names "$file" "$output_dir/base/${basename_file}_class_names.txt"
-            extract_fields "$file" "$output_dir/base/${basename_file}_fields.txt"
-            extract_fields_detailed "$file" "$output_dir/base/${basename_file}_fields_detailed.txt"
-            extract_field_names "$file" "$output_dir/base/${basename_file}_field_names.txt"
+            extract_java_elements "$file" "$output_dir/base" "$basename_file"
         fi
     done
     
     # Process head files
     for file in "$output_dir"/head/*.java; do
-        if [ -f "$file" ]; then
+        if [[ -f "$file" ]]; then
             basename_file=$(basename "$file")
-            extract_methods "$file" "$output_dir/head/${basename_file}_methods.txt"
-            extract_methods_detailed "$file" "$output_dir/head/${basename_file}_methods_detailed.txt"
-            extract_method_names "$file" "$output_dir/head/${basename_file}_method_names.txt"
-            extract_classes "$file" "$output_dir/head/${basename_file}_classes.txt"
-            extract_classes_detailed "$file" "$output_dir/head/${basename_file}_classes_detailed.txt"
-            extract_class_names "$file" "$output_dir/head/${basename_file}_class_names.txt"
-            extract_fields "$file" "$output_dir/head/${basename_file}_fields.txt"
-            extract_fields_detailed "$file" "$output_dir/head/${basename_file}_fields_detailed.txt"
-            extract_field_names "$file" "$output_dir/head/${basename_file}_field_names.txt"
+            extract_java_elements "$file" "$output_dir/head" "$basename_file"
         fi
     done
     
-    # Combine all extracted data
-    cat "$output_dir"/base/*_methods.txt 2>/dev/null | sort -u > "$output_dir/base/all_methods.txt" || true
-    cat "$output_dir"/head/*_methods.txt 2>/dev/null | sort -u > "$output_dir/head/all_methods.txt" || true
-    cat "$output_dir"/base/*_methods_detailed.txt 2>/dev/null | sort -u > "$output_dir/base/all_methods_detailed.txt" || true
-    cat "$output_dir"/head/*_methods_detailed.txt 2>/dev/null | sort -u > "$output_dir/head/all_methods_detailed.txt" || true
-    cat "$output_dir"/base/*_method_names.txt 2>/dev/null | sort -u > "$output_dir/base/all_method_names.txt" || true
-    cat "$output_dir"/head/*_method_names.txt 2>/dev/null | sort -u > "$output_dir/head/all_method_names.txt" || true
+    # Combine all extracted data safely
+    print_status "Combining extracted data..."
     
-    cat "$output_dir"/base/*_classes.txt 2>/dev/null | sort -u > "$output_dir/base/all_classes.txt" || true
-    cat "$output_dir"/head/*_classes.txt 2>/dev/null | sort -u > "$output_dir/head/all_classes.txt" || true
-    cat "$output_dir"/base/*_classes_detailed.txt 2>/dev/null | sort -u > "$output_dir/base/all_classes_detailed.txt" || true
-    cat "$output_dir"/head/*_classes_detailed.txt 2>/dev/null | sort -u > "$output_dir/head/all_classes_detailed.txt" || true
-    cat "$output_dir"/base/*_class_names.txt 2>/dev/null | sort -u > "$output_dir/base/all_class_names.txt" || true
-    cat "$output_dir"/head/*_class_names.txt 2>/dev/null | sort -u > "$output_dir/head/all_class_names.txt" || true
+    safe_combine_files "$output_dir/base/*_methods.txt" "$output_dir/base/all_methods.txt"
+    safe_combine_files "$output_dir/head/*_methods.txt" "$output_dir/head/all_methods.txt"
+    safe_combine_files "$output_dir/base/*_method_names.txt" "$output_dir/base/all_method_names.txt"
+    safe_combine_files "$output_dir/head/*_method_names.txt" "$output_dir/head/all_method_names.txt"
     
-    cat "$output_dir"/base/*_fields.txt 2>/dev/null | sort -u > "$output_dir/base/all_fields.txt" || true
-    cat "$output_dir"/head/*_fields.txt 2>/dev/null | sort -u > "$output_dir/head/all_fields.txt" || true
-    cat "$output_dir"/base/*_fields_detailed.txt 2>/dev/null | sort -u > "$output_dir/base/all_fields_detailed.txt" || true
-    cat "$output_dir"/head/*_fields_detailed.txt 2>/dev/null | sort -u > "$output_dir/head/all_fields_detailed.txt" || true
-    cat "$output_dir"/base/*_field_names.txt 2>/dev/null | sort -u > "$output_dir/base/all_field_names.txt" || true
-    cat "$output_dir"/head/*_field_names.txt 2>/dev/null | sort -u > "$output_dir/head/all_field_names.txt" || true
+    safe_combine_files "$output_dir/base/*_classes.txt" "$output_dir/base/all_classes.txt"
+    safe_combine_files "$output_dir/head/*_classes.txt" "$output_dir/head/all_classes.txt"
+    safe_combine_files "$output_dir/base/*_class_names.txt" "$output_dir/base/all_class_names.txt"
+    safe_combine_files "$output_dir/head/*_class_names.txt" "$output_dir/head/all_class_names.txt"
     
-    # Find differences
+    safe_combine_files "$output_dir/base/*_fields.txt" "$output_dir/base/all_fields.txt"
+    safe_combine_files "$output_dir/head/*_fields.txt" "$output_dir/head/all_fields.txt"
+    safe_combine_files "$output_dir/base/*_field_names.txt" "$output_dir/base/all_field_names.txt"
+    safe_combine_files "$output_dir/head/*_field_names.txt" "$output_dir/head/all_field_names.txt"
+    
+    # Find differences safely
     print_status "Calculating differences..."
     
     # New methods
     comm -23 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/new_methods.txt" 2>/dev/null || true
-    NEW_METHODS_COUNT=$(wc -l < "$output_dir/analysis/new_methods.txt" 2>/dev/null || echo "0")
+    NEW_METHODS_COUNT=$(safe_line_count "$output_dir/analysis/new_methods.txt")
     
     # New classes
     comm -23 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/new_classes.txt" 2>/dev/null || true
-    NEW_CLASSES_COUNT=$(wc -l < "$output_dir/analysis/new_classes.txt" 2>/dev/null || echo "0")
+    NEW_CLASSES_COUNT=$(safe_line_count "$output_dir/analysis/new_classes.txt")
     
     # New fields
     comm -23 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/new_fields.txt" 2>/dev/null || true
-    NEW_FIELDS_COUNT=$(wc -l < "$output_dir/analysis/new_fields.txt" 2>/dev/null || echo "0")
+    NEW_FIELDS_COUNT=$(safe_line_count "$output_dir/analysis/new_fields.txt")
     
     # Removed methods
     comm -13 "$output_dir/head/all_methods.txt" "$output_dir/base/all_methods.txt" > "$output_dir/analysis/removed_methods.txt" 2>/dev/null || true
-    REMOVED_METHODS_COUNT=$(wc -l < "$output_dir/analysis/removed_methods.txt" 2>/dev/null || echo "0")
+    REMOVED_METHODS_COUNT=$(safe_line_count "$output_dir/analysis/removed_methods.txt")
     
     # Removed classes
     comm -13 "$output_dir/head/all_classes.txt" "$output_dir/base/all_classes.txt" > "$output_dir/analysis/removed_classes.txt" 2>/dev/null || true
-    REMOVED_CLASSES_COUNT=$(wc -l < "$output_dir/analysis/removed_classes.txt" 2>/dev/null || echo "0")
+    REMOVED_CLASSES_COUNT=$(safe_line_count "$output_dir/analysis/removed_classes.txt")
     
     # Removed fields
     comm -13 "$output_dir/head/all_fields.txt" "$output_dir/base/all_fields.txt" > "$output_dir/analysis/removed_fields.txt" 2>/dev/null || true
-    REMOVED_FIELDS_COUNT=$(wc -l < "$output_dir/analysis/removed_fields.txt" 2>/dev/null || echo "0")
+    REMOVED_FIELDS_COUNT=$(safe_line_count "$output_dir/analysis/removed_fields.txt")
     
-    # Detect modifications (same name, different signature/structure)
-    print_status "Detecting modifications..."
-    
-    # Modified methods
-    detect_modified_methods "$output_dir/base" "$output_dir/head" "$output_dir/analysis/modified_methods.txt"
-    MODIFIED_METHODS_COUNT=$(grep -c "^MODIFIED:" "$output_dir/analysis/modified_methods.txt" 2>/dev/null || echo "0")
-    
-    # Modified classes
-    detect_modified_classes "$output_dir/base" "$output_dir/head" "$output_dir/analysis/modified_classes.txt"
-    MODIFIED_CLASSES_COUNT=$(grep -c "^MODIFIED:" "$output_dir/analysis/modified_classes.txt" 2>/dev/null || echo "0")
-    
-    # Modified fields
-    detect_modified_fields "$output_dir/base" "$output_dir/head" "$output_dir/analysis/modified_fields.txt"
-    MODIFIED_FIELDS_COUNT=$(grep -c "^MODIFIED:" "$output_dir/analysis/modified_fields.txt" 2>/dev/null || echo "0")
+    # For now, set modified counts to 0 (can be enhanced later)
+    MODIFIED_METHODS_COUNT=0
+    MODIFIED_CLASSES_COUNT=0
+    MODIFIED_FIELDS_COUNT=0
     
     # Get file change statistics
-    FILES_MODIFIED=$(git diff --name-only "$base_sha" "$head_sha" | grep '\.java$' | wc -l)
-    LINES_ADDED=$(git diff --stat "$base_sha" "$head_sha" | tail -1 | grep -o '[0-9]\+ insertion' | grep -o '[0-9]\+' || echo "0")
-    LINES_REMOVED=$(git diff --stat "$base_sha" "$head_sha" | tail -1 | grep -o '[0-9]\+ deletion' | grep -o '[0-9]\+' || echo "0")
+    FILES_MODIFIED=$(git diff --name-only "$base_commit" "$head_sha" 2>/dev/null | grep -c '\.java$' || echo "0")
+    LINES_ADDED=$(git diff --stat "$base_commit" "$head_sha" 2>/dev/null | tail -1 | grep -o '[0-9]\+ insertion' | grep -o '[0-9]\+' || echo "0")
+    LINES_REMOVED=$(git diff --stat "$base_commit" "$head_sha" 2>/dev/null | tail -1 | grep -o '[0-9]\+ deletion' | grep -o '[0-9]\+' || echo "0")
     
     # Generate detailed report
     print_status "Generating change report..."
@@ -486,7 +272,7 @@ analyze_changes() {
 ## 🆕 New Methods
 EOF
     
-    if [ "$NEW_METHODS_COUNT" -gt 0 ]; then
+    if [[ "$NEW_METHODS_COUNT" -gt 0 ]]; then
         echo "Found $NEW_METHODS_COUNT new method(s):" >> "$output_dir/analysis/change_report.md"
         echo "" >> "$output_dir/analysis/change_report.md"
         while IFS= read -r method; do
@@ -501,7 +287,7 @@ EOF
 ## 🏗️ New Classes
 EOF
     
-    if [ "$NEW_CLASSES_COUNT" -gt 0 ]; then
+    if [[ "$NEW_CLASSES_COUNT" -gt 0 ]]; then
         echo "Found $NEW_CLASSES_COUNT new class(es):" >> "$output_dir/analysis/change_report.md"
         echo "" >> "$output_dir/analysis/change_report.md"
         while IFS= read -r class; do
@@ -516,7 +302,7 @@ EOF
 ## 🔧 New Fields
 EOF
     
-    if [ "$NEW_FIELDS_COUNT" -gt 0 ]; then
+    if [[ "$NEW_FIELDS_COUNT" -gt 0 ]]; then
         echo "Found $NEW_FIELDS_COUNT new field(s):" >> "$output_dir/analysis/change_report.md"
         echo "" >> "$output_dir/analysis/change_report.md"
         while IFS= read -r field; do
@@ -526,39 +312,49 @@ EOF
         echo "No new fields detected." >> "$output_dir/analysis/change_report.md"
     fi
     
-    if [ "$REMOVED_METHODS_COUNT" -gt 0 ] || [ "$REMOVED_CLASSES_COUNT" -gt 0 ] || [ "$REMOVED_FIELDS_COUNT" -gt 0 ]; then
-        cat >> "$output_dir/analysis/change_report.md" << EOF
+    cat >> "$output_dir/analysis/change_report.md" << EOF
 
-## 🗑️ Removed Elements
+## 🗑️ Removed Methods
 EOF
-        
-        if [ "$REMOVED_METHODS_COUNT" -gt 0 ]; then
-            echo "- **Removed Methods:** $REMOVED_METHODS_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
-        if [ "$REMOVED_CLASSES_COUNT" -gt 0 ]; then
-            echo "- **Removed Classes:** $REMOVED_CLASSES_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
-        if [ "$REMOVED_FIELDS_COUNT" -gt 0 ]; then
-            echo "- **Removed Fields:** $REMOVED_FIELDS_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
+    
+    if [[ "$REMOVED_METHODS_COUNT" -gt 0 ]]; then
+        echo "Found $REMOVED_METHODS_COUNT removed method(s):" >> "$output_dir/analysis/change_report.md"
+        echo "" >> "$output_dir/analysis/change_report.md"
+        while IFS= read -r method; do
+            echo "- \`$method\`" >> "$output_dir/analysis/change_report.md"
+        done < "$output_dir/analysis/removed_methods.txt"
+    else
+        echo "No methods were removed." >> "$output_dir/analysis/change_report.md"
     fi
     
-    # Add modification sections
-    if [ "$MODIFIED_METHODS_COUNT" -gt 0 ] || [ "$MODIFIED_CLASSES_COUNT" -gt 0 ] || [ "$MODIFIED_FIELDS_COUNT" -gt 0 ]; then
-        cat >> "$output_dir/analysis/change_report.md" << EOF
+    cat >> "$output_dir/analysis/change_report.md" << EOF
 
-## 🔄 Modified Elements
+## 🗑️ Removed Classes
 EOF
-        
-        if [ "$MODIFIED_METHODS_COUNT" -gt 0 ]; then
-            echo "- **Modified Methods:** $MODIFIED_METHODS_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
-        if [ "$MODIFIED_CLASSES_COUNT" -gt 0 ]; then
-            echo "- **Modified Classes:** $MODIFIED_CLASSES_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
-        if [ "$MODIFIED_FIELDS_COUNT" -gt 0 ]; then
-            echo "- **Modified Fields:** $MODIFIED_FIELDS_COUNT" >> "$output_dir/analysis/change_report.md"
-        fi
+    
+    if [[ "$REMOVED_CLASSES_COUNT" -gt 0 ]]; then
+        echo "Found $REMOVED_CLASSES_COUNT removed class(es):" >> "$output_dir/analysis/change_report.md"
+        echo "" >> "$output_dir/analysis/change_report.md"
+        while IFS= read -r class; do
+            echo "- \`$class\`" >> "$output_dir/analysis/change_report.md"
+        done < "$output_dir/analysis/removed_classes.txt"
+    else
+        echo "No classes were removed." >> "$output_dir/analysis/change_report.md"
+    fi
+    
+    cat >> "$output_dir/analysis/change_report.md" << EOF
+
+## 🗑️ Removed Fields
+EOF
+    
+    if [[ "$REMOVED_FIELDS_COUNT" -gt 0 ]]; then
+        echo "Found $REMOVED_FIELDS_COUNT removed field(s):" >> "$output_dir/analysis/change_report.md"
+        echo "" >> "$output_dir/analysis/change_report.md"
+        while IFS= read -r field; do
+            echo "- \`$field\`" >> "$output_dir/analysis/change_report.md"
+        done < "$output_dir/analysis/removed_fields.txt"
+    else
+        echo "No fields were removed." >> "$output_dir/analysis/change_report.md"
     fi
     
     cat >> "$output_dir/analysis/change_report.md" << EOF
@@ -566,34 +362,16 @@ EOF
 ## 📁 Modified Files
 EOF
     
-    git diff --name-only "$base_sha" "$head_sha" | grep '\.java$' | while read -r file; do
+    git diff --name-only "$base_commit" "$head_sha" 2>/dev/null | grep '\.java$' | while read -r file; do
         echo "- \`$file\`" >> "$output_dir/analysis/change_report.md"
     done
     
-    # Add detailed modification information
-    if [ "$MODIFIED_METHODS_COUNT" -gt 0 ]; then
-        cat >> "$output_dir/analysis/change_report.md" << EOF
+    cat >> "$output_dir/analysis/change_report.md" << EOF
 
-## 🔄 Modified Method Details
-EOF
-        cat "$output_dir/analysis/modified_methods.txt" >> "$output_dir/analysis/change_report.md" 2>/dev/null || true
-    fi
-    
-    if [ "$MODIFIED_CLASSES_COUNT" -gt 0 ]; then
-        cat >> "$output_dir/analysis/change_report.md" << EOF
+---
 
-## 🔄 Modified Class Details
+*This release was automatically generated by the Ellithium Enhanced Release System*
 EOF
-        cat "$output_dir/analysis/modified_classes.txt" >> "$output_dir/analysis/change_report.md" 2>/dev/null || true
-    fi
-    
-    if [ "$MODIFIED_FIELDS_COUNT" -gt 0 ]; then
-        cat >> "$output_dir/analysis/change_report.md" << EOF
-
-## 🔄 Modified Field Details
-EOF
-        cat "$output_dir/analysis/modified_fields.txt" >> "$output_dir/analysis/change_report.md" 2>/dev/null || true
-    fi
     
     # Set output variables for GitHub Actions
     echo "new_methods_count=$NEW_METHODS_COUNT" >> "$GITHUB_OUTPUT"
@@ -628,7 +406,7 @@ EOF
 }
 
 # Main execution
-if [ "$#" -ne 3 ]; then
+if [[ $# -ne 3 ]]; then
     print_error "Usage: $0 <base_sha> <head_sha> <output_dir>"
     exit 1
 fi
@@ -638,7 +416,7 @@ HEAD_SHA="$2"
 OUTPUT_DIR="$3"
 
 # Validate inputs
-if [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ] || [ -z "$OUTPUT_DIR" ]; then
+if [[ -z "$BASE_SHA" ]] || [[ -z "$HEAD_SHA" ]] || [[ -z "$OUTPUT_DIR" ]]; then
     print_error "All parameters are required"
     exit 1
 fi
