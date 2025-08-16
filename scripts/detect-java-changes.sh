@@ -5,28 +5,21 @@
 
 set -euo pipefail  # Strict error handling
 
-# Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly NC='\033[0m' # No Color
-
-# Function to print colored output
+# Function to print clean output (no colors for GitHub Actions compatibility)
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    echo "[INFO] $1"
 }
 
 print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo "[SUCCESS] $1"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo "[WARNING] $1"
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
+    echo "[ERROR] $1" >&2
 }
 
 # Function to safely extract Java elements using grep and awk

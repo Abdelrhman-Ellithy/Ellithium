@@ -77,8 +77,10 @@ jobs:
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       
+      # Only run release-drafter for PRs and tag pushes (not main branch pushes)
       - name: Release Drafter
         id: release_drafter
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/')
         uses: release-drafter/release-drafter@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,7 +144,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔍 Detailed Change Analysis" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.detect-changes.outputs.change_report }}" >> $GITHUB_STEP_SUMMARY
+          # Clean up the output by removing any remaining color codes and formatting
+          CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
+          echo "$CLEAN_REPORT" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Copy this content to your manual release notes!**" >> $GITHUB_STEP_SUMMARY
@@ -163,7 +167,12 @@ jobs:
           echo ""
           echo "🔍 DETAILED CHANGE ANALYSIS:"
           echo "========================================="
-          echo "${{ steps.detect-changes.outputs.change_report }}"
+          # Clean up the output by removing any remaining color codes and formatting
+          CLEAN_REPORT=$(echo "${{ steps.detect-changes.outputs.change_report }}" | sed 's/\[0;34m//g' | sed 's/\[0;32m//g' | sed 's/\[0;31m//g' | sed 's/\[0m//g' | sed 's/\[1;33m//g')
+          echo "$CLEAN_REPORT"
           echo "========================================="
           echo ""
           echo "📋 COPY THE ABOVE DETAILED ANALYSIS FOR YOUR RELEASE NOTES!"
+          echo ""
+          echo "💡 TIP: This analysis will appear in the workflow logs above."
+          echo "💡 TIP: Copy the detailed analysis above for your manual release notes."
