@@ -86,22 +86,38 @@ jobs:
           config-name: release-drafter.yml
           name: ${{ github.ref_name }}
           tag: ${{ github.ref_name }}
-          draft: true
+          publish: false
           prerelease: false
-          body: |
-            ## 🚀 Enhanced Release Notes
-            
-            ### 📊 Java Code Changes
-            - **New Methods:** ${{ steps.detect-changes.outputs.new_methods_count }}
-            - **New Classes:** ${{ steps.detect-changes.outputs.new_classes_count }}
-            - **Modified Methods:** ${{ steps.detect-changes.outputs.modified_methods_count }}
-            - **Modified Classes:** ${{ steps.detect-changes.outputs.modified_classes_count }}
-            - **Files Modified:** ${{ steps.detect-changes.outputs.files_modified_count }}
-            
-            ### 🔍 Detailed Change Analysis
-            ```
-            ${{ steps.detect-changes.outputs.change_report }}
-            ```
-            
-            ---
-            *Enhanced with Ellithium Java Change Detection*
+      
+      - name: Create Enhanced Release Notes
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Get the tag name
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "Creating enhanced release notes for tag: $TAG_NAME"
+          
+          # Get the change report from our analysis
+          CHANGE_REPORT="${{ steps.detect-changes.outputs.change_report }}"
+          
+          # Create enhanced release body using cat for proper multiline handling
+          cat > /tmp/enhanced_body.md << 'EOF'
+          ## 🚀 Enhanced Release Notes
+          
+          ### 📊 Java Code Changes
+          - **New Methods:** ${{ steps.detect-changes.outputs.new_methods_count }}
+          - **New Classes:** ${{ steps.detect-changes.outputs.new_classes_count }}
+          - **Modified Methods:** ${{ steps.detect-changes.outputs.modified_methods_count }}
+          - **Modified Classes:** ${{ steps.detect-changes.outputs.modified_classes_count }}
+          - **Files Modified:** ${{ steps.detect-changes.outputs.files_modified_count }}
+          
+          ### 🔍 Detailed Change Analysis
+          ```
+          $CHANGE_REPORT
+          ```
+          
+          ---
+          *Enhanced with Ellithium Java Change Detection*
+          EOF
+          
+          # Update the release with enhanced notes
+          gh release edit "$TAG_NAME" --body-file /tmp/enhanced_body.md --repo "$GITHUB_REPOSITORY"
