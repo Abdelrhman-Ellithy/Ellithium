@@ -1,0 +1,252 @@
+name: Method and Class Detector
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/main/java/**/*.java'
+      - 'src/test/java/**/*.java'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/main/java/**/*.java'
+      - 'src/test/java/**/*.java'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install Java dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tree
+
+      - name: Make script executable
+        run: chmod +x scripts/detect-java-changes.sh
+
+      - name: Detect new methods and classes
+        id: detect-changes
+        run: |
+          echo "🔍 Analyzing Java source code changes..."
+          
+          # Get the base commit for comparison
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA=$(git rev-parse HEAD~1)
+            HEAD_SHA="${{ github.sha }}"
+          fi
+          
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA: $HEAD_SHA"
+          
+          # Create temporary directories for comparison
+          mkdir -p /tmp/base /tmp/head
+          
+          # Extract Java files from base commit
+          git show $BASE_SHA:src/main/java > /tmp/base/main.java 2>/dev/null || echo "No main source in base"
+          git show $BASE_SHA:src/test/java > /tmp/base/test.java 2>/dev/null || echo "No test source in base"
+          
+          # Extract Java files from head commit
+          git show $HEAD_SHA:src/main/java > /tmp/head/main.java 2>/dev/null || echo "No main source in head"
+          git show $HEAD_SHA:src/test/java > /tmp/head/test.java 2>/dev/null || echo "No test source in head"
+          
+          # Function to extract method signatures from Java code
+          extract_methods() {
+            local file="$1"
+            if [ -f "$file" ]; then
+              # Extract method signatures (public, private, protected, package-private)
+              grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*\{?' "$file" | \
+                sed 's/^\s*//' | \
+                sed 's/\s*\{.*$//' | \
+                sed 's/\s*$//' | \
+                sort -u
+            fi
+          }
+          
+          # Function to extract class declarations
+          extract_classes() {
+            local file="$1"
+            if [ -f "$file" ]; then
+              # Extract class, interface, and enum declarations
+              grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" | \
+                sed 's/^\s*//' | \
+                sed 's/\s*\{.*$//' | \
+                sed 's/\s*$//' | \
+                sort -u
+            fi
+          }
+          
+          # Extract methods and classes from both commits
+          extract_methods /tmp/base/main.java > /tmp/base_methods.txt
+          extract_methods /tmp/head/main.java > /tmp/head_methods.txt
+          extract_methods /tmp/base/test.java >> /tmp/base_methods.txt
+          extract_methods /tmp/head/test.java >> /tmp/head_methods.txt
+          
+          extract_classes /tmp/base/main.java > /tmp/base_classes.txt
+          extract_classes /tmp/head/main.java > /tmp/head_classes.txt
+          extract_classes /tmp/base/test.java >> /tmp/base_classes.txt
+          extract_classes /tmp/head/test.java >> /tmp/head_classes.txt
+          
+          # Find new methods
+          comm -23 /tmp/head_methods.txt /tmp/base_methods.txt > /tmp/new_methods.txt
+          NEW_METHODS_COUNT=$(wc -l < /tmp/new_methods.txt)
+          
+          # Find new classes
+          comm -23 /tmp/head_classes.txt /tmp/base_classes.txt > /tmp/new_classes.txt
+          NEW_CLASSES_COUNT=$(wc -l < /tmp/new_classes.txt)
+          
+          # Find removed methods
+          comm -13 /tmp/head_methods.txt /tmp/base_methods.txt > /tmp/removed_methods.txt
+          REMOVED_METHODS_COUNT=$(wc -l < /tmp/removed_methods.txt)
+          
+          # Find removed classes
+          comm -13 /tmp/head_classes.txt /tmp/base_classes.txt > /tmp/removed_classes.txt
+          REMOVED_CLASSES_COUNT=$(wc -l < /tmp/removed_classes.txt)
+          
+          # Get file change statistics
+          FILES_MODIFIED=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep '\.java$' | wc -l)
+          LINES_ADDED=$(git diff --stat $BASE_SHA $HEAD_SHA | tail -1 | grep -o '[0-9]\+ insertion' | grep -o '[0-9]\+' || echo "0")
+          LINES_REMOVED=$(git diff --stat $BASE_SHA $HEAD_SHA | tail -1 | grep -o '[0-9]\+ deletion' | grep -o '[0-9]\+' || echo "0")
+          
+          # Set output variables
+          echo "new_methods_count=$NEW_METHODS_COUNT" >> $GITHUB_OUTPUT
+          echo "new_classes_count=$NEW_CLASSES_COUNT" >> $GITHUB_OUTPUT
+          echo "removed_methods_count=$REMOVED_METHODS_COUNT" >> $GITHUB_OUTPUT
+          echo "removed_classes_count=$REMOVED_CLASSES_COUNT" >> $GITHUB_OUTPUT
+          echo "files_modified=$FILES_MODIFIED" >> $GITHUB_OUTPUT
+          echo "lines_added=$LINES_ADDED" >> $GITHUB_OUTPUT
+          echo "lines_removed=$LINES_REMOVED" >> $GITHUB_OUTPUT
+          
+          # Create detailed change report
+          echo "## 🔍 New Methods Detected" > /tmp/change_report.md
+          if [ $NEW_METHODS_COUNT -gt 0 ]; then
+            echo "Found $NEW_METHODS_COUNT new method(s):" >> /tmp/change_report.md
+            echo "" >> /tmp/change_report.md
+            while IFS= read -r method; do
+              echo "- \`$method\`" >> /tmp/change_report.md
+            done < /tmp/new_methods.txt
+          else
+            echo "No new methods detected." >> /tmp/change_report.md
+          fi
+          
+          echo "" >> /tmp/change_report.md
+          echo "## 🆕 New Classes Detected" >> /tmp/change_report.md
+          if [ $NEW_CLASSES_COUNT -gt 0 ]; then
+            echo "Found $NEW_CLASSES_COUNT new class(es):" >> /tmp/change_report.md
+            echo "" >> /tmp/change_report.md
+            while IFS= read -r class; do
+              echo "- \`$class\`" >> /tmp/change_report.md
+            done < /tmp/new_classes.txt
+          else
+            echo "No new classes detected." >> /tmp/change_report.md
+          fi
+          
+          if [ $REMOVED_METHODS_COUNT -gt 0 ] || [ $REMOVED_CLASSES_COUNT -gt 0 ]; then
+            echo "" >> /tmp/change_report.md
+            echo "## 🗑️ Removed Elements" >> /tmp/change_report.md
+            if [ $REMOVED_METHODS_COUNT -gt 0 ]; then
+              echo "- **Removed Methods:** $REMOVED_METHODS_COUNT" >> /tmp/change_report.md
+            fi
+            if [ $REMOVED_CLASSES_COUNT -gt 0 ]; then
+              echo "- **Removed Classes:** $REMOVED_CLASSES_COUNT" >> /tmp/change_report.md
+            fi
+          fi
+          
+          echo "" >> /tmp/change_report.md
+          echo "## 📊 Change Statistics" >> /tmp/change_report.md
+          echo "- **Files Modified:** $FILES_MODIFIED" >> /tmp/change_report.md
+          echo "- **Lines Added:** $LINES_ADDED" >> /tmp/change_report.md
+          echo "- **Lines Removed:** $LINES_REMOVED" >> /tmp/change_report.md
+          
+          # Save the report
+          echo "change_report<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/change_report.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "✅ Analysis complete!"
+          echo "📊 New Methods: $NEW_METHODS_COUNT"
+          echo "🏗️ New Classes: $NEW_CLASSES_COUNT"
+          echo "🗑️ Removed Methods: $REMOVED_METHODS_COUNT"
+          echo "🗑️ Removed Classes: $REMOVED_CLASSES_COUNT"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            // Check if we already commented
+            const existingComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🔍 New Methods Detected')
+            );
+            
+            if (!existingComment) {
+              const changeReport = '${{ steps.detect-changes.outputs.change_report }}';
+              const body = '## 🔍 Code Change Analysis\n\n' + changeReport + '\n\n---\n*This analysis was automatically generated by the Ellithium Method Detector*';
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Update PR with labels
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newMethodsCount = parseInt('${{ steps.detect-changes.outputs.new_methods_count }}');
+            const newClassesCount = parseInt('${{ steps.detect-changes.outputs.new_classes_count }}');
+            const modifiedMethodsCount = parseInt('${{ steps.detect-changes.outputs.modified_methods_count }}');
+            const modifiedClassesCount = parseInt('${{ steps.detect-changes.outputs.modified_classes_count }}');
+            
+            // Add appropriate labels based on changes
+            const labelsToAdd = [];
+            
+            if (newMethodsCount > 0) {
+              labelsToAdd.push('new-method');
+            }
+            
+            if (newClassesCount > 0) {
+              labelsToAdd.push('new-class');
+            }
+            
+            if (modifiedMethodsCount > 0) {
+              labelsToAdd.push('modified-method');
+            }
+            
+            if (modifiedClassesCount > 0) {
+              labelsToAdd.push('modified-class');
+            }
+            
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd
+              });
+            }
