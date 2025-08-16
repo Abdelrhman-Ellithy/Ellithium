@@ -61,6 +61,24 @@ jobs:
           # Run our enhanced change detection script
           ./scripts/detect-java-changes.sh "$LAST_TAG" "$CURRENT_SHA" "/tmp/release_analysis"
           
+          # Capture the outputs from the script
+          if [ -f "/tmp/release_analysis/analysis/change_report.md" ]; then
+            echo "change_report<<EOF" >> $GITHUB_OUTPUT
+            cat "/tmp/release_analysis/analysis/change_report.md" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "change_report=No changes detected" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set output variables for the release job
+          echo "new_methods_count=$NEW_METHODS_COUNT" >> $GITHUB_OUTPUT
+          echo "new_classes_count=$NEW_CLASSES_COUNT" >> $GITHUB_OUTPUT
+          echo "modified_methods_count=$MODIFIED_METHODS_COUNT" >> $GITHUB_OUTPUT
+          echo "modified_classes_count=$MODIFIED_CLASSES_COUNT" >> $GITHUB_OUTPUT
+          echo "files_modified=$FILES_MODIFIED" >> $GITHUB_OUTPUT
+          echo "lines_added=$LINES_ADDED" >> $GITHUB_OUTPUT
+          echo "lines_removed=$LINES_REMOVED" >> $GITHUB_OUTPUT
+          
           echo "✅ Analysis complete!"
           echo "📊 New Methods: $NEW_METHODS_COUNT"
           echo "🏗️ New Classes: $NEW_CLASSES_COUNT"
