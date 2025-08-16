@@ -321,8 +321,18 @@ analyze_changes() {
     
     # Get list of Java files in both commits (MAIN SOURCE ONLY, NO TEST FILES)
     print_status "Extracting main source Java files (excluding test files)..."
-    git show --name-only "$base_sha" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
-    git show --name-only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    
+    # Handle case where base_sha might be a tag name
+    if [[ "$base_sha" == v* ]]; then
+        # It's a tag, get the actual commit SHA
+        BASE_COMMIT=$(git rev-parse "$base_sha" 2>/dev/null || echo "$base_sha")
+        print_status "Base SHA is a tag, resolved to commit: $BASE_COMMIT"
+    else
+        BASE_COMMIT="$base_sha"
+    fi
+    
+    git show --name-only "$BASE_COMMIT" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
+    git show --name_only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
     
     # Debug: Show what files we found
     print_status "Base commit Java files found:"
@@ -338,7 +348,7 @@ analyze_changes() {
     # Extract content for each Java file
     while IFS= read -r file; do
         if [ -n "$file" ]; then
-            git show "$base_sha:$file" > "$output_dir/base/$(basename "$file")" 2>/dev/null || true
+            git show "$BASE_COMMIT:$file" > "$output_dir/base/$(basename "$file")" 2>/dev/null || true
         fi
     done < "$output_dir/base/java_files.txt"
     
