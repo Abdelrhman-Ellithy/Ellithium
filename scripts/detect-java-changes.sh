@@ -83,7 +83,7 @@ extract_method_names() {
     
     # Extract just method names for modification detection
     grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(synchronized\s+)?(abstract\s+)?(native\s+)?(strictfp\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*(throws\s+[^{]*)?\{?' "$file" | \
-        sed 's/^.*\s\([a-zA-Z_][a-zA-Z0-9_]*\)\s*([^)]*).*$/\1/' | \
+        sed 's/^.*[[:space:]]\([a-zA-Z_][a-zA-Z0-9_]*\)[[:space:]]*([^)]*).*$/\1/' | \
         sort -u > "$output_file"
 }
 
@@ -140,7 +140,7 @@ extract_class_names() {
     
     # Extract just class names for modification detection
     grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(class|interface|enum)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$file" | \
-        sed 's/^.*\s\(class\|interface\|enum\)\s\+\([a-zA-Z_][a-zA-Z0-9_]*\).*$/\2/' | \
+        sed 's/^.*[[:space:]]\(class\|interface\|enum\)[[:space:]]\+\([a-zA-Z_][a-zA-Z0-9_]*\).*$/\2/' | \
         sort -u > "$output_file"
 }
 
@@ -197,7 +197,7 @@ extract_field_names() {
     
     # Extract just field names for modification detection
     grep -E '^\s*(public|private|protected)?\s*(static\s+)?(final\s+)?(volatile\s+)?(transient\s+)?[a-zA-Z_][a-zA-Z0-9_<>\[\]\s]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*[=;]' "$file" | \
-        sed 's/^.*\s\+\([a-zA-Z_][a-zA-Z0-9_]*\)\s*[=;].*$/\1/' | \
+        sed 's/^.*[[:space:]]\+\([a-zA-Z_][a-zA-Z0-9_]*\)[[:space:]]*[=;].*$/\1/' | \
         sort -u > "$output_file"
 }
 
@@ -319,9 +319,21 @@ analyze_changes() {
     # Extract Java files from both commits
     print_status "Extracting Java source files..."
     
-    # Get list of Java files in both commits
-    git show --name-only "$base_sha" | grep '\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
-    git show --name-only "$head_sha" | grep '\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    # Get list of Java files in both commits (MAIN SOURCE ONLY, NO TEST FILES)
+    print_status "Extracting main source Java files (excluding test files)..."
+    git show --name-only "$base_sha" | grep 'src/main/java.*\.java$' > "$output_dir/base/java_files.txt" 2>/dev/null || true
+    git show --name-only "$head_sha" | grep 'src/main/java.*\.java$' > "$output_dir/head/java_files.txt" 2>/dev/null || true
+    
+    # Debug: Show what files we found
+    print_status "Base commit Java files found:"
+    if [ -f "$output_dir/base/java_files.txt" ]; then
+        cat "$output_dir/base/java_files.txt" | head -10
+    fi
+    
+    print_status "Head commit Java files found:"
+    if [ -f "$output_dir/head/java_files.txt" ]; then
+        cat "$output_dir/head/java_files.txt" | head -10
+    fi
     
     # Extract content for each Java file
     while IFS= read -r file; do
