@@ -22,11 +22,9 @@ public class BaseTests {
         driver=DriverFactory.getNewDriver(driverConfig);
         home=new HomPage(driver);
         screenRecorderActions=new ScreenRecorderActions<>(driver);
-        screenRecorderActions.startRecording("Test Name");
     }
     @AfterClass
     public void tareDown() {
-        screenRecorderActions.stopRecording();
         DriverFactory.quitDriver();
     }
 }

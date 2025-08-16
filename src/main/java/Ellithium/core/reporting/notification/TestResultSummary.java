@@ -11,14 +11,14 @@ import java.util.Set;
  * Generates rich HTML-formatted email content with professional styling.
  */
 public class TestResultSummary {
-    
-    private int totalTests;
-    private int passedTests;
-    private int failedTests;
-    private int skippedTests;
-    private long executionTime;
-    private Date executionDate;
-    private Set<ITestResult> failedTestResults;
+
+    private final long totalTests;
+    private final long passedTests;
+    private final long failedTests;
+    private final long skippedTests;
+    private final long executionTime;
+    private final Date executionDate;
+    private final Set<ITestResult> failedTestResults;
     
     /**
      * Creates a test result summary from overall execution results.
@@ -29,8 +29,8 @@ public class TestResultSummary {
      * @param executionTime Total execution time in milliseconds
      * @param failedTestResults Set of failed test results
      */
-    public TestResultSummary(int totalTests, int passedTests, int failedTests, int skippedTests, 
-                           long executionTime, Set<ITestResult> failedTestResults) {
+    public TestResultSummary(long totalTests, long passedTests, long failedTests, long skippedTests,
+                            long executionTime, Set<ITestResult> failedTestResults) {
         this.totalTests = totalTests;
         this.passedTests = passedTests;
         this.failedTests = failedTests;
@@ -63,16 +63,7 @@ public class TestResultSummary {
      * @return true if any tests failed
      */
     public boolean hasFailures() {
-        return failedTests > 0;
-    }
-    
-    /**
-     * Checks if the failure rate exceeds the threshold.
-     * @param threshold The failure threshold percentage
-     * @return true if failure rate exceeds threshold
-     */
-    public boolean exceedsFailureThreshold(int threshold) {
-        return getFailureRate() > threshold;
+        return failedTests > 0 && failedTestResults != null && !failedTestResults.isEmpty();
     }
     
     /**
@@ -80,16 +71,20 @@ public class TestResultSummary {
      * @return Formatted execution time
      */
     public String getFormattedExecutionTime() {
-        long seconds = executionTime / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        
-        if (hours > 0) {
-            return String.format("%dh %dm %ds", hours, minutes % 60, seconds % 60);
-        } else if (minutes > 0) {
-            return String.format("%dm %ds", minutes, seconds % 60);
-        } else {
-            return String.format("%ds", seconds);
+        try {
+            long seconds = executionTime / 1000;
+            long minutes = seconds / 60;
+            long hours = minutes / 60;
+            
+            if (hours > 0) {
+                return String.format("%dh %dm %ds", hours, minutes % 60, seconds % 60);
+            } else if (minutes > 0) {
+                return String.format("%dm %ds", minutes, seconds % 60);
+            } else {
+                return String.format("%ds", seconds);
+            }
+        } catch (Exception e) {
+            return "Unknown";
         }
     }
     
@@ -98,35 +93,43 @@ public class TestResultSummary {
      * @return Formatted summary message
      */
     public String generateSummaryMessage() {
-        StringBuilder message = new StringBuilder();
-        message.append("🚀 *Ellithium Test Execution Summary*").append(System.lineSeparator()).append(System.lineSeparator());
-        message.append("*Date:* ").append(getFormattedExecutionDate()).append(System.lineSeparator());
-        message.append("*Duration:* ").append(getFormattedExecutionTime()).append(System.lineSeparator()).append(System.lineSeparator());
-        
-        message.append("*Test Results:*").append(System.lineSeparator());
-        message.append("✅ Passed: ").append(passedTests).append(System.lineSeparator());
-        message.append("❌ Failed: ").append(failedTests).append(System.lineSeparator());
-        message.append("⏭️ Skipped: ").append(skippedTests).append(System.lineSeparator());
-        message.append("📊 Total: ").append(totalTests).append(System.lineSeparator());
-        message.append("📈 Success Rate: ").append(String.format("%.1f%%", getSuccessRate())).append(System.lineSeparator()).append(System.lineSeparator());
-        
-        if (hasFailures()) {
-            message.append("*Failed Tests:*").append(System.lineSeparator());
-            appendFailedTestsToMessage(message);
+        try {
+            StringBuilder message = new StringBuilder();
+            message.append("🚀 *Ellithium Test Execution Summary*").append(System.lineSeparator()).append(System.lineSeparator());
+            message.append("*Date:* ").append(getFormattedExecutionDate()).append(System.lineSeparator());
+            message.append("*Duration:* ").append(getFormattedExecutionTime()).append(System.lineSeparator()).append(System.lineSeparator());
+            
+            message.append("*Test Results:*").append(System.lineSeparator());
+            message.append("✅ Passed: ").append(passedTests).append(System.lineSeparator());
+            message.append("❌ Failed: ").append(failedTests).append(System.lineSeparator());
+            message.append("⏭️ Skipped: ").append(skippedTests).append(System.lineSeparator());
+            message.append("📊 Total: ").append(totalTests).append(System.lineSeparator());
+            message.append("📈 Success Rate: ").append(String.format("%.1f%%", getSuccessRate())).append(System.lineSeparator()).append(System.lineSeparator());
+            
+            if (hasFailures()) {
+                message.append("*Failed Tests:*").append(System.lineSeparator());
+                appendFailedTestsToMessage(message);
+            }
+            
+            return message.toString();
+        } catch (Exception e) {
+            return "Error generating summary message: " + e.getMessage();
         }
-        
-        return message.toString();
     }
     
     private void appendFailedTestsToMessage(StringBuilder message) {
-        for (ITestResult failedTest : failedTestResults) {
-            String testName = failedTest.getName();
-            String className = failedTest.getTestClass().getName();
-            Throwable throwable = failedTest.getThrowable();
-            String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
-            
-            message.append("• ").append(testName).append(" (").append(className).append(")").append(System.lineSeparator());
-            message.append("  Error: ").append(errorMessage).append(System.lineSeparator()).append(System.lineSeparator());
+        try {
+            for (ITestResult failedTest : failedTestResults) {
+                String testName = failedTest.getName();
+                String className = failedTest.getTestClass() != null ? failedTest.getTestClass().getName() : "Unknown Class";
+                Throwable throwable = failedTest.getThrowable();
+                String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
+                
+                message.append("• ").append(testName).append(" (").append(className).append(")").append(System.lineSeparator());
+                message.append("  Error: ").append(errorMessage).append(System.lineSeparator()).append(System.lineSeparator());
+            }
+        } catch (Exception e) {
+            message.append("Error processing failed tests: ").append(e.getMessage());
         }
     }
     
@@ -135,28 +138,32 @@ public class TestResultSummary {
      * @return HTML-formatted email body
      */
     public String generateHtmlEmailBody() {
-        String status = hasFailures() ? "FAILED" : "PASSED";
-        String statusColor = hasFailures() ? "#dc3545" : "#28a745";
-        String statusIcon = hasFailures() ? "❌" : "✅";
-        
-        StringBuilder html = new StringBuilder();
-        
-        // Build HTML structure
-        appendHtmlHeader(html);
-        appendHtmlStyles(html);
-        appendHtmlBodyStart(html);
-        
-        // Build content sections
-        appendHeaderSection(html, status, statusColor, statusIcon);
-        appendSummaryTable(html);
-        appendProgressSection(html);
-        appendExecutionInfoSection(html);
-        appendFailedTestsSection(html);
-        
-        // Close HTML structure
-        appendHtmlBodyEnd(html);
-        
-        return html.toString();
+        try {
+            String status = hasFailures() ? "FAILED" : "PASSED";
+            String statusColor = hasFailures() ? "#dc3545" : "#28a745";
+            String statusIcon = hasFailures() ? "❌" : "✅";
+            
+            StringBuilder html = new StringBuilder();
+            
+            // Build HTML structure
+            appendHtmlHeader(html);
+            appendHtmlStyles(html);
+            appendHtmlBodyStart(html);
+            
+            // Build content sections
+            appendHeaderSection(html, status, statusColor, statusIcon);
+            appendSummaryTable(html);
+            appendProgressSection(html);
+            appendExecutionInfoSection(html);
+            appendFailedTestsSection(html);
+            
+            // Close HTML structure
+            appendHtmlBodyEnd(html);
+            
+            return html.toString();
+        } catch (Exception e) {
+            return "<html><body><h1>Error generating HTML report</h1><p>" + e.getMessage() + "</p></body></html>";
+        }
     }
     
     private void appendHtmlHeader(StringBuilder html) {
@@ -202,7 +209,7 @@ public class TestResultSummary {
         html.append(".failed-table .test-name { font-weight: 600; color: #c53030; }");
         html.append(".failed-table .test-class { font-size: 12px; color: #718096; }");
         html.append(".failed-table .test-error { background-color: #fed7d7; border-radius: 4px; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; color: #c53030; margin-top: 5px; }");
-        html.append(".footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 12px; border-top: 1px solid #dee2e6; }");
+        html.append(".footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 12px; border-top: 1px solid #e9ecef; }");
         html.append(".progress-section { margin: 30px 0; }");
         html.append(".progress-section h3 { margin-bottom: 15px; color: #495057; font-size: 18px; }");
         html.append(".progress-bar { background-color: #e9ecef; border-radius: 10px; height: 20px; overflow: hidden; margin: 10px 0; }");
@@ -283,71 +290,84 @@ public class TestResultSummary {
     }
     
     private void appendExecutionInfoSection(StringBuilder html) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        html.append("<div class=\"execution-info\">");
-        html.append("<h3>📊 Execution Details</h3>");
-        html.append("<table class=\"execution-table\">");
-        
-        // Execution Date
-        html.append("<tr>");
-        html.append("<td>Execution Date:</td>");
-        html.append("<td>").append(dateFormat.format(executionDate)).append("</td>");
-        html.append("</tr>");
-        
-        // Total Duration
-        html.append("<tr>");
-        html.append("<td>Total Duration:</td>");
-        html.append("<td>").append(getFormattedExecutionTime()).append("</td>");
-        html.append("</tr>");
-        
-        // Report Type
-        html.append("<tr>");
-        html.append("<td>Report Type:</td>");
-        html.append("<td>Allure Reports</td>");
-        html.append("</tr>");
-        
-        // Execution Status
-        String status = hasFailures() ? "FAILED" : "PASSED";
-        String statusColor = hasFailures() ? "#dc3545" : "#28a745";
-        html.append("<tr>");
-        html.append("<td>Execution Status:</td>");
-        html.append("<td><strong style=\"color: ").append(statusColor).append(";\">").append(status).append("</strong></td>");
-        html.append("</tr>");
-        
-        html.append("</table>");
-        html.append("</div>");
+        try {
+            html.append("<div class=\"execution-info\">");
+            html.append("<h3>📊 Execution Details</h3>");
+            html.append("<table class=\"execution-table\">");
+            
+            // Execution Date
+            html.append("<tr>");
+            html.append("<td>Execution Date:</td>");
+            html.append("<td>").append(getFormattedExecutionDate()).append("</td>");
+            html.append("</tr>");
+            
+            // Total Duration
+            html.append("<tr>");
+            html.append("<td>Total Duration:</td>");
+            html.append("<td>").append(getFormattedExecutionTime()).append("</td>");
+            html.append("</tr>");
+            
+            // Report Type
+            html.append("<tr>");
+            html.append("<td>Report Type:</td>");
+            html.append("<td>Allure Reports</td>");
+            html.append("</tr>");
+            
+            // Execution Status
+            String status = hasFailures() ? "FAILED" : "PASSED";
+            String statusColor = hasFailures() ? "#dc3545" : "#28a745";
+            html.append("<tr>");
+            html.append("<td>Execution Status:</td>");
+            html.append("<td><strong style=\"color: ").append(statusColor).append(";\">").append(status).append("</strong></td>");
+            html.append("</tr>");
+            
+            html.append("</table>");
+            html.append("</div>");
+        } catch (Exception e) {
+            html.append("<div class=\"execution-info\">");
+            html.append("<h3>📊 Execution Details</h3>");
+            html.append("<p>Error loading execution details: ").append(e.getMessage()).append("</p>");
+            html.append("</div>");
+        }
     }
     
     private void appendFailedTestsSection(StringBuilder html) {
-        if (hasFailures() && !failedTestResults.isEmpty()) {
-            html.append("<div class=\"failed-tests\">");
-            html.append("<h3>❌ Failed Test Details</h3>");
-            html.append("<table class=\"failed-table\">");
-            html.append("<thead>");
-            html.append("<tr>");
-            html.append("<th>Test Name</th>");
-            html.append("<th>Test Class</th>");
-            html.append("<th>Error Details</th>");
-            html.append("</tr>");
-            html.append("</thead>");
-            html.append("<tbody>");
-            
-            for (ITestResult failedTest : failedTestResults) {
-                String testName = failedTest.getName();
-                String className = failedTest.getTestClass() != null ? failedTest.getTestClass().getName() : "Unknown Class";
-                Throwable throwable = failedTest.getThrowable();
-                String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
-                
+        if (hasFailures() && failedTestResults != null && !failedTestResults.isEmpty()) {
+            try {
+                html.append("<div class=\"failed-tests\">");
+                html.append("<h3>❌ Failed Test Details</h3>");
+                html.append("<table class=\"failed-table\">");
+                html.append("<thead>");
                 html.append("<tr>");
-                html.append("<td class=\"test-name\">").append(testName).append("</td>");
-                html.append("<td class=\"test-class\">").append(className).append("</td>");
-                html.append("<td><div class=\"test-error\">").append(errorMessage).append("</div></td>");
+                html.append("<th>Test Name</th>");
+                html.append("<th>Test Class</th>");
+                html.append("<th>Error Details</th>");
                 html.append("</tr>");
+                html.append("</thead>");
+                html.append("<tbody>");
+                
+                for (ITestResult failedTest : failedTestResults) {
+                    String testName = failedTest.getName();
+                    String className = failedTest.getTestClass() != null ? failedTest.getTestClass().getName() : "Unknown Class";
+                    Throwable throwable = failedTest.getThrowable();
+                    String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
+                    
+                    html.append("<tr>");
+                    html.append("<td class=\"test-name\">").append(testName).append("</td>");
+                    html.append("<td class=\"test-class\">").append(className).append("</td>");
+                    html.append("<td><div class=\"test-error\">").append(errorMessage).append("</div></td>");
+                    html.append("</tr>");
+                }
+                
+                html.append("</tbody>");
+                html.append("</table>");
+                html.append("</div>");
+            } catch (Exception e) {
+                html.append("<div class=\"failed-tests\">");
+                html.append("<h3>❌ Failed Test Details</h3>");
+                html.append("<p>Error loading failed test details: ").append(e.getMessage()).append("</p>");
+                html.append("</div>");
             }
-            
-            html.append("</tbody>");
-            html.append("</table>");
-            html.append("</div>");
         }
     }
     
@@ -363,18 +383,17 @@ public class TestResultSummary {
     }
     
     private String getFormattedExecutionDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return dateFormat.format(executionDate);
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return dateFormat.format(executionDate);
+        } catch (Exception e) {
+            return "Unknown";
+        }
     }
     
-    /**
-     * Generates an email subject line.
-     * @return Email subject
-     */
-    public String generateEmailSubject() {
-        NotificationConfig config = NotificationConfig.getInstance();
-        String prefix = config.getEmailSubjectPrefix();
-        String status = hasFailures() ? "FAILED" : "PASSED";
-        return prefix + " - Test Execution - " + status + " (" + passedTests + "/" + totalTests + ")";
-    }
+    // Getters for the fields
+    public long getTotalTests() { return totalTests; }
+    public long getPassedTests() { return passedTests; }
+    public long getFailedTests() { return failedTests; }
+    public long getSkippedTests() { return skippedTests; }
 }
