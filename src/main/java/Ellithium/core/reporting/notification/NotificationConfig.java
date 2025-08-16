@@ -2,15 +2,13 @@ package Ellithium.core.reporting.notification;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.core.logging.LogLevel;
-import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-
 import java.util.Properties;
 
 /**
  * Configuration class for notification settings.
  * Loads notification properties from config.properties file.
- * Follows singleton pattern for configuration management.
+ * Implements graceful error handling to prevent test execution blocking.
  */
 public class NotificationConfig {
     
@@ -48,13 +46,33 @@ public class NotificationConfig {
     
     /**
      * Gets the singleton instance of NotificationConfig.
-     * @return The NotificationConfig instance
+     * @return The singleton instance
      */
-    public static synchronized NotificationConfig getInstance() {
+    public static NotificationConfig getInstance() {
         if (instance == null) {
-            instance = new NotificationConfig();
+            synchronized (NotificationConfig.class) {
+                if (instance == null) {
+                    instance = new NotificationConfig();
+                }
+            }
         }
         return instance;
+    }
+    
+    /**
+     * Quick check if notifications are enabled without full configuration loading.
+     * This method provides early exit for performance optimization.
+     * @return true if notifications are enabled, false otherwise
+     */
+    public static boolean isNotificationEnabledQuick() {
+        try {
+            // Use PropertyHelper to get just the notification.enabled property
+            String enabled = Ellithium.Utilities.helpers.PropertyHelper.getAllProperties("src/main/resources/properties/config.properties").getProperty("notification.enabled");
+            return enabled != null && Boolean.parseBoolean(enabled);
+        } catch (Exception e) {
+            // If we can't check, assume disabled for safety
+            return false;
+        }
     }
     
     /**
@@ -64,11 +82,11 @@ public class NotificationConfig {
         try {
             properties = PropertyHelper.getAllProperties(CONFIG_FILE);
             propertiesLoaded = true;
-            Logger.info("Notification properties loaded successfully");
+            Reporter.log("Notification properties loaded successfully", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             propertiesLoaded = false;
-            Logger.error("Failed to load notification properties: " + e.getMessage());
-            Logger.error("Notification system will be disabled due to configuration loading failure");
+            Reporter.log("Failed to load notification properties: " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Notification system will be disabled due to configuration loading failure", LogLevel.ERROR);
         }
     }
     
@@ -82,7 +100,6 @@ public class NotificationConfig {
         if (value == null || value.isEmpty()) {
             return value;
         }
-        
 
         if (value.contains("${") && value.contains("}")) {
             String resolvedValue = value;
@@ -97,12 +114,11 @@ public class NotificationConfig {
                 
                 String envVarValue = System.getenv(envVarName);
                 if (envVarValue == null) {
-                    Logger.warn("Environment variable '" + envVarName + "' not found. Using placeholder as-is.");
+                    Reporter.log("Environment variable '" + envVarName + "' not found. Using placeholder as-is.", LogLevel.WARN);
                     envVarValue = placeholder;
                 }
                 
                 resolvedValue = resolvedValue.replace(placeholder, envVarValue);
-                
                 startIndex += envVarValue.length();
             }
             
@@ -113,50 +129,25 @@ public class NotificationConfig {
     }
     
     /**
-     * Checks if properties were loaded successfully.
-     * @return true if properties are loaded
-     */
-    public boolean arePropertiesLoaded() {
-        return propertiesLoaded;
-    }
-    
-    /**
-     * Gets a property value as string with environment variable resolution.
+     * Gets a property value with environment variable resolution.
      * @param key The property key
-     * @return The property value with environment variables resolved
+     * @return The resolved property value, or null if not found
      */
-    public String getProperty(String key) {
-        if (!propertiesLoaded || properties == null) {
-            Logger.warn("Attempting to get property '" + key + "' but properties are not loaded");
-            return "";
-        }
-        
-        String rawValue = properties.getProperty(key, "");
-        return resolveEnvironmentVariables(rawValue);
-    }
-    
-    /**
-     * Gets a property value as boolean.
-     * @param key The property key
-     * @return The property value as boolean
-     */
-    public boolean getBooleanProperty(String key) {
-        String value = getProperty(key);
-        return Boolean.parseBoolean(value);
-    }
-    
-    /**
-     * Gets a property value as integer.
-     * @param key The property key
-     * @return The property value as integer
-     */
-    public int getIntegerProperty(String key) {
-        String value = getProperty(key);
+    private String getProperty(String key) {
         try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            Logger.warn("Failed to parse integer property '" + key + "' with value '" + value + "': " + e.getMessage());
-            return 0;
+            if (!propertiesLoaded || properties == null) {
+                return null;
+            }
+            
+            String value = properties.getProperty(key);
+            if (value != null) {
+                return resolveEnvironmentVariables(value);
+            }
+            
+            return null;
+        } catch (Exception e) {
+            Reporter.log("Failed to get property '" + key + "': " + e.getMessage(), LogLevel.ERROR);
+            return null;
         }
     }
     
@@ -165,7 +156,13 @@ public class NotificationConfig {
      * @return true if notifications are enabled
      */
     public boolean isNotificationEnabled() {
-        return getBooleanProperty(NOTIFICATION_ENABLED);
+        try {
+            String value = getProperty(NOTIFICATION_ENABLED);
+            return Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            Reporter.log("Failed to check if notifications are enabled: " + e.getMessage(), LogLevel.ERROR);
+            return false;
+        }
     }
     
     /**
@@ -173,7 +170,13 @@ public class NotificationConfig {
      * @return true if email notifications are enabled
      */
     public boolean isEmailEnabled() {
-        return getBooleanProperty(EMAIL_ENABLED);
+        try {
+            String value = getProperty(EMAIL_ENABLED);
+            return Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            Reporter.log("Failed to check if email notifications are enabled: " + e.getMessage(), LogLevel.ERROR);
+            return false;
+        }
     }
     
     /**
@@ -181,11 +184,17 @@ public class NotificationConfig {
      * @return true if Slack notifications are enabled
      */
     public boolean isSlackEnabled() {
-        return getBooleanProperty(SLACK_ENABLED);
+        try {
+            String value = getProperty(SLACK_ENABLED);
+            return  Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            Reporter.log("Failed to check if Slack notifications are enabled: " + e.getMessage(), LogLevel.ERROR);
+            return false;
+        }
     }
     
     /**
-     * Gets the SMTP host for email configuration.
+     * Gets the SMTP host.
      * @return SMTP host
      */
     public String getSmtpHost() {
@@ -193,7 +202,7 @@ public class NotificationConfig {
     }
     
     /**
-     * Gets the SMTP port for email configuration.
+     * Gets the SMTP port.
      * @return SMTP port
      */
     public String getSmtpPort() {
@@ -201,7 +210,7 @@ public class NotificationConfig {
     }
     
     /**
-     * Gets the SMTP username for email configuration.
+     * Gets the SMTP username.
      * @return SMTP username
      */
     public String getSmtpUsername() {
@@ -209,7 +218,7 @@ public class NotificationConfig {
     }
     
     /**
-     * Gets the SMTP password for email configuration.
+     * Gets the SMTP password.
      * @return SMTP password
      */
     public String getSmtpPassword() {
@@ -269,77 +278,130 @@ public class NotificationConfig {
      * @return Failure threshold percentage
      */
     public int getFailureThreshold() {
-        return getIntegerProperty(FAILURE_THRESHOLD);
+        try {
+            String value = getProperty(FAILURE_THRESHOLD);
+            return value != null ? Integer.parseInt(value) : 20;
+        } catch (Exception e) {
+            Reporter.log("Failed to get failure threshold: " + e.getMessage(), LogLevel.ERROR);
+            return 20;
+        }
     }
     
     /**
-     * Checks if notifications should be sent on failure.
+     * Checks if notifications should be sent on test failure.
      * @return true if notifications should be sent on failure
      */
     public boolean shouldSendOnFailure() {
-        return getBooleanProperty(SEND_ON_FAILURE);
+        try {
+            String value = getProperty(SEND_ON_FAILURE);
+            return  Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            Reporter.log("Failed to check if should send on failure: " + e.getMessage(), LogLevel.ERROR);
+            return true;
+        }
     }
     
     /**
-     * Checks if notifications should be sent on completion.
+     * Checks if notifications should be sent on test completion.
      * @return true if notifications should be sent on completion
      */
     public boolean shouldSendOnCompletion() {
-        return getBooleanProperty(SEND_ON_COMPLETION);
+        try {
+            String value = getProperty(SEND_ON_COMPLETION);
+            return Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            Reporter.log("Failed to check if should send on completion: " + e.getMessage(), LogLevel.ERROR);
+            return true;
+        }
     }
     
     /**
      * Validates email configuration.
-     * @return true if email configuration is complete
+     * @return true if email configuration is valid
      */
     public boolean validateEmailConfiguration() {
-        if (!isEmailEnabled()) {
+        try {
+            if (!isEmailEnabled()) {
+                return false;
+            }
+            
+            String smtpHost = getSmtpHost();
+            String smtpPort = getSmtpPort();
+            String username = getSmtpUsername();
+            String password = getSmtpPassword();
+            String fromEmail = getFromEmail();
+            String toEmail = getToEmail();
+            
+            if (smtpHost == null || smtpHost.trim().isEmpty()) {
+                Reporter.log("SMTP host is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (smtpPort == null || smtpPort.trim().isEmpty()) {
+                Reporter.log("SMTP port is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (username == null || username.trim().isEmpty()) {
+                Reporter.log("SMTP username is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (password == null || password.trim().isEmpty()) {
+                Reporter.log("SMTP password is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (fromEmail == null || fromEmail.trim().isEmpty()) {
+                Reporter.log("From email is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (toEmail == null || toEmail.trim().isEmpty()) {
+                Reporter.log("To email is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            return true;
+        } catch (Exception e) {
+            Reporter.log("Failed to validate email configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;
         }
-        
-        String smtpHost = getSmtpHost();
-        String smtpPort = getSmtpPort();
-        String username = getSmtpUsername();
-        String password = getSmtpPassword();
-        String fromEmail = getFromEmail();
-        String toEmail = getToEmail();
-        
-        if (smtpHost.isEmpty() || smtpPort.isEmpty() || username.isEmpty() || 
-            password.isEmpty() || fromEmail.isEmpty() || toEmail.isEmpty()) {
-            Logger.error("Email configuration incomplete. Missing required properties.");
-            Logger.error("SMTP Host: " + (smtpHost.isEmpty() ? "MISSING" : "SET"));
-            Logger.error("SMTP Port: " + (smtpPort.isEmpty() ? "MISSING" : "SET"));
-            Logger.error("Username: " + (username.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(username)));
-            Logger.error("Password: " + (password.isEmpty() ? "MISSING" : "SET"));
-            Logger.error("From Email: " + (fromEmail.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(fromEmail)));
-            Logger.error("To Email: " + (toEmail.isEmpty() ? "MISSING" : EmailObfuscator.obfuscate(toEmail)));
-            return false;
-        }
-        
-        return true;
     }
     
     /**
      * Validates Slack configuration.
-     * @return true if Slack configuration is complete
+     * @return true if Slack configuration is valid
      */
     public boolean validateSlackConfiguration() {
-        if (!isSlackEnabled()) {
+        try {
+            if (!isSlackEnabled()) {
+                return false;
+            }
+            
+            String webhookUrl = getSlackWebhookUrl();
+            String channel = getSlackChannel();
+            String username = getSlackUsername();
+            
+            if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
+                Reporter.log("Slack webhook URL is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (channel == null || channel.trim().isEmpty()) {
+                Reporter.log("Slack channel is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (username == null || username.trim().isEmpty()) {
+                Reporter.log("Slack username is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            return true;
+        } catch (Exception e) {
+            Reporter.log("Failed to validate Slack configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;
         }
-        
-        String webhookUrl = getSlackWebhookUrl();
-        String channel = getSlackChannel();
-        String username = getSlackUsername();
-        
-        if (webhookUrl.isEmpty() || channel.isEmpty() || username.isEmpty()) {
-            Logger.error("Slack configuration incomplete. Missing required properties.");
-            Logger.error("Webhook URL: " + (webhookUrl.isEmpty() ? "MISSING" : "SET"));
-            Logger.error("Channel: " + (channel.isEmpty() ? "MISSING" : "SET"));
-            Logger.error("Username: " + (username.isEmpty() ? "MISSING" : "SET"));
-            return false;
-        }
-        
-        return true;
     }
 }
