@@ -1,22 +1,11 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
-draft: true
-prerelease: false
 categories:
   - title: '🚀 Features'
     labels:
       - 'feature'
       - 'enhancement'
       - 'feat'
-      - 'new-method'
-      - 'new-class'
-  - title: '🔄 Modifications'
-    labels:
-      - 'modified-method'
-      - 'modified-class'
-      - 'modified-field'
-      - 'refactor'
-      - 'api-change'
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
@@ -26,27 +15,15 @@ categories:
     labels:
       - 'chore'
       - 'dependencies'
-      - 'refactor'
   - title: '📚 Documentation'
     labels:
       - 'docs'
-      - 'documentation'
   - title: '🔨 Refactoring'
     labels:
       - 'refactor'
-      - 'code-cleanup'
   - title: '🧪 Tests'
     labels:
       - 'test'
-      - 'testing'
-  - title: '🔒 Security'
-    labels:
-      - 'security'
-      - 'vulnerability'
-  - title: '⚡ Performance'
-    labels:
-      - 'performance'
-      - 'optimization'
 
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 
@@ -54,48 +31,20 @@ version-resolver:
   major:
     labels:
       - 'major'
-      - 'breaking-change'
-      - 'api-change'
   minor:
     labels:
       - 'minor'
-      - 'new-feature'
-      - 'enhancement'
   patch:
     labels:
       - 'patch'
-      - 'bugfix'
-      - 'fix'
   default: patch
 
 template: |
-  ## 🎯 Release Overview
-  **Version:** $RESOLVED_VERSION  
-  **Release Date:** $RELEASE_DATE  
-  **Total Changes:** $CHANGES_COUNT
-
-  ## 📋 Changes by Category
+  ## Changes
   $CHANGES
 
-  ## 🔍 New Methods & API Changes
+  ## 📦 New Classes & Components
   $BODY
 
-  ## 📊 Change Statistics
-  - **New Features:** $FEATURES_COUNT
-  - **Bug Fixes:** $BUGFIXES_COUNT
-  - **New Methods:** $NEW_METHODS_COUNT
-  - **New Classes:** $NEW_CLASSES_COUNT
-  - **Modified Methods:** $MODIFIED_METHODS_COUNT
-  - **Modified Classes:** $MODIFIED_CLASSES_COUNT
-  - **Documentation Updates:** $DOCS_COUNT
-
-  ## 🏗️ Technical Details
-  - **Files Modified:** $FILES_MODIFIED
-  - **Lines Added:** $LINES_ADDED
-  - **Lines Removed:** $LINES_REMOVED
-
-  ## 👥 Contributors
+  ## Contributors
   $CONTRIBUTORS
-
-  ---
-  *Generated automatically by Ellithium Release Drafter*
