@@ -76,6 +76,18 @@ jobs:
           echo "change_report<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Debug: Show what we're storing
+          echo "DEBUG: Stored change report length: $(echo "$OUTPUT" | wc -c) characters"
+          echo "DEBUG: First 200 chars of OUTPUT:"
+          echo "$OUTPUT" | head -c 200
+          echo "..."
+          
+          # Debug: Show what files were generated
+          echo "DEBUG: Generated files in $OUTPUT_DIR:"
+          find "$OUTPUT_DIR" -type f -name "*.txt" -o -name "*.md" | head -10
+          echo "DEBUG: Analysis directory contents:"
+          ls -la "$OUTPUT_DIR/analysis/" 2>/dev/null || echo "No analysis directory found"
       
       # Only run release-drafter for PRs and tag pushes (not main branch pushes)
       - name: Release Drafter
@@ -176,3 +188,8 @@ jobs:
           echo ""
           echo "💡 TIP: This analysis will appear in the workflow logs above."
           echo "💡 TIP: Copy the detailed analysis above for your manual release notes."
+          echo ""
+          echo "🔍 DEBUG: Raw change report length: $(echo "${{ steps.detect-changes.outputs.change_report }}" | wc -c) characters"
+          echo "🔍 DEBUG: First 500 chars of report:"
+          echo "${{ steps.detect-changes.outputs.change_report }}" | head -c 500
+          echo "..."
