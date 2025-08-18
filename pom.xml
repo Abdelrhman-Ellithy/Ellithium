@@ -74,7 +74,7 @@
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
-        <Cucumber>7.27.0</Cucumber>
+        <Cucumber>7.27.1</Cucumber>
         <cucumberTsetNG>7.27.1</cucumberTsetNG>
         <restversion>5.5.5</restversion>
         <hamcrestversion>3.0</hamcrestversion>
