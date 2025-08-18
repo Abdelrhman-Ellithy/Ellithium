@@ -74,8 +74,8 @@
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
-        <Cucumber>7.27.0</Cucumber>
         <restversion>5.5.6</restversion>
+        <Cucumber>7.27.1</Cucumber>
         <cucumberTsetNG>7.27.1</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
@@ -89,7 +89,7 @@
         <caffineVersion>3.2.2</caffineVersion>
         <mysqlVersion>9.4.0</mysqlVersion>
         <postgresqlVersion>42.7.7</postgresqlVersion>
-        <mssqlVersion>13.1.1.jre11-preview</mssqlVersion>
+        <mssqlVersion>13.2.0.jre11</mssqlVersion>
         <oracleDBVersion>23.9.0.25.07</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>6.1.0</redisDBVersion>
@@ -318,7 +318,7 @@
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.40.0</version>
+            <version>1.45.3</version>
             <scope>compile</scope>
         </dependency>
         <!-- Oracle JDBC Driver -->
