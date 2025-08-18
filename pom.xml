@@ -75,8 +75,8 @@
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
         <Cucumber>7.27.0</Cucumber>
-        <cucumberTsetNG>7.27.0</cucumberTsetNG>
         <restversion>5.5.6</restversion>
+        <cucumberTsetNG>7.27.1</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
@@ -95,7 +95,7 @@
         <redisDBVersion>6.1.0</redisDBVersion>
         <couchBaseVersion>3.9.0</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
-        <mockito.version>5.18.0</mockito.version>
+        <mockito.version>5.19.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
@@ -455,7 +455,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.2</version>
+                <version>3.11.3</version>
                 <configuration>
                     <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
                     <sourcepath>
