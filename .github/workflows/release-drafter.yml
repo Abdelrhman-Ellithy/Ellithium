@@ -23,7 +23,7 @@ jobs:
       
       - name: Release Drafter
         id: release_drafter
-        uses: release-drafter/release-drafter@v5
+        uses: release-drafter/release-drafter@v6
         with:
           name: Release ${{ steps.release_drafter.outputs.version }}
           tag: ${{ steps.release_drafter.outputs.tag }}
