@@ -75,7 +75,7 @@
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
         <restversion>5.5.6</restversion>
-        <cucumberTsetNG>7.28.0</cucumberTsetNG>
+        <cucumberTsetNG>7.28.1</cucumberTsetNG>
         <Cucumber>7.28.0</Cucumber>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
