@@ -93,7 +93,7 @@
         <oracleDBVersion>23.9.0.25.07</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>6.2.0</redisDBVersion>
-        <couchBaseVersion>3.9.0</couchBaseVersion>
+        <couchBaseVersion>3.9.1</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
         <mockito.version>5.19.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
