@@ -23,6 +23,7 @@ public class PropertyHelper {
     private static final Object LOCK = new Object();
 
     private static class LinkedProperties extends Properties {
+        @Serial
         private static final long serialVersionUID = 1L;
         private final LinkedHashSet<Object> keys = new LinkedHashSet<>();
 
