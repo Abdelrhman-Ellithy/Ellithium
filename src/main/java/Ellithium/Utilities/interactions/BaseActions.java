@@ -18,7 +18,6 @@ public class BaseActions<T extends WebDriver> {
      * @param pollingEveryInMillis Polling interval in milliseconds
      * @return FluentWait instance
      */
-    @SuppressWarnings("unchecked")
     protected FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
         return WaitManager.getFluentWait(driver, timeoutInSeconds, pollingEveryInMillis);
     }
