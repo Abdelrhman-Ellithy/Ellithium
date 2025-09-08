@@ -1,6 +1,7 @@
 package Ellithium.Utilities.interactions;
 
-import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.*;
 /**
  * Provides a comprehensive set of WebDriver interaction methods with built-in waits and reporting.
@@ -52,9 +53,9 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
         return new MouseActions<>(driver);
     }
     public AndroidActions androidActions() {
-        return new AndroidActions<>((AppiumDriver) driver);
+        return new AndroidActions<>((AndroidDriver) driver);
     }
     public IOSActions iosActions() {
-        return new IOSActions((AppiumDriver) driver);
+        return new IOSActions((IOSDriver) driver);
     }
 }

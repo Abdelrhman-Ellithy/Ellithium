@@ -74,9 +74,9 @@
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
-        <Cucumber>7.27.0</Cucumber>
-        <cucumberTsetNG>7.27.0</cucumberTsetNG>
-        <restversion>5.5.5</restversion>
+        <restversion>5.5.6</restversion>
+        <cucumberTsetNG>7.28.1</cucumberTsetNG>
+        <Cucumber>7.28.1</Cucumber>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
@@ -85,17 +85,17 @@
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>2.29.1</AllureJVMVersion>
-        <HikariCPVersion>7.0.1</HikariCPVersion>
+        <HikariCPVersion>7.0.2</HikariCPVersion>
         <caffineVersion>3.2.2</caffineVersion>
         <mysqlVersion>9.4.0</mysqlVersion>
         <postgresqlVersion>42.7.7</postgresqlVersion>
-        <mssqlVersion>13.1.1.jre11-preview</mssqlVersion>
+        <mssqlVersion>13.2.0.jre11</mssqlVersion>
         <oracleDBVersion>23.9.0.25.07</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
-        <redisDBVersion>6.1.0</redisDBVersion>
-        <couchBaseVersion>3.9.0</couchBaseVersion>
+        <redisDBVersion>6.2.0</redisDBVersion>
+        <couchBaseVersion>3.9.1</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
-        <mockito.version>5.18.0</mockito.version>
+        <mockito.version>5.19.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
@@ -318,7 +318,7 @@
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.40.0</version>
+            <version>1.45.4</version>
             <scope>compile</scope>
         </dependency>
         <!-- Oracle JDBC Driver -->
@@ -455,7 +455,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.2</version>
+                <version>3.11.3</version>
                 <configuration>
                     <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
                     <sourcepath>

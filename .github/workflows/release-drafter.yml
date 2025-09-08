@@ -4,17 +4,30 @@ on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     types: [opened, reopened, synchronize]
-  release:
-    types: [created]
+  workflow_dispatch:
 
 jobs:
   update_release_draft:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@v6
+      - name: Checkout
+        uses: actions/checkout@v5
         with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Release Drafter
+        id: release_drafter
+        uses: release-drafter/release-drafter@v6
+        with:
+          name: Release ${{ steps.release_drafter.outputs.version }}
+          tag: ${{ steps.release_drafter.outputs.tag }}
+          body: ${{ steps.release_drafter.outputs.body }}
+          draft: true
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

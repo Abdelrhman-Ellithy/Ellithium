@@ -30,22 +30,22 @@ public class BrowserSetUp {
         switch (driverType) {
             case Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) chromeOptions.merge(capabilities);
+                if (capabilities != null) chromeOptions=chromeOptions.merge(capabilities);
                 return new ChromeDriver(chromeOptions);
             }
             case FireFox -> {
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) firefoxOptions.merge(capabilities);
+                if (capabilities != null) firefoxOptions=firefoxOptions.merge(capabilities);
                 return new FirefoxDriver(firefoxOptions);
             }
             case Edge -> {
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) edgeOptions.merge(capabilities);
+                if (capabilities != null) edgeOptions=edgeOptions.merge(capabilities);
                 return new EdgeDriver(edgeOptions);
             }
             case Safari -> {
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-                if (capabilities != null) safariOptions.merge(capabilities);
+                if (capabilities != null) safariOptions=safariOptions.merge(capabilities);
                 return new SafariDriver(safariOptions);
             }
             default -> {
@@ -141,7 +141,6 @@ public class BrowserSetUp {
                 , "--disable-client-side-phishing-detection"
                 , "--disable-default-apps"
                 ,"--disable-software-rasterizer"
-                ,"--single-process"
                 ,"--disable-infobars"
                 ,"--window-size=1920,1080"
                 ,"--disable-notifications"
@@ -156,14 +155,11 @@ public class BrowserSetUp {
                 ,"--enable-logging"
                 ,"--disable-plugins"
                 ,"--ash-disable-system-sounds"
-
         );
         chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
-        chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
         return chromeOptions;
     }
-
     // Configure Firefox options
     private static FirefoxOptions configureFirefoxOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
@@ -195,11 +191,8 @@ public class BrowserSetUp {
                 "--metrics-recording-only",  // Record metrics only (for debugging)
                 "--no-first-run",  // Skip first run setup
                 "--no-default-browser-check",  // Avoid default browser prompt
-              //  "--disable-extensions",  // Disable all extensions
-              //  "--disable-background-networking",  // Disable background networking
                 "--mute-audio",  // Mute audio
                 "--ignore-certificate-errors",  // Ignore SSL certificate errors
-           //     "--force-color-profile=srgb",  // Use sRGB color profile
                 "--hide-scrollbars",  // Hide scrollbars
                 "--disable-sync",  // Disable Firefox sync
                 "--disable-client-side-phishing-detection",  // Disable phishing detection (specific to Chrome but similar behavior in Firefox)
@@ -207,13 +200,11 @@ public class BrowserSetUp {
                 "--disable-notifications",  // Disable notifications
                 "--window-size=1920,1080",  // Set window size
                 "--disable-plugins"  // Disable plugins (extensions can be disabled with similar options)
-               // "--single-process"  // Use single-process mode
         );
         firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
         return firefoxOptions;
     }
-
     // Configure Edge options
     private static EdgeOptions configureEdgeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         EdgeOptions edgeOptions = new EdgeOptions();
@@ -249,8 +240,6 @@ public class BrowserSetUp {
                 "--metrics-recording-only",  // Only record metrics
                 "--no-first-run",  // Skip the first run experience
                 "--no-default-browser-check",  // Prevent the default browser check
-               // "--silent-debugger-extension-api",  // Silent extensions for debugging
-              //  "--disable-extensions",  // Disable all extensions
                 "--disable-component-extensions-with-background-pages",  // Disable extensions with background pages
                 "--disable-ipc-flooding-protection",  // Disable IPC flooding protection
                 "--disable-background-networking",  // Disable background network connections
@@ -269,7 +258,6 @@ public class BrowserSetUp {
                 "--disable-client-side-phishing-detection",  // Disable phishing detection
                 "--disable-default-apps",  // Disable default apps
                 "--disable-software-rasterizer",  // Disable software-based rendering
-               // "--single-process",  // Use single process for the browser
                 "--disable-infobars",  // Disable infobars
                 "--window-size=1920,1080",  // Set window size
                 "--disable-notifications",  // Disable notifications
