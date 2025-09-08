@@ -2,7 +2,7 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebElement;
 
@@ -14,7 +14,7 @@ import java.util.Map;
  * Based on Appium XCUITest driver mobile gestures.
  * Reference: https://appium.readthedocs.io/en/latest/en/writing-running-appium/ios/ios-xctest-mobile-gestures/
  */
-public class IOSActions<T extends AppiumDriver> extends BaseActions<T> {
+public class IOSActions<T extends IOSDriver> extends BaseActions<T> {
     
     /**
      * Constructor for IOSActions.

@@ -3,6 +3,7 @@ package Ellithium.Utilities.interactions;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebElement;
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.Map;
  * Based on Appium UIAutomator2 driver mobile gestures.
  * Reference: https://github.com/appium/appium-uiautomator2-driver/blob/master/docs/android-mobile-gestures.md
  */
-public class AndroidActions<T extends AppiumDriver> extends KeyPressActions<T> {
+public class AndroidActions<T extends AndroidDriver> extends KeyPressActions<T> {
     
     /**
      * Constructor for AndroidActions.

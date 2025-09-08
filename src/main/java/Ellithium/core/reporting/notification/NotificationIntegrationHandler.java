@@ -31,21 +31,9 @@ public class NotificationIntegrationHandler implements TestResultCollector {
      * No heavy operations are performed until notifications are actually needed.
      */
     public NotificationIntegrationHandler() {
-        // Lazy initialization - don't create instances until needed
         this.config = null;
         this.sender = null;
     }
-    
-    /**
-     * Constructor that accepts dependencies.
-     * @param config The notification configuration
-     * @param sender The notification sender
-     */
-    public NotificationIntegrationHandler(NotificationConfig config, NotificationSender sender) {
-        this.config = config;
-        this.sender = sender;
-    }
-    
     /**
      * Checks if notifications are enabled without loading the full configuration.
      * This provides early exit for performance optimization.

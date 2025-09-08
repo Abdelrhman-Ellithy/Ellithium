@@ -3,6 +3,7 @@ package Ellithium.Utilities.helpers;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -316,9 +317,9 @@ public class TextHelper {
         }
 
         try {
-            String content = new String(java.nio.file.Files.readAllBytes(textFile.toPath()), "UTF-8");
+            String content = new String(java.nio.file.Files.readAllBytes(textFile.toPath()), StandardCharsets.UTF_8);
             String updatedContent = content.replace(target, replacement);
-            java.nio.file.Files.write(textFile.toPath(), updatedContent.getBytes("UTF-8"));
+            java.nio.file.Files.write(textFile.toPath(), updatedContent.getBytes(StandardCharsets.UTF_8));
             Reporter.log("Successfully replaced all occurrences in: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to replace content in file: ", LogLevel.ERROR, filePath);
