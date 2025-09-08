@@ -2,7 +2,6 @@ package Ellithium.Utilities.helpers;
 
 import Ellithium.core.logging.LogLevel;
 import static Ellithium.core.reporting.Reporter.log;
-
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;

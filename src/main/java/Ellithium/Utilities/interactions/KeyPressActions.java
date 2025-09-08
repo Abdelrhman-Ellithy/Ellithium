@@ -6,7 +6,6 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
 import io.appium.java_client.android.nativekey.KeyEvent;
-import org.openqa.selenium.*;
 /**
  * Provides keyboard and key press actions for both web and mobile drivers.
  * Handles Android KeyEvents and iOS key press operations.
