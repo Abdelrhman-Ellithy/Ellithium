@@ -76,7 +76,7 @@
         <ApachePOI>5.4.1</ApachePOI>
         <restversion>5.5.6</restversion>
         <cucumberTsetNG>7.28.2</cucumberTsetNG>
-        <Cucumber>7.28.1</Cucumber>
+        <Cucumber>7.28.2</Cucumber>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
