@@ -10,45 +10,51 @@ import java.util.List;
 public class NoonSearchPage {
     WebDriver driver;
     DriverActions driverActions;
+    private final By searchField=By.id("search-input");
+    private final By sortBtn=By.cssSelector("button[class*='DesktopSortDropdown_trigger']");
+    private final By lowToHigh =By.xpath("//a[contains(text(),'Price: Low to High')]");
+    private final By sortBtnText=By.cssSelector("span[class*='DesktopSort_text']");
+    private final By elementPrice=By.cssSelector("strong[class*='Price_amount']");
+    private final By resultsLoadedHeader=By.cssSelector("div[class*='DesktopListHeader_subTitle']");
+    private final By dellBtn=By.xpath("//a[starts-with(@class,'NavPills_navPill') and span[text()='DELL']]");
+    private final By elementTitle=By.cssSelector("h2[class*='ProductDetailsSection_title']");
     public NoonSearchPage(WebDriver driver){
         this.driver=driver;
         driverActions=new DriverActions(driver);
     }
     public void searchItem(String itemName){
-        driverActions.elements().sendData(By.name("site-search"),itemName );
+        driverActions.elements().sendData(searchField,itemName );
     }
     public void clickEnter(){
-        driverActions.elements().sendData(By.name("site-search"),Keys.ENTER,3,200 );
+        driverActions.elements().sendData(searchField,Keys.ENTER );
     }
     public String getTextInSearchField(){
-       return driver.findElement(By.name("site-search")).getAttribute("value");
+       return driver.findElement(searchField).getAttribute("value");
     }
     public void clickSortBy(String sortBy) {
          String sortByLower=sortBy.toLowerCase();
-        driverActions.elements().clickOnElement(By.xpath("(//div[@data-qa='select-menu-btn-plp_sort'])[1]"));
+        driverActions.elements().clickOnElement(sortBtn);
          switch (sortByLower){
              case "price low to high":
-                 driverActions.elements().clickOnElement(By.cssSelector("li[data-value='price-asc']"));
+                 driverActions.elements().clickOnElement(lowToHigh);
                 break;
              default:
                  break;
          }
     }
     public List<String> getResultsPrice() {
-        driverActions.waits().waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
-        driverActions.waits().waitForTextToBePresentInElement( By.xpath("(//span[@data-qa='select-menu-btn-label'])[1]"),"PRICE: LOW TO HIGH");
-        List<String> prices=driverActions.elements().getTextFromMultipleElements(By.className("amount"));
+        driverActions.waits().waitForTextToBePresentInElement( sortBtnText,"Price: Low to High");
+        List<String> prices=driverActions.elements().getTextFromMultipleElements(elementPrice);
         return prices;
     }
     public List<String> getResultsNames(){
-        driverActions.waits().waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"),8,200);
-        List<String>itemsName=driverActions.elements().getAttributeFromMultipleElements(By.cssSelector("div[data-qa='product-name']"),"title",8,200);
+        driverActions.waits().waitForElementToBeVisible(resultsLoadedHeader);
+        List<String>itemsName=driverActions.elements().getTextFromMultipleElements(elementTitle);
         return itemsName;
     }
     public void clickDell()  {
-        driverActions.elements().clickOnElement(By.cssSelector("label[data-qa=brand_DELL]"),5,300);
-        driverActions.waits().waitForElementToDisappear(By.xpath("//img[@alt='Loading' and @loading='lazy']"));
-        driverActions.waits().waitForElementToBeVisible(By.xpath("//h1[contains(.,'DELL')]"));
+        driverActions.elements().clickOnElement(dellBtn);
+        driverActions.waits().waitForElementToBeVisible(resultsLoadedHeader);
     }
 
     public void returnHome(){
