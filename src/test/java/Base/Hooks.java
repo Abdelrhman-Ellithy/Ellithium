@@ -8,7 +8,7 @@ public class Hooks {
     public void setUp(){
         DriverFactory.getNewLocalDriver(LocalDriverType.Chrome,
                 HeadlessMode.False, PrivateMode.True,
-                PageLoadStrategyMode.Eager);
+                PageLoadStrategyMode.Normal);
     }
     @After
     public void tareDown(){
