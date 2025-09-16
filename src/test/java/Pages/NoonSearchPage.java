@@ -43,7 +43,9 @@ public class NoonSearchPage {
          }
     }
     public List<String> getResultsPrice() {
-        driverActions.waits().waitForTextToBePresentInElement( sortBtnText,"Price: Low to High");
+        driverActions.waits().waitForTextToBePresentInElement(sortBtnText,"Price: Low to High");
+        driverActions.waits().waitForElementToBeVisible(resultsLoadedHeader);
+        driverActions.sleep().sleepMillis(500);
         List<String> prices=driverActions.elements().getTextFromMultipleElements(elementPrice);
         return prices;
     }
