@@ -68,23 +68,23 @@
         <seleniumVersion>4.35.0</seleniumVersion>
         <testNG>7.11.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
-        <gsonVersion>2.13.1</gsonVersion>
+        <gsonVersion>2.13.2</gsonVersion>
         <log4jVersion>2.25.1</log4jVersion>
-        <AllureVersion>2.29.1</AllureVersion>
+        <AllureVersion>2.30.0</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.4.1</ApachePOI>
         <restversion>5.5.6</restversion>
-        <cucumberTsetNG>7.28.1</cucumberTsetNG>
-        <Cucumber>7.28.1</Cucumber>
+        <cucumberTsetNG>7.28.2</cucumberTsetNG>
+        <Cucumber>7.28.2</Cucumber>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
-        <mavenSurefirePluginVersion>3.5.3</mavenSurefirePluginVersion>
+        <mavenSurefirePluginVersion>3.5.4</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
-        <AllureJVMVersion>2.29.1</AllureJVMVersion>
+        <AllureJVMVersion>2.30.0</AllureJVMVersion>
         <HikariCPVersion>7.0.2</HikariCPVersion>
         <caffineVersion>3.2.2</caffineVersion>
         <mysqlVersion>9.4.0</mysqlVersion>
@@ -521,7 +521,7 @@
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-testng</artifactId>
-                        <version>3.5.3</version>
+                        <version>3.5.4</version>
                     </dependency>
                 </dependencies>
             </plugin>
