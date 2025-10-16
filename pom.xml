@@ -79,7 +79,7 @@
         <cucumberTsetNG>7.30.0</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.50.3.0</SQLiteVersion>
-        <PDFBoxVersion>2.0.27</PDFBoxVersion>
+        <PDFBoxVersion>3.0.6</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.4</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
