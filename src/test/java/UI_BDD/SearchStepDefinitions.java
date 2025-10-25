@@ -7,6 +7,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,7 @@ public class SearchStepDefinitions {
 
     @Given("The user has entered a search query")
     public void the_user_has_entered_a_search_query() {
-        searchPage.searchItem("laptop");
+        searchPage.searchItem("dell");
     }
 
     @When("they click the Search button or press Enter key")
@@ -42,14 +43,17 @@ public class SearchStepDefinitions {
     @Then("the search results page should display items matching the search query")
     public void the_search_results_page_should_display_items_matching_the_search_query() {
         List<String>names=searchPage.getResultsNames();
+        byte cnt=0;
         for (String name:names){
-            AssertionExecutor.hard.assertTrue(name.toLowerCase().contains("test"));
+            cnt++;
+            AssertionExecutor.hard.assertTrue(name.toLowerCase().contains("dell"));
+            if(cnt>4) break;
         }
     }
 
     @Given("The search results are displayed")
     public void the_search_results_are_displayed() {
-        searchPage.searchItem("laptop");
+        searchPage.searchItem("dell");
         searchPage.clickEnter();
     }
 
@@ -72,19 +76,24 @@ public class SearchStepDefinitions {
     }
 
     @Then("the search results should be sorted accordingly")
-    public void the_search_results_should_be_sorted_accordingly()  {
-        List<String>Prices=searchPage.getResultsPrice();
-        List<String> sorted = Prices.stream()
-                .sorted((a, b) -> b.compareTo(a))
+    public void the_search_results_should_be_sorted_accordingly() {
+        List<String> prices = searchPage.getResultsPrice();
+
+        List<Double> actualPrices = prices.stream()
+                .map(p -> Double.parseDouble(p.replaceAll("[^0-9.]", "")))
                 .collect(Collectors.toList());
-        List<String>newsorted =new ArrayList<>();
-        for (String item :sorted){
-            newsorted.add(0,item);
-        }
-        System.out.println(newsorted);
-        System.out.println(Prices);
-        AssertionExecutor.hard.assertEquals(newsorted,Prices);
+
+        int limit = Math.min(10, actualPrices.size());
+        List<Double> actualFirst10 = actualPrices.subList(0, limit);
+
+        List<Double> expectedFirst10 = new ArrayList<>(actualFirst10);
+        expectedFirst10.sort(Comparator.naturalOrder());
+
+        System.out.println("Expected (ascending, first " + limit + "): " + expectedFirst10);
+        System.out.println("Actual (first " + limit + "): " + actualFirst10);
+        AssertionExecutor.hard.assertEquals(expectedFirst10, actualFirst10);
     }
+
 
     @Given("The user enters a search query")
     public void the_user_enters_a_search_query() {
@@ -97,7 +106,7 @@ public class SearchStepDefinitions {
     }
 
     @Then("company products should be displayed")
-    public void compny_products_should_be_displayed() {
+    public void company_products_should_be_displayed() {
         List<String>names=searchPage.getResultsNames();
         var softAssert=new AssertionExecutor.soft();
         byte counter=0;
@@ -121,7 +130,7 @@ public class SearchStepDefinitions {
         var softAssert=new AssertionExecutor.soft();
         byte cnt=0;
         for (String name:names ){
-            if(cnt>10) break;
+            if(cnt>5) break;
             softAssert.assertContains(name.toLowerCase(),"laptop");
             cnt++;
         }

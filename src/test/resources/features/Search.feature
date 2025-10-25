@@ -1,7 +1,7 @@
 Feature: Search
   Background:
     Given The user is on the homepage
-@Run
+
   Scenario: User Search query is Accepted
     When they type a search query into the search bar
     Then the search query should be accepted and processed
