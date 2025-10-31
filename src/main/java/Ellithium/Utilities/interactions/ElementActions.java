@@ -107,6 +107,25 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         }
         return texts;
     }
+    /**
+     * Gets the value of a property from multiple elements.
+     * @param locator Element locator
+     * @param property Property name
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @return List of attribute values from the elements
+     */
+    public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
+        Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        List<WebElement> elements = findWebElements(locator);
+        List<String> texts = new ArrayList<>();
+        for (WebElement element : elements) {
+            texts.add(element.getDomProperty(property));
+        }
+        return texts;
+    }
 
     /**
      * Clicks on multiple elements.
@@ -136,6 +155,21 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
         return findWebElement(locator).getDomAttribute(attribute);
+    }
+
+    /**
+     * Retrieves the value of a Property from an element.
+     * @param locator Element locator
+     * @param property Property name
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @return The attribute value
+     */
+    public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
+        Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        return findWebElement(locator).getDomProperty(property);
     }
 
     /**
@@ -268,6 +302,27 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Gets the value of a property from multiple elements with default timeout and polling time.
+     * @param locator Element locator
+     * @param property Attribute name
+     * @return List of attribute values from the elements
+     */
+    public List<String> getPropertyFromMultipleElements(By locator, String property) {
+        return getPropertyFromMultipleElements(locator, property, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Gets the value of a property from multiple elements with specified timeout.
+     * @param locator Element locator
+     * @param property Attribute name
+     * @param timeout Maximum wait time in seconds
+     * @return List of attribute values from the elements
+     */
+    public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout) {
+        return getPropertyFromMultipleElements(locator, property, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
      * Clicks on multiple elements with default timeout and polling time.
      * @param locator Element locator
      */
@@ -292,6 +347,16 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute) {
         return getAttributeValue(locator, attribute, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Retrieves the value of a property from an element with default timeout and polling time.
+     * @param locator Element locator
+     * @param property Attribute name
+     * @return The attribute value
+     */
+    public String getPropertyValue(By locator, String property) {
+        return getPropertyValue(locator, property, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 
     /**
