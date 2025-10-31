@@ -467,6 +467,17 @@ public class LoginPage {
 }
 
 ```
+
+## Ellithium is created and led by **Abdelrahman Ellithy**.
+
+All contributions are welcome and credited fairly.  
+However:
+- This is a **solo-founded** project.  
+- There are **no co-creators or co-maintainers**.  
+- Major decisions, roadmap, and branding remain with the original author.
+
+Thank you for respecting the vision.
+
 ### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
 ## 📬 Contact
