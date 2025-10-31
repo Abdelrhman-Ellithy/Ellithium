@@ -467,8 +467,9 @@ public class LoginPage {
 }
 
 ```
+### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
-## Ellithium is created and led by **Abdelrahman Ellithy**.
+### Ellithium is created and led by **Abdelrahman Ellithy**.
 
 All contributions are welcome and credited fairly.  
 However:
@@ -478,7 +479,6 @@ However:
 
 Thank you for respecting the vision.
 
-### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
 ## 📬 Contact
 
