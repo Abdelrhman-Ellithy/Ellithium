@@ -2,7 +2,6 @@ package UI_BDD;
 import Ellithium.Utilities.assertion.AssertionExecutor;
 import Ellithium.core.driver.*;
 import Pages.NoonSearchPage;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -33,10 +32,6 @@ public class SearchStepDefinitions {
 
     @Given("The user has entered a search query")
     public void the_user_has_entered_a_search_query() {
-        searchPage.searchItem("dell");
-    }
-    @When("user has valid search query")
-    public void e_user_has_entered_a_search_query() {
         searchPage.searchItem("dell");
     }
     @When("they click the Search button or press Enter key")
