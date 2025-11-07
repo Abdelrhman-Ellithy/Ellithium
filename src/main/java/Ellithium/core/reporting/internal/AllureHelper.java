@@ -2,11 +2,12 @@ package Ellithium.core.reporting.internal;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.CommandExecutor;
+import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
 import Ellithium.core.logging.Logger;
 import org.apache.commons.lang3.SystemUtils;
-
+import java.net.InetAddress;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -16,6 +17,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static Ellithium.Utilities.helpers.CommandExecutor.executeCommand;
+import static Ellithium.Utilities.helpers.CommandExecutor.executeCommandWithOutput;
 import static Ellithium.Utilities.helpers.PropertyHelper.getDataFromProperties;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
@@ -170,6 +172,26 @@ public class AllureHelper {
         }
         catch (Exception e){
             System.err.println(e.getMessage());
+        }
+    }
+    public static void addEnvironmentDetailsToReport (){
+        String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
+        String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
+        resultsPath=resultsPath.concat(File.separator).concat("environment.properties");
+        PropertyHelper.setDataToProperties(resultsPath,"OS", System.getProperty("os.name"));
+        PropertyHelper.setDataToProperties(resultsPath,"OS Version", System.getProperty("os.version"));
+        PropertyHelper.setDataToProperties(resultsPath,"Architecture", System.getProperty("os.arch"));
+        PropertyHelper.setDataToProperties(resultsPath,"Java Version", System.getProperty("java.version"));
+        PropertyHelper.setDataToProperties(resultsPath,"User", System.getProperty("user.name"));
+        PropertyHelper.setDataToProperties(resultsPath,"Machine Name", getHostName());
+        PropertyHelper.setDataToProperties(resultsPath,"Maven Version", executeCommandWithOutput("mvn -v"));
+        Properties props = new Properties();
+    }
+    private static String getHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "Unknown";
         }
     }
 }
