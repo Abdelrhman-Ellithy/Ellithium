@@ -58,7 +58,10 @@ public class GeneralHandler {
     }
     
     public static void StartRoutine(){
+        ConfigContext.setIsLoggingOn(false);
         AllureHelper.deleteAllureResultsDir();
+        AllureHelper.addEnvironmentDetailsToReport();
+        ConfigContext.setIsLoggingOn(true);
         VersionChecker.solveVersion();
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();

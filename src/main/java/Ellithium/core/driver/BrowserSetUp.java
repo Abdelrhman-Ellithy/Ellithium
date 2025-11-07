@@ -158,6 +158,7 @@ public class BrowserSetUp {
         );
         chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(chromeOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return chromeOptions;
     }
     // Configure Firefox options
@@ -203,6 +204,7 @@ public class BrowserSetUp {
         );
         firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(firefoxOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return firefoxOptions;
     }
     // Configure Edge options
@@ -272,6 +274,7 @@ public class BrowserSetUp {
         );
         edgeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Edge Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(edgeOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return edgeOptions;
     }
     // Configure Safari options
@@ -285,6 +288,7 @@ public class BrowserSetUp {
         }
         safariOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(safariOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return safariOptions;
     }
 }
