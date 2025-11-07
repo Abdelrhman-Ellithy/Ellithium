@@ -31,13 +31,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
      * Constructor initializes the test result collector.
      */
     public CustomTestNGListener() {
-        // Use the shared test result collector instance
         this.testResultCollector = TestResultCollectorManager.getInstance().getTestResultCollector();
     }
     
     @Override
     public void onTestStart(ITestResult result) {
-        // Only log non-Cucumber tests to avoid duplicate logging
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
@@ -46,7 +44,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestFailure(ITestResult result) {
-        // Only log non-Cucumber tests to avoid duplicate logging
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
@@ -54,7 +51,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestSuccess(ITestResult result) {
-        // Only log non-Cucumber tests to avoid duplicate logging
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
         }
@@ -95,7 +91,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "---------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine Setup --------------" + RESET);
         Logger.info(BLUE + "---------------------------------------------" + RESET);
-        AllureHelper.deleteAllureResultsDir();
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
         testResultCollector.initializeTestResultCollection();

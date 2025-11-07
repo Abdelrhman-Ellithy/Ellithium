@@ -7,6 +7,7 @@ import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
+import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
@@ -57,6 +58,7 @@ public class GeneralHandler {
     }
     
     public static void StartRoutine(){
+        AllureHelper.deleteAllureResultsDir();
         VersionChecker.solveVersion();
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
