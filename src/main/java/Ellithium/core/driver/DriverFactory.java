@@ -267,7 +267,7 @@ public class DriverFactory {
         if (WebDriverThread != null) {
             Reporter.log("Driver Created", LogLevel.INFO_GREEN);
         } else {
-            Reporter.log("Driver Creation Failed", LogLevel.INFO_RED);
+            Reporter.log("Driver Creation Failed", LogLevel.ERROR);
         }
     }
 
@@ -301,7 +301,7 @@ public class DriverFactory {
             }
             default -> throw new IllegalArgumentException("Wrong Driver Initialization: " + ConfigContext.getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
         }
-        Reporter.log("Driver Creation Failed",LogLevel.INFO_RED);
+        Reporter.log("Driver Creation Failed",LogLevel.ERROR);
         return null;
     }
 
