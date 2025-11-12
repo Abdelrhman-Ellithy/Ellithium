@@ -1,17 +1,13 @@
 package Base;
 
-import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.core.driver.*;
 import Pages.HomPage;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 public class BaseTests {
    protected WebDriver driver;
    protected HomPage home;
-   ScreenRecorderActions screenRecorderActions;
     @BeforeClass
     public void Setup()  {
         LocalDriverConfig driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
@@ -21,7 +17,6 @@ public class BaseTests {
                 SandboxMode.Sandbox);
         driver=DriverFactory.getNewDriver(driverConfig);
         home=new HomPage(driver);
-        screenRecorderActions=new ScreenRecorderActions<>(driver);
     }
     @AfterClass
     public void tareDown() {
