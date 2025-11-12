@@ -2,9 +2,12 @@ package Ellithium.core.execution.listener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
+
+import java.net.URL;
 import java.time.Duration;
 import java.util.*;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.events.WebDriverListener;
 public class seleniumListener implements WebDriverListener {
     @Override
@@ -260,6 +263,55 @@ public class seleniumListener implements WebDriverListener {
    public void beforeAlert(WebDriver.TargetLocator targetLocator) {
        Reporter.log("Handling alert", LogLevel.INFO_BLUE);
    }
+    @Override
+    public void afterClear(WebElement element) {
+        Reporter.log("Cleared element: " + nameOf(element), LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterGetText(WebElement element, String result) {
+        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterIsDisplayed(WebElement element, boolean result) {
+        Reporter.log("Element displayed: " + result + " → " + nameOf(element), LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public  <X> void afterGetScreenshotAs(WebElement element, OutputType<X> target, X result) {
+        Reporter.log("Screenshot taken of element: " + nameOf(element), LogLevel.INFO_BLUE);
+    }
+
+    public  <X> void afterGetScreenshotAs(WebDriver
+                                                  driver, OutputType<X> target, X result) {
+        Reporter.log("Full page screenshot taken", LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterPerform(WebDriver driver, Collection<Sequence> actions) {
+        Reporter.log("Actions performed (e.g., drag-drop, hover, etc.)", LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterResetInputState(WebDriver driver) {
+        Reporter.log("Input state reset", LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterScriptTimeout(WebDriver.Timeouts timeouts, Duration duration) {
+        Reporter.log("Script timeout set to: " + duration.toMillis() + " ms", LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterAlert(WebDriver.TargetLocator targetLocator, Alert alert) {
+        Reporter.log("Switched to alert", LogLevel.INFO_BLUE);
+    }
+
+    @Override
+    public void afterTo(WebDriver.Navigation navigation, URL url) {
+        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
+    }
    private String nameOf(WebElement element){
        try {
            return element.getAccessibleName();
