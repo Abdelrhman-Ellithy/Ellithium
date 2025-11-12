@@ -18,8 +18,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
-import java.util.List;
-
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
 
