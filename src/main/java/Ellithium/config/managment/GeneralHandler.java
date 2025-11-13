@@ -29,7 +29,7 @@ public class GeneralHandler {
      */
     public static File testFailed( String browserName, String testName)  {
         try {
-            TakesScreenshot camera =((TakesScreenshot) DriverFactory.getCurrentDriver());
+            TakesScreenshot camera = DriverFactory.getCurrentDriver();
             assert camera != null;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
