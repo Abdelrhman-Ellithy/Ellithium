@@ -13,7 +13,9 @@ import java.util.Map;
  * Utility class for Android-specific mobile gestures and actions.
  * Based on Appium UIAutomator2 driver mobile gestures.
  * Reference: https://github.com/appium/appium-uiautomator2-driver/blob/master/docs/android-mobile-gestures.md
+ * @deprecated Use MobileActions class for cross-platform compatibility
  */
+
 public class AndroidActions<T extends AndroidDriver> extends KeyPressActions<T> {
     
     /**
