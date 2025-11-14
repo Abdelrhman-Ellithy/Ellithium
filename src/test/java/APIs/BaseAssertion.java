@@ -1,7 +1,6 @@
 package APIs;
 
 import Ellithium.Utilities.assertion.AssertionExecutor;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
 public class BaseAssertion {
