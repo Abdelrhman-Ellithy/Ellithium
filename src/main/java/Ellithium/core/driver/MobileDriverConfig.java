@@ -20,7 +20,7 @@ public class MobileDriverConfig implements DriverConfigBuilder {
 
     /**
      * Default constructor for MobileDriverConfig.
-     * Sets default URL to http://127.0.0.1:4723
+     * Sets default URL to <a href="http://127.0.0.1:4723">...</a>
      * Note: driverType and capabilities must be set before use as they are mandatory.
      */
     public MobileDriverConfig() {
@@ -82,8 +82,9 @@ public class MobileDriverConfig implements DriverConfigBuilder {
      * @param driverType The driver type to configure, must be instance of RemoteDriverType
      */
     @Override
-    public void setDriverType(DriverType driverType) {
+    public MobileDriverConfig setDriverType(DriverType driverType) {
         this.driverType = (MobileDriverType) driverType;
+        return this;
     }
 
     /**
@@ -108,9 +109,9 @@ public class MobileDriverConfig implements DriverConfigBuilder {
 
     /**
      * Gets the remote server address.
-     * Default is http://127.0.0.1:4723
+     * Default is <a href="http://127.0.0.1:4723">...</a>
      *
-     * @return The URL of the remote server, defaults to http://127.0.0.1:4723 if not set
+     * @return The URL of the remote server, defaults to <a href="http://127.0.0.1:4723">...</a> if not set
      */
     public URL getRemoteAddress() {
         try {
