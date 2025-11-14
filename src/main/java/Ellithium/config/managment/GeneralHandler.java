@@ -7,6 +7,7 @@ import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
+import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
@@ -28,7 +29,7 @@ public class GeneralHandler {
      */
     public static File testFailed( String browserName, String testName)  {
         try {
-            TakesScreenshot camera =((TakesScreenshot) DriverFactory.getCurrentDriver());
+            TakesScreenshot camera = DriverFactory.getCurrentDriver();
             assert camera != null;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
@@ -57,6 +58,10 @@ public class GeneralHandler {
     }
     
     public static void StartRoutine(){
+        ConfigContext.setIsLoggingOn(false);
+        AllureHelper.deleteAllureResultsDir();
+        AllureHelper.addEnvironmentDetailsToReport();
+        ConfigContext.setIsLoggingOn(true);
         VersionChecker.solveVersion();
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
