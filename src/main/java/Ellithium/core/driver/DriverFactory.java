@@ -17,7 +17,7 @@ import static io.appium.java_client.proxy.Helpers.createProxy;
  * Factory class for creating and managing WebDriver instances.
  * This class provides thread-safe creation and management of different types of WebDriver instances
  * including local browsers, remote browsers, and mobile devices (Android and iOS).
- * 
+ *
  * <p>The factory supports various configuration options through different driver configs:
  * <ul>
  *   <li>LocalDriverConfig - For local browser instances</li>
@@ -94,8 +94,13 @@ public class DriverFactory {
         } else if (driverConfigBuilder instanceof RemoteDriverConfig remoteDriverConfig) {
             return getNewDriver(remoteDriverConfig);
         }
-        else {
-            return getNewDriver((MobileDriverConfig) driverConfigBuilder);
+        else if (driverConfigBuilder instanceof CloudMobileDriverConfig cloudMobileConfig) {
+            return getNewDriver(cloudMobileConfig);
+        }
+        else if (driverConfigBuilder instanceof MobileDriverConfig mobileDriverConfig) {
+            return getNewDriver(mobileDriverConfig);
+        } else {
+            throw new IllegalArgumentException("Unknown driver config type: " + driverConfigBuilder.getClass().getName());
         }
     }
 
@@ -112,7 +117,7 @@ public class DriverFactory {
      * @return Configured local WebDriver instance
      */
     @SuppressWarnings("unchecked")
-    public static <T> T getNewLocalDriver(LocalDriverType driverType, HeadlessMode headlessMode, 
+    public static <T> T getNewLocalDriver(LocalDriverType driverType, HeadlessMode headlessMode,
             PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode,
             WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
         ConfigContext.setConfig(driverType,headlessMode,pageLoadStrategyMode,privateMode,sandboxMode,webSecurityMode);
@@ -176,6 +181,100 @@ public class DriverFactory {
     public static <T > T getNewRemoteDriver(RemoteDriverType driverType, URL remoteAddress, Capabilities capabilities) {
         return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False);
     }
+    /**
+     * Creates a new mobile driver instance using cloud mobile driver configuration.
+     * Supports BrowserStack, Sauce Labs, LambdaTest, and other cloud providers.
+     *
+     * @param cloudMobileConfig Configuration for cloud mobile device
+     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @return Configured mobile driver instance
+     */
+    public static <T> T getNewDriver(CloudMobileDriverConfig cloudMobileConfig) {
+        // Validate configuration before creating driver
+        cloudMobileConfig.validate();
+
+        ConfigContext.setDriverType(cloudMobileConfig.getDriverType());
+        ConfigContext.setRemoteAddress(cloudMobileConfig.getRemoteAddress());
+        ConfigContext.setCapabilities(cloudMobileConfig.getCapabilities());
+
+        Reporter.log("Creating driver for " + cloudMobileConfig.getCloudProvider() +
+                " cloud provider", LogLevel.INFO_BLUE);
+
+        return mobileSetup(
+                (MobileDriverType) cloudMobileConfig.getDriverType(),
+                cloudMobileConfig.getRemoteAddress(),
+                cloudMobileConfig.getCapabilities()
+        );
+    }
+
+    /**
+     * Creates a new cloud mobile driver with simplified parameters.
+     *
+     * @param provider The cloud provider type
+     * @param username The username for authentication
+     * @param accessKey The access key for authentication
+     * @param driverType The mobile driver type (Android or iOS)
+     * @param deviceName The device name to test on
+     * @param platformVersion The platform version
+     * @param app The app location/ID
+     * @param <T> Type of mobile driver to be returned
+     * @return Configured mobile driver instance
+     */
+    public static <T> T getNewCloudMobileDriver(
+            CloudProviderType provider,
+            String username,
+            String accessKey,
+            MobileDriverType driverType,
+            String deviceName,
+            String platformVersion,
+            String app) {
+
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(provider, username, accessKey, driverType)
+                .setDeviceName(deviceName)
+                .setPlatformVersion(platformVersion)
+                .setApp(app);
+
+        return getNewDriver(config);
+    }
+
+    /**
+     * Creates a new cloud mobile driver with build and project information.
+     *
+     * @param provider The cloud provider type
+     * @param username The username for authentication
+     * @param accessKey The access key for authentication
+     * @param driverType The mobile driver type (Android or iOS)
+     * @param deviceName The device name to test on
+     * @param platformVersion The platform version
+     * @param app The app location/ID
+     * @param projectName The project name
+     * @param buildName The build name
+     * @param testName The test name
+     * @param <T> Type of mobile driver to be returned
+     * @return Configured mobile driver instance
+     */
+    public static <T> T getNewCloudMobileDriver(
+            CloudProviderType provider,
+            String username,
+            String accessKey,
+            MobileDriverType driverType,
+            String deviceName,
+            String platformVersion,
+            String app,
+            String projectName,
+            String buildName,
+            String testName) {
+
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(provider, username, accessKey, driverType)
+                .setDeviceName(deviceName)
+                .setPlatformVersion(platformVersion)
+                .setApp(app)
+                .setProjectName(projectName)
+                .setBuildName(buildName)
+                .setTestName(testName);
+
+        return getNewDriver(config);
+    }
 
     /**
      * Gets the current driver instance for the executing thread.
@@ -209,20 +308,18 @@ public class DriverFactory {
                 if (localDriver != null) {
                     localDriver.quit();
                 }
-                removeDriver();
             } else if (driverType.equals(IOS)) {
                 IOSDriver localDriver = IOSDriverThread.get();
                 if (localDriver != null) {
                     localDriver.quit();
                 }
-                removeDriver();
             } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
                 var localDriver = WebDriverThread.get();
                 if (localDriver != null) {
                     localDriver.quit();
                 }
-                removeDriver();
             }
+            removeDriver();
         }
     }
 
@@ -245,7 +342,7 @@ public class DriverFactory {
     /**
      * Sets up a web driver instance with specified configuration.
      * Handles both local and remote web driver setup.
-     * 
+     *
      * @throws IllegalStateException if driver creation fails
      */
     private static void webSetUp() {
@@ -273,7 +370,10 @@ public class DriverFactory {
 
     /**
      * Sets up a mobile driver instance with specified configuration.
-     *
+     * KEY INSIGHT: This method works for BOTH local and cloud!
+     * The only difference is the URL and capabilities passed in.
+     * Local: <a href="http://127.0.0.1:4723">...</a> with basic capabilities
+     * Cloud: <a href="https://user:key@hub.browserstack.com/wd/hub">...</a> with cloud capabilities
      * @param driverType Type of mobile driver (Android or iOS)
      * @param remoteAddress URL of the Appium server
      * @param capabilities Desired capabilities for the mobile driver
