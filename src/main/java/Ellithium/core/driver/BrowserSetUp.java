@@ -18,8 +18,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
-import java.util.List;
-
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
 
@@ -85,7 +83,7 @@ public class BrowserSetUp {
     }
     private static ChromeOptions configureChromeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         ChromeOptions chromeOptions = new ChromeOptions();
-        chromeOptions.setCapability("webSocketUrl", true);
+        boolean bidi=true;
         if (headlessMode==HeadlessMode.True) {
             chromeOptions.addArguments("--headless");
         }
@@ -94,7 +92,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             chromeOptions.addArguments("--incognito");
-            chromeOptions.setCapability("webSocketUrl", false);
+            bidi=false;
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             chromeOptions.addArguments("--no-sandbox");
@@ -103,6 +101,7 @@ public class BrowserSetUp {
             chromeOptions.addArguments("--disable-web-security");
             chromeOptions.addArguments("--allow-running-insecure-content");
         }
+        chromeOptions.setCapability("webSocketUrl", bidi);
         // Other common options
         chromeOptions.addArguments(
                   "--disable-dev-shm-usage"
@@ -158,12 +157,13 @@ public class BrowserSetUp {
         );
         chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(chromeOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return chromeOptions;
     }
     // Configure Firefox options
     private static FirefoxOptions configureFirefoxOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         FirefoxOptions firefoxOptions = new FirefoxOptions();
-        firefoxOptions.setCapability("webSocketUrl", true);
+        boolean bidi=true;
         if (headlessMode==HeadlessMode.True) {
             firefoxOptions.addArguments("--headless");
         }
@@ -172,7 +172,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             firefoxOptions.addArguments("--private");
-            firefoxOptions.setCapability("webSocketUrl", false);
+            bidi=false;
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             firefoxOptions.addArguments("--no-sandbox");
@@ -180,6 +180,7 @@ public class BrowserSetUp {
         if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
             firefoxOptions.addPreference("security.mixed_content.block_active_content", false);
         }
+        firefoxOptions.setCapability("webSocketUrl", bidi);
         // Other common options
         firefoxOptions.addArguments(
                 "--disable-dev-shm-usage",  // Reduce memory usage in environments with low shared memory
@@ -203,12 +204,13 @@ public class BrowserSetUp {
         );
         firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(firefoxOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return firefoxOptions;
     }
     // Configure Edge options
     private static EdgeOptions configureEdgeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         EdgeOptions edgeOptions = new EdgeOptions();
-        edgeOptions.setCapability("webSocketUrl", true);
+        boolean bidi=true;
         if (headlessMode==HeadlessMode.True) {
             edgeOptions.addArguments("--headless");
         }
@@ -217,7 +219,7 @@ public class BrowserSetUp {
         }
         if (privateMode==PrivateMode.True) {
             edgeOptions.addArguments("--inPrivate");
-            edgeOptions.setCapability("webSocketUrl", false);
+            bidi=false;
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
             edgeOptions.addArguments("--no-sandbox");
@@ -226,6 +228,7 @@ public class BrowserSetUp {
             edgeOptions.addArguments("--disable-web-security");
             edgeOptions.addArguments("--allow-running-insecure-content");
         }
+        edgeOptions.setCapability("webSocketUrl", bidi);
         // Other common options
         edgeOptions.addArguments(
                 "--disable-dev-shm-usage",  // Reduce memory usage
@@ -272,6 +275,7 @@ public class BrowserSetUp {
         );
         edgeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Edge Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(edgeOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return edgeOptions;
     }
     // Configure Safari options
@@ -285,6 +289,7 @@ public class BrowserSetUp {
         }
         safariOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);
+        Reporter.logReportOnly(safariOptions.asMap().toString(),LogLevel.INFO_BLUE);
         return safariOptions;
     }
 }

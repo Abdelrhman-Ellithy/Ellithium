@@ -2,6 +2,5 @@
   "firstName": "Amy",
   "lastName": "Smith",
   "userEmail": "testtt@fake.com",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWYxNmJkODc5YjI1NjAwMTM3NDc4OGIiLCJpYXQiOjE3NTE1NjcxNDl9.8mm8u8F_LtBZCjTG71HmPQk4LaRPKzrd1MMtTlxbYUc",
-  "contactId": "6866cb2e5a571e0015b19846"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWYxNmJkODc5YjI1NjAwMTM3NDc4OGIiLCJpYXQiOjE3NTE1NjcxNDl9.8mm8u8F_LtBZCjTG71HmPQk4LaRPKzrd1MMtTlxbYUc"
 }

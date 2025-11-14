@@ -34,7 +34,6 @@ public class SearchStepDefinitions {
     public void the_user_has_entered_a_search_query() {
         searchPage.searchItem("dell");
     }
-
     @When("they click the Search button or press Enter key")
     public void they_click_the_button_or_press_enter_key() {
         searchPage.clickEnter();

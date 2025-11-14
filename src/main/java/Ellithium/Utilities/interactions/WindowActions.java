@@ -2,12 +2,14 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import org.openqa.selenium.NoSuchWindowException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.Dimension;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Provides window management actions for WebDriver interactions.
@@ -90,8 +92,13 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
     public void closePopupWindow() {
         driver.close();
         Reporter.log("Popup window closed. Switching back to the main window.", LogLevel.INFO_BLUE);
-        String mainWindow = driver.getWindowHandles().iterator().next();
-        driver.switchTo().window(mainWindow);
+        Set<String> remaining = driver.getWindowHandles();
+        if (remaining.isEmpty()) {
+            Reporter.log("No windows left after closing popup", LogLevel.ERROR);
+            return;
+        }
+        String main = remaining.iterator().next();
+        driver.switchTo().window(main);
     }
 
     /**
@@ -303,5 +310,58 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
         }
         driver.switchTo().window(currentHandle);
         return exists;
+    }
+    /**
+     * Switches to a window by its exact handle.
+     * @param handle The window handle to switch to
+     * @throws org.openqa.selenium.NoSuchWindowException if the handle is invalid
+     */
+    public void switchToWindowByHandle(String handle) {
+        try {
+            driver.switchTo().window(handle);
+            Reporter.log("Switched to window handle: " + handle, LogLevel.INFO_BLUE);
+        } catch (NoSuchWindowException e) {
+            Reporter.log("Window handle not found: " + handle, LogLevel.ERROR);
+            throw e;
+        } catch (Exception e) {
+            Reporter.log("Failed to switch by handle: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
+    }
+    /**
+     * Checks if a window with the given handle is still open.
+     * @param handle The window handle
+     * @return true if the window is open, false otherwise
+     */
+    public boolean isWindowOpen(String handle) {
+        boolean open = driver.getWindowHandles().contains(handle);
+        Reporter.log(open ? "Window is open: " + handle : "Window is closed: " + handle,
+                open ? LogLevel.INFO_BLUE : LogLevel.WARN);
+        return open;
+    }
+    /**
+     * Switches to the parent (default content) window.
+     * Useful when nested in frames or shadow DOM.
+     */
+    public void switchToParentWindow() {
+        try {
+            driver.switchTo().defaultContent();
+        } catch (Exception e) {
+            Reporter.log("Failed to switch to parent window: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
+    }
+    /**
+     * Gets the title of the currently focused window.
+     * @return The window title
+     */
+    public String getCurrentWindowTitle() {
+        try {
+            String title = driver.getTitle();
+            return title;
+        } catch (Exception e) {
+            Reporter.log("Failed to get window title: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
+        }
     }
 }
