@@ -17,8 +17,6 @@ import org.testng.annotations.Listeners;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Objects;
-
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.FAILURE;
 @Listeners({AllureTestNg.class})

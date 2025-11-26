@@ -20,12 +20,12 @@ Feature: Search
       Given The search results are displayed
       When the user chooses to sort the results (eg price)
       Then the search results should be sorted accordingly
-
+  @run
   Scenario: Verify that user can search with product Company name
       Given the user enters Company name in the search field
       When they click the Search button or press Enter key
       Then company products should be displayed
-
+  @run
   Scenario: Verify that user can search with partially product name
       Given the user enters product name partially in the search field
       When they click the Search button or press Enter key
