@@ -8,11 +8,10 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import org.testng.asserts.SoftAssert;
 
 import static io.restassured.RestAssured.given;
 
-public class BookingAPITests extends BaseAssertion{
+public class BookingAPITests {
     private Environment env;
 
     @BeforeClass
@@ -35,6 +34,7 @@ public class BookingAPITests extends BaseAssertion{
                 .when()
                 .post("/auth");
 
+        AssertionExecutor.soft soft = new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 3000, "Response time exceeded");
@@ -65,7 +65,7 @@ public class BookingAPITests extends BaseAssertion{
                 .body(payload)
                 .when()
                 .post("/booking"); //
-        
+        AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
@@ -80,7 +80,7 @@ public class BookingAPITests extends BaseAssertion{
         Response response = given()
                 .when()
                 .get("/booking");
-        
+        AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
@@ -93,7 +93,7 @@ public class BookingAPITests extends BaseAssertion{
         Response response = given()
                 .when()
                 .get("/booking/" + env.getAsInteger("bookingId"));
-        
+        AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
@@ -129,7 +129,7 @@ public class BookingAPITests extends BaseAssertion{
                 .when()
                 .put("/booking/" + env.getAsInteger("bookingId"));
 
-        
+        AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
@@ -147,6 +147,7 @@ public class BookingAPITests extends BaseAssertion{
                 .header("Cookie", "token="+ env.get("token"))
                 .when()
                 .delete("/booking/" + env.getAsInteger("bookingId"));
+        AssertionExecutor.soft soft=new AssertionExecutor.soft();
         soft.assertEquals(response.getStatusCode(), 200);
         soft.assertEquals(response.contentType(), "application/json; charset=utf-8");
         soft.assertTrue(response.time() < 1500, "Response time exceeded");
