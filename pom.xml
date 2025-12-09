@@ -95,7 +95,7 @@
         <redisDBVersion>7.0.0</redisDBVersion>
         <couchBaseVersion>3.10.0</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
-        <mockito.version>5.20.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
