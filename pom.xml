@@ -442,7 +442,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version> <!-- You can check for the latest version -->
+                <version>3.4.0</version> <!-- You can check for the latest version -->
                 <executions>
                     <execution>
                         <id>attach-sources</id>
