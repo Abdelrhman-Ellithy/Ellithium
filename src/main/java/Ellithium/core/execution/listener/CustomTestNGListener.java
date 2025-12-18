@@ -1,7 +1,9 @@
 package Ellithium.core.execution.listener;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.HeadlessMode;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
+import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.config.managment.ConfigContext;
@@ -17,14 +19,24 @@ import org.testng.annotations.Listeners;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import static Ellithium.core.reporting.internal.Colors.*;
-import static org.testng.ITestResult.FAILURE;
+import static org.testng.ITestResult.*;
+
 @Listeners({AllureTestNg.class})
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
     private long timeStartMills;
     private TestResultCollector testResultCollector;
-    
+
+    /**
+     * Maps ITestResult to Recording ID
+     * This allows us to correlate test results with their recordings
+     */
+    private static final Map<String, String> testResultToRecordingId = new ConcurrentHashMap<>();
+
+
     /**
      * Constructor initializes the test result collector.
      */
@@ -37,6 +49,24 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
+            boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+            boolean headless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
+            if (driverExecution && headless) {
+                try {
+                    String testName = getTestName(result);
+                    String testIdentifier = getTestIdentifier(result);
+                    String recordingId = VideoRecordingManager.startRecording(testName, testIdentifier);
+                    if (recordingId != null) {
+                        String resultKey = getResultKey(result);
+                        testResultToRecordingId.put(resultKey, recordingId);
+                        Logger.info(CYAN + "Recording ID [" + recordingId.substring(0, 8) +
+                                "] mapped to test: " + testName + RESET);
+                    }
+                } catch (Exception e) {
+                    Logger.info(RED + "Failed to start video recording: " + e.getMessage() + RESET);
+                    e.printStackTrace();
+                }
+            }
         }
     }
     
@@ -71,6 +101,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
         testResultCollector.collectTestResults(context);
+        testResultToRecordingId.clear();
     }
     
     @Override
@@ -81,6 +112,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onFinish(ISuite suite) {
         Logger.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase()+ " [SUITE FINISHED]" + RESET);
+        VideoRecordingManager.forceCleanupAll();
     }
     
     @Override
@@ -89,6 +121,13 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "---------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine Setup --------------" + RESET);
         Logger.info(BLUE + "---------------------------------------------" + RESET);
+        if (VideoRecordingManager.isRecordingEnabled()) {
+            Logger.info(GREEN + "Video Recording: ENABLED" + RESET);
+            Logger.info(CYAN + "Video Attachment: " +
+                    (VideoRecordingManager.isAttachmentEnabled() ? "ENABLED" : "DISABLED") + RESET);
+        } else {
+            Logger.info(YELLOW + "Video Recording: DISABLED" + RESET);
+        }
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
         testResultCollector.initializeTestResultCollection();
@@ -112,7 +151,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        if ((testResult.getStatus() == FAILURE) && (DriverFactory.getCurrentDriver() != null)) {
+        boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+        if ((testResult.getStatus() == FAILURE) && driverExecution) {
                 Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
                 File failedScreenShot = GeneralHandler.testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), method.getTestMethod().getMethodName());
                 if (failedScreenShot != null) {
@@ -120,11 +160,111 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
         }
+        boolean headless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
+        if (driverExecution && headless){
+            stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
+        }
         GeneralHandler.addAttachments();
     }
     
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
         annotation.setRetryAnalyzer(RetryAnalyzer.class);
+    }
+
+    /**
+     * Stops recording for a specific test result.
+     * Uses the recording ID that was stored when the test started.
+     * @param result TestNG test result
+     * @param status Test status (PASSED, FAILED, SKIPPED)
+     */
+    private void stopRecordingForTest(ITestResult result, String status) {
+        try {
+            String resultKey = getResultKey(result);
+            String recordingId = testResultToRecordingId.get(resultKey);
+            if (recordingId != null) {
+                String videoPath = VideoRecordingManager.stopRecordingById(recordingId, status);
+                if (videoPath != null) {
+                    Logger.info(GREEN + "Video recording stopped successfully for: " +
+                            result.getName() + RESET);
+                }
+                testResultToRecordingId.remove(resultKey);
+            } else {
+                Logger.info(YELLOW + "No recording ID found for test, trying thread-based stop" + RESET);
+                VideoRecordingManager.stopRecordingForCurrentThread(status);
+            }
+        } catch (Exception e) {
+            Logger.info(RED + "Failed to stop video recording: " + e.getMessage() + RESET);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gets a user-friendly test name for display.
+     * @param result TestNG test result
+     * @return Test name
+     */
+    private String getTestName(ITestResult result) {
+        StringBuilder name = new StringBuilder(result.getName());
+        Object[] parameters = result.getParameters();
+        if (parameters != null && parameters.length > 0) {
+            name.append("_params");
+            for (int i = 0; i < Math.min(parameters.length, 3); i++) {
+                name.append("_").append(sanitizeParam(parameters[i]));
+            }
+        }
+        return name.toString();
+    }
+    private String getStatus(int status){
+        switch (status){
+            case FAILURE -> {return "FAILED";}
+            case SKIP -> {return "SKIPPED";}
+            default -> {return "PASSED";}
+        }
+    }
+
+    /**
+     * Generates a unique test identifier that's consistent across retries.
+     * This is used as the key to track recordings for specific tests.
+     * @param result TestNG test result
+     * @return Unique test identifier
+     */
+    private String getTestIdentifier(ITestResult result) {
+        StringBuilder identifier = new StringBuilder();
+        if (result.getTestClass() != null) {
+            identifier.append(result.getTestClass().getName()).append(".");
+        }
+        identifier.append(result.getName());
+        Object[] parameters = result.getParameters();
+        if (parameters != null && parameters.length > 0) {
+            identifier.append("_").append(Math.abs(java.util.Arrays.deepHashCode(parameters)));
+        }
+        return identifier.toString();
+    }
+
+    /**
+     * Generates a unique key for an ITestResult instance.
+     * This is used to map test results to their recording IDs.
+     * @param result TestNG test result
+     * @return Unique result key
+     */
+    private String getResultKey(ITestResult result) {
+        return getTestIdentifier(result) + "_" + System.identityHashCode(result);
+    }
+
+    /**
+     * Sanitizes parameter value for use in file names.
+     * @param param Parameter object
+     * @return Sanitized string representation
+     */
+    private String sanitizeParam(Object param) {
+        if (param == null) {
+            return "null";
+        }
+        String value = param.toString();
+        if (value.length() > 20) {
+            value = value.substring(0, 20);
+        }
+        return value.replaceAll("[^a-zA-Z0-9]", "_");
     }
 }
