@@ -69,7 +69,7 @@
         <testNG>7.11.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.13.2</gsonVersion>
-        <log4jVersion>2.25.2</log4jVersion>
+        <log4jVersion>2.25.3</log4jVersion>
         <AllureVersion>2.32.0</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
