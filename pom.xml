@@ -92,7 +92,7 @@
         <mssqlVersion>13.3.0.jre11-preview</mssqlVersion>
         <oracleDBVersion>23.26.0.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
-        <redisDBVersion>7.1.0</redisDBVersion>
+        <redisDBVersion>7.2.0</redisDBVersion>
         <couchBaseVersion>3.10.0</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
         <mockito.version>5.21.0</mockito.version>
