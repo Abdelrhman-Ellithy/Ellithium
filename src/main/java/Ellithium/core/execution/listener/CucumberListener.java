@@ -86,8 +86,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
                 .count();
         ScenarioContext context = new ScenarioContext(name, scenarioId, totalSteps);
         scenarioContext.set(context);
-        Logger.info(CYAN + "[START] " + BLUE + "Scenario " + name +
-                " (Steps: " + totalSteps + ") [START]" + RESET);
+        Logger.info(CYAN + "[START] " + BLUE + "Scenario " + name + " (Steps: " + totalSteps + ") [START]" + RESET);
     }
 
     /**
@@ -160,10 +159,10 @@ public class CucumberListener extends AllureCucumber7Jvm {
             handleStepFailure(event, context);
         } else {
             if (stepStatus==Status.SKIPPED) {
-                handleStepSuccess(context, io.qameta.allure.model.Status.SKIPPED);
+                handleStepSuccess(io.qameta.allure.model.Status.SKIPPED);
             }
             else {
-                handleStepSuccess(context, io.qameta.allure.model.Status.PASSED);
+                handleStepSuccess(io.qameta.allure.model.Status.PASSED);
             }
         }
         if (!context.paramAdded) {
@@ -193,8 +192,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             case PASSED -> Logger.info(GREEN + "[PASSED] Scenario " + scenarioName + " [PASSED]" + RESET);
             case FAILED -> Logger.info(RED + "[FAILED] Scenario " + scenarioName + " [FAILED]" + RESET);
             case SKIPPED -> Logger.info(YELLOW + "[SKIPPED] Scenario " + scenarioName + " [SKIPPED]" + RESET);
-            default -> Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName +
-                    " [" + status + "]" + RESET);
+            default -> Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName +" [" + status + "]" + RESET);
         }
         if (context.recordingStarted && context.recordingId != null) {
             Logger.debug("Recording still active in scenario finish, stopping now");
@@ -256,7 +254,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
     /**
      * Handles step success - updates Allure status
      */
-    private void handleStepSuccess(ScenarioContext context, io.qameta.allure.model.Status status) {
+    private void handleStepSuccess( io.qameta.allure.model.Status status) {
         Allure.getLifecycle().updateTestCase(stepResult -> {
             GeneralHandler.addAttachments();
             stepResult.setStatus(status);
@@ -322,6 +320,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
         String uri = testCase.getUri().toString();
         int line = testCase.getLine();
         String name = testCase.getName().replaceAll("[^a-zA-Z0-9]", "_");
-        return uri + ":" + line + ":" + name;
+        return uri + ":" + line + ":" + name+":"+ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase();
     }
 }

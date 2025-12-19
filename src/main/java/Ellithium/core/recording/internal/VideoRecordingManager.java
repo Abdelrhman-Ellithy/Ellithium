@@ -119,16 +119,12 @@ public class VideoRecordingManager {
             Reporter.log("Video recording is disabled in configuration", LogLevel.DEBUG);
             return null;
         }
-
         WebDriver driver = DriverFactory.getCurrentDriver();
         if (driver == null) {
             Reporter.log("No active driver found, skipping video recording", LogLevel.WARN);
             return null;
         }
-
         long threadId = Thread.currentThread().getId();
-
-        // Check if this thread already has an active recording
         String existingRecordingId = threadToRecordingMap.get(threadId);
         if (existingRecordingId != null) {
             RecordingContext existingContext = recordingContextMap.get(existingRecordingId);
@@ -138,40 +134,23 @@ public class VideoRecordingManager {
                 stopRecordingById(existingRecordingId, "INTERRUPTED");
             }
         }
-
-        // Check if this test already has a recording (in case of retry or duplicate)
         String existingTestRecordingId = testToRecordingMap.get(testIdentifier);
         if (existingTestRecordingId != null) {
             Reporter.log("Test " + testIdentifier + " already has an active recording. Stopping previous recording.",
                     LogLevel.WARN);
             stopRecordingById(existingTestRecordingId, "DUPLICATE");
         }
-
         try {
-            // Generate unique recording ID
             String recordingId = UUID.randomUUID().toString();
-
-            // Create new recorder instance
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
-
-            // Generate unique recording name
-            String recordingName = sanitizeFileName(testName) + "_" +
+            String recordingName = sanitizeFileName(testName) + "_" + "_"+ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase()+
                     TestDataGenerator.getTimeStamp() + "_" + recordingId.substring(0, 8);
-
-            // Create recording context
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
-
-            // Store in maps
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);
             testToRecordingMap.put(testIdentifier, recordingId);
-
-            // Start recording
             recorder.startRecording(recordingName);
-
-            Reporter.log("Started video recording [ID: " + recordingId.substring(0, 8) +
-                    "] for: " + testName + " on thread: " + threadId, LogLevel.INFO_BLUE);
-
+            Reporter.log("Started video recording [] for: " + testName +" - " +ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase()+ " on thread: " + threadId, LogLevel.INFO_BLUE);
             return recordingId;
         } catch (Exception e) {
             Reporter.log("Failed to start video recording: " + e.getMessage(), LogLevel.ERROR);
@@ -192,29 +171,20 @@ public class VideoRecordingManager {
             Reporter.log("Recording ID is null, cannot stop recording", LogLevel.WARN);
             return null;
         }
-
         RecordingContext context = recordingContextMap.get(recordingId);
         if (context == null) {
             Reporter.log("No recording context found for ID: " + recordingId, LogLevel.WARN);
             return null;
         }
-
         try {
             ScreenRecorderActions<WebDriver> recorder = context.getRecorder();
             String testName = context.getTestName();
             long duration = System.currentTimeMillis() - context.getStartTime();
-
-            // Stop recording and get video path
             String videoPath = recorder.stopRecording();
-
             if (videoPath != null) {
-                Reporter.log("Stopped video recording [ID: " + recordingId.substring(0, 8) +
-                        "] for: " + testName + " (Duration: " + duration + "ms)", LogLevel.INFO_BLUE);
+                Reporter.log("Stopped video recording for: " + testName +" - " +ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase()+ " (Duration: " + duration + "ms)", LogLevel.INFO_BLUE);
                 Reporter.log("Video saved at: " + videoPath, LogLevel.INFO_GREEN);
-
-                // Handle attachment based on configuration and test status
                 handleVideoAttachment(videoPath, testName, testStatus);
-
                 return videoPath;
             } else {
                 Reporter.log("Failed to save video recording for: " + testName, LogLevel.ERROR);
@@ -226,7 +196,6 @@ public class VideoRecordingManager {
             e.printStackTrace();
             return null;
         } finally {
-            // Cleanup this recording from all maps
             cleanupRecording(recordingId);
         }
     }
@@ -240,7 +209,6 @@ public class VideoRecordingManager {
     public static String stopRecordingForCurrentThread(String testStatus) {
         long threadId = Thread.currentThread().getId();
         String recordingId = threadToRecordingMap.get(threadId);
-
         if (recordingId == null) {
             Reporter.log("No active recording found for thread: " + threadId, LogLevel.DEBUG);
             return null;
@@ -258,12 +226,10 @@ public class VideoRecordingManager {
      */
     public static String stopRecordingForTest(String testIdentifier, String testStatus) {
         String recordingId = testToRecordingMap.get(testIdentifier);
-
         if (recordingId == null) {
             Reporter.log("No active recording found for test: " + testIdentifier, LogLevel.DEBUG);
             return null;
         }
-
         return stopRecordingById(recordingId, testStatus);
     }
 
@@ -276,18 +242,15 @@ public class VideoRecordingManager {
     private static void handleVideoAttachment(String videoPath, String testName, String testStatus) {
         boolean shouldAttach = isAttachmentEnabled();
         boolean isFailed = "FAILED".equalsIgnoreCase(testStatus);
-
-        // Always attach failed test videos, or attach based on configuration
         if (isFailed || shouldAttach) {
             try {
-                String description = String.format("%s - %s - Video Recording", testName, testStatus);
+                String description = String.format("%s - %s - %s -Video Recording",ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase(), testName, testStatus);
                 Reporter.attachFileToReport(videoPath, testName + "_recording", description);
                 Reporter.log("Video attached to report: " + testName, LogLevel.INFO_GREEN);
             } catch (Exception e) {
                 Reporter.log("Failed to attach video to report: " + e.getMessage(), LogLevel.ERROR);
             }
         } else {
-            // Optionally delete video if not attaching and test passed
             deleteVideoFile(videoPath);
         }
     }
@@ -315,12 +278,8 @@ public class VideoRecordingManager {
         RecordingContext context = recordingContextMap.remove(recordingId);
 
         if (context != null) {
-            // Remove from thread mapping
             threadToRecordingMap.remove(context.getThreadId(), recordingId);
-
-            // Remove from test mapping (need to find the test identifier)
             testToRecordingMap.entrySet().removeIf(entry -> entry.getValue().equals(recordingId));
-
             Reporter.log("Cleaned up recording context [ID: " + recordingId.substring(0, 8) + "]",
                     LogLevel.DEBUG);
         }
@@ -333,12 +292,10 @@ public class VideoRecordingManager {
     public static ScreenRecorderActions<WebDriver> getCurrentRecorder() {
         long threadId = Thread.currentThread().getId();
         String recordingId = threadToRecordingMap.get(threadId);
-
         if (recordingId != null) {
             RecordingContext context = recordingContextMap.get(recordingId);
             return context != null ? context.getRecorder() : null;
         }
-
         return null;
     }
 
@@ -349,7 +306,6 @@ public class VideoRecordingManager {
     public static String getCurrentRecordingId() {
         return threadToRecordingMap.get(Thread.currentThread().getId());
     }
-
     /**
      * Gets the recording ID for a specific test.
      * @param testIdentifier Unique identifier for the test
@@ -387,7 +343,6 @@ public class VideoRecordingManager {
         info.append("Active Recordings: ").append(recordingContextMap.size()).append("\n");
         info.append("Thread Mappings: ").append(threadToRecordingMap.size()).append("\n");
         info.append("Test Mappings: ").append(testToRecordingMap.size()).append("\n");
-
         info.append("\nActive Recording Details:\n");
         recordingContextMap.forEach((id, context) -> {
             info.append("  ID: ").append(id.substring(0, 8))
@@ -410,20 +365,16 @@ public class VideoRecordingManager {
         if (fileName == null || fileName.isEmpty()) {
             return "test_recording";
         }
-        // Remove invalid file name characters
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_")
                 .replaceAll("\\s+", "_")
                 .trim();
     }
-
     /**
      * Force cleanup of all resources.
      * Should be called in emergency situations or test suite completion.
      */
     public static void forceCleanupAll() {
         int activeRecordings = recordingContextMap.size();
-
-        // Try to stop all active recordings gracefully
         recordingContextMap.keySet().forEach(recordingId -> {
             try {
                 stopRecordingById(recordingId, "CLEANUP");
@@ -432,11 +383,9 @@ public class VideoRecordingManager {
                         e.getMessage(), LogLevel.ERROR);
             }
         });
-
         recordingContextMap.clear();
         threadToRecordingMap.clear();
         testToRecordingMap.clear();
-
         Reporter.log("Force cleanup completed. Stopped " + activeRecordings +
                 " active recordings.", LogLevel.INFO_BLUE);
     }
