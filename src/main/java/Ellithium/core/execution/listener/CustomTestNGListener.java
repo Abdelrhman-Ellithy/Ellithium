@@ -50,8 +50,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
-            boolean headless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
-            if (driverExecution && headless) {
+            boolean notHeadless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
+            if (driverExecution && notHeadless) {
                 try {
                     String testName = getTestName(result);
                     String testIdentifier = getTestIdentifier(result);
@@ -59,12 +59,18 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                     if (recordingId != null) {
                         String resultKey = getResultKey(result);
                         testResultToRecordingId.put(resultKey, recordingId);
-                        Logger.info(CYAN + "Recording ID [" + recordingId.substring(0, 8) +
-                                "] mapped to test: " + testName + RESET);
+                        Logger.info(CYAN + "Video Recording started for Test Case: " + testName + RESET);
                     }
                 } catch (Exception e) {
                     Logger.info(RED + "Failed to start video recording: " + e.getMessage() + RESET);
                     e.printStackTrace();
+                }
+            }
+            else {
+                if (!driverExecution) {
+                    Logger.debug("Video recording skipped: No active driver");
+                } else if (!notHeadless) {
+                    Logger.debug("Video recording skipped: Headless mode enabled");
                 }
             }
         }
@@ -86,7 +92,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestSkipped(ITestResult result) {
-        // Only log non-Cucumber tests to avoid duplicate logging
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
         }
@@ -123,8 +128,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "---------------------------------------------" + RESET);
         if (VideoRecordingManager.isRecordingEnabled()) {
             Logger.info(GREEN + "Video Recording: ENABLED" + RESET);
-            Logger.info(CYAN + "Video Attachment: " +
-                    (VideoRecordingManager.isAttachmentEnabled() ? "ENABLED" : "DISABLED") + RESET);
+            Logger.info(CYAN + "Video Attachment: " + (VideoRecordingManager.isAttachmentEnabled() ? "ENABLED" : "DISABLED") + RESET);
         } else {
             Logger.info(YELLOW + "Video Recording: DISABLED" + RESET);
         }
@@ -185,8 +189,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             if (recordingId != null) {
                 String videoPath = VideoRecordingManager.stopRecordingById(recordingId, status);
                 if (videoPath != null) {
-                    Logger.info(GREEN + "Video recording stopped successfully for: " +
-                            result.getName() + RESET);
+                    Logger.info(GREEN + "Video recording stopped successfully for: " +result.getName() + RESET);
                 }
                 testResultToRecordingId.remove(resultKey);
             } else {
@@ -194,7 +197,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                 VideoRecordingManager.stopRecordingForCurrentThread(status);
             }
         } catch (Exception e) {
-            Logger.info(RED + "Failed to stop video recording: " + e.getMessage() + RESET);
+            Logger.warn(RED + "Failed to stop video recording: " + e.getMessage() + RESET);
             e.printStackTrace();
         }
     }
@@ -206,6 +209,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
      */
     private String getTestName(ITestResult result) {
         StringBuilder name = new StringBuilder(result.getName());
+        name.append("_");
+        name.append(ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase());
+        name.append("_");
         Object[] parameters = result.getParameters();
         if (parameters != null && parameters.length > 0) {
             name.append("_params");
