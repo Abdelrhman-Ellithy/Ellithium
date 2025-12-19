@@ -10,6 +10,7 @@ import io.qameta.allure.model.Status;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import static Ellithium.core.logging.LogLevel.*;
@@ -113,6 +114,66 @@ public class Reporter {
         }catch (IOException e) {
             Logger.logException(e);
         }
+    }
+
+    /**
+     * Attaches any file (image, video, log, json...) to the Allure test report.
+     * Automatically detects the MIME type and file extension.
+     *
+     * @param file File to attach
+     * @param name Name of the attachment in the report
+     * @param description Description for the attachment
+     */
+    public static void attachFileToReport(File file, String name, String description) {
+        if (file == null || !file.exists()) {
+            log("Attachment failed: file does not exist -> " + file, LogLevel.ERROR);
+            return;
+        }
+        try (FileInputStream fis = new FileInputStream(file)) {
+            String mimeType = Files.probeContentType(file.toPath());
+            if (mimeType == null) {
+                mimeType = "application/octet-stream"; // fallback
+            }
+            String fileName = file.getName();
+            String extension = "";
+            int dotIndex = fileName.lastIndexOf(".");
+            if (dotIndex != -1) {
+                extension = fileName.substring(dotIndex); // includes the dot
+            }
+            Allure.description(description);
+            Allure.addAttachment(name, mimeType, fis, extension);
+        } catch (IOException e) {
+            Logger.logException(e);
+        }
+    }
+    /**
+     * Attaches a screenshot to the test report using a file path.
+     * * @param screenshotPath Relative or absolute path to the screenshot file
+     * @param name Screenshot name in the report
+     * @param description Description for the test attachment
+     */
+    public static void attachScreenshotToReport(String screenshotPath, String name, String description) {
+        if (screenshotPath == null || screenshotPath.isEmpty()) {
+            log("Screenshot attachment failed: path is null or empty.", LogLevel.ERROR);
+            return;
+        }
+        attachScreenshotToReport(new File(screenshotPath), name, description);
+    }
+
+    /**
+     * Attaches any file (image, video, log, json...) to the Allure test report using a file path.
+     * Automatically detects the MIME type and file extension.
+     *
+     * @param filePath Relative or absolute path to the file
+     * @param name Name of the attachment in the report
+     * @param description Description for the attachment
+     */
+    public static void attachFileToReport(String filePath, String name, String description) {
+        if (filePath == null || filePath.isEmpty()) {
+            log("File attachment failed: path is null or empty.", LogLevel.ERROR);
+            return;
+        }
+        attachFileToReport(new File(filePath), name, description);
     }
 
     /**

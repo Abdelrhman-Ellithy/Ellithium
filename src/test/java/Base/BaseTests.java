@@ -1,6 +1,8 @@
 package Base;
 
+import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.core.driver.*;
+import Ellithium.core.reporting.Reporter;
 import Pages.HomPage;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
