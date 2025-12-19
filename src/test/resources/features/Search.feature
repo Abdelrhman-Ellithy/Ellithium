@@ -1,11 +1,11 @@
 Feature: Search
   Background:
     Given The user is on the homepage
-
+  @run
   Scenario: User Search query is Accepted
     When they type a search query into the search bar
     Then the search query should be accepted and processed
-
+  @run
   Scenario: Only Relative Items Returned in the results
     Given The user has entered a search query
     When they click the Search button or press Enter key

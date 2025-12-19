@@ -129,6 +129,8 @@ public class ConfigContext {
             "properties"  + File.separator + "config"+".properties";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "allure"+".properties";
+    private final static String notificationFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+            "properties"  + File.separator + "notifications"+".properties";
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
     private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker"+".json";
@@ -150,6 +152,9 @@ public class ConfigContext {
     }
     public static String getCheckerFolderPath() {
         return checkerFolderPath;
+    }
+    public static String getNotificationFilePath() {
+        return notificationFilePath;
     }
 
     public static String getEllithiumRepoPath() {

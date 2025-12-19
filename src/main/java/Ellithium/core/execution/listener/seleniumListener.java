@@ -275,7 +275,7 @@ public class seleniumListener implements WebDriverListener {
 
     @Override
     public void afterIsDisplayed(WebElement element, boolean result) {
-        Reporter.log("Element displayed: " + result + " → " + nameOf(element), LogLevel.INFO_BLUE);
+        Reporter.log("Element displayed: " + result +" "+ nameOf(element), LogLevel.INFO_BLUE);
     }
 
     @Override
@@ -312,13 +312,27 @@ public class seleniumListener implements WebDriverListener {
     public void afterTo(WebDriver.Navigation navigation, URL url) {
         Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
     }
-   private String nameOf(WebElement element){
-       try {
-           return element.getAccessibleName();
-       }catch (Exception e){
-           return "";
-       }
-   }
+    private String nameOf(WebElement element) {
+        if (element == null) return "";
+        try {
+            String name = element.getAccessibleName();
+            if (name == null || name.isBlank()) {
+                name = element.getText();
+            }
+            if (name == null || name.isBlank()) {
+                name = element.getAttribute("placeholder");
+            }
+            if (name == null || name.isBlank()) {
+                name = element.getAttribute("value");
+            }
+            if (name == null || name.isBlank()) {
+                name = element.getAttribute("id");
+            }
+            return (name != null) ? name.trim() : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
     private static final Map<Keys, String> keyMap;
     static {
         keyMap = Map.ofEntries(
