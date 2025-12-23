@@ -61,49 +61,49 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>2.2.1</EllithiumVersion>
+        <EllithiumVersion>2.2.2</EllithiumVersion>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <seleniumVersion>4.38.0</seleniumVersion>
+        <seleniumVersion>4.39.0</seleniumVersion>
         <testNG>7.11.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.13.2</gsonVersion>
-        <log4jVersion>2.25.2</log4jVersion>
-        <AllureVersion>2.30.0</AllureVersion>
+        <log4jVersion>2.25.3</log4jVersion>
+        <AllureVersion>2.32.0</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
-        <ApachePOI>5.4.1</ApachePOI>
-        <restversion>5.5.6</restversion>
-        <Cucumber>7.31.0</Cucumber>
-        <cucumberTsetNG>7.31.0</cucumberTsetNG>
+        <ApachePOI>5.5.1</ApachePOI>
+        <restversion>6.0.0</restversion>
+        <Cucumber>7.33.0</Cucumber>
+        <cucumberTsetNG>7.33.0</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
-        <SQLiteVersion>3.51.0.0</SQLiteVersion>
+        <SQLiteVersion>3.51.1.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.4</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
-        <AllureJVMVersion>2.30.0</AllureJVMVersion>
+        <AllureJVMVersion>2.32.0</AllureJVMVersion>
         <HikariCPVersion>7.0.2</HikariCPVersion>
         <caffineVersion>3.2.3</caffineVersion>
         <mysqlVersion>9.5.0</mysqlVersion>
         <postgresqlVersion>42.7.8</postgresqlVersion>
-        <mssqlVersion>13.2.1.jre11</mssqlVersion>
+        <mssqlVersion>13.3.0.jre11-preview</mssqlVersion>
         <oracleDBVersion>23.26.0.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
-        <redisDBVersion>7.0.0</redisDBVersion>
+        <redisDBVersion>7.2.0</redisDBVersion>
         <couchBaseVersion>3.10.0</couchBaseVersion>
         <appiumVersion>10.0.0</appiumVersion>
-        <mockito.version>5.20.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-2.2.0.jar
-            gpg -ab target/ellithium-2.2.0-javadoc.jar
-            gpg -ab target/ellithium-2.2.0-sources.jar
-            gpg -ab target/ellithium-2.2.0.pom
+            gpg -ab target/ellithium-2.2.2.jar
+            gpg -ab target/ellithium-2.2.2-javadoc.jar
+            gpg -ab target/ellithium-2.2.2-sources.jar
+            gpg -ab target/ellithium-2.2.2.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>
@@ -442,7 +442,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version> <!-- You can check for the latest version -->
+                <version>3.4.0</version> <!-- You can check for the latest version -->
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -516,7 +516,7 @@
                     <dependency>
                         <groupId>org.aspectj</groupId>
                         <artifactId>aspectjweaver</artifactId>
-                        <version>1.9.25</version>
+                        <version>1.9.25.1</version>
                     </dependency>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
