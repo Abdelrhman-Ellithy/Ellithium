@@ -78,6 +78,7 @@ public class DriverFactory {
         ConfigContext.setDriverType(mobileDriverConfig.getDriverType());
         ConfigContext.setRemoteAddress(mobileDriverConfig.getRemoteAddress());
         ConfigContext.setCapabilities(mobileDriverConfig.getCapabilities());
+        checkMobileHeadless(mobileDriverConfig.getCapabilities());
         return mobileSetup((MobileDriverType) mobileDriverConfig.getDriverType(),mobileDriverConfig.getRemoteAddress(),mobileDriverConfig.getCapabilities());
     }
 
@@ -149,6 +150,7 @@ public class DriverFactory {
         ConfigContext.setDriverType(driverType);
         ConfigContext.setRemoteAddress(remoteAddress);
         ConfigContext.setCapabilities(capabilities);
+        checkMobileHeadless(capabilities);
         return mobileSetup(driverType,remoteAddress,capabilities);
     }
 
@@ -442,5 +444,13 @@ public class DriverFactory {
                 new Class[] {URL.class,Capabilities.class},
                 new appiumListener()
         );
+    }
+    private static void checkMobileHeadless(Capabilities capabilities){
+        Object isHeadless=capabilities.getCapability("appium:isHeadless");
+        ConfigContext.setHeadlessMode(HeadlessMode.False);
+        if (isHeadless!=null){
+            boolean headless=isHeadless.toString().equalsIgnoreCase("true");
+            if (headless)ConfigContext.setHeadlessMode(HeadlessMode.True);
+        }
     }
 }

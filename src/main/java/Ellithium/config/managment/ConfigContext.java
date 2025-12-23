@@ -24,7 +24,7 @@ public class ConfigContext {
     private static final Map<PageLoadStrategyMode, String> PAGE_LOAD_STRATEGY_MODE_STRING_MAP;
     private static final Map<SandboxMode, String> SANDBOX_MODE_STRING_MAP;
     private static final String allureVersion="2.30.0";
-    private static final String EllithuiumVersion="2.2.0";
+    private static final String EllithuiumVersion="2.2.2";
 
     public static String getAllureVersion() {
         return allureVersion;
@@ -129,6 +129,8 @@ public class ConfigContext {
             "properties"  + File.separator + "config"+".properties";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "allure"+".properties";
+    private final static String notificationFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+            "properties"  + File.separator + "notifications"+".properties";
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties" + File.separator;
     private static final String checkerFilePath="Test-Output" + File.separator + "UpdateChecker"+File.separator+"checker"+".json";
@@ -150,6 +152,9 @@ public class ConfigContext {
     }
     public static String getCheckerFolderPath() {
         return checkerFolderPath;
+    }
+    public static String getNotificationFilePath() {
+        return notificationFilePath;
     }
 
     public static String getEllithiumRepoPath() {

@@ -13,6 +13,7 @@ import java.util.Map;
  * Utility class for iOS-specific mobile gestures and actions.
  * Based on Appium XCUITest driver mobile gestures.
  * Reference: https://appium.readthedocs.io/en/latest/en/writing-running-appium/ios/ios-xctest-mobile-gestures/
+ * @deprecated Use MobileActions class for cross-platform compatibility
  */
 public class IOSActions<T extends IOSDriver> extends BaseActions<T> {
     

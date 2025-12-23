@@ -15,6 +15,7 @@ public class StartUpLoader {
                         testPath,
                         ScreenShotPath,
                         allurePath,
+                        notificationPath,
                         configPath,
                         logPath,
                         checkerFilePath,
@@ -28,10 +29,12 @@ public class StartUpLoader {
         allurePath = ConfigContext.getAllureFilePath();
         configPath = ConfigContext.getConfigFilePath();
         logPath = ConfigContext.getLogFilePath();
+        notificationPath=ConfigContext.getNotificationFilePath();
         System.out.println("Application started with properties initialized.");
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
+        initializePropertyFiles("notifications");
         TestOutputSolver();
     }
     private static void initializePropertyFiles(String propertyFileType) {
@@ -61,6 +64,16 @@ public class StartUpLoader {
                     File jarFile = findJarFile();
                     if (jarFile != null) {
                         extractFileFromJar(jarFile, "properties/log4j2.properties", new File(logPath));
+                    } else {
+                        System.err.println("JAR file not found.");
+                    }
+                }
+                break;
+            case "notifications":
+                if (!checkFileExists(notificationPath)) {
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        extractFileFromJar(jarFile, "properties/notifications.properties", new File(notificationPath));
                     } else {
                         System.err.println("JAR file not found.");
                     }
@@ -111,7 +124,7 @@ public class StartUpLoader {
         }
         return 0; // Versions are equal
     }
-    public static void TestOutputSolver(){
+    private static void TestOutputSolver(){
         boolean result;
         boolean exists=PropertyHelper.keyExists(allurePath,"allure.report.directory");
         String allureReportPath;

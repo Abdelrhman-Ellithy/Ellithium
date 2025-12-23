@@ -12,7 +12,7 @@ import java.util.Properties;
  */
 public class NotificationConfig {
     
-    private static final String CONFIG_FILE = "src/main/resources/properties/config.properties";
+    private static final String NOTIFICATION_FILE = "src/main/resources/properties/notifications.properties";
     private static NotificationConfig instance;
     private Properties properties;
     private boolean propertiesLoaded = false;
@@ -80,7 +80,7 @@ public class NotificationConfig {
      */
     private void loadProperties() {
         try {
-            properties = PropertyHelper.getAllProperties(CONFIG_FILE);
+            properties = PropertyHelper.getAllProperties(NOTIFICATION_FILE);
             propertiesLoaded = true;
             Reporter.log("Notification properties loaded successfully", LogLevel.INFO_GREEN);
         } catch (Exception e) {
