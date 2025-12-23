@@ -5,10 +5,9 @@ import io.appium.java_client.android.options.UiAutomator2Options;
 import io.appium.java_client.ios.options.XCUITestOptions;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.MutableCapabilities;
-
+import org.openqa.selenium.remote.DesiredCapabilities;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
     private String testName;
     private String customHost;
     private Map<String, Object> providerOptions;
-    private MutableCapabilities capabilities;
+    private MutableCapabilities internalCapabilities;
 
     /**
      * Default constructor initializing with LOCAL provider.
@@ -53,7 +52,8 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         super();
         this.cloudProvider = CloudProviderType.LOCAL;
         this.providerOptions = new HashMap<>();
-        this.capabilities = new MutableCapabilities();
+        this.internalCapabilities = new DesiredCapabilities();
+
     }
 
     /**
@@ -141,7 +141,11 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      */
     public CloudMobileDriverConfig setProjectName(String projectName) {
         this.projectName = projectName;
-        addToProviderOptions("project", projectName);
+        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
+            addToProviderOptions("projectName", projectName);
+        } else {
+            addToProviderOptions("project", projectName);
+        }
         return this;
     }
 
@@ -153,7 +157,11 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      */
     public CloudMobileDriverConfig setBuildName(String buildName) {
         this.buildName = buildName;
-        addToProviderOptions("build", buildName);
+        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
+            addToProviderOptions("buildName", buildName);
+        } else {
+            addToProviderOptions("build", buildName);
+        }
         return this;
     }
 
@@ -165,7 +173,11 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      */
     public CloudMobileDriverConfig setTestName(String testName) {
         this.testName = testName;
-        addToProviderOptions("name", testName);
+        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
+            addToProviderOptions("sessionName", testName);
+        } else {
+            addToProviderOptions("name", testName);
+        }
         return this;
     }
 
@@ -189,10 +201,10 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig setDeviceName(String deviceName) {
-        capabilities.setCapability("deviceName", deviceName);
-        // BrowserStack uses 'device' instead of 'deviceName'
-        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
-            capabilities.setCapability("device", deviceName);
+        if (cloudProvider == CloudProviderType.BROWSERSTACK || cloudProvider == CloudProviderType.LAMBDATEST) {
+            addToProviderOptions("deviceName", deviceName);
+        } else {
+            internalCapabilities.setCapability("appium:deviceName", deviceName);
         }
         return this;
     }
@@ -204,10 +216,13 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig setPlatformVersion(String platformVersion) {
-        capabilities.setCapability("platformVersion", platformVersion);
-        // BrowserStack uses 'osVersion'
         if (cloudProvider == CloudProviderType.BROWSERSTACK) {
-            capabilities.setCapability("osVersion", platformVersion);
+            addToProviderOptions("osVersion", platformVersion);
+        } else if (cloudProvider == CloudProviderType.LAMBDATEST) {
+            String majorVersion = platformVersion.contains(".") ? platformVersion.split("\\.")[0] : platformVersion;
+            addToProviderOptions("platformVersion",majorVersion);
+        } else {
+            internalCapabilities.setCapability("appium:platformVersion", platformVersion);
         }
         return this;
     }
@@ -221,7 +236,8 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig setApp(String app) {
-        capabilities.setCapability("app", app);
+        //capabilities.setCapability("app", app);
+        internalCapabilities.setCapability("appium:app", app);
         return this;
     }
 
@@ -232,7 +248,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig setAutomationName(String automationName) {
-        capabilities.setCapability("automationName", automationName);
+        internalCapabilities.setCapability("appium:automationName", automationName);
         return this;
     }
 
@@ -269,7 +285,11 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig setDeviceOrientation(String orientation) {
-        capabilities.setCapability("deviceOrientation", orientation);
+        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
+            addToProviderOptions("deviceOrientation", orientation);
+        } else {
+            internalCapabilities.setCapability("appium:orientation", orientation);
+        }
         return this;
     }
 
@@ -329,8 +349,11 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      */
     public CloudMobileDriverConfig setRealDevice(boolean isRealDevice) {
         switch (cloudProvider) {
-            case BROWSERSTACK -> capabilities.setCapability("realMobile", isRealDevice);
-            case LAMBDATEST -> addToProviderOptions("isRealMobile", isRealDevice);
+            case BROWSERSTACK -> addToProviderOptions("realMobile", isRealDevice);
+            case LAMBDATEST -> {
+                providerOptions.put("w3c", true);
+                addToProviderOptions("isRealMobile", isRealDevice);
+            }
         }
         return this;
     }
@@ -355,7 +378,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @return This config instance for method chaining
      */
     public CloudMobileDriverConfig addCapability(String key, Object value) {
-        capabilities.setCapability(key, value);
+        internalCapabilities.setCapability(key, value);
         return this;
     }
 
@@ -367,21 +390,41 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
     public CloudMobileDriverConfig setDriverType(DriverType driverType) {
         super.setDriverType(driverType);
         if (driverType == MobileDriverType.Android) {
-            capabilities.setCapability("platformName", "Android");
+            internalCapabilities.setCapability("platformName", "Android");
         } else if (driverType == MobileDriverType.IOS) {
-            capabilities.setCapability("platformName", "iOS");
+            internalCapabilities.setCapability("platformName", "iOS");
         }
         return this;
     }
 
     @Override
     public Capabilities getCapabilities() {
-        MutableCapabilities finalCapabilities = new MutableCapabilities(capabilities);
+        MutableCapabilities finalCapabilities;
+        if (getDriverType() == MobileDriverType.IOS) {
+            finalCapabilities = new XCUITestOptions(internalCapabilities);
+        } else {
+            // Default to Android if not specified or explicitly Android
+            finalCapabilities = new UiAutomator2Options(internalCapabilities);
+        }
+        if (finalCapabilities.getCapability("appium:automationName") == null) {
+            String platform = String.valueOf(finalCapabilities.getCapability("platformName"));
+            finalCapabilities.setCapability("appium:automationName", platform.equalsIgnoreCase("ios") ? "XCUITest" : "UiAutomator2");
+        }
         if (!providerOptions.isEmpty()) {
             switch (cloudProvider) {
-                case BROWSERSTACK -> finalCapabilities.setCapability("bstack:options", new HashMap<>(providerOptions));
-                case SAUCE_LABS -> finalCapabilities.setCapability("sauce:options", new HashMap<>(providerOptions));
-                case LAMBDATEST -> finalCapabilities.setCapability("lt:options", new HashMap<>(providerOptions));
+                case BROWSERSTACK -> {
+                    finalCapabilities.setCapability("bstack:options", new HashMap<>(providerOptions));
+                }
+                case SAUCE_LABS -> {
+                    providerOptions.putIfAbsent("appiumVersion", "stable");
+                    finalCapabilities.setCapability("sauce:options", new HashMap<>(providerOptions));
+                }
+                case LAMBDATEST -> {
+                    providerOptions.putIfAbsent("w3c", true);
+                    String platform= finalCapabilities.getCapability("platformName").toString();
+                    finalCapabilities.setCapability("platformName",platform.toLowerCase());
+                    finalCapabilities.setCapability("lt:options", new HashMap<>(providerOptions));
+                }
             }
         }
 
@@ -391,9 +434,9 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
     @Override
     public void setCapabilities(Capabilities capabilities) {
         if (capabilities instanceof MutableCapabilities) {
-            this.capabilities = (MutableCapabilities) capabilities;
+            this.internalCapabilities = (MutableCapabilities) capabilities;
         } else {
-            this.capabilities = new MutableCapabilities(capabilities);
+            this.internalCapabilities = new MutableCapabilities(capabilities);
         }
     }
 

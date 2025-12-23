@@ -192,19 +192,16 @@ public class DriverFactory {
     public static <T> T getNewDriver(CloudMobileDriverConfig cloudMobileConfig) {
         // Validate configuration before creating driver
         cloudMobileConfig.validate();
-
         ConfigContext.setDriverType(cloudMobileConfig.getDriverType());
         ConfigContext.setRemoteAddress(cloudMobileConfig.getRemoteAddress());
         ConfigContext.setCapabilities(cloudMobileConfig.getCapabilities());
-
+        Reporter.logReportOnly("Capabilities: "+cloudMobileConfig.getCapabilities().asMap().toString(),LogLevel.INFO_BLUE);
         Reporter.log("Creating driver for " + cloudMobileConfig.getCloudProvider() +
                 " cloud provider", LogLevel.INFO_BLUE);
-
-        return mobileSetup(
-                (MobileDriverType) cloudMobileConfig.getDriverType(),
-                cloudMobileConfig.getRemoteAddress(),
-                cloudMobileConfig.getCapabilities()
-        );
+         return mobileSetup(
+                    (MobileDriverType) cloudMobileConfig.getDriverType(),
+                    cloudMobileConfig.getRemoteAddress(),
+                    cloudMobileConfig.getCapabilities());
     }
 
     /**

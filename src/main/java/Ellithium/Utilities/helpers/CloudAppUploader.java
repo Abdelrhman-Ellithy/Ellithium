@@ -73,15 +73,13 @@ public class CloudAppUploader {
         if (!appFile.exists()) {
             throw new IOException("App file not found: " + appFilePath);
         }
-
         validateAppFile(appFile);
-
         String uploadUrl = getUploadUrl(provider);
         String authHeader = createAuthHeader(username, accessKey);
 
         try {
             String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
-            byte[] multipartBody = createMultipartBody(appFile, customId, boundary);
+            byte[] multipartBody = createMultipartBody(provider,appFile, customId, boundary);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(uploadUrl))
@@ -163,12 +161,15 @@ public class CloudAppUploader {
      * @return The multipart body as byte array
      * @throws IOException if file reading fails
      */
-    private static byte[] createMultipartBody(File appFile, String customId, String boundary) throws IOException {
+    private static byte[] createMultipartBody(CloudProviderType provider,File appFile, String customId, String boundary) throws IOException {
         StringBuilder builder = new StringBuilder();
-
+        String fileFieldName = switch (provider) {
+            case LAMBDATEST -> "appFile"; // LambdaTest requirement
+            default -> "file";           // BrowserStack and others
+        };
         // Add file field
         builder.append("--").append(boundary).append("\r\n");
-        builder.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+        builder.append("Content-Disposition: form-data; name=\"").append(fileFieldName).append("\"; filename=\"")
                 .append(appFile.getName()).append("\"\r\n");
         builder.append("Content-Type: application/octet-stream\r\n\r\n");
 
@@ -288,28 +289,41 @@ public class CloudAppUploader {
     public static boolean deleteApp(CloudProviderType provider, String username,
                                     String accessKey, String appId) {
         Reporter.log("Attempting to delete app: " + appId + " from " + provider, LogLevel.INFO_BLUE);
-
         try {
-            String deleteUrl = getDeleteUrl(provider, appId);
             String authHeader = createAuthHeader(username, accessKey);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(deleteUrl))
-                    .header("Authorization", authHeader)
-                    .timeout(Duration.ofSeconds(30))
-                    .DELETE()
-                    .build();
-
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                Reporter.log("App deleted successfully", LogLevel.INFO_GREEN);
-                return true;
-            } else {
-                Reporter.log("App deletion failed. Status: " + response.statusCode(), LogLevel.ERROR);
-                return false;
+            String cleanId = appId.replace("lt://", "").replace("bs://", "").replace("storage:filename=", "");
+            if (provider == CloudProviderType.LAMBDATEST) {
+                String deleteUrl = "https://manual-api.lambdatest.com/app/delete";
+                JSONObject bodyJson = new JSONObject();
+                bodyJson.put("appIds", cleanId);
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(deleteUrl))
+                        .header("Authorization", authHeader)
+                        .header("Content-Type", "application/json")
+                        .timeout(Duration.ofSeconds(30))
+                        .method("DELETE", HttpRequest.BodyPublishers.ofString(bodyJson.toString()))
+                        .build();
+                HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+                return handleResponse(response);
             }
+            else {
+                String deleteUrl = getDeleteUrl(provider, appId);
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(deleteUrl))
+                        .header("Authorization", authHeader)
+                        .timeout(Duration.ofSeconds(30))
+                        .DELETE()
+                        .build();
 
+                HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    Reporter.log("App deleted successfully", LogLevel.INFO_GREEN);
+                    return true;
+                } else {
+                    Reporter.log("App deletion failed. Status: " + response.statusCode(), LogLevel.ERROR);
+                    return false;
+                }
+            }
         } catch (Exception e) {
             Reporter.log("Failed to delete app: " + e.getMessage(), LogLevel.ERROR);
             Logger.logException(e);
@@ -329,12 +343,19 @@ public class CloudAppUploader {
         String cleanId = appId.replace("bs://", "")
                 .replace("lt://", "")
                 .replace("storage:filename=", "");
-
         return switch (provider) {
             case BROWSERSTACK -> "https://api-cloud.browserstack.com/app-automate/app/delete/" + cleanId;
             case SAUCE_LABS -> "https://api.us-west-1.saucelabs.com/v1/storage/files/" + cleanId;
-            case LAMBDATEST -> "https://manual-api.lambdatest.com/app/delete/" + cleanId;
             default -> throw new IllegalArgumentException("Delete not supported for provider: " + provider);
         };
+    }
+    private static boolean handleResponse(HttpResponse<String> response) {
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            Reporter.log("App deleted successfully", LogLevel.INFO_GREEN);
+            return true;
+        } else {
+            Reporter.log("App deletion failed. Status: " + response.statusCode() + " Body: " + response.body(), LogLevel.ERROR);
+            return false;
+        }
     }
 }
