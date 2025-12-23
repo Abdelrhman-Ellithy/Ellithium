@@ -8,6 +8,8 @@ NOTIFICATION_README.md
 docker-entrypoint.sh
 Dockerfile
 
+src/test/resources/TestData/MobileApps/browserstack.json
+src\test\resources\TestData\MobileApps\browserstack.json
 # Test Output Management
 Test-Output/*
 !Test-Output/.gitkeep
