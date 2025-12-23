@@ -164,10 +164,10 @@ public class CloudAppUploader {
     private static byte[] createMultipartBody(CloudProviderType provider,File appFile, String customId, String boundary) throws IOException {
         StringBuilder builder = new StringBuilder();
         String fileFieldName = switch (provider) {
-            case LAMBDATEST -> "appFile"; // LambdaTest requirement
-            default -> "file";           // BrowserStack and others
+            case LAMBDATEST -> "appFile";
+            default -> "file";
         };
-        // Add file field
+
         builder.append("--").append(boundary).append("\r\n");
         builder.append("Content-Disposition: form-data; name=\"").append(fileFieldName).append("\"; filename=\"")
                 .append(appFile.getName()).append("\"\r\n");
@@ -179,7 +179,6 @@ public class CloudAppUploader {
         StringBuilder footer = new StringBuilder();
         footer.append("\r\n");
 
-        // Add custom_id field if provided
         if (customId != null && !customId.isEmpty()) {
             footer.append("--").append(boundary).append("\r\n");
             footer.append("Content-Disposition: form-data; name=\"custom_id\"\r\n\r\n");
@@ -189,7 +188,6 @@ public class CloudAppUploader {
         footer.append("--").append(boundary).append("--\r\n");
         byte[] footerBytes = footer.toString().getBytes();
 
-        // Combine all parts
         byte[] body = new byte[headerBytes.length + fileBytes.length + footerBytes.length];
         System.arraycopy(headerBytes, 0, body, 0, headerBytes.length);
         System.arraycopy(fileBytes, 0, body, headerBytes.length, fileBytes.length);
@@ -211,7 +209,6 @@ public class CloudAppUploader {
 
             return switch (provider) {
                 case BROWSERSTACK -> {
-                    // BrowserStack returns: {"app_url": "bs://c700ce60..."}
                     if (json.has("app_url")) {
                         yield json.getString("app_url");
                     } else if (json.has("custom_id")) {
@@ -220,7 +217,6 @@ public class CloudAppUploader {
                     yield json.toString();
                 }
                 case SAUCE_LABS -> {
-                    // Sauce Labs returns: {"item": {"id": "app-id"}}
                     if (json.has("item")) {
                         JSONObject item = json.getJSONObject("item");
                         if (item.has("id")) {
@@ -230,7 +226,6 @@ public class CloudAppUploader {
                     yield json.toString();
                 }
                 case LAMBDATEST -> {
-                    // LambdaTest returns: {"app_url": "lt://APP123456", "app_id": "APP123456"}
                     if (json.has("app_url")) {
                         yield json.getString("app_url");
                     } else if (json.has("app_id")) {
@@ -243,7 +238,6 @@ public class CloudAppUploader {
 
         } catch (Exception e) {
             Logger.logException(e);
-            // If JSON parsing fails, return the raw response
             return responseBody;
         }
     }
@@ -261,13 +255,12 @@ public class CloudAppUploader {
      */
     public static String uploadApp(CloudProviderType provider, String username,
                                    String accessKey, byte[] appBytes, String fileName) throws IOException {
-        // Create temporary file
+
         Path tempFile = Files.createTempFile("app_upload_", fileName);
         try {
             Files.write(tempFile, appBytes);
             return uploadApp(provider, username, accessKey, tempFile.toString(), null);
         } finally {
-            // Clean up temp file
             try {
                 Files.deleteIfExists(tempFile);
             } catch (IOException e) {
@@ -339,7 +332,6 @@ public class CloudAppUploader {
      * @return The delete endpoint URL
      */
     private static String getDeleteUrl(CloudProviderType provider, String appId) {
-        // Extract actual ID from provider-specific formats
         String cleanId = appId.replace("bs://", "")
                 .replace("lt://", "")
                 .replace("storage:filename=", "");
