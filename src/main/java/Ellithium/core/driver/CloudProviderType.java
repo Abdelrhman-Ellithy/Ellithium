@@ -6,16 +6,16 @@ package Ellithium.core.driver;
  *
  * <p>Supported Providers:
  * <ul>
- *   <li>BrowserStack - https://www.browserstack.com/</li>
- *   <li>Sauce Labs - https://saucelabs.com/</li>
- *   <li>LambdaTest - https://www.lambdatest.com/</li>
+ *   <li>BrowserStack - <a href="https://www.browserstack.com/">...</a></li>
+ *   <li>Sauce Labs - <a href="https://saucelabs.com/">...</a></li>
+ *   <li>LambdaTest - <a href="https://www.lambdatest.com/">...</a></li>
  *   <li>Local - For local Appium server</li>
  * </ul>
  */
 public enum CloudProviderType {
     /**
      * BrowserStack cloud testing platform.
-     * Default hub URL: https://hub-cloud.browserstack.com/wd/hub
+     * Default hub URL: <a href="https://hub-cloud.browserstack.com/wd/hub">...</a>
      */
     BROWSERSTACK("hub-cloud.browserstack.com", "/wd/hub", true),
 
@@ -30,13 +30,13 @@ public enum CloudProviderType {
 
     /**
      * LambdaTest cloud testing platform.
-     * Default hub URL: https://mobile-hub.lambdatest.com/wd/hub
+     * Default hub URL: <a href="https://mobile-hub.lambdatest.com/wd/hub">...</a>
      */
     LAMBDATEST("mobile-hub.lambdatest.com", "/wd/hub", true),
 
     /**
      * Local Appium server.
-     * Default URL: http://127.0.0.1:4723
+     * Default URL: <a href="http://127.0.0.1:4723">...</a>
      */
     LOCAL("127.0.0.1:4723", "", false);
 
