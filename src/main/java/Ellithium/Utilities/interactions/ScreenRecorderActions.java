@@ -128,9 +128,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * Stops the current recording and saves it with timestamp.
      * Handles both web and mobile recording scenarios.
      * Automatically cleans up ThreadLocal resources after completion.
+     * @return path of the File object of saved recorded video, null if saving fails
      */
-    public void stopRecording() {
+    public String stopRecording() {
+        String path = null;
         String name = videoName.get();
+        File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
+        if (!videoFolder.exists()) {
+            videoFolder.mkdirs();
+        }
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
             String video;
             if (driver instanceof AndroidDriver) {
@@ -139,43 +145,73 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 video = ((IOSDriver) driver).stopRecordingScreen();
             }
             byte[] videoData = Base64.getDecoder().decode(video);
-            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
-            if (!videoFolder.exists()) {
-                videoFolder.mkdirs();
-            }
             String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, newName);
             try (FileOutputStream fos = new FileOutputStream(videoFile)) {
                 fos.write(videoData);
                 Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_BLUE);
+                path=videoFile.getPath();
             } catch (Exception e) {
                 Reporter.log("Failed to save mobile recording: " + e.getMessage(), LogLevel.ERROR);
             }
         } else {
-            File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
-            if (!videoFolder.exists()) {
-                videoFolder.mkdirs();
-            }
             try {
-                screenRecorder.get().stop();
-                java.util.List<File> createdFiles = screenRecorder.get().getCreatedMovieFiles();
-                if (createdFiles != null && !createdFiles.isEmpty()) {
-                    File recordedFile = createdFiles.get(0);
-                    String newName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
-                    File mp4File = new File(videoFolder, newName);
-                    if (recordedFile.renameTo(mp4File)) {
-                        Reporter.log("Video recording saved: " + mp4File.getPath(), LogLevel.INFO_BLUE);
-                    } else {
-                        Reporter.log("Failed to rename video file to mp4", LogLevel.ERROR);
+                if (screenRecorder.get() != null) {
+                    screenRecorder.get().stop();
+                    Thread.sleep(200);
+                    java.util.List<File> createdFiles = screenRecorder.get().getCreatedMovieFiles();
+                    if (createdFiles != null && !createdFiles.isEmpty()) {
+                        File libraryFile = createdFiles.get(createdFiles.size() - 1);
+                        File actualFile = libraryFile;
+                        if (!libraryFile.exists()) {
+                            File parentDir = libraryFile.getParentFile();
+                            String prefix = libraryFile.getName();
+                            File[] matchingFiles = parentDir.listFiles((dir, fileName) ->
+                                    fileName.startsWith(prefix) && fileName.endsWith(".avi")
+                            );
+                            if (matchingFiles != null && matchingFiles.length > 0) {
+                                actualFile = matchingFiles[0];
+                            }
+                        }
+                        if (actualFile.exists()) {
+                            String extension = ".mp4";
+                            String newName = name + "-" + TestDataGenerator.getTimeStamp() + extension;
+                            File targetFile = new File(videoFolder, newName).getAbsoluteFile();
+                            try {
+                                java.nio.file.Files.move(
+                                        actualFile.toPath(),
+                                        targetFile.toPath(),
+                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                );
+                                path = targetFile.getAbsolutePath();
+                                Reporter.log("Video recording saved: " + path, LogLevel.INFO_BLUE);
+                            } catch (java.io.IOException e) {
+                                try {
+                                    java.nio.file.Files.copy(
+                                            actualFile.toPath(),
+                                            targetFile.toPath(),
+                                            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                    );
+                                    path = targetFile.getAbsolutePath();
+                                    Reporter.log("Video recording copied: " + path, LogLevel.INFO_BLUE);
+                                    actualFile.delete();
+                                } catch (Exception ex) {
+                                    path = actualFile.getAbsolutePath();
+                                    Reporter.log("Failed to move/copy, using original: " + path, LogLevel.WARN);
+                                }
+                            }
+                        } else {
+                            Reporter.log("Physical video file NOT FOUND on disk. Looked for prefix: " + libraryFile.getName(), LogLevel.ERROR);
+                            path = null;
+                        }
                     }
-                } else {
-                    Reporter.log("No video file found after recording", LogLevel.ERROR);
                 }
             } catch (Exception e) {
                 Reporter.log("Failed to save Web recording: " + e.getMessage(), LogLevel.ERROR);
             }
         }
         cleanup();
+        return path;
     }
 
     /**

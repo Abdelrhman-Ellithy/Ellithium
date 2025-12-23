@@ -9,7 +9,7 @@ public class loginTests extends BaseTests {
     LoginPage login;
 
     @DataProvider(name= "invalidLoginData")
-            Object[][] getInvalidTestData(){
+    Object[][] getInvalidTestData(){
         return new Object[][]{
                 {"tomsmith","hamada","Your password is invalid"},
                 {"hamada","SuperSecretPassword!","Your username is invalid"}
