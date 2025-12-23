@@ -410,8 +410,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      * @param driverType The driver type to set
      */
     @Override
-    public void setDriverType(DriverType driverType) {
+    public LocalDriverConfig setDriverType(DriverType driverType) {
         this.localDriverType = (LocalDriverType)driverType;
+        return this;
     }
 
     /**

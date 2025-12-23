@@ -383,8 +383,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * @param driverType The driver type to configure, must be instance of RemoteDriverType
      */
     @Override
-    public void setDriverType(DriverType driverType) {
+    public RemoteDriverConfig setDriverType(DriverType driverType) {
         this.driverType = (RemoteDriverType) driverType;
+        return this;
     }
 
     /**
