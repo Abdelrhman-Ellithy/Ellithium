@@ -7,8 +7,8 @@ import Ellithium.core.execution.listener.seleniumListener;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.events.EventFiringDecorator;
 import java.net.URL;
 import static Ellithium.core.driver.MobileDriverType.IOS;
@@ -123,8 +123,21 @@ public class DriverFactory {
      * @param <T> Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
-    public static <T> T getNewLocalDriver(LocalDriverType driverType, HeadlessMode headlessMode, PrivateMode privateMode, PageLoadStrategyMode pageLoadStrategyMode, WebSecurityMode webSecurityMode, SandboxMode sandboxMode) {
-        LocalDriverConfig localDriverConfig=new LocalDriverConfig(driverType, new DesiredCapabilities(),headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,sandboxMode);
+    public static <T> T getNewLocalDriver(LocalDriverType driverType,
+                                          HeadlessMode headlessMode,
+                                          PrivateMode privateMode,
+                                          PageLoadStrategyMode pageLoadStrategyMode,
+                                          WebSecurityMode webSecurityMode,
+                                          SandboxMode sandboxMode) {
+        Capabilities emptyCaps = new MutableCapabilities();
+        LocalDriverConfig localDriverConfig=new LocalDriverConfig(
+                driverType,
+                emptyCaps,
+                headlessMode,
+                privateMode,
+                pageLoadStrategyMode,
+                webSecurityMode,
+                sandboxMode).setCapabilities(emptyCaps);
         return getNewDriver(localDriverConfig);
     }
     /**
@@ -583,16 +596,19 @@ public class DriverFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getCurrentDriver() {
-        var driverType=driverConfigurationThread.get().getDriverType();
-        if(driverType!=null){
-            if (driverType.equals(MobileDriverType.Android)) {
-                return (T) AndroidDriverThread.get();
-            } else if (driverType.equals(IOS)) {
-                return (T) IOSDriverThread.get();
-            } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                return (T) WebDriverThread.get();
-            }
-        }
+       DriverConfiguration currentDriverConfigurationThread=driverConfigurationThread.get();
+       if (currentDriverConfigurationThread!=null){
+           DriverType driverType=driverConfigurationThread.get().getDriverType();
+           if(driverType!=null){
+               if (driverType.equals(MobileDriverType.Android)) {
+                   return (T) AndroidDriverThread.get();
+               } else if (driverType.equals(IOS)) {
+                   return (T) IOSDriverThread.get();
+               } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
+                   return (T) WebDriverThread.get();
+               }
+           }
+       }
         return null;
     }
 
@@ -626,7 +642,7 @@ public class DriverFactory {
      * Removes the current driver instance from thread local storage.
      */
     public static void removeDriver() {
-        var driverType=driverConfigurationThread.get().getDriverType();
+        DriverType driverType=driverConfigurationThread.get().getDriverType();
         if(driverType!=null) {
             if (driverType.equals(MobileDriverType.Android)) {
                 AndroidDriverThread.remove();
@@ -635,6 +651,7 @@ public class DriverFactory {
             } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
                 WebDriverThread.remove();
             }
+            driverConfigurationThread.remove();
         }
     }
 
@@ -645,6 +662,15 @@ public class DriverFactory {
      */
     public static DriverConfiguration getCurrentDriverConfiguration(){
         return driverConfigurationThread.get();
+    }
+
+    /**
+     * Internal Method to remove the current driver configuration for the executing thread.
+     * Automatically managed don't call it
+     *
+     */
+    public static void removeCurrentDriverConfiguration(){
+        driverConfigurationThread.remove();
     }
 
     // ========================================================================================
@@ -658,19 +684,20 @@ public class DriverFactory {
      * @throws IllegalStateException if driver creation fails
      */
     private static void webSetUp() {
-        var driverType = getCurrentDriverConfiguration().getDriverType();
-        var headlessMode = getCurrentDriverConfiguration().getHeadlessMode();
-        var PageLoadStrategy=getCurrentDriverConfiguration().getPageLoadStrategy();
-        var PrivateMode=getCurrentDriverConfiguration().getPrivateMode();
-        var SandboxMode=getCurrentDriverConfiguration().getSandboxMode();
-        var WebSecurityMode=getCurrentDriverConfiguration().getWebSecurityMode();
+        DriverConfiguration currentDriverConfig=getCurrentDriverConfiguration();
+        DriverType driverType =currentDriverConfig.getDriverType();
+        HeadlessMode headlessMode = currentDriverConfig.getHeadlessMode();
+        PageLoadStrategyMode PageLoadStrategy=currentDriverConfig.getPageLoadStrategy();
+        PrivateMode PrivateMode=currentDriverConfig.getPrivateMode();
+        SandboxMode SandboxMode=currentDriverConfig.getSandboxMode();
+        WebSecurityMode WebSecurityMode=currentDriverConfig.getWebSecurityMode();
+        Capabilities capabilities=currentDriverConfig.getCapabilities();
         WebDriver localDriver;
         if (driverType instanceof RemoteDriverType) {
-            var capabilities = getCurrentDriverConfiguration().getCapabilities();
-            var remoteAddress = getCurrentDriverConfiguration().getRemoteAddress();
+            var remoteAddress = currentDriverConfig.getRemoteAddress();
             localDriver = BrowserSetUp.setupRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         } else {
-            localDriver = BrowserSetUp.setupLocalDriver(driverType, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
+            localDriver = BrowserSetUp.setupLocalDriver(driverType, capabilities,headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
         if (WebDriverThread != null) {

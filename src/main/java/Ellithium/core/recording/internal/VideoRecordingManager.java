@@ -161,7 +161,7 @@ public class VideoRecordingManager {
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
             DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
             String recordingName = sanitizeFileName(testName) + "_" + "_"+currentDriverConfiguration.getDriverType().getName().toUpperCase()+
-                    TestDataGenerator.getTimeStamp() + "_" + recordingId.substring(0, 8);
+                    TestDataGenerator.getTimeStamp();
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);
@@ -263,8 +263,7 @@ public class VideoRecordingManager {
         }
         if (shouldAttach) {
             try {
-                String description = String.format("%s - %s - %s -Video Recording",DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase(), testName, testStatus);
-                Reporter.attachFileToReport(videoPath, testName + "_recording", description);
+                Reporter.attachFileToReport(videoPath, testName + "_recording");
                 Reporter.log("Video attached to report: " + testName, LogLevel.INFO_GREEN);
             } catch (Exception e) {
                 Reporter.log("Failed to attach video to report: " + e.getMessage(), LogLevel.ERROR);

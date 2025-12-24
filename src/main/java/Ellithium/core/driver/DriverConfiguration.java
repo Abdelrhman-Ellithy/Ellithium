@@ -1,6 +1,7 @@
 package Ellithium.core.driver;
 
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
 
 import java.net.URL;
 
@@ -11,7 +12,7 @@ public class DriverConfiguration {
     public DriverConfiguration(DriverType driverType, HeadlessMode headlessMode, Capabilities capabilities, boolean isMobileCloud) {
         this.driverType = driverType;
         this.headlessMode = headlessMode;
-        this.capabilities = capabilities;
+        this.capabilities = (capabilities != null) ? capabilities : new MutableCapabilities();
         this.isMobileCloud = isMobileCloud;
     }
 
@@ -30,7 +31,7 @@ public class DriverConfiguration {
         this.privateMode = privateMode;
         this.sandboxMode = sandboxMode;
         this.webSecurityMode = webSecurityMode;
-        this.capabilities = capabilities;
+        this.capabilities = (capabilities != null) ? capabilities : new MutableCapabilities();
         this.isMobileCloud = isMobileCloud;
         this.remoteAddress=null;
     }

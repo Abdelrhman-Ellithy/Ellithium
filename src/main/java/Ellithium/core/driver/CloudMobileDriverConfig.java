@@ -52,7 +52,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         super();
         this.cloudProvider = CloudProviderType.LOCAL;
         this.providerOptions = new HashMap<>();
-        this.internalCapabilities = new DesiredCapabilities();
+        this.internalCapabilities = new MutableCapabilities();
 
     }
 
@@ -454,18 +454,19 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @param capabilities The Driver capabilities to configure
      */
     @Override
-    public void setCapabilities(Capabilities capabilities) {
+    public CloudMobileDriverConfig setCapabilities(Capabilities capabilities) {
         if (capabilities instanceof MutableCapabilities) {
             this.internalCapabilities = (MutableCapabilities) capabilities;
         } else {
             this.internalCapabilities = new MutableCapabilities(capabilities);
         }
+        return this;
     }
 
     // ========================================================================================
     // GETTERS
     // ========================================================================================
-    
+
     /**
      * Gets the cloud provider type.
      *

@@ -51,8 +51,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
-            boolean notHeadless=DriverFactory.getCurrentDriverConfiguration().getHeadlessMode()==HeadlessMode.False;
-            boolean isNotMobileCloud=!DriverFactory.getCurrentDriverConfiguration().isMobileCloud();
+            DriverConfiguration driverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+            boolean notHeadless= (driverConfiguration != (null)) && (driverConfiguration.getHeadlessMode() == HeadlessMode.False);
+            boolean isNotMobileCloud= (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
             boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
             if (shouldRecord) {
                 try {
@@ -162,19 +163,20 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
-        boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
-        DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
-        if ((testResult.getStatus() == FAILURE) && driverExecution) {
+        if (method.isTestMethod()){
+            boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+            DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+            if ((testResult.getStatus() == FAILURE) && driverExecution) {
                 Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
                 File failedScreenShot = GeneralHandler.testFailed(currentDriverConfiguration.getDriverType().getName(), method.getTestMethod().getMethodName());
                 if (failedScreenShot != null) {
                     String description = currentDriverConfiguration.getDriverType().getName().toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
-        }
-        boolean headless= currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False;
-        boolean isNotMobileCloud=!currentDriverConfiguration.isMobileCloud();
-        if (method.isTestMethod()){
+            }
+            boolean headless= currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False;
+            boolean isNotMobileCloud=!currentDriverConfiguration.isMobileCloud();
+            Reporter.addParams(GeneralHandler.getParameters());
             if (driverExecution && headless && isNotMobileCloud){
                 stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             }
