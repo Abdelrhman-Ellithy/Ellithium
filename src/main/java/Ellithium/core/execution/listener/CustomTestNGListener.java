@@ -174,10 +174,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
             }
-            boolean headless= currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False;
-            boolean isNotMobileCloud=!currentDriverConfiguration.isMobileCloud();
+            boolean notHeadless= (currentDriverConfiguration != (null)) && (currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False);
+            boolean isNotMobileCloud= (currentDriverConfiguration != (null)) && (!currentDriverConfiguration.isMobileCloud());
+            boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
             Reporter.addParams(GeneralHandler.getParameters());
-            if (driverExecution && headless && isNotMobileCloud){
+            if (shouldRecord){
                 stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             }
             GeneralHandler.addAttachments();
