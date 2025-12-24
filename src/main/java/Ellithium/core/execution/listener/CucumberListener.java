@@ -128,14 +128,16 @@ public class CucumberListener extends AllureCucumber7Jvm {
                     Logger.info(GREEN + "Video recording started for scenario: " + context.scenarioName + RESET);
                 }
             } catch (Exception e) {
-                Logger.error("Failed to start video recording: " + e.getMessage());
+                Logger.warn(RED+"Failed to start video recording: " + e.getMessage()+RESET);
                 Logger.logException(e);
             }
         } else {
             if (!driverExecution) {
-                Logger.debug("Video recording skipped: No active driver");
-            } else {
-                Logger.debug("Video recording skipped: Headless mode enabled");
+                Logger.debug(YELLOW+"Video recording skipped: No active driver");
+            } else if(!isNotMobileCloud){
+                Logger.debug(YELLOW+"Video recording skipped: Recording not available when testing mobile on cloud, it's handled by provider"+RESET);
+            }else {
+                Logger.debug(YELLOW+"Video recording skipped: Headless mode enabled");
             }
         }
     }
@@ -182,7 +184,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         String scenarioName = event.getTestCase().getName();
         ScenarioContext context = scenarioContext.get();
         if (context == null) {
-            Logger.warn("Scenario context is null in testFinishedHandler");
+            Logger.warn(YELLOW+"Scenario context is null in testFinishedHandler"+RESET);
             return;
         }
         long scenarioExecutionTime = System.currentTimeMillis() - context.scenarioStartTime;
@@ -195,15 +197,15 @@ public class CucumberListener extends AllureCucumber7Jvm {
             default -> Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName +" [" + status + "]" + RESET);
         }
         if (context.recordingStarted && context.recordingId != null) {
-            Logger.debug("Recording still active in scenario finish, stopping now");
+            Logger.debug(YELLOW+"Recording still active in scenario finish, stopping now"+RESET);
             stopRecording(context);
         }
         try {
             TestResultCollectorManager.getInstance().getTestResultCollector()
                     .collectCucumberTestResult(scenarioName, status, scenarioExecutionTime);
-            Logger.debug("Cucumber scenario result collected: " + scenarioName + " - " + status);
+            Logger.debug(YELLOW+"Cucumber scenario result collected: " + scenarioName + " - " + status+RESET);
         } catch (Exception e) {
-            Logger.warn("Failed to collect Cucumber test result: " + e.getMessage());
+            Logger.warn(YELLOW+"Failed to collect Cucumber test result: " + e.getMessage()+RESET);
         }
         scenarioContext.remove();
     }
@@ -218,9 +220,9 @@ public class CucumberListener extends AllureCucumber7Jvm {
         scenarioToRecordingId.clear();
         try {
             VideoRecordingManager.forceCleanupAll();
-            Logger.info("Video recording resources cleaned up after test run completion");
+            Logger.info(GREEN+"Video recording resources cleaned up after test run completion"+RESET);
         } catch (Exception e) {
-            Logger.warn("Failed to cleanup video recording resources: " + e.getMessage());
+            Logger.warn(YELLOW+"Failed to cleanup video recording resources: " + e.getMessage()+RESET);
             Logger.logException(e);
         }
     }
@@ -267,7 +269,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      */
     private void stopRecording(ScenarioContext context) {
         if (context.recordingId == null) {
-            Logger.debug("No recording ID, skipping video stop");
+            Logger.debug(YELLOW+"No recording ID, skipping video stop"+RESET);
             return;
         }
         try {
@@ -287,7 +289,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             scenarioToRecordingId.remove(context.scenarioId);
             context.recordingStarted = false;
         } catch (Exception e) {
-            Logger.error("Failed to stop recording: " + e.getMessage());
+            Logger.error(RED+"Failed to stop recording: " + e.getMessage()+RESET);
             Logger.logException(e);
             tryFallbackStop(context);
         }
@@ -298,18 +300,18 @@ public class CucumberListener extends AllureCucumber7Jvm {
      */
     private void tryFallbackStop(ScenarioContext context) {
         try {
-            Logger.debug("Trying fallback recording stop methods");
+            Logger.debug(GREEN+"Trying fallback recording stop methods"+RESET);
             String mappedRecordingId = scenarioToRecordingId.get(context.scenarioId);
             if (mappedRecordingId != null) {
                 VideoRecordingManager.stopRecordingById(mappedRecordingId, context.scenarioStatus);
                 scenarioToRecordingId.remove(context.scenarioId);
-                Logger.info("Recording stopped using mapped ID fallback");
+                Logger.info(GREEN+"Recording stopped using mapped ID fallback"+RESET);
             } else {
                 VideoRecordingManager.stopRecordingForCurrentThread(context.scenarioStatus);
-                Logger.info("Recording stopped using thread fallback");
+                Logger.info(GREEN+"Recording stopped using thread fallback"+RESET);
             }
         } catch (Exception e2) {
-            Logger.error("All fallback methods failed: " + e2.getMessage());
+            Logger.error(RED+"All fallback methods failed: " + e2.getMessage());
         }
     }
 

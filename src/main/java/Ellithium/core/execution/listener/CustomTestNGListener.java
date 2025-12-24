@@ -72,7 +72,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             else {
                 if (!driverExecution) {
                     Logger.debug("Video recording skipped: No active driver");
-                } else {
+                }
+                else if(!isNotMobileCloud){
+                    Logger.debug("Video recording skipped: Recording not available when testing mobile on cloud, it's handled by provider");
+                }
+                else {
                     Logger.debug("Video recording skipped: Headless mode enabled");
                 }
             }
