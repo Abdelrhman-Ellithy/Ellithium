@@ -172,7 +172,10 @@ public class CucumberListener extends AllureCucumber7Jvm {
             context.paramAdded = true;
         }
         boolean isLastStep = context.currentStepIndex >= context.totalSteps;
-        if (isLastStep && context.recordingStarted) {
+        DriverConfiguration driverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+        boolean isNotMobileCloud= (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
+        boolean shouldRecord=isShouldCapture()&&isNotMobileCloud;
+        if (isLastStep && context.recordingStarted &&shouldRecord) {
             stopRecording(context);
         }
     }
