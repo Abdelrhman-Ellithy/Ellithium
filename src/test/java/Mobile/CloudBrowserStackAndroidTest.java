@@ -53,8 +53,8 @@ public class CloudBrowserStackTest {
                 .setTestName("Android Login Test")
                 .setRealDevice(true)
                 .setAutomationName("UiAutomator2");
-        AndroidDriver driver = DriverFactory.getNewDriver(config);
-        new ScreenRecorderActions<>(driver).captureScreenshot("test browserstack android app");
+        DriverFactory.getNewDriver(config);
+        new ScreenRecorderActions<>(DriverFactory.getCurrentDriver()).captureScreenshot("test browserstack android app");
     }
     @Test
     public void testBrowserStackIOS() throws Exception {
@@ -79,8 +79,8 @@ public class CloudBrowserStackTest {
                 .setRealDevice(true)
                 .setAutomationName("XCUITest")
                 .setDeviceOrientation("portrait");
-        IOSDriver driver = DriverFactory.getNewDriver(config);
-        new ScreenRecorderActions<>(driver).captureScreenshot("test browserstack ios app");
+        DriverFactory.getNewDriver(config);
+        new ScreenRecorderActions<>(DriverFactory.getCurrentDriver()).captureScreenshot("test browserstack ios app");
     }
     @AfterMethod
     public void tareDown(){
