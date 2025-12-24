@@ -70,19 +70,20 @@ public class GeneralHandler {
     
     public static List<Parameter> getParameters(){
         List<io.qameta.allure.model.Parameter>parameters=new ArrayList<>();
-        DriverType type=ConfigContext.getDriverType();
+        DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+        DriverType type=currentDriverConfiguration.getDriverType();
         if(type!=null){
-            parameters.add(new io.qameta.allure.model.Parameter().setName("DriverType").setValue(ConfigContext.getValue(type)));
+            parameters.add(new io.qameta.allure.model.Parameter().setName("DriverType").setValue(type.getName()));
             if(type instanceof LocalDriverType || type instanceof RemoteDriverType){
-                parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(ConfigContext.getValue(ConfigContext.getHeadlessMode())));
-                parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(ConfigContext.getValue(ConfigContext.getPageLoadStrategy())));
-                parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(ConfigContext.getValue(ConfigContext.getPrivateMode())));
-                parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(ConfigContext.getValue(ConfigContext.getSandboxMode())));
-                parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(ConfigContext.getValue(ConfigContext.getWebSecurityMode())));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(currentDriverConfiguration.getHeadlessMode().getName()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(currentDriverConfiguration.getPageLoadStrategy().getName()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(currentDriverConfiguration.getPrivateMode().getName()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(currentDriverConfiguration.getSandboxMode().getName()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(currentDriverConfiguration.getWebSecurityMode().getName()));
             }
             if(type instanceof RemoteDriverType ||type instanceof MobileDriverType){
-                parameters.add(new io.qameta.allure.model.Parameter().setName("Remote Address").setValue(ConfigContext.getRemoteAddress().toString()));
-                parameters.add(new io.qameta.allure.model.Parameter().setName("Capabilities").setValue(ConfigContext.getCapabilities().toString()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("Remote Address").setValue(currentDriverConfiguration.getRemoteAddress().toString()));
+                parameters.add(new io.qameta.allure.model.Parameter().setName("Capabilities").setValue(currentDriverConfiguration.getCapabilities().asMap().toString()));
             }
         }
         return parameters;

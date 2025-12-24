@@ -1,4 +1,5 @@
 package Ellithium.core.execution.listener;
+import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
@@ -50,8 +51,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
-            boolean notHeadless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
-            if (driverExecution && notHeadless) {
+            boolean notHeadless=DriverFactory.getCurrentDriverConfiguration().getHeadlessMode()==HeadlessMode.False;
+            boolean shouldRecord=driverExecution && notHeadless;
+            if (shouldRecord) {
                 try {
                     String testName = getTestName(result);
                     String testIdentifier = getTestIdentifier(result);
@@ -63,13 +65,13 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                     }
                 } catch (Exception e) {
                     Logger.info(RED + "Failed to start video recording: " + e.getMessage() + RESET);
-                    e.printStackTrace();
+                    Logger.logException(e);
                 }
             }
             else {
                 if (!driverExecution) {
                     Logger.debug("Video recording skipped: No active driver");
-                } else if (!notHeadless) {
+                } else {
                     Logger.debug("Video recording skipped: Headless mode enabled");
                 }
             }
@@ -156,19 +158,22 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
         boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+        DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
         if ((testResult.getStatus() == FAILURE) && driverExecution) {
                 Reporter.setStepStatus(method.getTestMethod().getMethodName(), io.qameta.allure.model.Status.FAILED);
-                File failedScreenShot = GeneralHandler.testFailed(ConfigContext.getValue(ConfigContext.getDriverType()), method.getTestMethod().getMethodName());
+                File failedScreenShot = GeneralHandler.testFailed(currentDriverConfiguration.getDriverType().getName(), method.getTestMethod().getMethodName());
                 if (failedScreenShot != null) {
-                    String description = ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
+                    String description = currentDriverConfiguration.getDriverType().getName().toUpperCase() + "-" + method.getTestMethod().getMethodName() + " FAILED";
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
         }
-        boolean headless= ConfigContext.getHeadlessMode() == HeadlessMode.False;
-        if (driverExecution && headless){
-            stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
+        boolean headless= currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False;
+        if (method.isTestMethod()){
+            if (driverExecution && headless ){
+                stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
+            }
+            GeneralHandler.addAttachments();
         }
-        GeneralHandler.addAttachments();
     }
     
     @Override
@@ -198,7 +203,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             }
         } catch (Exception e) {
             Logger.warn(RED + "Failed to stop video recording: " + e.getMessage() + RESET);
-            e.printStackTrace();
+            Logger.logException(e);
         }
     }
 
@@ -210,7 +215,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     private String getTestName(ITestResult result) {
         StringBuilder name = new StringBuilder(result.getName());
         name.append("_");
-        name.append(ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase());
+        name.append(DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase());
         name.append("_");
         Object[] parameters = result.getParameters();
         if (parameters != null && parameters.length > 0) {
