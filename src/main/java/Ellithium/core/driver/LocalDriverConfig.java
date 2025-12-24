@@ -1,6 +1,7 @@
 package Ellithium.core.driver;
 
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
 
 /**
  * Configuration class for local WebDriver instances.
@@ -22,7 +23,7 @@ public class LocalDriverConfig implements DriverConfigBuilder {
     private PageLoadStrategyMode pageLoadStrategyMode;
     private HeadlessMode headlessMode;
     private LocalDriverType localDriverType;
-    private Capabilities capabilities;
+    private MutableCapabilities capabilities;
 
 
     /**
@@ -48,6 +49,14 @@ public class LocalDriverConfig implements DriverConfigBuilder {
 
     /**
      * Constructs a LocalDriverConfig with all available configuration options including capabilities.
+     * @param localDriverType Type of local driver to be used
+     * @param capabilities WebDriver capabilities
+     * @param headlessMode Headless mode setting
+     * @param privateMode Browser private mode setting
+     * @param pageLoadStrategyMode Page load strategy to be used
+     * @param webSecurityMode Web security mode setting
+     * @param sandboxMode Browser sandbox mode setting
+     * 
      */
     public LocalDriverConfig(LocalDriverType localDriverType, Capabilities capabilities,
             HeadlessMode headlessMode, PrivateMode privateMode,  PageLoadStrategyMode pageLoadStrategyMode,
@@ -400,8 +409,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      * @param capabilities The capabilities to set
      */
     @Override
-    public void setCapabilities(Capabilities capabilities) {
-        this.capabilities = capabilities;
+    public LocalDriverConfig setCapabilities(Capabilities capabilities) {
+        this.capabilities = (capabilities != null) ? (MutableCapabilities) capabilities : new MutableCapabilities();
+        return this;
     }
 
     /**

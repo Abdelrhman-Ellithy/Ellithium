@@ -1,7 +1,8 @@
 package Ellithium.core.driver;
-import Ellithium.config.managment.ConfigContext;
+
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
@@ -18,13 +19,15 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
 
 public class BrowserSetUp {
 
-    public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        var capabilities=ConfigContext.getCapabilities();
+    public static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         switch (driverType) {
             case Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
@@ -157,7 +160,7 @@ public class BrowserSetUp {
         );
         chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
-        Reporter.logReportOnly(chromeOptions.asMap().toString(),LogLevel.INFO_BLUE);
+        addCapabilitiesToParam(chromeOptions);
         return chromeOptions;
     }
     // Configure Firefox options
@@ -204,7 +207,7 @@ public class BrowserSetUp {
         );
         firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
-        Reporter.logReportOnly(firefoxOptions.asMap().toString(),LogLevel.INFO_BLUE);
+        addCapabilitiesToParam(firefoxOptions);
         return firefoxOptions;
     }
     // Configure Edge options
@@ -275,7 +278,7 @@ public class BrowserSetUp {
         );
         edgeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Edge Options Configured", LogLevel.INFO_GREEN);
-        Reporter.logReportOnly(edgeOptions.asMap().toString(),LogLevel.INFO_BLUE);
+        addCapabilitiesToParam(edgeOptions);
         return edgeOptions;
     }
     // Configure Safari options
@@ -289,7 +292,11 @@ public class BrowserSetUp {
         }
         safariOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);
-        Reporter.logReportOnly(safariOptions.asMap().toString(),LogLevel.INFO_BLUE);
+        addCapabilitiesToParam(safariOptions);
         return safariOptions;
+    }
+    private static void addCapabilitiesToParam(Capabilities capabilities){
+        String convertedCaps=capabilities.asMap().toString();
+        Reporter.logReportOnly("Configured Optimized Capabilities: "+convertedCaps,LogLevel.INFO_BLUE);
     }
 }

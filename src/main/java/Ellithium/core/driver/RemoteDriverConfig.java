@@ -373,8 +373,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * @param capabilities The WebDriver capabilities to configure
      */
     @Override
-    public void setCapabilities(Capabilities capabilities) {
+    public RemoteDriverConfig setCapabilities(Capabilities capabilities) {
         this.capabilities = capabilities;
+        return this;
     }
 
     /**
