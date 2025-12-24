@@ -28,7 +28,9 @@ public class RetryAnalyzer implements IRetryAnalyzer {
     public static void initRetryCount(){
         try {
             String countStr= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
-            ConfigContext.setRetryCount(Integer.parseInt(countStr));
+            if (countStr != null) {
+                ConfigContext.setRetryCount(Integer.parseInt(countStr));
+            }
         }catch (Exception e){
             Reporter.log("You Need to Add \"retryCountOnFailure\" Key on you config.properties File", LogLevel.ERROR);
         }

@@ -122,9 +122,8 @@ public class Reporter {
      *
      * @param file File to attach
      * @param name Name of the attachment in the report
-     * @param description Description for the attachment
      */
-    public static void attachFileToReport(File file, String name, String description) {
+    public static void attachFileToReport(File file, String name) {
         if (file == null || !file.exists()) {
             log("Attachment failed: file does not exist -> " + file, LogLevel.ERROR);
             return;
@@ -140,7 +139,6 @@ public class Reporter {
             if (dotIndex != -1) {
                 extension = fileName.substring(dotIndex); // includes the dot
             }
-            Allure.description(description);
             Allure.addAttachment(name, mimeType, fis, extension);
         } catch (IOException e) {
             Logger.logException(e);
@@ -166,14 +164,13 @@ public class Reporter {
      *
      * @param filePath Relative or absolute path to the file
      * @param name Name of the attachment in the report
-     * @param description Description for the attachment
      */
-    public static void attachFileToReport(String filePath, String name, String description) {
+    public static void attachFileToReport(String filePath, String name) {
         if (filePath == null || filePath.isEmpty()) {
             log("File attachment failed: path is null or empty.", LogLevel.ERROR);
             return;
         }
-        attachFileToReport(new File(filePath), name, description);
+        attachFileToReport(new File(filePath), name);
     }
 
     /**

@@ -52,7 +52,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         super();
         this.cloudProvider = CloudProviderType.LOCAL;
         this.providerOptions = new HashMap<>();
-        this.internalCapabilities = new DesiredCapabilities();
+        this.internalCapabilities = new MutableCapabilities();
 
     }
 
@@ -94,7 +94,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
     }
 
     // ========================================================================================
-    // BUILDER PATTERN METHODS
+    // BUILDER PATTERN METHODS - CLOUD PROVIDER
     // ========================================================================================
 
     /**
@@ -194,12 +194,17 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         return this;
     }
 
+    // ========================================================================================
+    // BUILDER PATTERN METHODS - DEVICE CONFIGURATION (OVERRIDE PARENT)
+    // ========================================================================================
+
     /**
      * Sets the device name for testing.
      *
      * @param deviceName The device name (e.g., "Google Pixel 7", "iPhone 14 Pro")
      * @return This config instance for method chaining
      */
+    @Override
     public CloudMobileDriverConfig setDeviceName(String deviceName) {
         if (cloudProvider == CloudProviderType.BROWSERSTACK || cloudProvider == CloudProviderType.LAMBDATEST) {
             addToProviderOptions("deviceName", deviceName);
@@ -215,12 +220,13 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @param platformVersion The OS version (e.g., "13.0", "16.0")
      * @return This config instance for method chaining
      */
+    @Override
     public CloudMobileDriverConfig setPlatformVersion(String platformVersion) {
         if (cloudProvider == CloudProviderType.BROWSERSTACK) {
             addToProviderOptions("osVersion", platformVersion);
         } else if (cloudProvider == CloudProviderType.LAMBDATEST) {
             String majorVersion = platformVersion.contains(".") ? platformVersion.split("\\.")[0] : platformVersion;
-            addToProviderOptions("platformVersion",majorVersion);
+            addToProviderOptions("platformVersion", majorVersion);
         } else {
             internalCapabilities.setCapability("appium:platformVersion", platformVersion);
         }
@@ -235,6 +241,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @param app The app location
      * @return This config instance for method chaining
      */
+    @Override
     public CloudMobileDriverConfig setApp(String app) {
         //capabilities.setCapability("app", app);
         internalCapabilities.setCapability("appium:app", app);
@@ -247,10 +254,32 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @param automationName The automation name
      * @return This config instance for method chaining
      */
+    @Override
     public CloudMobileDriverConfig setAutomationName(String automationName) {
         internalCapabilities.setCapability("appium:automationName", automationName);
         return this;
     }
+
+    /**
+     * Sets device orientation.
+     *
+     * @param orientation The orientation ("portrait" or "landscape")
+     * @return This config instance for method chaining
+     */
+    @Override
+    public CloudMobileDriverConfig setDeviceOrientation(String orientation) {
+        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
+            addToProviderOptions("deviceOrientation", orientation);
+        } else {
+            internalCapabilities.setCapability("appium:orientation", orientation);
+        }
+        return this;
+    }
+
+
+    // ========================================================================================
+    // BUILDER PATTERN METHODS - CLOUD-SPECIFIC FEATURES
+    // ========================================================================================
 
     /**
      * Enables or disables local testing (for apps accessing local/internal resources).
@@ -278,20 +307,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         return this;
     }
 
-    /**
-     * Sets device orientation.
-     *
-     * @param orientation The orientation ("portrait" or "landscape")
-     * @return This config instance for method chaining
-     */
-    public CloudMobileDriverConfig setDeviceOrientation(String orientation) {
-        if (cloudProvider == CloudProviderType.BROWSERSTACK) {
-            addToProviderOptions("deviceOrientation", orientation);
-        } else {
-            internalCapabilities.setCapability("appium:orientation", orientation);
-        }
-        return this;
-    }
+
 
     /**
      * Sets geolocation for testing.
@@ -323,9 +339,8 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      */
     public CloudMobileDriverConfig setVideoRecording(boolean enableVideo) {
         switch (cloudProvider) {
-            case BROWSERSTACK -> addToProviderOptions("video", enableVideo);
+            case BROWSERSTACK, LAMBDATEST -> addToProviderOptions("video", enableVideo);
             case SAUCE_LABS -> addToProviderOptions("recordVideo", enableVideo);
-            case LAMBDATEST -> addToProviderOptions("video", enableVideo);
         }
         return this;
     }
@@ -377,6 +392,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      * @param value The capability value
      * @return This config instance for method chaining
      */
+    @Override
     public CloudMobileDriverConfig addCapability(String key, Object value) {
         internalCapabilities.setCapability(key, value);
         return this;
@@ -406,7 +422,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
             // Default to Android if not specified or explicitly Android
             finalCapabilities = new UiAutomator2Options(internalCapabilities);
         }
-        if (finalCapabilities.getCapability("appium:automationName") == null) {
+        if (finalCapabilities.getCapability("appium:platformName") == null) {
             String platform = String.valueOf(finalCapabilities.getCapability("platformName"));
             finalCapabilities.setCapability("appium:automationName", platform.equalsIgnoreCase("ios") ? "XCUITest" : "UiAutomator2");
         }
@@ -431,47 +447,94 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         return finalCapabilities;
     }
 
+    /**
+     * Sets the Driver capabilities.
+     * This replaces all existing capabilities.
+     *
+     * @param capabilities The Driver capabilities to configure
+     */
     @Override
-    public void setCapabilities(Capabilities capabilities) {
+    public CloudMobileDriverConfig setCapabilities(Capabilities capabilities) {
         if (capabilities instanceof MutableCapabilities) {
             this.internalCapabilities = (MutableCapabilities) capabilities;
         } else {
             this.internalCapabilities = new MutableCapabilities(capabilities);
         }
+        return this;
     }
 
     // ========================================================================================
     // GETTERS
     // ========================================================================================
 
+    /**
+     * Gets the cloud provider type.
+     *
+     * @return The cloud provider
+     */
     public CloudProviderType getCloudProvider() {
         return cloudProvider;
     }
 
+    /**
+     * Gets the username for authentication.
+     *
+     * @return The username
+     */
     public String getUsername() {
         return username;
     }
 
+    /**
+     * Gets the access key for authentication.
+     *
+     * @return The access key
+     */
     public String getAccessKey() {
         return accessKey;
     }
 
+    /**
+     * Gets the project name.
+     *
+     * @return The project name
+     */
     public String getProjectName() {
         return projectName;
     }
 
+    /**
+     * Gets the build name.
+     *
+     * @return The build name
+     */
     public String getBuildName() {
         return buildName;
     }
 
+    /**
+     * Gets the test name.
+     *
+     * @return The test name
+     */
     public String getTestName() {
         return testName;
     }
 
+    /**
+     * Gets the custom host.
+     *
+     * @return The custom host or null if using default
+     */
     public String getCustomHost() {
         return customHost;
     }
 
+    /**
+     * Gets a copy of the provider-specific options.
+     *
+     * @return A Map of provider specific options
+     */    
     public Map<String, Object> getProviderOptions() {
         return new HashMap<>(providerOptions);
     }
@@ -514,6 +577,7 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
      *
      * @throws IllegalStateException if configuration is invalid
      */
+    @Override
     public void validate() {
         if (cloudProvider.requiresAuth()) {
             if (username == null || username.isEmpty()) {

@@ -27,7 +27,6 @@ public class Sleep {
      * @param seconds Number of seconds to sleep
      */
     public  void sleepSeconds(long seconds) {
-        Allure.step("Sleeping for " + seconds + " seconds", Status.PASSED);
         sleepMillis(seconds * 1000);
     }
 
@@ -36,7 +35,6 @@ public class Sleep {
      * @param minutes Number of minutes to sleep
      */
     public  void sleepMinutes(long minutes) {
-        Allure.step("Sleeping for " + minutes + " minutes", Status.PASSED);
-        sleepMillis(minutes * 60 * 1000);
+        sleepSeconds(minutes * 60);
     }
 }
