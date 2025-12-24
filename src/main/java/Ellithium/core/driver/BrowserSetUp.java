@@ -1,5 +1,5 @@
 package Ellithium.core.driver;
-import Ellithium.config.managment.ConfigContext;
+
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.Capabilities;
@@ -24,7 +24,7 @@ import static Ellithium.core.driver.RemoteDriverType.*;
 public class BrowserSetUp {
 
     public static WebDriver setupLocalDriver(DriverType driverType, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        var capabilities=ConfigContext.getCapabilities();
+        var capabilities=DriverFactory.getCurrentDriverConfiguration().getCapabilities();
         switch (driverType) {
             case Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);

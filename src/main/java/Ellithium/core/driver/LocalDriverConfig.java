@@ -48,6 +48,14 @@ public class LocalDriverConfig implements DriverConfigBuilder {
 
     /**
      * Constructs a LocalDriverConfig with all available configuration options including capabilities.
+     * @param localDriverType Type of local driver to be used
+     * @param capabilities WebDriver capabilities
+     * @param headlessMode Headless mode setting
+     * @param privateMode Browser private mode setting
+     * @param pageLoadStrategyMode Page load strategy to be used
+     * @param webSecurityMode Web security mode setting
+     * @param sandboxMode Browser sandbox mode setting
+     * 
      */
     public LocalDriverConfig(LocalDriverType localDriverType, Capabilities capabilities,
             HeadlessMode headlessMode, PrivateMode privateMode,  PageLoadStrategyMode pageLoadStrategyMode,

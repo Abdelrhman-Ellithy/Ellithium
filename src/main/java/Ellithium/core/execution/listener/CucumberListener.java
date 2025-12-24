@@ -1,6 +1,5 @@
 package Ellithium.core.execution.listener;
 
-import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -111,9 +110,10 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Attempts to start recording if driver is available and conditions are met
      */
     private void startRecordingIfPossible(ScenarioContext context) {
-        boolean driverExecution = (DriverFactory.getCurrentDriver() != null);
-        boolean notHeadless = ConfigContext.getHeadlessMode() == HeadlessMode.False;
-        boolean shouldRecord = driverExecution && notHeadless;
+        boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+        boolean notHeadless=DriverFactory.getCurrentDriverConfiguration().getHeadlessMode()==HeadlessMode.False;
+        boolean isNotMobileCloud=!DriverFactory.getCurrentDriverConfiguration().isMobileCloud();
+        boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
         if (shouldRecord) {
             try {
                 String recordingId = VideoRecordingManager.startRecording(
@@ -134,7 +134,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         } else {
             if (!driverExecution) {
                 Logger.debug("Video recording skipped: No active driver");
-            } else if (!notHeadless) {
+            } else {
                 Logger.debug("Video recording skipped: Headless mode enabled");
             }
         }
@@ -153,7 +153,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         }
         Status stepStatus = event.getResult().getStatus();
         boolean driverExecution = (DriverFactory.getCurrentDriver() != null);
-        boolean notHeadless = ConfigContext.getHeadlessMode() == HeadlessMode.False;
+        boolean notHeadless = DriverFactory.getCurrentDriverConfiguration().getHeadlessMode() == HeadlessMode.False;
         boolean shouldCapture = driverExecution && notHeadless;
         if (shouldCapture && stepStatus == Status.FAILED) {
             handleStepFailure(event, context);
@@ -229,15 +229,16 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles step failure - captures screenshot and updates Allure
      */
     private void handleStepFailure(TestStepFinished event, ScenarioContext context) {
+        String driverName =DriverFactory.getCurrentDriverConfiguration().getDriverType().getName();
         Reporter.setStepStatus(event.getTestStep().getId().toString(),
                 io.qameta.allure.model.Status.FAILED);
         context.failedScreenShot = testFailed(
-                ConfigContext.getValue(ConfigContext.getDriverType()),
+                driverName,
                 context.scenarioName
         );
         Allure.getLifecycle().updateTestCase(stepResult -> {
             if (context.failedScreenShot != null) {
-                String description = ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase() +
+                String description = driverName +
                         " - " + context.scenarioName + " - FAILED";
                 Reporter.attachScreenshotToReport(
                         context.failedScreenShot,
@@ -318,8 +319,8 @@ public class CucumberListener extends AllureCucumber7Jvm {
      */
     private String getScenarioIdentifier(TestCase testCase) {
         String uri = testCase.getUri().toString();
-        int line = testCase.getLine();
+        int line = testCase.hashCode();
         String name = testCase.getName().replaceAll("[^a-zA-Z0-9]", "_");
-        return uri + ":" + line + ":" + name+":"+ConfigContext.getValue(ConfigContext.getDriverType()).toUpperCase();
+        return uri + ":" + line + ":" + name+":"+DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase();
     }
 }
