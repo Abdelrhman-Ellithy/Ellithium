@@ -52,7 +52,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
             boolean notHeadless=DriverFactory.getCurrentDriverConfiguration().getHeadlessMode()==HeadlessMode.False;
-            boolean shouldRecord=driverExecution && notHeadless;
+            boolean isNotMobileCloud=!DriverFactory.getCurrentDriverConfiguration().isMobileCloud();
+            boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
             if (shouldRecord) {
                 try {
                     String testName = getTestName(result);
@@ -168,8 +169,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                 }
         }
         boolean headless= currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False;
+        boolean isNotMobileCloud=!currentDriverConfiguration.isMobileCloud();
         if (method.isTestMethod()){
-            if (driverExecution && headless ){
+            if (driverExecution && headless && isNotMobileCloud){
                 stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             }
             GeneralHandler.addAttachments();
