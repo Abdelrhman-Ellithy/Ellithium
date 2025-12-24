@@ -533,12 +533,13 @@ public class MobileDriverConfig implements DriverConfigBuilder {
      * @param capabilities The WebDriver capabilities to configure
      */
     @Override
-    public void setCapabilities(Capabilities capabilities) {
+    public MobileDriverConfig setCapabilities(Capabilities capabilities) {
         if (capabilities instanceof MutableCapabilities) {
             this.internalCapabilities = (MutableCapabilities) capabilities;
         } else {
             this.internalCapabilities = new MutableCapabilities(capabilities);
         }
+        return this;
     }
 
     /**

@@ -1,6 +1,7 @@
 package Ellithium.core.execution.listener;
 
 import Ellithium.config.managment.GeneralHandler;
+import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
 import Ellithium.core.logging.Logger;
@@ -14,6 +15,7 @@ import io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static Ellithium.config.managment.GeneralHandler.testFailed;
@@ -110,10 +112,9 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Attempts to start recording if driver is available and conditions are met
      */
     private void startRecordingIfPossible(ScenarioContext context) {
-        boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
-        boolean notHeadless=DriverFactory.getCurrentDriverConfiguration().getHeadlessMode()==HeadlessMode.False;
-        boolean isNotMobileCloud=!DriverFactory.getCurrentDriverConfiguration().isMobileCloud();
-        boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
+        DriverConfiguration driverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+        boolean isNotMobileCloud= (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
+        boolean shouldRecord=isShouldCapture()&&isNotMobileCloud;
         if (shouldRecord) {
             try {
                 String recordingId = VideoRecordingManager.startRecording(
@@ -132,6 +133,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
                 Logger.logException(e);
             }
         } else {
+            boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
             if (!driverExecution) {
                 Logger.debug(YELLOW+"Video recording skipped: No active driver");
             } else if(!isNotMobileCloud){
@@ -154,9 +156,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             return;
         }
         Status stepStatus = event.getResult().getStatus();
-        boolean driverExecution = (DriverFactory.getCurrentDriver() != null);
-        boolean notHeadless = DriverFactory.getCurrentDriverConfiguration().getHeadlessMode() == HeadlessMode.False;
-        boolean shouldCapture = driverExecution && notHeadless;
+        boolean shouldCapture = isShouldCapture();
         if (shouldCapture && stepStatus == Status.FAILED) {
             handleStepFailure(event, context);
         } else {
@@ -175,6 +175,13 @@ public class CucumberListener extends AllureCucumber7Jvm {
         if (isLastStep && context.recordingStarted) {
             stopRecording(context);
         }
+    }
+
+    private static boolean isShouldCapture() {
+        DriverConfiguration driverConfiguration=DriverFactory.getCurrentDriverConfiguration();
+        boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
+        boolean notHeadless= (driverConfiguration != (null)) && (driverConfiguration.getHeadlessMode() == HeadlessMode.False);
+        return driverExecution && notHeadless;
     }
 
     /**
@@ -244,7 +251,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
                         " - " + context.scenarioName + " - FAILED";
                 Reporter.attachScreenshotToReport(
                         context.failedScreenShot,
-                        context.failedScreenShot.getName(),
+                        context.scenarioName,
                         description
                 );
                 context.failedScreenShot = null;
@@ -323,6 +330,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
         String uri = testCase.getUri().toString();
         int line = testCase.hashCode();
         String name = testCase.getName().replaceAll("[^a-zA-Z0-9]", "_");
-        return uri + ":" + line + ":" + name+":"+DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase();
+        return uri + ":" + line + ":" + name+":"+ UUID.randomUUID();
     }
 }
