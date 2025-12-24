@@ -1,17 +1,10 @@
 package Ellithium.config.managment;
 
-import Ellithium.core.driver.*;
-import org.openqa.selenium.Capabilities;
-
 import java.io.File;
-import java.net.URL;
-import java.util.Map;
-
 public class ConfigContext {
 
     private static final String allureVersion="2.30.0";
-    private static final String EllithuiumVersion="2.2.2";
-
+    private static final String EllithuiumVersion="2.3.0";
     public static String getAllureVersion() {
         return allureVersion;
     }

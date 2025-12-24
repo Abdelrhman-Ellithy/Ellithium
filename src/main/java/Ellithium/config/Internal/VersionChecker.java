@@ -28,19 +28,19 @@ public class VersionChecker {
                 if (latestVersion==null)latestVersion=getLatestVersion();
                 String currentVersion= ConfigContext.getEllithuiumVersion();
                 if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
-                    Logger.info(CYAN + "------------[VERSION CHECKER]------------------" + RESET);
-                    Logger.info(BLUE + "-----------------------------------------------" + RESET);
-                    Logger.info(RED+   "You Are Using Old Version of Ellithium: "+currentVersion+ RESET);
-                    Logger.info(BLUE+  "You Need To update to the latest Version: "+latestVersion+ RESET);
-                    Logger.info(BLUE + "-----------------------------------------------" + RESET);
-                    Logger.info(CYAN + "------------[VERSION CHECKER]------------------" + RESET);
+                    Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
+                    Logger.info(BLUE + "---------------------------------------------------------" + RESET);
+                    Logger.info(RED+   "You Are Using Old Version of Ellithium: "+currentVersion+"-----------"+ RESET);
+                    Logger.info(BLUE+  "You Need To update to the latest Version: "+latestVersion+"------------"+ RESET);
+                    Logger.info(BLUE + "---------------------------------------------------------" + RESET);
+                    Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
                 }
             }catch (Exception e){
-                Logger.info(CYAN + "------------[VERSION CHECKER]----------------------------" + RESET);
-                Logger.info(BLUE + "---------------------------------------------------------" + RESET);
-                Logger.info(RED+   "Connection Problem Happened Version will be Checked Later"+ RESET);
-                Logger.info(BLUE + "---------------------------------------------------------" + RESET);
-                Logger.info(CYAN + "------------[VERSION CHECKER]----------------------------" + RESET);
+                    Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------" + RESET);
+                    Logger.info(BLUE + "---------------------------------------------------------" + RESET);
+                    Logger.info(RED+   "Connection Problem Happened Version will be Checked Later" + RESET);
+                    Logger.info(BLUE + "---------------------------------------------------------" + RESET);
+                    Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
             }
         }
     }
