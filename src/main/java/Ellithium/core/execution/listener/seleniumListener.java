@@ -87,7 +87,7 @@ public class seleniumListener implements WebDriverListener {
    }
    @Override
    public void afterGetAttribute(WebElement element, String name, String result) {
-       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + element.getAttribute(name), LogLevel.INFO_BLUE);
    }
    @Override
    public void afterIsSelected(WebElement element, boolean result) {
