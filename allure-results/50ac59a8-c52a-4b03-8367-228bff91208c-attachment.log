@@ -1,0 +1,54 @@
+[INFO] - [2025-12-25-4-49-54PM] - [94m[START] TESTCASE alertClicked [STARTED][0m
+[INFO] - [2025-12-25-4-49-54PM] - [94m[START] TESTCASE TC_checkSelected [STARTED][0m
+[INFO] - [2025-12-25-4-49-54PM] - [92mChecked key existence: recordGUITestExecution in file: src\main\resources\properties\config.properties[0m
+[INFO] - [2025-12-25-4-49-54PM] - [92mChecked key existence: recordGUITestExecution in file: src\main\resources\properties\config.properties[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mGetting Timestamp: 2025-12-25-4-49-54PM[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mGetting Timestamp: 2025-12-25-4-49-54PM[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mStarted web recording (Snapshot): TC_checkSelected_CHROME_CHROME2025-12-25-4-49-54PM[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mStarted web recording (Snapshot): alertClicked_CHROME_CHROME2025-12-25-4-49-54PM[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mStarted video recording [] for: TC_checkSelected_CHROME_ - CHROME on thread: 65[0m
+[INFO] - [2025-12-25-4-49-54PM] - [94mStarted video recording [] for: alertClicked_CHROME_ - CHROME on thread: 66[0m
+[INFO] - [2025-12-25-4-49-54PM] - [96mVideo Recording started for Test Case: alertClicked_CHROME_[0m
+[INFO] - [2025-12-25-4-49-54PM] - [96mVideo Recording started for Test Case: TC_checkSelected_CHROME_[0m
+[INFO] - [2025-12-25-4-49-56PM] - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+[INFO] - [2025-12-25-4-49-57PM] - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+[INFO] - [2025-12-25-4-49-57PM] - [94mElement displayed: true Dropdown[0m
+[INFO] - [2025-12-25-4-49-57PM] - [94mElement displayed: true JavaScript Alerts[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mClicked on element: [0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mClicked on element: [0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mElement displayed: true Please select an option
+    Option 1
+    Option 2[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mTag name retrieved: select[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mElement enabled: true[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mCSS value for "visibility" retrieved: visible[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mClicked on element: [0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mCSS value for "display" retrieved: inline-block[0m
+[INFO] - [2025-12-25-4-49-58PM] - [94mHandling alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mSwitched to alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mHandling alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mCSS value for "opacity" retrieved: 1[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mSwitched to alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mAccepted alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mCSS value for "visibility" retrieved: visible[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mCSS value for "display" retrieved: block[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mCSS value for "opacity" retrieved: 1[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement enabled: true[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement selected: false[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mClicked on element: Option 1[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mSelecting Dropdown Option By Text: Option 1 From Element: By.cssSelector: select#dropdown[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mGetting Dropdown Options Texts: By.cssSelector: select#dropdown[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement displayed: true You successfully clicked an alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement displayed: true Please select an option
+    Option 1
+    Option 2[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mText retrieved: "You successfully clicked an alert" from You successfully clicked an alert[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mTag name retrieved: select[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement selected: false[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement selected: true[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mElement selected: false[0m
+[WARN] - [2025-12-25-4-49-59PM] - [38;5;200mNo frames captured during recording[0m
+[INFO] - [2025-12-25-4-49-59PM] - [94mText retrieved: "Option 1" from Option 1[0m
+[ERROR] - [2025-12-25-4-49-59PM] - [91mFailed to save video recording[0m
+[ERROR] - [2025-12-25-4-49-59PM] - [91mFailed to save video recording for: alertClicked_CHROME_[0m
+[DEBUG] - [2025-12-25-4-49-59PM] - [93mCleaned up recording context [ID: 829294db][0m

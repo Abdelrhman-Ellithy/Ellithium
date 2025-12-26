@@ -1,0 +1,22 @@
+[INFO] - [2025-12-25-4-50-02PM] - [94m[START] TESTCASE confirmAlertCancel [STARTED][0m
+[INFO] - [2025-12-25-4-50-02PM] - [92mChecked key existence: recordGUITestExecution in file: src\main\resources\properties\config.properties[0m
+[INFO] - [2025-12-25-4-50-02PM] - [94mGetting Timestamp: 2025-12-25-4-50-02PM[0m
+[INFO] - [2025-12-25-4-50-02PM] - [94mStarted web recording (Snapshot): confirmAlertCancel_CHROME_CHROME2025-12-25-4-50-02PM[0m
+[INFO] - [2025-12-25-4-50-02PM] - [94mStarted video recording [] for: confirmAlertCancel_CHROME_ - CHROME on thread: 66[0m
+[INFO] - [2025-12-25-4-50-02PM] - [96mVideo Recording started for Test Case: confirmAlertCancel_CHROME_[0m
+[INFO] - [2025-12-25-4-50-02PM] - [94mNavigating to URL: https://the-internet.herokuapp.com/[0m
+[INFO] - [2025-12-25-4-50-02PM] - [94mElement displayed: true JavaScript Alerts[0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mClicked on element: [0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mClicked on element: [0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mHandling alert[0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mSwitched to alert[0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mHandling alert[0m
+[INFO] - [2025-12-25-4-50-03PM] - [94mSwitched to alert[0m
+[INFO] - [2025-12-25-4-50-04PM] - [94mDismissed alert[0m
+[INFO] - [2025-12-25-4-50-04PM] - [94mElement displayed: true You clicked: Cancel[0m
+[INFO] - [2025-12-25-4-50-04PM] - [94mText retrieved: "You clicked: Cancel" from You clicked: Cancel[0m
+[INFO] - [2025-12-25-4-50-04PM] - [94mWebDriver quit[0m
+[WARN] - [2025-12-25-4-50-04PM] - [38;5;200mNo frames captured during recording[0m
+[ERROR] - [2025-12-25-4-50-04PM] - [91mFailed to save video recording[0m
+[ERROR] - [2025-12-25-4-50-04PM] - [91mFailed to save video recording for: confirmAlertCancel_CHROME_[0m
+[DEBUG] - [2025-12-25-4-50-04PM] - [93mCleaned up recording context [ID: a3b9d4a9][0m
