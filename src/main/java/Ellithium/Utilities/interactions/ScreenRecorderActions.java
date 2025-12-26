@@ -3,7 +3,6 @@ package Ellithium.Utilities.interactions;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;
-import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.appium.java_client.android.AndroidDriver;
@@ -12,7 +11,6 @@ import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WrapsDriver;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import org.openqa.selenium.devtools.DevTools;
 import javax.imageio.ImageIO;
@@ -32,7 +30,7 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
 
 /**
  * Advanced screen recording and screenshot functionality for web and mobile testing.
- * 
+ *
  * <p><b>Architecture:</b> Driver-Centric Hybrid Recording System
  * <ul>
  *   <li><b>Mobile (Android/iOS):</b> Uses native Appium screen recording capabilities</li>
@@ -41,7 +39,7 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
  *   <li><b>Firefox/Safari:</b> Uses snapshot stitching - captures driver screenshots every 100ms
  *       and compiles them into video, ensuring parallel execution safety</li>
  * </ul>
- * 
+ *
  * <p><b>Key Features:</b>
  * <ul>
  *   <li>Parallel execution safe - each driver instance records independently</li>
@@ -50,7 +48,7 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
  *   <li>Thread-safe with ThreadLocal state management</li>
  *   <li>Automatic resource cleanup to prevent memory leaks</li>
  * </ul>
- * 
+ *
  * <p><b>Technical Details:</b>
  * <ul>
  *   <li>CDP captures browser viewport directly from render stream (doesn't capture desktop)</li>
@@ -58,71 +56,71 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
  *   <li>Frames stored in memory during recording, encoded to MP4 on stop</li>
  *   <li>Frame rate: ~10 FPS for optimal balance of quality and file size</li>
  * </ul>
- * 
+ *
  * @param <T> Type of WebDriver being used (WebDriver, ChromiumDriver, or mobile driver)
  * @see <a href="https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast">CDP Screencast</a>
  * @see <a href="https://github.com/jcodec/jcodec">JCodec Documentation</a>
  */
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
-    
+
     /**
      * Thread-safe storage for video frames captured during recording.
      * Each thread maintains its own queue of frame data (as byte arrays).
      */
-    private static final ThreadLocal<Queue<byte[]>> videoFrames = 
+    private static final ThreadLocal<Queue<byte[]>> videoFrames =
         ThreadLocal.withInitial(ConcurrentLinkedQueue::new);
-    
+
     /**
      * Thread-safe storage for the video name/identifier.
      */
     private static final ThreadLocal<String> videoName = new ThreadLocal<>();
-    
+
     /**
      * Thread-safe flag indicating if recording is currently active.
      * Used to control frame capture in CDP listeners and snapshot threads.
      */
-    private static final ThreadLocal<AtomicBoolean> isRecording = 
+    private static final ThreadLocal<AtomicBoolean> isRecording =
         ThreadLocal.withInitial(() -> new AtomicBoolean(false));
-    
+
     /**
      * Thread-safe storage for the background snapshot capture executor.
      * Used for Firefox/Safari browsers that don't support CDP.
      */
     private static final ThreadLocal<ScheduledExecutorService> backgroundCapturer = new ThreadLocal<>();
-    
+
     /**
      * Thread-safe storage for DevTools session.
      * Used for Chrome/Edge CDP screencast recording.
      */
     private static final ThreadLocal<DevTools> devToolsSession = new ThreadLocal<>();
-    
+
     /**
      * Default frame rate for video recording (frames per second).
      * Balances file size with smooth playback.
      */
     private static final int DEFAULT_FPS = 10;
-    
+
     /**
      * Interval between snapshots in milliseconds for Firefox/Safari recording.
      */
     private static final int SNAPSHOT_INTERVAL_MS = 100;
-    
+
     /**
      * CDP screencast JPEG quality (0-100).
      * Higher quality = larger frames but better video quality.
      */
     private static final int CDP_JPEG_QUALITY = 80;
-    
+
     /**
      * Maximum wait time in milliseconds for executor shutdown.
      */
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_MS = 2000;
 
     private static Class<?> cachedPageClass = null;
-    
+
     /**
      * Creates a new ScreenRecorderActions instance.
-     * 
+     *
      * @param driver WebDriver instance to use for recording/screenshots
      * @throws IllegalArgumentException if driver is null
      */
@@ -138,7 +136,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * <p>
      * The screenshot is saved with a timestamp and automatically attached to the test report.
      * This method is thread-safe and works in parallel execution.
-     * 
+     *
      * @param screenshotName Base name for the screenshot file (will be sanitized)
      * @return File object of saved screenshot, null if capture fails
      * @throws IllegalArgumentException if screenshotName is null or empty
@@ -148,7 +146,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("Screenshot name cannot be null or empty, using default", LogLevel.WARN);
             screenshotName = "screenshot";
         }
-        
+
         try {
             if (!(driver instanceof TakesScreenshot camera)) {
                 Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
@@ -156,31 +154,31 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-            
+
             if (screenshot == null || !screenshot.exists()) {
                 Reporter.log("Screenshot file was not created", LogLevel.ERROR);
                 return null;
             }
-            
+
             File screenShotFolder = new File(ConfigContext.getCapturedScreenShotPath() + File.separator);
             if (!screenShotFolder.exists()) {
                 boolean created = screenShotFolder.mkdirs();
                 if (!created) {
-                    Reporter.log("Failed to create screenshot folder: " + screenShotFolder.getPath(), 
+                    Reporter.log("Failed to create screenshot folder: " + screenShotFolder.getPath(),
                         LogLevel.ERROR);
                     return null;
                 }
             }
-            
+
             String sanitizedName = sanitizeFileName(screenshotName);
             String name = sanitizedName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File(screenShotFolder.getPath() + File.separator + name + ".png");
-            
+
             Files.move(screenshot, screenShotFile);
-            
+
             Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_BLUE);
             Reporter.attachScreenshotToReport(screenShotFile, name, "Captured Screenshot");
-            
+
             return screenShotFile;
         } catch (IOException e) {
             Reporter.log("Failed to save screenshot: " + e.getMessage(), LogLevel.ERROR);
@@ -200,10 +198,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      *   <li><b>Chrome/Edge:</b> Uses CDP screencast (high performance, parallel-safe)</li>
      *   <li><b>Firefox/Safari:</b> Uses snapshot stitching (parallel-safe fallback)</li>
      * </ul>
-     * 
+     *
      * <p><b>Thread Safety:</b> Each thread maintains its own recording state via ThreadLocal.
      * Multiple tests can record simultaneously without interference.
-     * 
+     *
      * @param name Base name for the video file (will be sanitized and timestamped)
      * @throws IllegalArgumentException if name is null or empty
      */
@@ -212,19 +210,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("Recording name cannot be null or empty, using default", LogLevel.WARN);
             name = "recording";
         }
-        
+
         String sanitizedName = sanitizeFileName(name);
         videoName.set(sanitizedName);
         isRecording.get().set(true);
         videoFrames.get().clear();
-        
+
         try {
             // Strategy 1: Mobile Recording (Android/iOS)
             if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
                 startMobileRecording(sanitizedName);
                 return;
             }
-            
+
             // Strategy 2: CDP Recording (Chrome/Edge)
             if (driver instanceof ChromiumDriver) {
                 boolean cdpStarted = startCDPRecording(sanitizedName);
@@ -234,10 +232,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 // If CDP fails, fall through to snapshot mode
                 Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
             }
-            
+
             // Strategy 3: Snapshot Recording (Firefox/Safari/Fallback)
             startSnapshotRecording(sanitizedName);
-            
+
         } catch (Exception e) {
             Reporter.log("Failed to start recording: " + e.getMessage(), LogLevel.ERROR);
             isRecording.get().set(false);
@@ -250,23 +248,23 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * <p>
      * The video is compiled from captured frames using JCodec and saved with a timestamp.
      * All recording resources are automatically cleaned up.
-     * 
+     *
      * <p><b>Output Format:</b> Standard H.264 MP4 (compatible with all modern players and reports)
-     * 
+     *
      * <p><b>Thread Safety:</b> Safe to call from any thread. Only affects the current thread's recording.
-     * 
+     *
      * @return Absolute path of the saved video file, null if recording failed or no frames captured
      */
     public String stopRecording() {
         String path = null;
         String name = videoName.get();
-        
+
         if (name == null) {
             Reporter.log("No active recording found to stop", LogLevel.WARN);
             cleanup();
             return null;
         }
-        
+
         File videoFolder = new File(ConfigContext.getRecordedExecutionsPath() + File.separator);
         if (!videoFolder.exists()) {
             boolean created = videoFolder.mkdirs();
@@ -280,31 +278,31 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             // Stop recording flag first to prevent new frames
             isRecording.get().set(false);
-            
+
             // Strategy 1: Mobile Recording Stop
             if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
                 path = stopMobileRecording(name, videoFolder);
-            } 
+            }
             // Strategy 2 & 3: Web Recording Stop (CDP or Snapshot)
             else {
                 path = stopWebRecording(name, videoFolder);
             }
-            
+
             if (path != null) {
                 Reporter.log("Video recording saved: " + path, LogLevel.INFO_BLUE);
             } else {
                 Reporter.log("Failed to save video recording", LogLevel.ERROR);
             }
-            
+
         } catch (Exception e) {
             Reporter.log("Error stopping recording: " + e.getMessage(), LogLevel.ERROR);
         } finally {
             cleanup();
         }
-        
+
         return path;
     }
-    
+
     /**
      * Starts mobile recording using Appium's native capabilities.
      */
@@ -321,109 +319,168 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             throw e;
         }
     }
-    
+
     /**
      * Starts CDP-based recording for Chromium browsers.
-     * 
+     *
      * @return true if CDP recording started successfully, false otherwise
      */
     private boolean startCDPRecording(String name) {
         try {
-            // --- FIX START: UNWRAP DRIVER ---
-            // If driver is a Proxy (EventFiringDecorator, etc.), extract the real one.
-            WebDriver rawDriver = driver;
-            try {
-                if (driver instanceof WrapsDriver) {
-                    rawDriver = ((WrapsDriver) driver).getWrappedDriver();
-                }
-            } catch (Exception ignored) {}
-
-            // Check if the REAL driver is actually Chromium (Chrome/Edge)
-            if (!(rawDriver instanceof ChromiumDriver)) {
-                return false; // It's Firefox/Safari wrapped in a proxy
+            // Unwrap the driver to get the actual ChromiumDriver instance
+            ChromiumDriver chromiumDriver = unwrapChromiumDriver(driver);
+            if (chromiumDriver == null) {
+                Reporter.log("Could not unwrap ChromiumDriver, falling back to snapshot", LogLevel.WARN);
+                return false;
             }
-
-            ChromiumDriver chromiumDriver = (ChromiumDriver) rawDriver;
-            // --- FIX END ---
 
             DevTools devTools = chromiumDriver.getDevTools();
             devTools.createSession();
             devToolsSession.set(devTools);
 
-            // Dynamically find the Page class available in the current Classpath
-            Class<?> pageClass = getPageClass();
-            if (pageClass == null) {
-                return false; // No compatible DevTools found in dependencies
+            // Dynamically detect available CDP version
+            String detectedVersion = detectCDPVersion();
+            if (detectedVersion == null) {
+                Reporter.log("No CDP version found in classpath", LogLevel.WARN);
+                return false;
             }
 
-            // Reflection: Page.enable()
-            Object enableCommand = pageClass.getMethod("enable").invoke(null);
-            devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
+            try {
+                Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
+                Object enableCommand = pageClass.getMethod("enable").invoke(null);
+                devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
 
-            // Reflection: Page.startScreencast(...)
-            Object formatEnum = getScreencastFormat(pageClass);
-            Object startCommand = pageClass.getMethod("startScreencast",
-                            Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
-                    .invoke(null,
-                            Optional.of(formatEnum),
-                            Optional.of(CDP_JPEG_QUALITY),
-                            Optional.empty(),
-                            Optional.empty(),
-                            Optional.empty()
-                    );
-            devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
+                Object startScreencastCommand = pageClass.getMethod("startScreencast",
+                                Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
+                        .invoke(null,
+                                Optional.of(getScreencastFormat(pageClass)),
+                                Optional.of(CDP_JPEG_QUALITY),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        );
+                devTools.send((org.openqa.selenium.devtools.Command<?>) startScreencastCommand);
 
-            // Reflection: Add Listener
-            addScreencastFrameListener(devTools, pageClass);
+                addScreencastFrameListener(devTools, pageClass);
 
-            Reporter.log("Started web recording (CDP): " + name, LogLevel.INFO_BLUE);
-            return true;
+                Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.INFO_BLUE);
+                return true;
+
+            } catch (Exception e) {
+                Reporter.log("CDP version " + detectedVersion + " failed: " + e.getMessage(), LogLevel.WARN);
+                return false;
+            }
 
         } catch (Exception e) {
-            // If CDP fails (e.g. version mismatch), return false to trigger Snapshot fallback
+            Reporter.log("CDP initialization failed: " + e.getMessage(), LogLevel.WARN);
             if (devToolsSession.get() != null) {
-                try { devToolsSession.get().close(); } catch (Exception ignored) {}
+                try {
+                    devToolsSession.get().close();
+                } catch (Exception ignored) {}
                 devToolsSession.remove();
             }
-            Reporter.log("CDP Init failed: " + e.getMessage(), LogLevel.WARN);
             return false;
         }
     }
 
     /**
-     * Tries fallback CDP versions if the latest is not available.
-     * Starts with current stable (v143) and falls back to recent previous majors.
+     * Unwraps proxied/decorated drivers to get the actual ChromiumDriver instance.
+     */
+    private ChromiumDriver unwrapChromiumDriver(WebDriver driver) {
+        WebDriver current = driver;
+        int maxUnwrapDepth = 10; // Prevent infinite loops
+
+        for (int i = 0; i < maxUnwrapDepth; i++) {
+            // Check if current is ChromiumDriver
+            if (current instanceof ChromiumDriver) {
+                return (ChromiumDriver) current;
+            }
+
+            // Try WrapsDriver interface
+            if (current instanceof org.openqa.selenium.WrapsDriver) {
+                current = ((org.openqa.selenium.WrapsDriver) current).getWrappedDriver();
+                continue;
+            }
+
+            // Try EventFiringDecorator reflection
+            try {
+                java.lang.reflect.Field decoratedField = current.getClass().getDeclaredField("decorated");
+                decoratedField.setAccessible(true);
+                Object decorated = decoratedField.get(current);
+                if (decorated instanceof WebDriver) {
+                    current = (WebDriver) decorated;
+                    continue;
+                }
+            } catch (Exception ignored) {}
+
+            // Try getting field "driver" (common in custom wrappers)
+            try {
+                java.lang.reflect.Field driverField = current.getClass().getDeclaredField("driver");
+                driverField.setAccessible(true);
+                Object innerDriver = driverField.get(current);
+                if (innerDriver instanceof WebDriver) {
+                    current = (WebDriver) innerDriver;
+                    continue;
+                }
+            } catch (Exception ignored) {}
+
+            // Can't unwrap further
+            break;
+        }
+
+        return null;
+    }
+
+    /**
+     * Dynamically detects available CDP version in classpath.
+     * Scans for org.openqa.selenium.devtools.v* packages.
+     */
+    private String detectCDPVersion() {
+        // Try to find the highest available version
+        for (int version = 150; version >= 85; version--) {
+            String versionStr = "v" + version;
+            try {
+                Class.forName("org.openqa.selenium.devtools." + versionStr + ".page.Page");
+                return versionStr;
+            } catch (ClassNotFoundException ignored) {}
+        }
+        return null;
+    }
+
+    /**
+     * Tries fallback CDP versions (kept for compatibility).
      */
     private boolean tryFallbackCDPVersions(DevTools devTools, String name) {
-        String[] versions = {"v143", "v142", "v141", "v140", "v139", "v138"};
+        // This method is now rarely called since we detect version dynamically
+        // But kept as additional fallback
+        String[] versions = {"v143", "v142", "v141", "v140", "v139", "v138", "v137", "v136", "v135"};
         for (String version : versions) {
             try {
                 Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + version + ".page.Page");
                 Object enableCommand = pageClass.getMethod("enable").invoke(null);
                 devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
-                
+
                 Object startScreencastCommand = pageClass.getMethod("startScreencast",
-                    Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
-                    .invoke(null,
-                        Optional.of(getScreencastFormat(pageClass)),
-                        Optional.of(CDP_JPEG_QUALITY),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()
-                    );
+                                Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
+                        .invoke(null,
+                                Optional.of(getScreencastFormat(pageClass)),
+                                Optional.of(CDP_JPEG_QUALITY),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        );
                 devTools.send((org.openqa.selenium.devtools.Command<?>) startScreencastCommand);
-                
+
                 addScreencastFrameListener(devTools, pageClass);
-                
+
                 Reporter.log("Started web recording (CDP " + version + "): " + name, LogLevel.INFO_BLUE);
                 return true;
-                
-            } catch (Exception e) {
-            }
+
+            } catch (Exception ignored) {}
         }
         return false;
     }
-    
+
     /**
      * Gets the screencast format enum for CDP.
      */
@@ -436,7 +493,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         throw new ClassNotFoundException("StartScreencastFormat not found in " + pageClass.getName());
     }
-    
+
     /**
      * Adds listener for CDP screencast frames.
      */
@@ -513,7 +570,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
         Reporter.log("Started web recording (Snapshot): " + name, LogLevel.INFO_BLUE);
     }
-    
+
     /**
      * Stops mobile recording and saves the video.
      */
@@ -525,23 +582,23 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else {
                 base64Video = ((IOSDriver) driver).stopRecordingScreen();
             }
-            
+
             if (base64Video == null || base64Video.isEmpty()) {
                 Reporter.log("Mobile recording returned empty data", LogLevel.ERROR);
                 return null;
             }
-            
+
             byte[] videoData = Base64.getDecoder().decode(base64Video);
             String fileName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, fileName);
-            
+
             try (FileOutputStream fos = new FileOutputStream(videoFile)) {
                 fos.write(videoData);
                 fos.flush();
             }
             Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_BLUE);
             return videoFile.getAbsolutePath();
-            
+
         } catch (IllegalArgumentException e) {
             Reporter.log("Invalid Base64 data from mobile recording: " + e.getMessage(), LogLevel.ERROR);
             return null;
@@ -553,7 +610,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             return null;
         }
     }
-    
+
     /**
      * Stops web recording (CDP or Snapshot) and compiles frames to MP4.
      */
@@ -619,18 +676,33 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             return null;
         }
     }
-    
+
     /**
-     * Stops CDP screencast session.
+     * Stops CDP screencast session with dynamic version detection.
      */
     private void stopCDPScreencast() {
         try {
             DevTools devTools = devToolsSession.get();
-            // Use cached class to stop
-            if (devTools != null && cachedPageClass != null) {
-                // Reflection: Page.stopScreencast()
-                Object stopCommand = cachedPageClass.getMethod("stopScreencast").invoke(null);
-                devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
+            if (devTools != null) {
+                String detectedVersion = detectCDPVersion();
+                if (detectedVersion != null) {
+                    try {
+                        Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
+                        Object stopCommand = pageClass.getMethod("stopScreencast").invoke(null);
+                        devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
+                    } catch (Exception e) {
+                        // Try fallback versions
+                        String[] versions = {"v143", "v142", "v141", "v140", "v139", "v138"};
+                        for (String version : versions) {
+                            try {
+                                Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + version + ".page.Page");
+                                Object stopCommand = pageClass.getMethod("stopScreencast").invoke(null);
+                                devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
+                                break;
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
                 devTools.close();
             }
         } catch (Exception ignored) {
@@ -638,7 +710,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             devToolsSession.remove();
         }
     }
-    
+
     /**
      * Stops snapshot capture executor.
      */
@@ -662,12 +734,17 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Compiles captured frames into an MP4 video file using JCodec.
      */
+    /**
+     * Compiles captured frames into an MP4 video file using JCodec.
+     */
     private String compileFramesToMP4(Queue<byte[]> frames, File outputFile) {
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
         int failedFrames = 0;
+
         try {
             encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, DEFAULT_FPS);
+
             for (byte[] frameBytes : frames) {
                 try {
                     BufferedImage image = ImageIO.read(new ByteArrayInputStream(frameBytes));
@@ -706,6 +783,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             encoder.finish();
+
             if (successfulFrames == 0) {
                 Reporter.log("No valid frames to encode", LogLevel.ERROR);
                 if (outputFile.exists()) {
@@ -713,7 +791,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 }
                 return null;
             }
+
             Reporter.log("Encoded " + successfulFrames + " frames successfully", LogLevel.DEBUG);
+
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
@@ -730,10 +810,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
         }
     }
-    
+
     /**
      * Sanitizes a file name by removing invalid characters.
-     * 
+     *
      * @param fileName Original file name
      * @return Sanitized file name safe for all operating systems
      */
@@ -753,7 +833,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * <p>
      * This method should be called after recording is complete or in case of failures.
      * It's automatically called by stopRecording() but can be called manually if needed.
-     * 
+     *
      * <p><b>Cleaned Resources:</b>
      * <ul>
      *   <li>Video frames queue</li>
@@ -801,27 +881,5 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 t.setDaemon(true);
                 return t;
             });
-    /**
-     * Scans the classpath for available Selenium DevTools versions.
-     * <p>Instead of hardcoding v131, v130, etc., this loops from v150 down to v85
-     * and returns the first one present in the project dependencies.</p>
-     */
-    private synchronized Class<?> getPageClass() {
-        if (cachedPageClass != null) return cachedPageClass;
-
-        // Try reasonably high versions down to v85 (stable baseline)
-        for (int i = 150; i >= 85; i--) {
-            try {
-                String className = "org.openqa.selenium.devtools.v" + i + ".page.Page";
-                Class<?> clazz = Class.forName(className);
-                cachedPageClass = clazz;
-                // Reporter.log("Detected DevTools version: v" + i, LogLevel.DEBUG);
-                return clazz;
-            } catch (ClassNotFoundException ignored) {
-                // Continue searching
-            }
-        }
-        return null;
-    }
 
 }
