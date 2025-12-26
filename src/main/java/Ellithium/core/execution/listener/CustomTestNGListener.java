@@ -22,6 +22,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+import static Ellithium.Utilities.interactions.ScreenRecorderActions.videoCompilationExecutor;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.*;
 
@@ -157,8 +160,18 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
-        AllureHelper.allureOpen();
-        TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
+        try {
+            videoCompilationExecutor.shutdown();
+            if (!videoCompilationExecutor.awaitTermination(20, TimeUnit.SECONDS)) {
+                videoCompilationExecutor.shutdownNow();
+            }
+        } catch (Exception e) {
+            Logger.warn("Video compilation executor shutdown interrupted");
+        }
+        finally {
+            AllureHelper.allureOpen();
+            TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
+        }
     }
     
     @Override
