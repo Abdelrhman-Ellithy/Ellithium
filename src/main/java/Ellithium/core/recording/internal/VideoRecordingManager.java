@@ -159,15 +159,14 @@ public class VideoRecordingManager {
         try {
             String recordingId = UUID.randomUUID().toString();
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
-            DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
-            String recordingName = sanitizeFileName(testName) + "_" + "_"+currentDriverConfiguration.getDriverType().getName().toUpperCase()+
+            String recordingName = sanitizeFileName(testName) + "_" + "_"+
                     TestDataGenerator.getTimeStamp();
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);
             testToRecordingMap.put(testIdentifier, recordingId);
             recorder.startRecording(recordingName);
-            Reporter.log("Started video recording [] for: " + testName +" - " +currentDriverConfiguration.getDriverType().getName().toUpperCase()+ " on thread: " + threadId, LogLevel.INFO_BLUE);
+            Reporter.log("Started video recording [] for: " + testName + " on thread: " + threadId, LogLevel.INFO_BLUE);
             return recordingId;
         } catch (Exception e) {
             Reporter.log("Failed to start video recording: " + e.getMessage(), LogLevel.ERROR);
@@ -199,8 +198,7 @@ public class VideoRecordingManager {
             long duration = System.currentTimeMillis() - context.getStartTime();
             String videoPath = recorder.stopRecording();
             if (videoPath != null) {
-                Reporter.log("Stopped video recording for: " + testName +" - " +DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase()+ " (Duration: " + duration + "ms)", LogLevel.INFO_BLUE);
-                Reporter.log("Video saved at: " + videoPath, LogLevel.INFO_GREEN);
+                Reporter.log("Stopped video recording for: " + testName +" - " + " (Duration: " + duration + "ms)", LogLevel.INFO_BLUE);
                 handleVideoAttachment(videoPath, testName, testStatus);
                 return videoPath;
             } else {
