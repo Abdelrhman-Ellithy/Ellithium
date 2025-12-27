@@ -220,34 +220,32 @@ public class BrowserSetUp {
             options.setAcceptInsecureCerts(true); // acceptInsecureCerts capability
         }
 
-        // Window / UI (use arguments preferred by geckodriver)
-        options.addArguments("--width=1920");
-        options.addArguments("--height=1080");
-        options.addPreference("browser.tabs.warnOnClose", false);
+        /* ---------- Performance & Noise Reduction ---------- */
         options.addPreference("browser.aboutConfig.showWarning", false);
-
-        // Notifications & media
+        options.addPreference("browser.tabs.warnOnClose", false);
         options.addPreference("dom.webnotifications.enabled", false);
-        options.addPreference("media.volume_scale", 0.0);
-
-        // Privacy / telemetry / sync
         options.addPreference("services.sync.enabled", false);
+
+        /* ---------- Telemetry ---------- */
         options.addPreference("toolkit.telemetry.enabled", false);
         options.addPreference("toolkit.telemetry.unified", false);
         options.addPreference("datareporting.healthreport.uploadEnabled", false);
-        options.addPreference("browser.safebrowsing.malware.enabled", false);
-        options.addPreference("browser.safebrowsing.phishing.enabled", false);
 
-        // Performance / background
-        options.addPreference("dom.ipc.processCount", 1);
+        /* ---------- Media ---------- */
+        options.addPreference("media.volume_scale", 0); // MUST be int
 
-        // Automation-specific preferences (explicit)
+        /* ---------- Automation ---------- */
         options.addPreference("dom.webdriver.enabled", true);
-        options.addPreference("useAutomationExtension", false);
 
-        options.setCapability("webSocketUrl", true);
+        /* ---------- Window Size ---------- */
+        options.addArguments("--width=1920");
+        options.addArguments("--height=1080");
 
-        options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
+        /* ---------- Alerts ---------- */
+        options.setCapability(
+                CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR,
+                UnexpectedAlertBehaviour.IGNORE
+        );
 
         Reporter.log("Firefox Options Configured", LogLevel.INFO_GREEN);
         addCapabilitiesToParam(options);
