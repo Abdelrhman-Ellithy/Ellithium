@@ -2,7 +2,12 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.config.managment.ConfigContext;
+import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.DriverType;
+import Ellithium.core.driver.LocalDriverType;
+import Ellithium.core.driver.RemoteDriverType;
 import Ellithium.core.logging.LogLevel;
+import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 import com.google.common.io.Files;
 import io.appium.java_client.android.AndroidDriver;
@@ -116,8 +121,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_MS = 2000;
 
-    private static Class<?> cachedPageClass = null;
-
     /**
      * Creates a new ScreenRecorderActions instance.
      *
@@ -152,9 +155,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
                 return null;
             }
-
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-
             if (screenshot == null || !screenshot.exists()) {
                 Reporter.log("Screenshot file was not created", LogLevel.ERROR);
                 return null;
@@ -169,16 +170,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     return null;
                 }
             }
-
             String sanitizedName = sanitizeFileName(screenshotName);
             String name = sanitizedName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File(screenShotFolder.getPath() + File.separator + name + ".png");
-
             Files.move(screenshot, screenShotFile);
-
-            Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_BLUE);
+            Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_GREEN);
             Reporter.attachScreenshotToReport(screenShotFile, name, "Captured Screenshot");
-
             return screenShotFile;
         } catch (IOException e) {
             Reporter.log("Failed to save screenshot: " + e.getMessage(), LogLevel.ERROR);
@@ -224,12 +221,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             // Strategy 2: CDP Recording (Chrome/Edge)
-            if (driver instanceof ChromiumDriver) {
+            DriverType driverType= DriverFactory.getCurrentDriverConfiguration().getDriverType();
+            if (driverType== LocalDriverType.Chrome || driverType==LocalDriverType.Edge ||driverType== RemoteDriverType.REMOTE_Chrome || driverType==RemoteDriverType.REMOTE_Edge) {
                 boolean cdpStarted = startCDPRecording(sanitizedName);
                 if (cdpStarted) {
                     return;
                 }
-                // If CDP fails, fall through to snapshot mode
                 Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
             }
 
@@ -287,19 +284,16 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             else {
                 path = stopWebRecording(name, videoFolder);
             }
-
             if (path != null) {
-                Reporter.log("Video recording saved: " + path, LogLevel.INFO_BLUE);
+                Reporter.log("Video recording saved: " + path, LogLevel.INFO_GREEN);
             } else {
                 Reporter.log("Failed to save video recording", LogLevel.ERROR);
             }
-
         } catch (Exception e) {
             Reporter.log("Error stopping recording: " + e.getMessage(), LogLevel.ERROR);
         } finally {
             cleanup();
         }
-
         return path;
     }
 
@@ -313,7 +307,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else if (driver instanceof IOSDriver) {
                 ((IOSDriver) driver).startRecordingScreen();
             }
-            Reporter.log("Started mobile screen recording: " + name, LogLevel.INFO_BLUE);
+            Reporter.log("Started mobile screen recording: " + name, LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to start mobile recording: " + e.getMessage(), LogLevel.ERROR);
             throw e;
@@ -327,59 +321,123 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     private boolean startCDPRecording(String name) {
         try {
-            // Unwrap the driver to get the actual ChromiumDriver instance
             ChromiumDriver chromiumDriver = unwrapChromiumDriver(driver);
             if (chromiumDriver == null) {
                 Reporter.log("Could not unwrap ChromiumDriver, falling back to snapshot", LogLevel.WARN);
                 return false;
             }
-
             DevTools devTools = chromiumDriver.getDevTools();
             devTools.createSession();
             devToolsSession.set(devTools);
 
-            // Dynamically detect available CDP version
             String detectedVersion = detectCDPVersion();
             if (detectedVersion == null) {
                 Reporter.log("No CDP version found in classpath", LogLevel.WARN);
                 return false;
             }
+            Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
 
+            // CORRECTED: Handle enable() with different signatures
+            Object enableCommand = null;
+            Exception lastException = null;
+
+            // Approach 1: Try enable(Optional) - Selenium 4.10+
             try {
-                Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
-                Object enableCommand = pageClass.getMethod("enable").invoke(null);
-                devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
+                Method enableMethod = pageClass.getMethod("enable", Optional.class);
+                enableCommand = enableMethod.invoke(null, Optional.empty());
+            } catch (NoSuchMethodException e) {
+                lastException = e;
 
-                Object startScreencastCommand = pageClass.getMethod("startScreencast",
-                                Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
-                        .invoke(null,
-                                Optional.of(getScreencastFormat(pageClass)),
-                                Optional.of(CDP_JPEG_QUALITY),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty()
-                        );
-                devTools.send((org.openqa.selenium.devtools.Command<?>) startScreencastCommand);
+                // Approach 2: Try enable() no-args - Selenium 4.0-4.9
+                try {
+                    Method enableMethod = pageClass.getMethod("enable");
+                    enableCommand = enableMethod.invoke(null);
+                } catch (NoSuchMethodException e2) {
+                    lastException = e2;
 
-                addScreencastFrameListener(devTools, pageClass);
+                    // Approach 3: Try as FIELD - Older Selenium 4.x
+                    try {
+                        java.lang.reflect.Field enableField = pageClass.getField("enable");
+                        enableCommand = enableField.get(null);
+                    } catch (NoSuchFieldException e3) {
+                        lastException = e3;
 
-                Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.INFO_BLUE);
-                return true;
+                        // Approach 4: Try as declared field
+                        try {
+                            java.lang.reflect.Field enableField = pageClass.getDeclaredField("enable");
+                            enableField.setAccessible(true);
+                            enableCommand = enableField.get(null);
+                        } catch (Exception e4) {
+                            lastException = e4;
+                        }
+                    }
+                }
+            }
 
-            } catch (Exception e) {
-                Reporter.log("CDP version " + detectedVersion + " failed: " + e.getMessage(), LogLevel.WARN);
+            // If all approaches failed, log and return false
+            if (enableCommand == null) {
+                Reporter.log("Could not find CDP enable command in " + detectedVersion, LogLevel.WARN);
+                Logger.logException(lastException);
+                devTools.close();
+                devToolsSession.remove();
                 return false;
             }
 
-        } catch (Exception e) {
-            Reporter.log("CDP initialization failed: " + e.getMessage(), LogLevel.WARN);
-            if (devToolsSession.get() != null) {
+            // Send enable command
+            devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
+
+            // Get startScreencast command - also needs Optional parameter handling
+            Object startCommand;
+            try {
+                // Try the full signature with 5 Optional parameters
+                java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast",
+                        Optional.class, Optional.class, Optional.class, Optional.class, Optional.class);
+                startCommand = startMethod.invoke(null,
+                        Optional.of(getScreencastFormat(pageClass)),
+                        Optional.of(CDP_JPEG_QUALITY),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty()
+                );
+            } catch (NoSuchMethodException e) {
+                // Try alternative signatures if needed
                 try {
-                    devToolsSession.get().close();
-                } catch (Exception ignored) {}
-                devToolsSession.remove();
+                    java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast");
+                    startCommand = startMethod.invoke(null);
+                } catch (NoSuchMethodException e2) {
+                    Reporter.log("startScreencast method not found in " + detectedVersion, LogLevel.WARN);
+                    devTools.close();
+                    devToolsSession.remove();
+                    return false;
+                }
             }
+
+            devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
+            addScreencastFrameListener(devTools, pageClass);
+            Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.INFO_BLUE);
+            return true;
+
+        } catch (ClassNotFoundException e) {
+            Reporter.log("CDP Page class not found: " + e.getMessage(), LogLevel.WARN);
+            cleanupDevTools();
             return false;
+        } catch (Exception e) {
+            Reporter.log("CDP recording initialization failed: " + e.getMessage(), LogLevel.WARN);
+            Logger.logException(e);
+            cleanupDevTools();
+            return false;
+        }
+    }
+
+    /**
+     * Helper method to clean up DevTools session safely.
+     */
+    private void cleanupDevTools() {
+        if (devToolsSession.get() != null) {
+            try {
+                devToolsSession.get().close();
+            } catch (Exception ignored) {}
+            devToolsSession.remove();
         }
     }
 
@@ -423,8 +481,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     continue;
                 }
             } catch (Exception ignored) {}
-
-            // Can't unwrap further
             break;
         }
 
@@ -445,40 +501,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } catch (ClassNotFoundException ignored) {}
         }
         return null;
-    }
-
-    /**
-     * Tries fallback CDP versions (kept for compatibility).
-     */
-    private boolean tryFallbackCDPVersions(DevTools devTools, String name) {
-        // This method is now rarely called since we detect version dynamically
-        // But kept as additional fallback
-        String[] versions = {"v143", "v142", "v141", "v140", "v139", "v138", "v137", "v136", "v135"};
-        for (String version : versions) {
-            try {
-                Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + version + ".page.Page");
-                Object enableCommand = pageClass.getMethod("enable").invoke(null);
-                devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
-
-                Object startScreencastCommand = pageClass.getMethod("startScreencast",
-                                Optional.class, Optional.class, Optional.class, Optional.class, Optional.class)
-                        .invoke(null,
-                                Optional.of(getScreencastFormat(pageClass)),
-                                Optional.of(CDP_JPEG_QUALITY),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty()
-                        );
-                devTools.send((org.openqa.selenium.devtools.Command<?>) startScreencastCommand);
-
-                addScreencastFrameListener(devTools, pageClass);
-
-                Reporter.log("Started web recording (CDP " + version + "): " + name, LogLevel.INFO_BLUE);
-                return true;
-
-            } catch (Exception ignored) {}
-        }
-        return false;
     }
 
     /**
@@ -568,7 +590,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
         }, 0, SNAPSHOT_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.INFO_BLUE);
+        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.INFO_GREEN);
     }
 
     /**
@@ -596,7 +618,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 fos.write(videoData);
                 fos.flush();
             }
-            Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_BLUE);
+            Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_GREEN);
             return videoFile.getAbsolutePath();
 
         } catch (IllegalArgumentException e) {
@@ -644,7 +666,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             File videoFile = new File(videoFolder, fileName);
 
             boolean needsAttachment = isAttachmentEnabled();
-
             if (needsAttachment) {
                 // SYNCHRONOUS: Compile immediately because we need to attach to report
                 Reporter.log("Compiling video synchronously for report attachment", LogLevel.DEBUG);
@@ -653,7 +674,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 // ASYNCHRONOUS: Compile in background to not block test execution
                 final Queue<byte[]> framesCopy = new ConcurrentLinkedQueue<>(frames);
                 final int frameCount = framesCopy.size();
-
                 videoCompilationExecutor.submit(() -> {
                     try {
                         compileFramesToMP4(framesCopy, videoFile);
@@ -688,24 +708,45 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 if (detectedVersion != null) {
                     try {
                         Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
-                        Object stopCommand = pageClass.getMethod("stopScreencast").invoke(null);
-                        devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
-                    } catch (Exception e) {
-                        // Try fallback versions
-                        String[] versions = {"v143", "v142", "v141", "v140", "v139", "v138"};
-                        for (String version : versions) {
+                        Object stopCommand = null;
+                        // Try stopScreencast() with Optional parameter
+                        try {
+                            Method stopMethod = pageClass.getMethod("stopScreencast", Optional.class);
+                            stopCommand = stopMethod.invoke(null, Optional.empty());
+                        } catch (NoSuchMethodException e) {
+                            // Try no-arg version
                             try {
-                                Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + version + ".page.Page");
-                                Object stopCommand = pageClass.getMethod("stopScreencast").invoke(null);
-                                devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
-                                break;
-                            } catch (Exception ignored) {}
+                                Method stopMethod = pageClass.getMethod("stopScreencast");
+                                stopCommand = stopMethod.invoke(null);
+                            } catch (NoSuchMethodException e2) {
+                                // Try as field
+                                try {
+                                    java.lang.reflect.Field stopField = pageClass.getField("stopScreencast");
+                                    stopCommand = stopField.get(null);
+                                } catch (NoSuchFieldException e3) {
+                                    // Try as declared field
+                                    try {
+                                        java.lang.reflect.Field stopField = pageClass.getDeclaredField("stopScreencast");
+                                        stopField.setAccessible(true);
+                                        stopCommand = stopField.get(null);
+                                    } catch (Exception e4) {
+                                        Reporter.log("Could not find stopScreencast command", LogLevel.DEBUG);
+                                    }
+                                }
+                            }
                         }
+
+                        if (stopCommand != null) {
+                            devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
+                        }
+                    } catch (Exception e) {
+                        Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.DEBUG);
                     }
                 }
                 devTools.close();
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Reporter.log("Error closing DevTools: " + e.getMessage(), LogLevel.DEBUG);
         } finally {
             devToolsSession.remove();
         }
@@ -734,9 +775,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Compiles captured frames into an MP4 video file using JCodec.
      */
-    /**
-     * Compiles captured frames into an MP4 video file using JCodec.
-     */
     private String compileFramesToMP4(Queue<byte[]> frames, File outputFile) {
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
@@ -752,13 +790,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     if (image != null) {
                         int width = image.getWidth();
                         int height = image.getHeight();
-
                         // Ensure even dimensions for JCodec
                         int evenWidth = (width % 2 == 0) ? width : width - 1;
                         int evenHeight = (height % 2 == 0) ? height : height - 1;
-
                         BufferedImage processedImage;
-
                         // Only process if dimensions need adjustment or type conversion needed
                         if (width != evenWidth || height != evenHeight || image.getType() != BufferedImage.TYPE_3BYTE_BGR) {
                             processedImage = new BufferedImage(evenWidth, evenHeight, BufferedImage.TYPE_3BYTE_BGR);
@@ -771,7 +806,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         } else {
                             processedImage = image;
                         }
-
                         encoder.encodeImage(processedImage);
                         successfulFrames++;
                     } else {
@@ -781,9 +815,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     failedFrames++;
                 }
             }
-
             encoder.finish();
-
             if (successfulFrames == 0) {
                 Reporter.log("No valid frames to encode", LogLevel.ERROR);
                 if (outputFile.exists()) {
@@ -791,9 +823,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 }
                 return null;
             }
-
             Reporter.log("Encoded " + successfulFrames + " frames successfully", LogLevel.DEBUG);
-
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
