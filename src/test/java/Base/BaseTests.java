@@ -12,8 +12,8 @@ public class BaseTests {
    protected HomPage home;
     @BeforeClass
     public void Setup()  {
-        LocalDriverConfig driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
-                HeadlessMode.False, PrivateMode.False,
+        LocalDriverConfig driverConfig=new LocalDriverConfig(LocalDriverType.FireFox,
+                HeadlessMode.False, PrivateMode.True,
                 PageLoadStrategyMode.Normal,
                 WebSecurityMode.SecureMode,
                 SandboxMode.Sandbox);

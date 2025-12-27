@@ -273,10 +273,10 @@ public class seleniumListener implements WebDriverListener {
         Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.INFO_BLUE);
     }
 
-    @Override
-    public void afterIsDisplayed(WebElement element, boolean result) {
-        Reporter.log("Element displayed: " + result +" "+ nameOf(element), LogLevel.INFO_BLUE);
-    }
+//    @Override
+//    public void afterIsDisplayed(WebElement element, boolean result) {
+//        Reporter.log("Element displayed: " + result +" "+ nameOf(element), LogLevel.INFO_BLUE);
+//    }
 
     @Override
     public  <X> void afterGetScreenshotAs(WebElement element, OutputType<X> target, X result) {
