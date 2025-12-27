@@ -2,7 +2,6 @@ package Ellithium.core.driver;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
@@ -19,11 +18,9 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
+import static Ellithium.core.recording.internal.VideoRecordingManager.isRecordingEnabled;
 
 public class BrowserSetUp {
 
@@ -85,201 +82,301 @@ public class BrowserSetUp {
         return driver;
     }
     private static ChromeOptions configureChromeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        ChromeOptions chromeOptions = new ChromeOptions();
-        boolean bidi=true;
+        ChromeOptions options = new ChromeOptions();
         if (headlessMode==HeadlessMode.True) {
-            chromeOptions.addArguments("--headless");
+            options.addArguments("--headless");
         }
         if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
-            chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+            options.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
         if (privateMode==PrivateMode.True) {
-            chromeOptions.addArguments("--incognito");
-            bidi=false;
+            options.addArguments("--incognito");
         }
         if (sandboxMode==SandboxMode.NoSandboxMode) {
-            chromeOptions.addArguments("--no-sandbox");
+            options.addArguments("--no-sandbox");
         }
         if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
-            chromeOptions.addArguments("--disable-web-security");
-            chromeOptions.addArguments("--allow-running-insecure-content");
+            options.addArguments("--disable-web-security");
+            options.addArguments("--allow-running-insecure-content");
         }
-        chromeOptions.setCapability("webSocketUrl", bidi);
-        // Other common options
-        chromeOptions.addArguments(
-                  "--disable-dev-shm-usage"
-                , "--disable-search-engine-choice-screen"
-                , "--remote-allow-origins=*"
-                , "--disable-automation"
-                , "--disable-background-timer-throttling"
-                , "--disable-backgrounding-occluded-windows"
-                , "--disable-features=OptimizationGuideModelDownloading,OptimizationHintsFetching,OptimizationTargetPrediction,OptimizationHints,CalculateNativeWinOcclusion,AutofillServerCommunication,MediaRouter,Translate,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,OptimizationHints,DialMediaRouteProvider,GlobalMediaControls,ImprovedCookieControls,LazyFrameLoading,InterestFeedContentSuggestions"
-                , "--disable-hang-monitor"
-                , "--disable-domain-reliability"
-                , "--disable-renderer-backgrounding"
-                , "--metrics-recording-only"
-                , "--no-first-run"
-                , "--no-default-browser-check"
-                , "--silent-debugger-extension-api"
-                , "--disable-extensions"
-                , "--disable-component-extensions-with-background-pages"
-                , "--disable-ipc-flooding-protection"
-                , "--disable-background-networking"
-                , "--mute-audio"
-                , "--disable-breakpad"
-                , "--ignore-certificate-errors"
-                , "--disable-device-discovery-notifications"
-                , "--force-color-profile=srgb"
-                , "--hide-scrollbars"
-                , "--host-resolver-rules"
-                , "--no-pings"
-                , "--disable-sync"
-                , "--disable-field-trial-config"
-                , "--enable-features=NetworkService"
-                , "--enable-features=NetworkServiceInProcess"
-                , "--enable-use-zoom-for-dsf"
-                , "--log-net-log"
-                , "--net-log-capture-mode"
-                , "--disable-client-side-phishing-detection"
-                , "--disable-default-apps"
-                ,"--disable-software-rasterizer"
-                ,"--disable-infobars"
-                ,"--window-size=1920,1080"
-                ,"--disable-notifications"
-                ,"--disable-background-networking"
-                ,"--disable-translate"
-                ,"--disable-sync-preferences"
-                ,"--dns-prefetch-disable"
-                ,"--disable-blink-features=AutomationControlled"
-                ,"--disable-pinch"
-                ,"--disable-background-tasks"
-                ,"--disable-component-update"
-                ,"--enable-logging"
-                ,"--disable-plugins"
-                ,"--ash-disable-system-sounds"
-        );
-        chromeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
+        // Window and Display Settings
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--force-color-profile=srgb");
+        options.addArguments("--hide-scrollbars");
+
+        // Security and Privacy
+        options.addArguments("--ignore-certificate-errors");
+        options.addArguments("--remote-allow-origins=*");
+
+        // Automation Detection
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-automation");
+
+        // Browser UI
+        options.addArguments("--no-first-run");
+        options.addArguments("--no-default-browser-check");
+        options.addArguments("--disable-search-engine-choice-screen");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--disable-notifications");
+        options.addArguments("--disable-default-apps");
+
+        // Performance Optimizations (SAFE)
+        options.addArguments("--disable-software-rasterizer");
+        options.addArguments("--disable-pinch");
+        options.addArguments("--mute-audio");
+        options.addArguments("--dns-prefetch-disable");
+
+        // Stability
+        options.addArguments("--disable-hang-monitor");
+        options.addArguments("--disable-ipc-flooding-protection");
+        options.addArguments("--silent-debugger-extension-api");
+
+        // Privacy Features (SAFE)
+        options.addArguments("--disable-client-side-phishing-detection");
+        options.addArguments("--disable-sync");
+        options.addArguments("--disable-sync-preferences");
+        options.addArguments("--disable-translate");
+        options.addArguments("--no-pings");
+
+        // Disable Heavy Features
+        options.addArguments("--disable-features=OptimizationGuideModelDownloading," +
+                "OptimizationHintsFetching,OptimizationTargetPrediction,OptimizationHints," +
+                "CalculateNativeWinOcclusion,AutofillServerCommunication,MediaRouter," +
+                "Translate,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater," +
+                "DialMediaRouteProvider,GlobalMediaControls,ImprovedCookieControls," +
+                "LazyFrameLoading,InterestFeedContentSuggestions");
+
+        // Network Features (Careful - some affect CDP)
+        options.addArguments("--disable-background-networking");  // Only once!
+        options.addArguments("--disable-domain-reliability");
+
+        // Background Tasks
+        options.addArguments("--disable-background-timer-throttling");
+        options.addArguments("--disable-backgrounding-occluded-windows");
+        options.addArguments("--disable-renderer-backgrounding");
+        options.addArguments("--disable-background-tasks");
+
+        // Component Updates
+        options.addArguments("--disable-component-update");
+        options.addArguments("--disable-field-trial-config");
+
+        // Miscellaneous
+        options.addArguments("--metrics-recording-only");
+        options.addArguments("--host-resolver-rules");
+        options.addArguments("--disable-device-discovery-notifications");
+        options.addArguments("--ash-disable-system-sounds");
+        options.addArguments("--disable-plugins");
+        options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
+        // ====================================================================
+        // REQUIRED FOR CDP
+        // ====================================================================
+        options.addArguments("--enable-features=NetworkService");
+        options.addArguments("--enable-features=NetworkServiceInProcess");
+        options.addArguments("--enable-use-zoom-for-dsf");
+        options.setCapability("unhandledPromptBehavior", "ignore");
+        options.setCapability("webSocketUrl", true);
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
-        addCapabilitiesToParam(chromeOptions);
-        return chromeOptions;
+        boolean isRecordingEnabled = isRecordingEnabled();
+
+        if (!isRecordingEnabled) {
+            // These can interfere with CDP but are safe when not recording
+            options.addArguments("--disable-dev-shm-usage");
+            options.addArguments("--enable-logging");
+            options.addArguments("--log-net-log");
+            options.addArguments("--net-log-capture-mode");
+            options.addArguments("--disable-extensions");
+            options.addArguments("--disable-component-extensions-with-background-pages");
+        }
+        addCapabilitiesToParam(options);
+        return options;
     }
     // Configure Firefox options
-    private static FirefoxOptions configureFirefoxOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        FirefoxOptions firefoxOptions = new FirefoxOptions();
-        boolean bidi=true;
-        if (headlessMode==HeadlessMode.True) {
-            firefoxOptions.addArguments("--headless");
+    private static FirefoxOptions configureFirefoxOptions(
+            HeadlessMode headlessMode,
+            PageLoadStrategyMode pageLoadStrategy,
+            PrivateMode privateMode,
+            SandboxMode sandboxMode,
+            WebSecurityMode webSecurityMode) {
+
+        FirefoxOptions options = new FirefoxOptions();
+        if (headlessMode == HeadlessMode.True) {
+            options.addArguments("--headless");
         }
-        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
-            firefoxOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+        if (pageLoadStrategy == PageLoadStrategyMode.Eager) {
+            options.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if (privateMode==PrivateMode.True) {
-            firefoxOptions.addArguments("--private");
-            bidi=false;
+        // Private mode (use preferences, not disabling BiDi)
+        if (privateMode == PrivateMode.True) {
+            options.addPreference("browser.privatebrowsing.autostart", true);
         }
-        if (sandboxMode==SandboxMode.NoSandboxMode) {
-            firefoxOptions.addArguments("--no-sandbox");
+
+        if (sandboxMode == SandboxMode.NoSandboxMode) {
+            // Firefox doesn't have a single --no-sandbox flag like Chromium; only use if you know what you're doing
+            // (left intentionally blank or use environment-specific service config)
         }
-        if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
-            firefoxOptions.addPreference("security.mixed_content.block_active_content", false);
+        if (webSecurityMode == WebSecurityMode.AllowUnsecure) {
+            options.addPreference("security.mixed_content.block_active_content", false);
+            options.addPreference("security.mixed_content.block_display_content", false);
+            options.setAcceptInsecureCerts(true); // acceptInsecureCerts capability
         }
-        firefoxOptions.setCapability("webSocketUrl", bidi);
-        // Other common options
-        firefoxOptions.addArguments(
-                "--disable-dev-shm-usage",  // Reduce memory usage in environments with low shared memory
-                "--enable-automation",  // Enable automation control
-                "--disable-background-timer-throttling",  // Disable throttling for background tabs
-                "--disable-backgrounding-occluded-windows",  // Prevent backgrounding of occluded windows
-                "--disable-hang-monitor",  // Disable hang monitor
-                "--disable-domain-reliability",  // Disable domain reliability monitoring
-                "--metrics-recording-only",  // Record metrics only (for debugging)
-                "--no-first-run",  // Skip first run setup
-                "--no-default-browser-check",  // Avoid default browser prompt
-                "--mute-audio",  // Mute audio
-                "--ignore-certificate-errors",  // Ignore SSL certificate errors
-                "--hide-scrollbars",  // Hide scrollbars
-                "--disable-sync",  // Disable Firefox sync
-                "--disable-client-side-phishing-detection",  // Disable phishing detection (specific to Chrome but similar behavior in Firefox)
-                "--disable-default-apps",  // Prevent loading of default apps (not entirely applicable to Firefox, but similar logic)
-                "--disable-notifications",  // Disable notifications
-                "--window-size=1920,1080",  // Set window size
-                "--disable-plugins"  // Disable plugins (extensions can be disabled with similar options)
+
+        /* ---------- Performance & Noise Reduction ---------- */
+        options.addPreference("browser.aboutConfig.showWarning", false);
+        options.addPreference("browser.tabs.warnOnClose", false);
+        options.addPreference("dom.webnotifications.enabled", false);
+        options.addPreference("services.sync.enabled", false);
+
+        /* ---------- Telemetry ---------- */
+        options.addPreference("toolkit.telemetry.enabled", false);
+        options.addPreference("toolkit.telemetry.unified", false);
+        options.addPreference("datareporting.healthreport.uploadEnabled", false);
+
+        /* ---------- Media ---------- */
+        options.addPreference("media.volume_scale", 0); // MUST be int
+
+        /* ---------- Automation ---------- */
+        options.addPreference("dom.webdriver.enabled", true);
+
+        /* ---------- Window Size ---------- */
+        options.addArguments("--width=1920");
+        options.addArguments("--height=1080");
+
+        /* ---------- Alerts ---------- */
+        options.setCapability(
+                CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR,
+                UnexpectedAlertBehaviour.IGNORE
         );
-        firefoxOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
-        Reporter.log(  "Firefox Options Configured", LogLevel.INFO_GREEN);
-        addCapabilitiesToParam(firefoxOptions);
-        return firefoxOptions;
+
+        Reporter.log("Firefox Options Configured", LogLevel.INFO_GREEN);
+        addCapabilitiesToParam(options);
+        return options;
     }
     // Configure Edge options
-    private static EdgeOptions configureEdgeOptions(HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
-        EdgeOptions edgeOptions = new EdgeOptions();
-        boolean bidi=true;
-        if (headlessMode==HeadlessMode.True) {
-            edgeOptions.addArguments("--headless");
+    private static EdgeOptions configureEdgeOptions(
+            HeadlessMode headlessMode,
+            PageLoadStrategyMode pageLoadStrategy,
+            PrivateMode privateMode,
+            SandboxMode sandboxMode,
+            WebSecurityMode webSecurityMode) {
+
+        EdgeOptions options = new EdgeOptions();
+        if (headlessMode == HeadlessMode.True) {
+            options.addArguments("--headless");
         }
-        if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
-            edgeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+
+        if (pageLoadStrategy == PageLoadStrategyMode.Eager) {
+            options.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if (privateMode==PrivateMode.True) {
-            edgeOptions.addArguments("--inPrivate");
-            bidi=false;
+
+        if (privateMode == PrivateMode.True) {
+            options.addArguments("--inPrivate");
         }
-        if (sandboxMode==SandboxMode.NoSandboxMode) {
-            edgeOptions.addArguments("--no-sandbox");
+        if (sandboxMode == SandboxMode.NoSandboxMode) {
+            options.addArguments("--no-sandbox");
         }
-        if (webSecurityMode==WebSecurityMode.AllowUnsecure) {
-            edgeOptions.addArguments("--disable-web-security");
-            edgeOptions.addArguments("--allow-running-insecure-content");
+        if (webSecurityMode == WebSecurityMode.AllowUnsecure) {
+            options.addArguments("--disable-web-security");
+            options.addArguments("--allow-running-insecure-content");
         }
-        edgeOptions.setCapability("webSocketUrl", bidi);
-        // Other common options
-        edgeOptions.addArguments(
-                "--disable-dev-shm-usage",  // Reduce memory usage
-                "--disable-search-engine-choice-screen",  // Edge equivalent to Chrome's search engine choice
-                "--remote-allow-origins=*",  // Allow cross-origin requests
-                "--enable-automation",  // Enable automation control
-                "--disable-background-timer-throttling",  // Optimize background tab performance
-                "--disable-backgrounding-occluded-windows",  // Avoid backgrounding windows not in focus
-                "--disable-hang-monitor",  // Disable hang monitor
-                "--disable-domain-reliability",  // Disable domain reliability checks
-                "--disable-renderer-backgrounding",  // Prevent renderer from backgrounding
-                "--metrics-recording-only",  // Only record metrics
-                "--no-first-run",  // Skip the first run experience
-                "--no-default-browser-check",  // Prevent the default browser check
-                "--disable-component-extensions-with-background-pages",  // Disable extensions with background pages
-                "--disable-ipc-flooding-protection",  // Disable IPC flooding protection
-                "--disable-background-networking",  // Disable background network connections
-                "--mute-audio",  // Mute audio
-                "--disable-breakpad",  // Disable crash reporting
-                "--ignore-certificate-errors",  // Ignore SSL certificate errors
-                "--disable-device-discovery-notifications",  // Disable device discovery notifications
-                "--force-color-profile=srgb",  // Force sRGB color profile
-                "--hide-scrollbars",  // Hide scrollbars
-                "--no-pings",  // Disable ping requests
-                "--disable-sync",  // Disable syncing with Microsoft account
-                "--disable-features=Translate",  // Disable the translate feature
-                "--enable-features=NetworkService",  // Enable network service feature
-                "--enable-features=NetworkServiceInProcess",  // Enable network service in process
-                "--enable-use-zoom-for-dsf",  // Enable zooming for display scaling
-                "--disable-client-side-phishing-detection",  // Disable phishing detection
-                "--disable-default-apps",  // Disable default apps
-                "--disable-software-rasterizer",  // Disable software-based rendering
-                "--disable-infobars",  // Disable infobars
-                "--window-size=1920,1080",  // Set window size
-                "--disable-notifications",  // Disable notifications
-                "--dns-prefetch-disable",  // Disable DNS prefetching
-                "--disable-blink-features=AutomationControlled",  // Hide automation control features
-                "--disable-pinch",  // Disable pinch to zoom
-                "--disable-background-tasks",  // Disable background tasks
-                "--disable-component-update",  // Disable component updates
-                "--enable-logging",  // Enable logging
-                "--disable-plugins",  // Disable plugins
-                "--ash-disable-system-sounds"  // Disable system sounds
-        );
-        edgeOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
-        Reporter.log( "Edge Options Configured", LogLevel.INFO_GREEN);
-        addCapabilitiesToParam(edgeOptions);
-        return edgeOptions;
+        // =========================================================
+        // Window & Display
+        // =========================================================
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--force-color-profile=srgb");
+        options.addArguments("--hide-scrollbars");
+
+        // =========================================================
+        // Security & Privacy
+        // =========================================================
+        options.addArguments("--ignore-certificate-errors");
+        options.addArguments("--remote-allow-origins=*");
+
+        // =========================================================
+        // Automation Detection
+        // =========================================================
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-automation");
+
+        // =========================================================
+        // Browser UI
+        // =========================================================
+        options.addArguments("--no-first-run");
+        options.addArguments("--no-default-browser-check");
+        options.addArguments("--disable-search-engine-choice-screen");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--disable-notifications");
+        options.addArguments("--disable-default-apps");
+
+        // =========================================================
+        // Performance (SAFE)
+        // =========================================================
+        options.addArguments("--disable-software-rasterizer");
+        options.addArguments("--disable-pinch");
+        options.addArguments("--mute-audio");
+        options.addArguments("--dns-prefetch-disable");
+
+        // =========================================================
+        // Stability
+        // =========================================================
+        options.addArguments("--disable-hang-monitor");
+        options.addArguments("--silent-debugger-extension-api");
+
+        // =========================================================
+        // Privacy
+        // =========================================================
+        options.addArguments("--disable-client-side-phishing-detection");
+        options.addArguments("--disable-sync");
+        options.addArguments("--disable-sync-preferences");
+        options.addArguments("--disable-translate");
+        options.addArguments("--no-pings");
+
+        // =========================================================
+        // Background / Network
+        // =========================================================
+        options.addArguments("--disable-background-networking");
+        options.addArguments("--disable-background-timer-throttling");
+        options.addArguments("--disable-backgrounding-occluded-windows");
+        options.addArguments("--disable-renderer-backgrounding");
+        options.addArguments("--disable-background-tasks");
+
+        // =========================================================
+        // Component Updates
+        // =========================================================
+        options.addArguments("--disable-component-update");
+        options.addArguments("--disable-field-trial-config");
+
+        // =========================================================
+        // Misc
+        // =========================================================
+        options.addArguments("--metrics-recording-only");
+        options.addArguments("--disable-device-discovery-notifications");
+        options.addArguments("--ash-disable-system-sounds");
+
+        // =========================================================
+        // REQUIRED FOR CDP / BiDi
+        // =========================================================
+        options.addArguments("--enable-features=NetworkService");
+        options.addArguments("--enable-features=NetworkServiceInProcess");
+        options.addArguments("--enable-use-zoom-for-dsf");
+        options.setCapability("webSocketUrl", true);
+        options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
+
+        // =========================================================
+        // CONDITIONAL (NOT recording)
+        // =========================================================
+        boolean isRecordingEnabled = isRecordingEnabled();
+        if (!isRecordingEnabled) {
+            options.addArguments("--disable-dev-shm-usage");
+            options.addArguments("--enable-logging");
+            options.addArguments("--log-net-log");
+            options.addArguments("--net-log-capture-mode");
+            options.addArguments("--disable-extensions");
+            options.addArguments("--disable-component-extensions-with-background-pages");
+        }
+
+        Reporter.log("Edge Options Configured", LogLevel.INFO_GREEN);
+        addCapabilitiesToParam(options);
+        return options;
     }
     // Configure Safari options
     private static SafariOptions configureSafariOptions(PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode) {
@@ -287,8 +384,11 @@ public class BrowserSetUp {
         if (pageLoadStrategy==PageLoadStrategyMode.Eager) {
             safariOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
         }
-        if (privateMode==PrivateMode.True) {
-            safariOptions.setUseTechnologyPreview(true); // Safari doesn't have "private" mode via arguments, but this simulates it
+        if (privateMode == PrivateMode.True) {
+            Reporter.log(
+                    "Safari does not support Private/Incognito mode via WebDriver. Ignoring PrivateMode.",
+                    LogLevel.WARN
+            );
         }
         safariOptions.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
         Reporter.log( "Safari Options Configured", LogLevel.INFO_GREEN);
