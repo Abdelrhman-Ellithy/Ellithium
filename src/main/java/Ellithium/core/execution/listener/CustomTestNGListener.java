@@ -7,6 +7,7 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
+import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
 import Ellithium.core.reporting.notification.TestResultCollector;
@@ -22,9 +23,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static Ellithium.Utilities.interactions.ScreenRecorderActions.videoCompilationExecutor;
 import static Ellithium.core.reporting.internal.Colors.*;
 import static org.testng.ITestResult.*;
 
@@ -160,13 +158,16 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
+        int active = ScreenRecorderActions.activeCompilations.get();
         try {
-            videoCompilationExecutor.shutdown();
-            if (!videoCompilationExecutor.awaitTermination(20, TimeUnit.SECONDS)) {
-                videoCompilationExecutor.shutdownNow();
-            }
+            if (active > 0) {
+            Logger.info("Background video compilation in progress (" + active + " videos)");
+            Logger.info("Videos will finish compiling before process exits");
+        } else {
+            Logger.info("All videos compiled");
+        }   
         } catch (Exception e) {
-            Logger.warn("Video compilation executor shutdown interrupted");
+            Logger.logException(e);
         }
         finally {
             AllureHelper.allureOpen();

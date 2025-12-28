@@ -4,7 +4,7 @@ import java.io.File;
 public class ConfigContext {
 
     private static final String allureVersion="2.30.0";
-    private static final String EllithuiumVersion="2.3.1";
+    private static final String EllithuiumVersion="2.3.2";
     public static String getAllureVersion() {
         return allureVersion;
     }
