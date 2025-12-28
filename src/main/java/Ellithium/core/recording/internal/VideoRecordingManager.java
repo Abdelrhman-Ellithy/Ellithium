@@ -4,7 +4,6 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;
-import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
@@ -73,6 +72,7 @@ public class VideoRecordingManager {
      */
     private static final String RECORD_GUI_EXECUTION_KEY = "recordGUITestExecution";
     private static final String ATTACH_RECORDED_EXECUTION_KEY = "attachRecordedGUITestExecutionToReport";
+    private static final String GENERATE_REPORT_KEY = "allure.generate.report";
     private static final String ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY = "attachRecordedGUITestExecutionToReportOnlyOnFailure";
 
     /**
@@ -102,12 +102,17 @@ public class VideoRecordingManager {
      */
     public static boolean isAttachmentEnabled() {
         String configPath = ConfigContext.getConfigFilePath();
-        if (configPath == null || !PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
+        if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
             Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
-            return true;
+            return false;
         }
-        String value = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
-        return Boolean.parseBoolean(value);
+        if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
+            Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
+            return false;
+        }
+        String isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
+        String isReportGenerated = PropertyHelper.getDataFromProperties(ConfigContext.getAllureFilePath(), GENERATE_REPORT_KEY);
+        return Boolean.parseBoolean(isAttachmentEnabled) && Boolean.parseBoolean(isReportGenerated);
     }
     /**
      * Checks if recorded videos should be attached to the report on failure only.

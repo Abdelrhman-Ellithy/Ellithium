@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachmentEnabled;
 
@@ -114,7 +115,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * CDP screencast JPEG quality (0-100).
      * Higher quality = larger frames but better video quality.
      */
-    private static final int CDP_JPEG_QUALITY = 60;
+    private static final int CDP_JPEG_QUALITY = 50;
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
@@ -123,6 +124,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     private static final ThreadLocal<Long> recordingStartTime = new ThreadLocal<>();
 
+    /**
+     * atomic counter to track active video compilations.
+     */
+    public static final AtomicInteger activeCompilations = new AtomicInteger(0);
 
     /**
      * Creates a new ScreenRecorderActions instance.
@@ -400,7 +405,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         Optional.of(CDP_JPEG_QUALITY),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(DEFAULT_FPS)
+                        Optional.of(4)
                 );
             } catch (NoSuchMethodException e) {
                 // Try alternative signatures if needed
@@ -653,17 +658,16 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (backgroundCapturer.get() != null) {
                 stopSnapshotExecutor();
             }
-            // Small delay for last frames
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
 
             if (frames == null || frames.isEmpty()) {
                 Reporter.log("No frames captured during recording", LogLevel.WARN);
                 return null;
             }
+
+            // CAPTURE DURATION HERE (before async, in main thread)
+            Long startTime = recordingStartTime.get();
+            long durationMs = (startTime != null) ? System.currentTimeMillis() - startTime : 0;
+
 
             String fileName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, fileName);
@@ -671,24 +675,29 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             boolean needsAttachment = isAttachmentEnabled();
             if (needsAttachment) {
                 // SYNCHRONOUS: Compile immediately because we need to attach to report
-                Reporter.log("Compiling video synchronously for report attachment", LogLevel.DEBUG);
-                return compileFramesToMP4(frames, videoFile);
+                Reporter.log("Compiling video synchronously for report attachment", LogLevel.INFO_GREEN);
+                return compileFramesToMP4(frames, videoFile,durationMs);
             } else {
                 // ASYNCHRONOUS: Compile in background to not block test execution
                 final Queue<byte[]> framesCopy = new ConcurrentLinkedQueue<>(frames);
                 final int frameCount = framesCopy.size();
+                final long capturedDuration = durationMs; // Capture for lambda
                 videoCompilationExecutor.submit(() -> {
+                    activeCompilations.incrementAndGet();
                     try {
-                        compileFramesToMP4(framesCopy, videoFile);
+                        compileFramesToMP4(framesCopy, videoFile, capturedDuration);
                         Reporter.log("Video compiled asynchronously: " + videoFile.getName() +
                                 " (" + frameCount + " frames)", LogLevel.INFO_GREEN);
                     } catch (Exception e) {
                         Reporter.log("Async video compilation failed: " + e.getMessage(), LogLevel.ERROR);
                     }
+                    finally {
+                        activeCompilations.decrementAndGet();
+                    }
                 });
 
                 Reporter.log("Video compilation started in background (" + frameCount + " frames)",
-                        LogLevel.DEBUG);
+                        LogLevel.INFO_BLUE);
 
                 // Return path immediately (file will be ready in a few seconds)
                 return videoFile.getAbsolutePath();
@@ -733,7 +742,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                         stopField.setAccessible(true);
                                         stopCommand = stopField.get(null);
                                     } catch (Exception e4) {
-                                        Reporter.log("Could not find stopScreencast command", LogLevel.DEBUG);
+                                        Reporter.log("Could not find stopScreencast command", LogLevel.WARN);
                                     }
                                 }
                             }
@@ -743,13 +752,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
                         }
                     } catch (Exception e) {
-                        Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.DEBUG);
+                        Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.WARN);
                     }
                 }
                 devTools.close();
             }
         } catch (Exception e) {
-            Reporter.log("Error closing DevTools: " + e.getMessage(), LogLevel.DEBUG);
+            Reporter.log("Error closing DevTools: " + e.getMessage(), LogLevel.WARN);
         } finally {
             devToolsSession.remove();
         }
@@ -777,8 +786,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Compiles captured frames into an MP4 video file using JCodec.
+     * 
+     * @param frames Queue of frame data
+     * @param outputFile Output video file
+     * @param recordingDurationMs Recording duration in milliseconds (0 if unknown)
+     * @return Absolute path of compiled video, or null if failed
      */
-    private String compileFramesToMP4(Queue<byte[]> frames, File outputFile) {
+    private String compileFramesToMP4(Queue<byte[]> frames, File outputFile, long recordingDurationMs) {
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
         int totalFrames = frames.size();
@@ -789,16 +803,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
 
         try {
-            // OPTIMIZATION 1: Determine actual FPS from frame count
-            long recordingDurationMs = System.currentTimeMillis() - recordingStartTime.get();
             double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
             // Decide output FPS: use actual FPS if reasonable, otherwise default
-            int outputFPS = (actualCaptureFPS >= 2 && actualCaptureFPS <= 30)
-                    ? (int) Math.round(actualCaptureFPS)
+            int outputFPS = (actualCaptureFPS >= 0) ? Math.max(1, (int) Math.round(actualCaptureFPS))
                     : DEFAULT_FPS;
-            Reporter.log("Detected capture rate: " + String.format("%.1f", actualCaptureFPS) +
-                    " FPS, using " + outputFPS + " FPS for output", LogLevel.DEBUG);
-
             encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, outputFPS);
             // OPTIMIZATION 2: Pre-allocate reusable BufferedImage to avoid repeated allocation
             BufferedImage reusableImage = null;
@@ -846,11 +854,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 if (outputFile.exists()) outputFile.delete();
                 return null;
             }
-
             double expectedDuration = (double) successfulFrames / outputFPS;
             Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
-                    " frames at " + outputFPS + " FPS (~" +
-                    String.format("%.1f", expectedDuration) + "s video)", LogLevel.DEBUG);
+                    " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)", LogLevel.INFO_GREEN);
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
@@ -928,14 +934,50 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("Error during cleanup: " + e.getMessage(), LogLevel.WARN);
         }
     }
+
     /**
      * Executor service for async video compilation.
+     * Single thread ensures:
+     * - Sequential processing (no CPU thrashing)
+     * - Predictable memory usage
+     * - Faster individual compilation (no resource competition)
      */
     public static final ExecutorService videoCompilationExecutor =
-            Executors.newFixedThreadPool(4, r -> {
-                Thread t = new Thread(r, "VideoCompiler-" + r.hashCode());
+            Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "VideoCompiler");
                 t.setDaemon(true);
+                t.setPriority(Thread.NORM_PRIORITY);
                 return t;
             });
+
+        static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            int active = activeCompilations.get();
+            if (active > 0) {
+                System.out.println("[Ellithium] Waiting for " + active + 
+                                 " video(s) to finish compiling...");
+                try {
+                    videoCompilationExecutor.shutdown();
+                    // Wait up to 3 minutes for videos to finish
+                    boolean completed = videoCompilationExecutor.awaitTermination(180, TimeUnit.SECONDS);
+                    if (completed) {
+                        System.out.println("[Ellithium] ✓ All videos compiled successfully");
+                    } else {
+                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() + 
+                                         " video(s) may be incomplete");
+                        videoCompilationExecutor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    System.out.println("[Ellithium] Video compilation interrupted during shutdown");
+                    videoCompilationExecutor.shutdownNow();
+                    Thread.currentThread().interrupt();
+                }
+            } else {
+                System.out.println("[Ellithium] All videos already compiled");
+            }
+        }, "VideoCompilationShutdownHook"));
+        
+        System.out.println("[Ellithium] Video compilation shutdown hook registered");
+    }
 
 }
