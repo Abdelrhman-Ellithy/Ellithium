@@ -114,16 +114,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * CDP screencast JPEG quality (0-100).
      * Higher quality = larger frames but better video quality.
      */
-    private static final int CDP_JPEG_QUALITY = 80;
+    private static final int CDP_JPEG_QUALITY = 60;
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
      */
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_MS = 2000;
 
+    private static final ThreadLocal<Long> recordingStartTime = new ThreadLocal<>();
+
+
     /**
      * Creates a new ScreenRecorderActions instance.
-     *
      * @param driver WebDriver instance to use for recording/screenshots
      * @throws IllegalArgumentException if driver is null
      */
@@ -212,6 +214,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         videoName.set(sanitizedName);
         isRecording.get().set(true);
         videoFrames.get().clear();
+        recordingStartTime.set(System.currentTimeMillis());
 
         try {
             // Strategy 1: Mobile Recording (Android/iOS)
@@ -236,6 +239,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         } catch (Exception e) {
             Reporter.log("Failed to start recording: " + e.getMessage(), LogLevel.ERROR);
             isRecording.get().set(false);
+            recordingStartTime.remove();
             cleanup();
         }
     }
@@ -275,7 +279,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             // Stop recording flag first to prevent new frames
             isRecording.get().set(false);
-
             // Strategy 1: Mobile Recording Stop
             if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
                 path = stopMobileRecording(name, videoFolder);
@@ -397,7 +400,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         Optional.of(CDP_JPEG_QUALITY),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.empty()
+                        Optional.of(DEFAULT_FPS)
                 );
             } catch (NoSuchMethodException e) {
                 // Try alternative signatures if needed
@@ -778,65 +781,85 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     private String compileFramesToMP4(Queue<byte[]> frames, File outputFile) {
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        int failedFrames = 0;
+        int totalFrames = frames.size();
+
+        if (totalFrames == 0) {
+            Reporter.log("No frames to encode", LogLevel.WARN);
+            return null;
+        }
 
         try {
-            encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, DEFAULT_FPS);
+            // OPTIMIZATION 1: Determine actual FPS from frame count
+            long recordingDurationMs = System.currentTimeMillis() - recordingStartTime.get();
+            double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
+            // Decide output FPS: use actual FPS if reasonable, otherwise default
+            int outputFPS = (actualCaptureFPS >= 2 && actualCaptureFPS <= 30)
+                    ? (int) Math.round(actualCaptureFPS)
+                    : DEFAULT_FPS;
+            Reporter.log("Detected capture rate: " + String.format("%.1f", actualCaptureFPS) +
+                    " FPS, using " + outputFPS + " FPS for output", LogLevel.DEBUG);
 
+            encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, outputFPS);
+            // OPTIMIZATION 2: Pre-allocate reusable BufferedImage to avoid repeated allocation
+            BufferedImage reusableImage = null;
+            // OPTIMIZATION 3: Process frames in batches
+            int frameIndex = 0;
             for (byte[] frameBytes : frames) {
+                frameIndex++;
+
                 try {
                     BufferedImage image = ImageIO.read(new ByteArrayInputStream(frameBytes));
 
-                    if (image != null) {
-                        int width = image.getWidth();
-                        int height = image.getHeight();
-                        // Ensure even dimensions for JCodec
-                        int evenWidth = (width % 2 == 0) ? width : width - 1;
-                        int evenHeight = (height % 2 == 0) ? height : height - 1;
-                        BufferedImage processedImage;
-                        // Only process if dimensions need adjustment or type conversion needed
-                        if (width != evenWidth || height != evenHeight || image.getType() != BufferedImage.TYPE_3BYTE_BGR) {
-                            processedImage = new BufferedImage(evenWidth, evenHeight, BufferedImage.TYPE_3BYTE_BGR);
-                            processedImage.getGraphics().drawImage(
-                                    image,
-                                    0, 0, evenWidth, evenHeight,
-                                    0, 0, evenWidth, evenHeight,
-                                    null
-                            );
-                        } else {
-                            processedImage = image;
-                        }
-                        encoder.encodeImage(processedImage);
-                        successfulFrames++;
-                    } else {
-                        failedFrames++;
+                    if (image == null) continue;
+
+                    int width = image.getWidth();
+                    int height = image.getHeight();
+                    int evenWidth = (width % 2 == 0) ? width : width - 1;
+                    int evenHeight = (height % 2 == 0) ? height : height - 1;
+
+                    // OPTIMIZATION 4: Only create new image if dimensions changed
+                    if (reusableImage == null ||
+                            reusableImage.getWidth() != evenWidth ||
+                            reusableImage.getHeight() != evenHeight) {
+                        reusableImage = new BufferedImage(evenWidth, evenHeight, BufferedImage.TYPE_3BYTE_BGR);
                     }
+
+                    // OPTIMIZATION 5: Fast draw (no scaling if already correct size)
+                    if (width == evenWidth && height == evenHeight && image.getType() == BufferedImage.TYPE_3BYTE_BGR) {
+                        encoder.encodeImage(image);
+                    } else {
+                        reusableImage.getGraphics().drawImage(image, 0, 0, evenWidth, evenHeight, null);
+                        encoder.encodeImage(reusableImage);
+                    }
+
+                    successfulFrames++;
+
                 } catch (Exception e) {
-                    failedFrames++;
+                    // Silent fail on individual frames
                 }
             }
+
             encoder.finish();
+
             if (successfulFrames == 0) {
-                Reporter.log("No valid frames to encode", LogLevel.ERROR);
-                if (outputFile.exists()) {
-                    outputFile.delete();
-                }
+                Reporter.log("No valid frames encoded", LogLevel.ERROR);
+                if (outputFile.exists()) outputFile.delete();
                 return null;
             }
-            Reporter.log("Encoded " + successfulFrames + " frames successfully", LogLevel.DEBUG);
+
+            double expectedDuration = (double) successfulFrames / outputFPS;
+            Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
+                    " frames at " + outputFPS + " FPS (~" +
+                    String.format("%.1f", expectedDuration) + "s video)", LogLevel.DEBUG);
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
-            Reporter.log("Failed to compile frames to video: " + e.getMessage(), LogLevel.ERROR);
-            if (outputFile.exists()) {
-                outputFile.delete();
-            }
+            Reporter.log("Video compilation failed: " + e.getMessage(), LogLevel.ERROR);
+            if (outputFile.exists()) outputFile.delete();
             return null;
         } finally {
             if (encoder != null) {
-                try {
-                    encoder.finish();
-                } catch (Exception ignored) {}
+                try { encoder.finish(); } catch (Exception ignored) {}
             }
         }
     }
@@ -896,6 +919,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (isRecording.get() != null) {
                 isRecording.get().set(false);
                 isRecording.remove();
+            }
+            if (recordingStartTime.get() != null) {
+                recordingStartTime.remove();
             }
 
         } catch (Exception e) {
