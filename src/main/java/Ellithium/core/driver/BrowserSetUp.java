@@ -237,10 +237,6 @@ public class BrowserSetUp {
         /* ---------- Automation ---------- */
         options.addPreference("dom.webdriver.enabled", true);
 
-        /* ---------- Window Size ---------- */
-        options.addArguments("--width=1920");
-        options.addArguments("--height=1080");
-
         /* ---------- Alerts ---------- */
         options.setCapability(
                 CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR,
