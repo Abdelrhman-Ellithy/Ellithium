@@ -19,18 +19,19 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import org.openqa.selenium.devtools.DevTools;
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Base64;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachmentEnabled;
 
@@ -786,77 +787,127 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Compiles captured frames into an MP4 video file using JCodec.
-     * 
-     * @param frames Queue of frame data
+     * Uses BATCHED PARALLEL processing to balance high speed with low memory usage.
+     * * @param frames Queue of frame data
      * @param outputFile Output video file
      * @param recordingDurationMs Recording duration in milliseconds (0 if unknown)
      * @return Absolute path of compiled video, or null if failed
      */
     private String compileFramesToMP4(Queue<byte[]> frames, File outputFile, long recordingDurationMs) {
-        AWTSequenceEncoder encoder = null;
-        int successfulFrames = 0;
         int totalFrames = frames.size();
-
         if (totalFrames == 0) {
             Reporter.log("No frames to encode", LogLevel.WARN);
             return null;
         }
+        AWTSequenceEncoder encoder = null;
+        int successfulFrames = 0;
+        final int MAX_WIDTH = 1280;
+        final int MAX_HEIGHT = 720;
+        int batchSize = 50;
+        try {
+            // Peek at the first frame to calculate accurate memory requirements
+            byte[] firstFrame = frames.peek();
+            if (firstFrame != null) {
+                BufferedImage probe = ImageIO.read(new ByteArrayInputStream(firstFrame));
+                if (probe != null) {
+                    // Calculate the dimensions this frame will have AFTER processing
+                    long frameSize = getFrameSize(probe, MAX_WIDTH, MAX_HEIGHT);
+                    batchSize = calculateOptimalBatchSize(frameSize);
+                }
+            }
+        } catch (Exception e) {
+            Reporter.log("Failed to calculate dynamic batch size, using default: " + e.getMessage(), LogLevel.DEBUG);
+        }
+        // -----------------------------------------
 
         try {
             double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
-            // Decide output FPS: use actual FPS if reasonable, otherwise default
-            int outputFPS = (actualCaptureFPS >= 0) ? Math.max(1, (int) Math.round(actualCaptureFPS))
+            int outputFPS = (actualCaptureFPS >= 1 && actualCaptureFPS <= 60)
+                    ? Math.max(1, (int) Math.round(actualCaptureFPS))
                     : DEFAULT_FPS;
+
             encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, outputFPS);
-            // OPTIMIZATION 2: Pre-allocate reusable BufferedImage to avoid repeated allocation
-            BufferedImage reusableImage = null;
-            // OPTIMIZATION 3: Process frames in batches
-            int frameIndex = 0;
-            for (byte[] frameBytes : frames) {
-                frameIndex++;
 
-                try {
-                    BufferedImage image = ImageIO.read(new ByteArrayInputStream(frameBytes));
+            while (!frames.isEmpty()) {
 
-                    if (image == null) continue;
-
-                    int width = image.getWidth();
-                    int height = image.getHeight();
-                    int evenWidth = (width % 2 == 0) ? width : width - 1;
-                    int evenHeight = (height % 2 == 0) ? height : height - 1;
-
-                    // OPTIMIZATION 4: Only create new image if dimensions changed
-                    if (reusableImage == null ||
-                            reusableImage.getWidth() != evenWidth ||
-                            reusableImage.getHeight() != evenHeight) {
-                        reusableImage = new BufferedImage(evenWidth, evenHeight, BufferedImage.TYPE_3BYTE_BGR);
-                    }
-
-                    // OPTIMIZATION 5: Fast draw (no scaling if already correct size)
-                    if (width == evenWidth && height == evenHeight && image.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-                        encoder.encodeImage(image);
-                    } else {
-                        reusableImage.getGraphics().drawImage(image, 0, 0, evenWidth, evenHeight, null);
-                        encoder.encodeImage(reusableImage);
-                    }
-
-                    successfulFrames++;
-
-                } catch (Exception e) {
-                    // Silent fail on individual frames
+                // A. Create Batch
+                List<byte[]> rawBatch = new ArrayList<>(batchSize);
+                for (int i = 0; i < batchSize && !frames.isEmpty(); i++) {
+                    byte[] data = frames.poll();
+                    if (data != null) rawBatch.add(data);
                 }
+
+                if (rawBatch.isEmpty()) continue;
+
+                // B. Parallel Process
+                List<BufferedImage> processedBatch = rawBatch.parallelStream()
+                        .map(frameBytes -> {
+                            try {
+                                BufferedImage original = ImageIO.read(new ByteArrayInputStream(frameBytes));
+                                if (original == null) return null;
+
+                                int origW = original.getWidth();
+                                int origH = original.getHeight();
+
+                                boolean needsScaling = (origW > MAX_WIDTH || origH > MAX_HEIGHT);
+                                int newW = origW;
+                                int newH = origH;
+
+                                if (needsScaling) {
+                                    double scale = Math.min((double) MAX_WIDTH / origW, (double) MAX_HEIGHT / origH);
+                                    newW = (int) (origW * scale);
+                                    newH = (int) (origH * scale);
+                                }
+
+                                int evenW = (newW % 2 == 0) ? newW : newW - 1;
+                                int evenH = (newH % 2 == 0) ? newH : newH - 1;
+
+                                if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
+                                    return original;
+                                }
+
+                                BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
+                                Graphics2D g2d = resized.createGraphics();
+                                if (needsScaling) {
+                                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                                }
+                                g2d.drawImage(original, 0, 0, evenW, evenH, null);
+                                g2d.dispose();
+
+                                return resized;
+                            } catch (Exception e) {
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                // C. Encode
+                for (BufferedImage img : processedBatch) {
+                    try {
+                        encoder.encodeImage(img);
+                        successfulFrames++;
+                    } catch (Exception e) {}
+                }
+
+                // D. Cleanup
+                processedBatch.clear();
+                rawBatch.clear();
             }
 
             encoder.finish();
 
+            // ... (Remaining logging logic same as before)
             if (successfulFrames == 0) {
                 Reporter.log("No valid frames encoded", LogLevel.ERROR);
                 if (outputFile.exists()) outputFile.delete();
                 return null;
             }
+
             double expectedDuration = (double) successfulFrames / outputFPS;
             Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
                     " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)", LogLevel.INFO_GREEN);
+
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
@@ -868,6 +919,41 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 try { encoder.finish(); } catch (Exception ignored) {}
             }
         }
+    }
+
+    private static long getFrameSize(BufferedImage probe, int MAX_WIDTH, int MAX_HEIGHT) {
+        int w = probe.getWidth();
+        int h = probe.getHeight();
+        if (w > MAX_WIDTH || h > MAX_HEIGHT) {
+            double scale = Math.min((double) MAX_WIDTH / w, (double) MAX_HEIGHT / h);
+            w = (int) (w * scale);
+            h = (int) (h * scale);
+        }
+        // Calculate uncompressed size: Width * Height * 3 bytes (BGR)
+        return ((long) w * h * 3);
+    }
+
+    /**
+     * Calculates a safe batch size based on available JVM memory and specific frame size.
+     * @param singleFrameSizeBytes The estimated RAM usage of a single uncompressed frame.
+     */
+    private int calculateOptimalBatchSize(long singleFrameSizeBytes) {
+        // 1. Calculate approximate available memory
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+
+        long usableMemoryBytes = (maxMemory - totalMemory) + freeMemory;
+
+        // 2. Add overhead (20% for Java object headers)
+        double realFrameCost = singleFrameSizeBytes * 1.2;
+
+        // 3. Determine batch size (Use 40% of usable memory)
+        int calculatedBatch = (int) ((usableMemoryBytes * 0.4) / realFrameCost);
+
+        // 4. Clamp results
+        return Math.max(5, Math.min(calculatedBatch, 500));
     }
 
     /**
@@ -943,12 +1029,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * - Faster individual compilation (no resource competition)
      */
     public static final ExecutorService videoCompilationExecutor =
-            Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "VideoCompiler");
-                t.setDaemon(true);
-                t.setPriority(Thread.NORM_PRIORITY);
-                return t;
-            });
+            Executors.newFixedThreadPool(
+                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1), // Leave 1 core for OS/tests
+                    r -> {
+                        Thread t = new Thread(r, "VideoCompiler-" + r.hashCode());
+                        t.setDaemon(true);
+                        t.setPriority(Thread.NORM_PRIORITY); // Normal priority for speed
+                        return t;
+                    }
+            );
 
         static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
