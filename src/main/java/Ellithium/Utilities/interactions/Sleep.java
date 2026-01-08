@@ -13,8 +13,8 @@ public class Sleep {
      */
     public  void sleepMillis(long millis) {
         try {
-            Thread.sleep(millis);
             Reporter.log("Sleeping for " + millis + " milliseconds", LogLevel.INFO_BLUE);
+            Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             Reporter.log("Sleep interrupted: " + e.getMessage(), LogLevel.ERROR);
