@@ -33,19 +33,24 @@
 
 **Ellithium** is a Unified powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process. Leveraging tools such as **TestNG**, **Cucumber**, **Rest Assured**, and others, it provides an end-to-end solution for automated testing. With support for **BDD**, **cross-browser testing**, **parallel execution**, **headless testing**, and detailed **Allure reporting**, Ellithium aims to make your test automation faster, more reliable, and easier to maintain.  
 
-### 👨‍💻 Supported Testing PlatForms
-|Web |Mobile| API|DB|
+### Supported Testing PlatForms
+|Web |Mobile| API| DB|
 | :---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |
 
-### 🚀 Supported DB Types with Caching Mechanisms 🚀
+### Supported Cloud Mobile Device Test Labs
+|BrowserStack | LambdaTest | Sauce Labs |
+| :---: |:---: |:---: |
+| ✅  |✅  |✅   | 
+
+### Supported DB Types with Caching Mechanisms 🚀
 |Mongo | Couchebase |Redis | MY_SQL| SQL_SERVER | ORACLE | IBM_DB2| POSTGRES_SQL|SQLITE |
 | :---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |✅  |✅  |✅   |✅  |✅  |
 
-### 🚀 Key Features
+### Key Features
  
-|BDD Support|Parallel Execution|Cross-Browser Testing|Headless Testing|Logging|Screenshots Attaching|User Stories Linking|Reporting|
+|BDD Support|Parallel Execution|Cross-Browser Testing|Headless Testing|Logging| Automatic Screenshots / Video Recording | User Stories Linking|Reporting|
 |:--------:|:--------:|:--------:|:------:|:------:|:------:|:------:|:-----:|
 |✅        |✅         |✅         |✅        |✅      |✅       |✅       |✅      |
 
@@ -59,11 +64,13 @@
 - **API Testing**: Full support for API testing with **Rest Assured** for RESTful services.
 - **Database Testing**: Extends coverage to both SQL and NoSQL databases, including MySQL, SQL Server, PostgreSQL, Oracle, IBM DB2, SQLite, Couchbase, MongoDB, and Redis, enabling comprehensive backend testing. 
 - **Mobile Testing**: Test native, hybrid, and mobile apps on Android and IOS, with Appium integration and support for real devices and emulators. 
-- **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
-- **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
+- **Cloud Mobile Device Test Labs**: Reliable exeuction with cloud platforms such as **BrowserStack**, **LambdaTest**, and **Sauce Labs** with mobile app uploader.
+- **Automatic Video Recording**: Configurable Web and Mobile execution Recording in synchronous and asynchronous modes based on video recording attachment flag.
+- **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **Email Notifications**: Automated SMTP email delivery with rich HTML reports and configurable triggers.
 - **Slack Integration**: Webhook-based notifications with structured messages and channel targeting.
+- **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
 
 ### 👨‍💻 Supported OS with OS Command Executor Interface for Desktop OS
 
