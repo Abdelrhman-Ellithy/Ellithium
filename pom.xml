@@ -89,7 +89,7 @@
         <caffineVersion>3.2.3</caffineVersion>
         <mysqlVersion>9.5.0</mysqlVersion>
         <postgresqlVersion>42.7.8</postgresqlVersion>
-        <mssqlVersion>13.3.0.jre11-preview</mssqlVersion>
+        <mssqlVersion>13.3.1.jre11-preview</mssqlVersion>
         <oracleDBVersion>23.26.0.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>7.2.0</redisDBVersion>
