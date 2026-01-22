@@ -66,7 +66,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <seleniumVersion>4.39.0</seleniumVersion>
-        <testNG>7.11.0</testNG>
+        <testNG>7.12.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.13.2</gsonVersion>
         <log4jVersion>2.25.3</log4jVersion>
