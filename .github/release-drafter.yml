@@ -44,7 +44,6 @@ template: |
   $CHANGES
 
   ## 📦 New Classes & Components
-  $BODY
 
   ## Contributors
   $CONTRIBUTORS

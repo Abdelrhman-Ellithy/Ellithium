@@ -15,7 +15,6 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * Creates a new DriverActions instance.
      * @param driver WebDriver instance to wrap
      */
-    @SuppressWarnings("unchecked")
     public JavaScriptActions(T driver) {
         super(driver);
     }
@@ -36,6 +35,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param locator Element locator
      */
     public  void javascriptClick( By locator) {
+        // Re-locate element right before JavaScript execution to avoid stale element
         WebElement element = findWebElement( locator);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
         Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE,locator.toString());
@@ -45,7 +45,9 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param locator Element locator
      */
     public void scrollToElement(By locator) {
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", findWebElement( locator));
+        // Re-locate element right before JavaScript execution to avoid stale element
+        WebElement element = findWebElement( locator);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", element);
         Reporter.log("Scrolling To Element: ",LogLevel.INFO_BLUE,locator.toString());
     }
     /**
@@ -75,6 +77,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param value Value to set
      */
     public  void setElementValueUsingJS( By locator, String value) {
+        // Re-locate element right before JavaScript execution to avoid stale element
         JavascriptExecutor js = (JavascriptExecutor) driver;
         WebElement element = findWebElement( locator);
         js.executeScript("arguments[0].value = arguments[1];", element, value);
@@ -104,11 +107,15 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
                 throw new IllegalArgumentException("File does not exist: " + filePath);
             }
 
-            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
+            getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
 
+            // Re-locate element right before use to avoid stale element
+            WebElement uploadElement = findWebElement(fileUploadLocator);
             JavascriptExecutor js = (JavascriptExecutor) driver;
             js.executeScript("arguments[0].style.display='block';", uploadElement);
+            // Re-locate again before sendKeys in case JS execution caused DOM change
+            uploadElement = findWebElement(fileUploadLocator);
             uploadElement.sendKeys(file.getAbsolutePath());
             Reporter.log("File uploaded successfully using JavaScript: " + file.getName(), LogLevel.INFO_BLUE);
         } catch (Exception e) {

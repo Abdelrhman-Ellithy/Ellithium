@@ -8,7 +8,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SelectActions<T extends WebDriver> extends BaseActions<T> {
@@ -70,13 +69,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
         Reporter.log("Getting Dropdown Options Texts: ", LogLevel.INFO_BLUE, locator.toString());
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        Select dropDown = new Select(findWebElement(locator));
-        List<WebElement> elements = dropDown.getAllSelectedOptions();
-        List<String> texts = new ArrayList<>();
-        for (WebElement element : elements) {
-            texts.add(element.getText());
-        }
-        return texts;
+        return mapSelectOptionsSafely(locator, WebElement::getText);
     }
 
     /**
@@ -90,11 +83,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
         Reporter.log("Selecting dropdown option by text for multiple elements: " + option + " for locator: " + locator.toString(), LogLevel.INFO_BLUE);
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-
-        List<WebElement> elements = findWebElements(locator);
-        for (WebElement element : elements) {
-            new Select(element).selectByVisibleText(option);
-        }
+        forEachSelectElementSafely(locator, select -> select.selectByVisibleText(option));
     }
 
     // Overloaded methods with default timeouts

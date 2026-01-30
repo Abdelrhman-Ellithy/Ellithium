@@ -5,7 +5,6 @@ import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ElementActions<T extends WebDriver> extends BaseActions<T> {
@@ -24,8 +23,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        findWebElement(locator).clear();
-        findWebElement(locator).sendKeys(data);
+        WebElement element = findWebElement(locator);
+        element.clear();
+        element.sendKeys(data);
     }
 
     /**
@@ -38,8 +38,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        findWebElement(locator).clear();
-        findWebElement(locator).sendKeys(data);
+        WebElement element = findWebElement(locator);
+        element.clear();
+        element.sendKeys(data);
     }
 
     /**
@@ -77,12 +78,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
         getFluentWait(timeout, pollingEvery).until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        List<WebElement> elements = findWebElements(locator);
-        List<String> texts = new ArrayList<>();
-        for (WebElement element : elements) {
-            texts.add(element.getText());
-        }
-        return texts;
+        return mapElementsSafely(locator, WebElement::getText);
     }
 
     /**
@@ -97,12 +93,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        List<WebElement> elements = findWebElements(locator);
-        List<String> texts = new ArrayList<>();
-        for (WebElement element : elements) {
-            texts.add(element.getDomAttribute(attribute));
-        }
-        return texts;
+        return mapElementsSafely(locator, element -> element.getDomAttribute(attribute));
     }
     /**
      * Gets the value of a property from multiple elements.
@@ -116,12 +107,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        List<WebElement> elements = findWebElements(locator);
-        List<String> texts = new ArrayList<>();
-        for (WebElement element : elements) {
-            texts.add(element.getDomProperty(property));
-        }
-        return texts;
+        return mapElementsSafely(locator, element -> element.getDomProperty(property));
     }
 
     /**
@@ -133,10 +119,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     public void clickOnMultipleElements(By locator, int timeout, int pollingEvery) {
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        List<WebElement> elements = findWebElements(locator);
-        for (WebElement element : elements) {
-            element.click();
-        }
+        Reporter.log("Clicking on multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
+        forEachElementSafely(locator, WebElement::click);
     }
 
     /**
@@ -171,11 +155,14 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Gets all elements matching the locator.
+     * @deprecated This method returns a List of WebElements which can become stale.
+     * Consider using methods that return data (e.g., getTextFromMultipleElements) instead.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      * @return List of found WebElements
      */
+    @Deprecated
     public List<WebElement> getElements(By locator, int timeout, int pollingEvery) {
         getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
@@ -716,8 +703,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
         try {
-            WebElement element = getFluentWait(timeout, pollingEvery)
+            getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.presenceOfElementLocated(locator));
+            // Re-locate element right before JavaScript execution to avoid stale element
+            WebElement element = findWebElement(locator);
             ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
             Reporter.log("Scrolled into view: " + locator, LogLevel.INFO_BLUE);
         } catch (TimeoutException e) {

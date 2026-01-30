@@ -318,6 +318,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
 
     /**
      * Waits for visibility of all elements located by the given locator.
+     * This method returns a List of WebElements which can become stale.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds

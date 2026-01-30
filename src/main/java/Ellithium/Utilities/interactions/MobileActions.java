@@ -141,9 +141,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param locator Locator to the element to tap
      */
     public void tap(By locator) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing tap gesture on element", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -204,9 +205,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param locator Locator to the element to double-tap
      */
     public void doubleTap(By locator) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing double-tap gesture on element", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -264,9 +266,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param durationSeconds The duration in seconds
      */
     public void doubleTap(By locator, double durationSeconds) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing double-tap gesture on element with duration " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -349,9 +352,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param durationSeconds The duration in seconds
      */
     public void longPress(By locator, double durationSeconds) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing long press gesture on element for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -434,9 +438,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param locator Locator to the element to swipe on
      */
     public void swipe(String direction, By locator) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing swipe gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -467,9 +472,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param percent The swipe distance as percentage (0.0 to 1.0)
      */
     public void swipe(By locator, String direction, double percent) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing swipe gesture on element in direction " + direction + " with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -578,9 +584,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param direction The direction to scroll (up, down, left, right)
      */
     public void scroll(By locator, String direction) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing scroll gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -611,9 +618,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param percent The scroll distance as percentage (0-100)
      */
     public void scroll(By locator, String direction, int percent) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing scroll gesture on element in direction " + direction + " with " + percent + "%", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -755,9 +763,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param direction The direction to scroll
      */
     public void scrollToElement(By locator, String selector, String direction) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             
             if (isIOS()) {
@@ -838,9 +847,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param durationSeconds The duration in seconds
      */
     public void drag(By locator, double endX, double endY, double durationSeconds) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing drag gesture on element to coordinates (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             
@@ -946,9 +956,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param percent The pinch percentage (0.0 to 1.0) - Android only, ignored on iOS
      */
     public void pinch(By locator, boolean zoomIn, double percent) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing pinch " + (zoomIn ? "open" : "close") + " gesture on element with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             
@@ -989,9 +1000,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param velocity The velocity of the pinch
      */
     public void pinch(By locator, double scale, double velocity) {
-        WebElement element=findWebElement(locator);
         Reporter.log("Performing pinch gesture on element with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             params.put("scale", scale);
@@ -1185,10 +1197,11 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @throws UnsupportedOperationException if called on Android
      */
     public void twoFingerTap(By locator) {
-        WebElement element=findWebElement(locator);
         validatePlatform("twoFingerTap", true, false);
         Reporter.log("Performing two-finger tap gesture on element", LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("element", getElementId(element));
             driver.executeScript("mobile: twoFingerTap", params);
@@ -1243,10 +1256,11 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @throws UnsupportedOperationException if called on iOS
      */
     public void fling(By locator, String direction) {
-        WebElement element=findWebElement(locator);
         validatePlatform("fling", false, true);
         Reporter.log("Performing fling gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
+            // Re-locate element right before use to avoid stale element
+            WebElement element = findWebElement(locator);
             Map<String, Object> params = new HashMap<>();
             params.put("elementId", getElementId(element));
             params.put("direction", direction);
