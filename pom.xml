@@ -318,7 +318,7 @@
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.46.0</version>
+            <version>1.47.0</version>
             <scope>compile</scope>
         </dependency>
         <!-- Oracle JDBC Driver -->
