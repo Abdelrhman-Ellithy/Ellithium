@@ -88,7 +88,7 @@
         <HikariCPVersion>7.0.2</HikariCPVersion>
         <caffineVersion>3.2.3</caffineVersion>
         <mysqlVersion>9.6.0</mysqlVersion>
-        <postgresqlVersion>42.7.9</postgresqlVersion>
+        <postgresqlVersion>42.7.10</postgresqlVersion>
         <mssqlVersion>13.3.1.jre11-preview</mssqlVersion>
         <oracleDBVersion>23.26.1.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
