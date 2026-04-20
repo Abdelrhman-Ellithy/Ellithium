@@ -94,7 +94,7 @@
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>7.4.1</redisDBVersion>
         <couchBaseVersion>3.11.2</couchBaseVersion>
-        <appiumVersion>10.1.0</appiumVersion>
+        <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
