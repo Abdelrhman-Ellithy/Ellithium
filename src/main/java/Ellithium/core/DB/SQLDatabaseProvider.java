@@ -34,7 +34,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
     private final Cache<String, Map<String, String>> foreignKeysCache;
     private static final Map<SQLDBType, String> dbTypeConnectionMap = new HashMap<>();
     private static final Map<SQLDBType, Properties> dbTypeProperties = new HashMap<>();
-    private ThreadLocal<Connection> transactionConnection = new ThreadLocal<>();
+    private final ThreadLocal<Connection> transactionConnection = new ThreadLocal<>();
 
     static {
         dbTypeConnectionMap.put(SQLDBType.MY_SQL, "jdbc:mysql://");
@@ -474,6 +474,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @return Number of rows in the table
      */
     public int getRowCount(String tableName) {
+        validateTableName(tableName);
         return rowCountCache.get(tableName, key -> {
             int rowCount = 0;
             // Table name is already validated by validateTableName
