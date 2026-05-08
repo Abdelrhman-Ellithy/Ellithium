@@ -24,6 +24,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     private final MongoClient mongoClient;
     private final MongoDatabase database;
     private final Cache<String, Object> queryResultCache;
+    private final String defaultCollectionName;
 
     /**
      * Primary constructor for production use.
@@ -35,6 +36,20 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      * @param cacheMaxSize    the maximum number of entries to store in the cache
      */
     public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize) {
+        this(connectionString, databaseName, cacheTtlMinutes, cacheMaxSize, "documents");
+    }
+
+    /**
+     * Primary constructor for production use with custom default collection.
+     * Constructs a MongoDatabaseProvider with the specified connection details, cache configuration, and default collection.
+     *
+     * @param connectionString the MongoDB connection string
+     * @param databaseName     the database name
+     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
+     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @param defaultCollectionName the default collection name for NoSQL operations
+     */
+    public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize, String defaultCollectionName) {
         Reporter.log("Initializing MongoDB connection to " + connectionString, LogLevel.INFO_YELLOW);
         this.mongoClient = MongoClients.create(connectionString);
         this.database = mongoClient.getDatabase(databaseName);
@@ -42,6 +57,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
                 .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
                 .maximumSize(cacheMaxSize)
                 .build();
+        this.defaultCollectionName = defaultCollectionName;
         Reporter.log("MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
     }
     /**
@@ -56,9 +72,22 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      * @param queryResultCache the {@link Cache} instance for storing and retrieving query results.
      */
     public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, Cache<String, Object> queryResultCache) {
+        this(mongoClient, database, queryResultCache, "documents");
+    }
+
+    /**
+     * Secondary constructor for dependency injection with custom default collection.
+     *
+     * @param mongoClient      the {@link MongoClient} instance to be used by this provider.
+     * @param database         the {@link MongoDatabase} instance to be used for database operations.
+     * @param queryResultCache the {@link Cache} instance for storing and retrieving query results.
+     * @param defaultCollectionName the default collection name for NoSQL operations.
+     */
+    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, Cache<String, Object> queryResultCache, String defaultCollectionName) {
         this.mongoClient = mongoClient;
         this.database = database;
         this.queryResultCache = queryResultCache;
+        this.defaultCollectionName = defaultCollectionName;
         Reporter.log("Dummy MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
@@ -181,7 +210,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     public boolean exists(String key) {
         try {
             Reporter.log("Checking existence of document: " + key, LogLevel.INFO_YELLOW);
-            boolean result = database.getCollection("documents").countDocuments(new Document("_id", key)) > 0;
+            boolean result = database.getCollection(defaultCollectionName).countDocuments(new Document("_id", key)) > 0;
             Reporter.log("Document existence check completed", LogLevel.INFO_YELLOW);
             return result;
         } catch (Exception e) {
@@ -201,7 +230,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     public boolean delete(String key) {
         try {
             Reporter.log("Deleting document: " + key, LogLevel.INFO_YELLOW);
-            long result = database.getCollection("documents").deleteOne(new Document("_id", key)).getDeletedCount();
+            long result = database.getCollection(defaultCollectionName).deleteOne(new Document("_id", key)).getDeletedCount();
             Reporter.log("Document deleted successfully", LogLevel.INFO_YELLOW);
             return result > 0;
         } catch (Exception e) {
@@ -222,7 +251,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     public boolean expire(String key, int seconds) {
         try {
             Reporter.log("Setting expiry for document: " + key + " to " + seconds + " seconds", LogLevel.INFO_YELLOW);
-            database.getCollection("documents").updateOne(
+            database.getCollection(defaultCollectionName).updateOne(
                 new Document("_id", key),
                 new Document("$set", new Document("expiresAt", System.currentTimeMillis() + (seconds * 1000L)))
             );
