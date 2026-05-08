@@ -616,7 +616,9 @@ public class DriverFactory {
      * Quits the current driver instance and closes all associated windows.
      */
     public static void quitDriver() {
-        var driverType=driverConfigurationThread.get().getDriverType();
+        var config = driverConfigurationThread.get();
+        if (config == null) return;
+        var driverType = config.getDriverType();
         if (driverType!=null){
             if (driverType==MobileDriverType.Android) {
                 AndroidDriver localDriver = AndroidDriverThread.get();
@@ -642,7 +644,9 @@ public class DriverFactory {
      * Removes the current driver instance from thread local storage.
      */
     public static void removeDriver() {
-        DriverType driverType=driverConfigurationThread.get().getDriverType();
+        var config = driverConfigurationThread.get();
+        if (config == null) return;
+        DriverType driverType = config.getDriverType();
         if(driverType!=null) {
             if (driverType.equals(MobileDriverType.Android)) {
                 AndroidDriverThread.remove();
@@ -700,7 +704,7 @@ public class DriverFactory {
             localDriver = BrowserSetUp.setupLocalDriver(driverType, capabilities,headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
-        if (WebDriverThread != null) {
+        if (WebDriverThread.get() != null) {
             Reporter.log("Driver Created", LogLevel.INFO_GREEN);
         } else {
             Reporter.log("Driver Creation Failed", LogLevel.ERROR);
@@ -726,7 +730,7 @@ public class DriverFactory {
             case IOS -> {
                 IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
                 IOSDriverThread.set(localDriver);
-                if(IOSDriverThread!=null){
+                if(IOSDriverThread.get()!=null){
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
                     return (T)IOSDriverThread.get();
                 }
@@ -734,7 +738,7 @@ public class DriverFactory {
             case Android -> {
                 AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
                 AndroidDriverThread.set(localDriver);
-                if(IOSDriverThread!=null){
+                if(AndroidDriverThread.get()!=null){
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
                     return (T)AndroidDriverThread.get();
                 }

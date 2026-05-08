@@ -334,6 +334,17 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Retrieves the value of an attribute from an element with specified timeout.
+     * @param locator Element locator
+     * @param attribute Attribute name
+     * @param timeout Maximum wait time in seconds
+     * @return The attribute value
+     */
+    public String getAttributeValue(By locator, String attribute, int timeout) {
+        return getAttributeValue(locator, attribute, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
      * Retrieves the value of a property from an element with default timeout and polling time.
      * @param locator Element locator
      * @param property Attribute name
@@ -341,6 +352,17 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property) {
         return getPropertyValue(locator, property, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Retrieves the value of a property from an element with specified timeout.
+     * @param locator Element locator
+     * @param property Property name
+     * @param timeout Maximum wait time in seconds
+     * @return The property value
+     */
+    public String getPropertyValue(By locator, String property, int timeout) {
+        return getPropertyValue(locator, property, timeout, WaitManager.getDefaultPollingTime());
     }
 
     /**
