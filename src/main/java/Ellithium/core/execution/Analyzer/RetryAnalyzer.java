@@ -5,16 +5,17 @@ import Ellithium.core.logging.LogLevel;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;
 import Ellithium.core.reporting.Reporter;
+import java.util.concurrent.atomic.AtomicInteger;
 public class RetryAnalyzer implements IRetryAnalyzer {
-    private int counter = 0;
+    private final AtomicInteger counter = new AtomicInteger(0);
     @Override
     public boolean retry(ITestResult iTestResult) {
         if (!iTestResult.isSuccess()) {
             int maxCount=ConfigContext.getRetryCount();
-            if (counter < maxCount) {
-                counter++;
+            if (counter.get() < maxCount) {
+                counter.incrementAndGet();
                 iTestResult.setStatus(ITestResult.FAILURE);
-                Reporter.log("Retry #" + counter +
+                Reporter.log("Retry #" + counter.get() +
                         " for test: " + iTestResult.getMethod().getMethodName() +
                         ", on thread: " + Thread.currentThread().getName(),
                         LogLevel.ERROR);
@@ -35,4 +36,4 @@ public class RetryAnalyzer implements IRetryAnalyzer {
             Reporter.log("You Need to Add \"retryCountOnFailure\" Key on you config.properties File", LogLevel.ERROR);
         }
     }
-}
+}

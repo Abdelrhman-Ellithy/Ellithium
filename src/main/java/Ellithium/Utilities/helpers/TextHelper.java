@@ -115,7 +115,7 @@ public class TextHelper {
             }
         } catch (IOException e) {
             Reporter.log("Failed to search text file: ", LogLevel.ERROR, filePath);
-                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         Reporter.log("No line with keyword found in text file: ", LogLevel.INFO_YELLOW, filePath);
         return null;
@@ -137,7 +137,7 @@ public class TextHelper {
 
         } catch (IOException e) {
             Reporter.log("Failed to delete line from text file: ", LogLevel.ERROR, filePath);
-                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -207,7 +207,7 @@ public class TextHelper {
             Reporter.log("Successfully deleted lines containing keyword in text file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to delete lines containing keyword in text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -232,7 +232,7 @@ public class TextHelper {
             }
         } catch (IOException e) {
             Reporter.log("Failed to check keyword in text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         Reporter.log("Keyword not found in text file: " + keyword, LogLevel.INFO_YELLOW, filePath);
         return false;
@@ -258,7 +258,7 @@ public class TextHelper {
             Reporter.log("Successfully replaced line in text file: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to replace line in text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -280,7 +280,7 @@ public class TextHelper {
             return count;
         } catch (IOException e) {
             Reporter.log("Failed to count lines in file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return 0;
         }
     }
@@ -302,7 +302,7 @@ public class TextHelper {
             return isEmpty;
         } catch (IOException e) {
             Reporter.log("Failed to check file emptiness: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return false;
         }
     }
@@ -323,7 +323,7 @@ public class TextHelper {
             Reporter.log("Successfully replaced all occurrences in: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to replace content in file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -348,7 +348,7 @@ public class TextHelper {
             return matches;
         } catch (IOException e) {
             Reporter.log("Failed to search for keyword in file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return matches;
         }
     }
@@ -374,7 +374,7 @@ public class TextHelper {
             Reporter.log("File copied successfully to: ", LogLevel.INFO_GREEN, destPath);
         } catch (IOException e) {
             Reporter.log("Failed to copy file to: ", LogLevel.ERROR, destPath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -409,7 +409,7 @@ public class TextHelper {
             return true;
         } catch (IOException e) {
             Reporter.log("Failed to compare files", LogLevel.ERROR);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return false;
         }
     }
@@ -437,7 +437,7 @@ public class TextHelper {
             return lineNumbers;
         } catch (IOException e) {
             Reporter.log("Failed to find line numbers in file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return lineNumbers;
         }
     }
@@ -459,7 +459,7 @@ public class TextHelper {
             Reporter.log("Successfully inserted line at position " + lineNumber + " in: ", LogLevel.INFO_GREEN, filePath);
         } catch (Exception e) {
             Reporter.log("Failed to insert line in: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -480,7 +480,7 @@ public class TextHelper {
             Reporter.log("Successfully appended after line " + lineNumber + " in: ", LogLevel.INFO_GREEN, filePath);
         } catch (Exception e) {
             Reporter.log("Failed to append line in: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -511,7 +511,7 @@ public class TextHelper {
                     LogLevel.INFO_GREEN, filePath);
         } catch (IndexOutOfBoundsException e) {
             Reporter.log("Invalid line range in: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         return result;
     }
@@ -535,7 +535,7 @@ public class TextHelper {
             Reporter.log("Successfully wrote to line " + lineNumber + " in: ", LogLevel.INFO_GREEN, filePath);
         } catch (Exception e) {
             Reporter.log("Failed to write to line in: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -630,7 +630,7 @@ public class TextHelper {
             
         } catch (IOException e) {
             Reporter.log("Failed to read line from file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return null;
         }
     }
@@ -654,7 +654,7 @@ public class TextHelper {
             Reporter.log("Found " + matches.size() + " matching lines", LogLevel.INFO_GREEN);
         } catch (IOException e) {
             Reporter.log("Failed to search with regex: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         return matches;
     }
@@ -697,7 +697,7 @@ public class TextHelper {
             }
         } catch (IOException e) {
             Reporter.log("Failed to analyze word frequency: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         return frequency;
     }
@@ -713,7 +713,7 @@ public class TextHelper {
             Reporter.log("Successfully wrote file with encoding: ", LogLevel.INFO_GREEN, filePath);
         } catch (IOException e) {
             Reporter.log("Failed to write file with encoding: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 

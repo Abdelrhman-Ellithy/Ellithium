@@ -130,11 +130,28 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
 
     /**
      * Waits for an element to become stale.
-     * @param element The WebElement to wait for
+     * Finds the element first, then waits for that reference to become stale (removed or re-rendered in the DOM).
+     * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the element becomes stale, false otherwise
      */
+    public  boolean waitForElementStaleness( By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element Staleness: " + locator.toString(), LogLevel.INFO_BLUE);
+        WebElement element = findWebElement(locator);
+        return getFluentWait( timeout, pollingEvery)
+                .until(ExpectedConditions.stalenessOf(element));
+    }
+
+    /**
+     * Waits for an element to become stale.
+     * @param element The WebElement to wait for
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @return True if the element becomes stale, false otherwise
+     * @deprecated Use {@link #waitForElementStaleness(By, int, int)} instead for consistency and better staleness handling.
+     */
+    @Deprecated
     public  boolean waitForElementStaleness( WebElement element, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Staleness: " + element.toString(), LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -412,9 +429,30 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
 
     /**
      * Waits for an element to become stale with default timeout and polling time.
-     * @param element The WebElement to wait for
+     * @param locator Element locator
      * @return True if the element becomes stale, false otherwise
      */
+    public  boolean waitForElementStaleness( By locator) {
+        return waitForElementStaleness( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Waits for an element to become stale with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     * @return True if the element becomes stale, false otherwise
+     */
+    public  boolean waitForElementStaleness( By locator, int timeout) {
+        return waitForElementStaleness( locator, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Waits for an element to become stale with default timeout and polling time.
+     * @param element The WebElement to wait for
+     * @return True if the element becomes stale, false otherwise
+     * @deprecated Use {@link #waitForElementStaleness(By)} instead for consistency and better staleness handling.
+     */
+    @Deprecated
     public  boolean waitForElementStaleness( WebElement element) {
         return waitForElementStaleness( element, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
@@ -424,7 +462,9 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param element The WebElement to wait for
      * @param timeout Maximum wait time in seconds
      * @return True if the element becomes stale, false otherwise
+     * @deprecated Use {@link #waitForElementStaleness(By, int)} instead for consistency and better staleness handling.
      */
+    @Deprecated
     public  boolean waitForElementStaleness( WebElement element, int timeout) {
         return waitForElementStaleness( element, timeout, WaitManager.getDefaultPollingTime());
     }
@@ -754,12 +794,32 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     }
 
     /**
+     * Waits for an element to be clickable with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     * @return The clickable WebElement
+     */
+    public  WebElement waitForElementToBeClickable( By locator, int timeout) {
+        return waitForElementToBeClickable( locator, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
      * Waits for an element to be visible with default timeout and polling time.
      * @param locator Element locator
      * @return The visible WebElement
      */
     public  WebElement waitForElementToBeVisible( By locator) {
         return waitForElementToBeVisible( locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Waits for an element to be visible with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     * @return The visible WebElement
+     */
+    public  WebElement waitForElementToBeVisible( By locator, int timeout) {
+        return waitForElementToBeVisible( locator, timeout, WaitManager.getDefaultPollingTime());
     }
 
     /**
@@ -772,11 +832,30 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     }
 
     /**
+     * Waits for an element to be present in the DOM with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     * @return The present WebElement
+     */
+    public  WebElement waitForElementPresence( By locator, int timeout) {
+        return waitForElementPresence( locator, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
      * Waits for an element to disappear from the DOM with default timeout and polling time.
      * @param locator Element locator
      */
     public  void waitForElementToDisappear( By locator) {
         waitForElementToDisappear(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Waits for an element to disappear from the DOM with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     */
+    public  void waitForElementToDisappear( By locator, int timeout) {
+        waitForElementToDisappear(locator, timeout, WaitManager.getDefaultPollingTime());
     }
     /**
      * Creates a WebDriverWait instance with specified timeout.

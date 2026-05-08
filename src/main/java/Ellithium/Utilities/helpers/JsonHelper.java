@@ -148,6 +148,7 @@ public class JsonHelper {
         File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
+            return null;
         }
         log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
         synchronized (getFileLock(filePath)) {
@@ -246,7 +247,7 @@ public class JsonHelper {
 
         } catch (IOException e) {
             log("Failed to validate keys in JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
         return false;
     }
@@ -260,6 +261,7 @@ public class JsonHelper {
         File jsonFile = new File(filePath );
         if (!jsonFile.exists()) {
             log("JSON file does not exist: ", LogLevel.ERROR, filePath);
+            return Collections.emptyMap();
         }
 
         log("Attempting to read nested JSON data from file: ", LogLevel.INFO_BLUE, filePath);
@@ -270,12 +272,12 @@ public class JsonHelper {
 
         } catch (FileNotFoundException e) {
             log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return Collections.emptyMap();
 
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return Collections.emptyMap();
         }
     }
@@ -344,8 +346,8 @@ public class JsonHelper {
             return isEqual;
 
         } catch (IOException | JsonSyntaxException e) {
-            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", filePath2");
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", " + filePath2);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return false;
         }
     }
@@ -383,7 +385,7 @@ public class JsonHelper {
 
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to merge JSON files.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -426,7 +428,7 @@ public class JsonHelper {
 
         } catch (IOException | JsonSyntaxException e) {
             log("Failed to update nested JSON key.", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -538,7 +540,7 @@ public class JsonHelper {
 
         } catch (Exception e) {
             log("Failed to read nested path", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return null;
         }
     }
@@ -599,7 +601,7 @@ public class JsonHelper {
 
         } catch (Exception e) {
             log("Failed to modify JSON structure", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 
@@ -671,7 +673,7 @@ public class JsonHelper {
             return false;
         } catch (Exception e) {
             log("Failed to check array contents", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause().toString());
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return false;
         }
     }
