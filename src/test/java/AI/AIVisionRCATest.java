@@ -1,0 +1,53 @@
+package AI;
+
+import Ellithium.Utilities.ai.AIVisionRCA;
+import Ellithium.Utilities.ai.config.AIConfigLoader;
+import Ellithium.Utilities.ai.provider.LLMProvider;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.nio.file.Files;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+public class AIVisionRCATest {
+
+    @Test
+    public void testAnalyze_WithVisionEnabled_CallsProvider() throws Exception {
+        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
+            configMock.when(AIConfigLoader::isVisionRcaEnabled).thenReturn(true);
+
+            LLMProvider provider = mock(LLMProvider.class);
+            when(provider.supportsVision()).thenReturn(true);
+            when(provider.askWithVision(anyString(), any(byte[].class))).thenReturn("Cookie banner is blocking the element.");
+
+            // Create a dummy temp file to act as the screenshot
+            File dummyScreenshot = File.createTempFile("test-screenshot", ".png");
+            Files.write(dummyScreenshot.toPath(), new byte[]{1, 2, 3});
+            dummyScreenshot.deleteOnExit();
+
+            AIVisionRCA.analyze(dummyScreenshot, "ElementNotInteractableException", provider);
+
+            verify(provider, times(1)).askWithVision(anyString(), any(byte[].class));
+        }
+    }
+
+    @Test
+    public void testAnalyze_WithVisionDisabled_DoesNotCallProvider() throws Exception {
+        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
+            configMock.when(AIConfigLoader::isVisionRcaEnabled).thenReturn(false);
+
+            LLMProvider provider = mock(LLMProvider.class);
+            File dummyScreenshot = File.createTempFile("test-screenshot", ".png");
+            dummyScreenshot.deleteOnExit();
+
+            AIVisionRCA.analyze(dummyScreenshot, "Error", provider);
+
+            verify(provider, never()).askWithVision(anyString(), any(byte[].class));
+        }
+    }
+}
