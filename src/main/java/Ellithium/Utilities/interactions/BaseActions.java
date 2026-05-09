@@ -1,6 +1,8 @@
 package Ellithium.Utilities.interactions;
 
+import Ellithium.Utilities.ai.AISelfHealer;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -27,11 +29,24 @@ public class BaseActions<T extends WebDriver> {
     }
     /**
      * Finds a WebElement using the given locator.
+     * If the element is not found, and AI Self-Healing is configured, the healer
+     * is invoked to attempt to find a corrected locator.
+     * Zero overhead on successful runs — the catch block is never entered.
+     *
      * @param locator Element locator
      * @return The found WebElement
      */
-    public  WebElement findWebElement( By locator) {
-        return driver.findElement(locator);
+    public WebElement findWebElement(By locator) {
+        try {
+            return driver.findElement(locator);
+        } catch (NoSuchElementException e) {
+            WebElement healed = AISelfHealer.attemptHeal(
+                    driver, locator, Thread.currentThread().getStackTrace());
+            if (healed != null) {
+                return healed;
+            }
+            throw e;
+        }
     }
 
     /**
