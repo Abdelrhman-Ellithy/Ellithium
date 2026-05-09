@@ -59,6 +59,61 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Deselects all options from a multi-select dropdown.
+     * @param locator Dropdown element locator
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     */
+    public void deselectAll(By locator, int timeout, int pollingEvery) {
+        Reporter.log("Deselecting All Options From Element: ", LogLevel.INFO_BLUE, locator.toString());
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebElement(locator)).deselectAll();
+    }
+
+    /**
+     * Deselects a dropdown option by visible text.
+     * @param locator Dropdown element locator
+     * @param option Text of the option to deselect
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     */
+    public void deselectDropdownByText(By locator, String option, int timeout, int pollingEvery) {
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebElement(locator)).deselectByVisibleText(option);
+        Reporter.log("Deselecting Dropdown Option By Text: " + option + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
+    }
+
+    /**
+     * Deselects a dropdown option by value.
+     * @param locator Dropdown element locator
+     * @param value Value of the option to deselect
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     */
+    public void deselectDropdownByValue(By locator, String value, int timeout, int pollingEvery) {
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebElement(locator)).deselectByValue(value);
+        Reporter.log("Deselecting Dropdown Option By Value: " + value + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
+    }
+
+    /**
+     * Deselects a dropdown option by index.
+     * @param locator Dropdown element locator
+     * @param index Index of the option to deselect
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     */
+    public void deselectDropdownByIndex(By locator, int index, int timeout, int pollingEvery) {
+        Reporter.log("Deselecting Dropdown Option By Index: " + index + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
+        getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        new Select(findWebElement(locator)).deselectByIndex(index);
+    }
+
+    /**
      * Retrieves the selected options' texts from a dropdown.
      * @param locator Dropdown element locator
      * @param timeout Maximum wait time in seconds
@@ -151,5 +206,40 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void selectDropdownByTextForMultipleElements(By locator, String option, int timeout) {
         selectDropdownByTextForMultipleElements(locator, option, timeout, WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Deselects all options from a multi-select dropdown with default timeout and polling time.
+     * @param locator Dropdown element locator
+     */
+    public void deselectAll(By locator) {
+        deselectAll(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Deselects a dropdown option by visible text with default timeout and polling time.
+     * @param locator Dropdown element locator
+     * @param option Text of the option to deselect
+     */
+    public void deselectDropdownByText(By locator, String option) {
+        deselectDropdownByText(locator, option, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Deselects a dropdown option by value with default timeout and polling time.
+     * @param locator Dropdown element locator
+     * @param value Value of the option to deselect
+     */
+    public void deselectDropdownByValue(By locator, String value) {
+        deselectDropdownByValue(locator, value, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+    }
+
+    /**
+     * Deselects a dropdown option by index with default timeout and polling time.
+     * @param locator Dropdown element locator
+     * @param index Index of the option to deselect
+     */
+    public void deselectDropdownByIndex(By locator, int index) {
+        deselectDropdownByIndex(locator, index, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
 }
