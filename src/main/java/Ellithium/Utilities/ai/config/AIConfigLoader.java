@@ -30,6 +30,7 @@ public class AIConfigLoader {
     private static String llmModel = "";
     private static String llmBaseUrl = "";
     private static ExecutionMode executionMode = ExecutionMode.LOCAL;
+    private static boolean visionRcaEnabled = false;
     private static boolean initialized = false;
 
     /**
@@ -83,9 +84,15 @@ public class AIConfigLoader {
                 }
             }
 
+            String rca = PropertyHelper.getDataFromProperties(configPath, "ai.vision.rca.enabled");
+            if (rca != null && !rca.isEmpty()) {
+                visionRcaEnabled = Boolean.parseBoolean(rca.trim());
+            }
+
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
                     + " | Mode: " + executionMode
+                    + " | Vision RCA: " + (visionRcaEnabled ? "ENABLED" : "DISABLED")
                     + " | Provider: " + llmProviderName, LogLevel.INFO_YELLOW);
 
         } catch (Exception e) {
@@ -106,4 +113,5 @@ public class AIConfigLoader {
     public static String getLlmBaseUrl() { return llmBaseUrl; }
     public static ExecutionMode getExecutionMode() { return executionMode; }
     public static boolean isCI() { return executionMode == ExecutionMode.CI; }
+    public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
 }

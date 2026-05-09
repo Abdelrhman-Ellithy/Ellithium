@@ -1,5 +1,6 @@
 package Ellithium.Utilities.ai;
 
+import Ellithium.Utilities.ai.config.AIConfigLoader;
 import Ellithium.Utilities.ai.config.HealingStrategy;
 import Ellithium.Utilities.ai.models.HealingResult;
 import Ellithium.Utilities.ai.provider.LLMProvider;
@@ -80,7 +81,7 @@ public class AISelfHealer {
     /**
      * Returns the effective LLM provider for the current thread.
      */
-    private static LLMProvider getEffectiveProvider() {
+    public static LLMProvider getEffectiveProvider() {
         LLMProvider threadProvider = llmProviderThread.get();
         return threadProvider != null ? threadProvider : globalProvider;
     }
@@ -155,13 +156,21 @@ public class AISelfHealer {
             return null;
         }
 
-        // HEAL_AND_CONTINUE or HEAL_AND_NOTIFY: rewrite the source file
+        // HEAL_AND_CONTINUE or HEAL_AND_NOTIFY
         SourceLocation sourceLocation = resolveSourceLocation(stackTrace);
-        if (sourceLocation != null) {
-            boolean written = JavaSourceModifier.updateLocatorValue(
-                    sourceLocation.filePath, sourceLocation.fieldName, result.getNewLocatorExpression());
-            if (written) {
-                Reporter.log("AI Self-Healing: POM file updated successfully", LogLevel.INFO_GREEN);
+        
+        if (AIConfigLoader.isCI()) {
+            // CI Mode: Do not modify source files directly. Queue for the report.
+            String filePath = sourceLocation != null ? sourceLocation.filePath : "unknown file";
+            AIHealingReporter.queueChange(filePath, brokenLocator.toString(), result);
+        } else {
+            // LOCAL Mode: Rewrite the source file
+            if (sourceLocation != null) {
+                boolean written = JavaSourceModifier.updateLocatorValue(
+                        sourceLocation.filePath, sourceLocation.fieldName, result.getNewLocatorExpression());
+                if (written) {
+                    Reporter.log("AI Self-Healing: POM file updated successfully", LogLevel.INFO_GREEN);
+                }
             }
         }
 

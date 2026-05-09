@@ -7,6 +7,8 @@ import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
+import Ellithium.Utilities.ai.AIVisionRCA;
+import Ellithium.Utilities.ai.AISelfHealer;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
@@ -36,6 +38,10 @@ public class GeneralHandler {
             String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File("Test-Output"+ File.separator +"ScreenShots"+ File.separator +"Failed"+ File.separator + name + ".png");
             Files.move(screenshot, screenShotFile);
+            
+            // Trigger AI Vision RCA
+            AIVisionRCA.analyze(screenShotFile, "Test Failed: " + testName, AISelfHealer.getEffectiveProvider());
+            
             return screenShotFile;
         } catch (IOException e) {
             Logger.logException(e);
