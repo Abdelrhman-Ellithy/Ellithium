@@ -9,6 +9,9 @@ import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
 import Ellithium.Utilities.ai.AIVisionRCA;
 import Ellithium.Utilities.ai.AISelfHealer;
+import Ellithium.Utilities.ai.config.AIConfigLoader;
+import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.Utilities.ai.provider.LLMProviderFactory;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
@@ -73,6 +76,11 @@ public class GeneralHandler {
         APIFilterHelper.applyFilter();
         WaitManager.initializeTimeoutAndPolling();
         RetryAnalyzer.initRetryCount();
+        AIConfigLoader.initialize();
+        LLMProvider aiProvider = LLMProviderFactory.createProvider();
+        if (aiProvider != null) {
+            AISelfHealer.initialize(aiProvider, AIConfigLoader.getHealingStrategy(), AIConfigLoader.getConfidenceThreshold());
+        }
     }
     
     public static List<Parameter> getParameters(){

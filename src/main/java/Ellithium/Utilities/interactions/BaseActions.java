@@ -7,6 +7,7 @@ import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,22 @@ public class BaseActions<T extends WebDriver> {
                 return healed;
             }
             throw e;
+        }
+    }
+
+    /**
+     * Waits for an element to be visible, returning it. 
+     * If a TimeoutException occurs, it falls back to findWebElement() which triggers AI Self-Healing
+     * if the element is entirely missing from the DOM.
+     */
+    protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
+        try {
+            getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
+            return driver.findElement(locator);
+        } catch (org.openqa.selenium.TimeoutException e) {
+            // Element might be missing completely, trigger findWebElement to engage AI healer
+            return findWebElement(locator);
         }
     }
 

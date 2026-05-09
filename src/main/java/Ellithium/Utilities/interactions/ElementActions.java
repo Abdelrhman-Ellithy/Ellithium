@@ -21,9 +21,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        WebElement element = findWebElement(locator);
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
         element.clear();
         element.sendKeys(data);
     }
@@ -36,9 +34,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        WebElement element = findWebElement(locator);
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
         element.clear();
         element.sendKeys(data);
     }
@@ -50,9 +46,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnElement(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        findWebElement(locator).click();
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        element.click();
     }
 
     /**
@@ -63,9 +58,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return Text content of the element
      */
     public String getText(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getText();
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        return element.getText();
     }
 
     /**
