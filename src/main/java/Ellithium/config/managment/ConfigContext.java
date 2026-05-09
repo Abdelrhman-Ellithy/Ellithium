@@ -25,6 +25,8 @@ public class ConfigContext {
             "properties"  + File.separator + "config"+".properties";
     private static final String allureFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "allure"+".properties";
+    private static final String aiFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
+            "properties"  + File.separator + "ai-config"+".properties";
     private final static String notificationFilePath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
             "properties"  + File.separator + "notifications"+".properties";
     private static final String basePropertyFolderPath="src" + File.separator + "main" + File.separator + "resources" + File.separator +
@@ -64,6 +66,9 @@ public class ConfigContext {
     }
     public static String getAllureFilePath() {
         return allureFilePath;
+    }
+    public static String getAiFilePath() {
+        return aiFilePath;
     }
     public static String getLogFilePath() {
         return logFilePath;

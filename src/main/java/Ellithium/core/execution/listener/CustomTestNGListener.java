@@ -7,6 +7,7 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
+import Ellithium.Utilities.ai.AIHealingReporter;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
@@ -170,6 +171,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.logException(e);
         }
         finally {
+            AIHealingReporter.generateReport();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
         }

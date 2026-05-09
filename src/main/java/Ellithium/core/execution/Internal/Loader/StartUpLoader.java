@@ -18,6 +18,7 @@ public class StartUpLoader {
                         notificationPath,
                         configPath,
                         logPath,
+                        aiPath,
                         checkerFilePath,
                         checkerFolderPath
     ;
@@ -28,9 +29,11 @@ public class StartUpLoader {
         ScreenShotPath = ConfigContext.getFailedScreenShotPath();
         allurePath = ConfigContext.getAllureFilePath();
         configPath = ConfigContext.getConfigFilePath();
+        aiPath = ConfigContext.getAiFilePath();
         logPath = ConfigContext.getLogFilePath();
         notificationPath=ConfigContext.getNotificationFilePath();
         System.out.println("Application started with properties initialized.");
+        initializePropertyFiles("ai-config");
         initializePropertyFiles("allure");
         initializePropertyFiles("config");
         initializePropertyFiles("log4j2");
@@ -76,6 +79,31 @@ public class StartUpLoader {
                         extractFileFromJar(jarFile, "properties/notifications.properties", new File(notificationPath));
                     } else {
                         System.err.println("JAR file not found.");
+                    }
+                }
+                break;
+            case "ai-config":
+                if (!checkFileExists(aiPath)) {
+                    try {
+                        File aiConfigFile = new File(aiPath);
+                        aiConfigFile.getParentFile().mkdirs();
+                        aiConfigFile.createNewFile();
+                        String defaultAiConfig = "# Ellithium AI Engine Configuration\n" +
+                                "# Strategy options: DISABLED, HEAL_AND_CONTINUE, HEAL_AND_NOTIFY\n" +
+                                "ai.healing.strategy=DISABLED\n" +
+                                "ai.healing.confidenceThreshold=0.85\n" +
+                                "ai.llm.provider=OpenAI\n" +
+                                "ai.llm.apiKey=YOUR_API_KEY_HERE\n" +
+                                "ai.llm.model=gpt-4o\n" +
+                                "ai.llm.baseUrl=\n" +
+                                "# Execution mode: LOCAL or CI\n" +
+                                "ai.execution.mode=LOCAL\n" +
+                                "# Vision RCA for failed test screenshots\n" +
+                                "ai.vision.rca.enabled=true\n";
+                        Files.write(aiConfigFile.toPath(), defaultAiConfig.getBytes());
+                        System.out.println("Created default ai-config.properties");
+                    } catch (IOException e) {
+                        System.err.println("Failed to create ai-config.properties: " + e.getMessage());
                     }
                 }
                 break;
