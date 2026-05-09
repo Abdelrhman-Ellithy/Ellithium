@@ -64,9 +64,10 @@ public class AnthropicProvider implements LLMProvider {
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 JSONObject jsonResponse = new JSONObject(response.body());
-                return jsonResponse.getJSONArray("content")
+                String rawText = jsonResponse.getJSONArray("content")
                         .getJSONObject(0)
                         .getString("text");
+                return stripMarkdownFences(rawText);
             } else {
                 Reporter.log("Anthropic API Error: " + response.statusCode() + " - " + response.body(), LogLevel.ERROR);
                 return null;
@@ -80,5 +81,16 @@ public class AnthropicProvider implements LLMProvider {
     @Override
     public String getModelName() {
         return model;
+    }
+
+    private String stripMarkdownFences(String text) {
+        if (text == null) return null;
+        String trimmed = text.trim();
+        if (trimmed.startsWith("```")) {
+            int firstNewline = trimmed.indexOf('\n');
+            if (firstNewline != -1) trimmed = trimmed.substring(firstNewline + 1);
+            if (trimmed.endsWith("```")) trimmed = trimmed.substring(0, trimmed.lastIndexOf("```")).trim();
+        }
+        return trimmed;
     }
 }

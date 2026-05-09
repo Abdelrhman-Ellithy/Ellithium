@@ -61,10 +61,11 @@ public class OpenAICompatibleProvider implements LLMProvider {
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 JSONObject jsonResponse = new JSONObject(response.body());
-                return jsonResponse.getJSONArray("choices")
+                String rawText = jsonResponse.getJSONArray("choices")
                         .getJSONObject(0)
                         .getJSONObject("message")
                         .getString("content");
+                return stripMarkdownFences(rawText);
             } else {
                 Reporter.log("OpenAI API Error: " + response.statusCode() + " - " + response.body(), LogLevel.ERROR);
                 return null;
@@ -78,5 +79,16 @@ public class OpenAICompatibleProvider implements LLMProvider {
     @Override
     public String getModelName() {
         return model;
+    }
+
+    private String stripMarkdownFences(String text) {
+        if (text == null) return null;
+        String trimmed = text.trim();
+        if (trimmed.startsWith("```")) {
+            int firstNewline = trimmed.indexOf('\n');
+            if (firstNewline != -1) trimmed = trimmed.substring(firstNewline + 1);
+            if (trimmed.endsWith("```")) trimmed = trimmed.substring(0, trimmed.lastIndexOf("```")).trim();
+        }
+        return trimmed;
     }
 }

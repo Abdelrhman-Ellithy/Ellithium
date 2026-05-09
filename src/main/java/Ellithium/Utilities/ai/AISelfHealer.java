@@ -233,6 +233,9 @@ public class AISelfHealer {
      * Parses the LLM's JSON response into a HealingResult.
      */
     private static HealingResult parseHealingResponse(String response) {
+        if (response == null || response.trim().isEmpty()) {
+            return null;
+        }
         try {
             // Simple JSON extraction — production should use Gson
             com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(response).getAsJsonObject();
