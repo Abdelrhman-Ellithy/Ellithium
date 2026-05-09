@@ -25,8 +25,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      */
     public void javascriptClick(By locator, int timeout, int pollingEvery) {
-        getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator));
+        waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
         javascriptClick( locator);
     }
 
@@ -56,8 +55,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param timeout Maximum wait time in seconds
      */
     public  void javascriptClick( By locator, int timeout) {
-        getFluentWait( timeout, WaitManager.getDefaultPollingTime())
-                .until(ExpectedConditions.elementToBeClickable(locator));
+        waitForVisibilityAndFindElement(locator, timeout, WaitManager.getDefaultPollingTime());
         javascriptClick( locator);
     }
     /**
@@ -107,11 +105,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
                 throw new IllegalArgumentException("File does not exist: " + filePath);
             }
 
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
-
-            // Re-locate element right before use to avoid stale element
-            WebElement uploadElement = findWebElement(fileUploadLocator);
+            WebElement uploadElement = waitForVisibilityAndFindElement(fileUploadLocator, timeout, pollingEvery);
             JavascriptExecutor js = (JavascriptExecutor) driver;
             js.executeScript("arguments[0].style.display='block';", uploadElement);
             // Re-locate again before sendKeys in case JS execution caused DOM change

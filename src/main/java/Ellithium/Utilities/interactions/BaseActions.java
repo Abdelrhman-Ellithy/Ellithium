@@ -40,7 +40,8 @@ public class BaseActions<T extends WebDriver> {
     public WebElement findWebElement(By locator) {
         try {
             return driver.findElement(locator);
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException e) {
+            // InvalidSelectorException covers empty/blank locators (e.g. By.tagName(""))
             WebElement healed = AISelfHealer.attemptHeal(
                     driver, locator, Thread.currentThread().getStackTrace());
             if (healed != null) {
@@ -52,26 +53,58 @@ public class BaseActions<T extends WebDriver> {
 
     /**
      * Waits for an element to be visible, returning it. 
-     * If a TimeoutException occurs, it falls back to findWebElement() which triggers AI Self-Healing
-     * if the element is entirely missing from the DOM.
+     * If a TimeoutException or InvalidSelectorException occurs, it falls back to findWebElement()
+     * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
     protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
         try {
             getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
             return driver.findElement(locator);
-        } catch (org.openqa.selenium.TimeoutException e) {
-            // Element might be missing completely, trigger findWebElement to engage AI healer
+        } catch (org.openqa.selenium.TimeoutException | org.openqa.selenium.InvalidSelectorException e) {
+            // Covers both missing elements and invalid/empty locators
             return findWebElement(locator);
         }
     }
 
     /**
+     * Waits for all elements to be visible, returning them.
+     * If a TimeoutException occurs, attempts to heal the locator before querying again.
+     */
+    protected List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
+        try {
+            getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            return driver.findElements(locator);
+        } catch (org.openqa.selenium.TimeoutException e) {
+            // List is missing entirely. Attempt to heal the locator.
+            By healedLocator = AISelfHealer.healLocator(driver, locator, Thread.currentThread().getStackTrace());
+            if (healedLocator != null) {
+                // If the cache was hit or AI found it, log it
+                AISelfHealer.CachedLocator cached = AISelfHealer.healedLocatorCacheThread.get().get(locator.toString());
+                if (cached != null) {
+                    Ellithium.core.reporting.Reporter.log("AI Self-Healing (cached list): reusing healed locator " 
+                            + cached.newLocator + " for field '" + cached.originalField 
+                            + "' (original: " + locator.toString() + ")", Ellithium.core.logging.LogLevel.INFO_YELLOW);
+                }
+                return driver.findElements(healedLocator);
+            }
+            // If healing fails, return the empty list (standard Selenium behavior for findElements)
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * Finds all WebElements matching the given locator.
+     * Respects the AI healing cache if the locator was previously healed.
      * @param locator Element locator
      * @return List of found WebElements
      */
     public List<WebElement> findWebElements(By locator) {
+        AISelfHealer.CachedLocator cached = AISelfHealer.healedLocatorCacheThread.get().get(locator.toString());
+        if (cached != null) {
+            return driver.findElements(cached.newLocator);
+        }
         return driver.findElements(locator);
     }
 

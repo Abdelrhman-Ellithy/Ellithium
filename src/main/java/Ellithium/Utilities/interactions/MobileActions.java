@@ -143,8 +143,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void tap(By locator) {
         Reporter.log("Performing tap gesture on element", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -207,8 +207,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void doubleTap(By locator) {
         Reporter.log("Performing double-tap gesture on element", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -268,8 +268,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void doubleTap(By locator, double durationSeconds) {
         Reporter.log("Performing double-tap gesture on element with duration " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -354,8 +354,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void longPress(By locator, double durationSeconds) {
         Reporter.log("Performing long press gesture on element for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
@@ -440,8 +440,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void swipe(String direction, By locator) {
         Reporter.log("Performing swipe gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -474,8 +474,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void swipe(By locator, String direction, double percent) {
         Reporter.log("Performing swipe gesture on element in direction " + direction + " with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -586,8 +586,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void scroll(By locator, String direction) {
         Reporter.log("Performing scroll gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -620,8 +620,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void scroll(By locator, String direction, int percent) {
         Reporter.log("Performing scroll gesture on element in direction " + direction + " with " + percent + "%", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
@@ -765,8 +765,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void scrollToElement(By locator, String selector, String direction) {
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             
             if (isIOS()) {
@@ -849,8 +849,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void drag(By locator, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture on element to coordinates (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             
@@ -958,8 +958,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinch(By locator, boolean zoomIn, double percent) {
         Reporter.log("Performing pinch " + (zoomIn ? "open" : "close") + " gesture on element with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             
@@ -1002,8 +1002,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinch(By locator, double scale, double velocity) {
         Reporter.log("Performing pinch gesture on element with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             params.put("scale", scale);
@@ -1200,8 +1200,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
         validatePlatform("twoFingerTap", true, false);
         Reporter.log("Performing two-finger tap gesture on element", LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("element", getElementId(element));
             driver.executeScript("mobile: twoFingerTap", params);
@@ -1259,8 +1259,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
         validatePlatform("fling", false, true);
         Reporter.log("Performing fling gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
         try {
-            // Re-locate element right before use to avoid stale element
-            WebElement element = findWebElement(locator);
+            // Wait for element visibility before use to prevent premature AI healing on slow screens
+            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             params.put("elementId", getElementId(element));
             params.put("direction", direction);

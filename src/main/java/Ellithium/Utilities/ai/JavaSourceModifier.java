@@ -6,12 +6,15 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -22,6 +25,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * back into the Page Object Model (POM) source code.
  *
  * <p>Thread-safe: uses per-file locking to prevent corruption during parallel execution.</p>
+ *
+ * <p>Supports two locator patterns:</p>
+ * <ul>
+ *   <li><b>Field-based:</b> {@code private final By loginBtn = By.id("old");}</li>
+ *   <li><b>Inline:</b> {@code driver.click(By.id("old"));}</li>
+ * </ul>
+ *
+ * <p>The inline strategy matches by <b>content</b> (the broken locator's value),
+ * not by line number. This eliminates the line-shift bug that occurs when
+ * JavaParser reformats the file on the first write.</p>
  */
 public class JavaSourceModifier {
 
@@ -80,6 +93,107 @@ public class JavaSourceModifier {
                 return true;
             } else {
                 Reporter.log("Could not find locator field '" + fieldName + "' in file: " + filePath, LogLevel.ERROR);
+                return false;
+            }
+
+        } catch (FileNotFoundException e) {
+            Reporter.log("File not found: " + filePath, LogLevel.ERROR);
+            return false;
+        } catch (IOException e) {
+            Reporter.log("Failed to write updated AST to file: " + filePath, LogLevel.ERROR);
+            return false;
+        } catch (Exception e) {
+            Reporter.log("AST parsing error: " + e.getMessage(), LogLevel.ERROR);
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Updates a locator by matching its OLD value content in the AST, regardless of line number.
+     *
+     * <p>This is the primary method for healing inline locators like:
+     * {@code driverActions.elements().sendData(By.id("test"), username);}
+     * It finds the By.xxx("test") call anywhere in the file by matching the By method name
+     * and argument value, then replaces it with the new expression.</p>
+     *
+     * <p>This approach is immune to line-number shifts caused by JavaParser reformatting.</p>
+     *
+     * @param filePath       Path to the .java file
+     * @param oldByMethod    The By method name (e.g., "id", "cssSelector", "tagName", "xpath")
+     * @param oldByValue     The old locator value string (e.g., "test", "lpl", "bt")
+     * @param newByString    The new By declaration as a string (e.g., "By.id(\"username\")")
+     * @return true if successfully modified and saved, false otherwise
+     */
+    public static boolean updateLocatorByOldValue(String filePath, String oldByMethod, String oldByValue, String newByString) {
+        ReentrantLock lock = getFileLock(filePath);
+        lock.lock();
+        try {
+            File javaFile = new File(filePath);
+            if (!javaFile.exists()) {
+                Reporter.log("Java file not found for AST modification: " + filePath, LogLevel.ERROR);
+                return false;
+            }
+
+            CompilationUnit cu = StaticJavaParser.parse(javaFile);
+
+            // Find ALL MethodCallExpr where scope is "By" or "AppiumBy"
+            // and the method name + argument value match the broken locator
+            List<MethodCallExpr> allByCalls = cu.findAll(MethodCallExpr.class);
+
+            MethodCallExpr targetCall = null;
+            for (MethodCallExpr call : allByCalls) {
+                if (!call.getScope().isPresent()) continue;
+
+                String scopeName = call.getScope().get().toString();
+                if (!scopeName.equals("By") && !scopeName.equals("AppiumBy")) continue;
+
+                // Check the method name matches (e.g., "id", "cssSelector", "tagName")
+                if (!call.getNameAsString().equals(oldByMethod)) continue;
+
+                // Check the argument value matches
+                if (call.getArguments().isEmpty()) {
+                    // If the call has no arguments and old value is empty, it's a match
+                    if (oldByValue == null || oldByValue.isEmpty()) {
+                        targetCall = call;
+                        break;
+                    }
+                    continue;
+                }
+
+                Expression arg = call.getArgument(0);
+                if (arg instanceof StringLiteralExpr) {
+                    String argValue = ((StringLiteralExpr) arg).getValue();
+                    if (argValue.equals(oldByValue)) {
+                        targetCall = call;
+                        break;
+                    }
+                }
+            }
+
+            if (targetCall != null) {
+                Expression newExpression = StaticJavaParser.parseExpression(newByString);
+                targetCall.replace(newExpression);
+
+                Files.writeString(Paths.get(filePath), cu.toString());
+                Reporter.log("Successfully healed inline locator By." + oldByMethod + "(\"" + oldByValue
+                        + "\") → " + newByString + " in file: " + filePath, LogLevel.INFO_GREEN);
+                return true;
+            } else {
+                // AST search failed (can happen after JavaParser reformats the file).
+                // Fallback: direct text-based search and replace on the raw file content.
+                String rawContent = Files.readString(Paths.get(filePath));
+                String oldPattern = "By." + oldByMethod + "(\"" + oldByValue + "\")";
+                if (rawContent.contains(oldPattern)) {
+                    String updatedContent = rawContent.replace(oldPattern, newByString);
+                    Files.writeString(Paths.get(filePath), updatedContent);
+                    Reporter.log("Successfully healed inline locator (text fallback) " + oldPattern
+                            + " → " + newByString + " in file: " + filePath, LogLevel.INFO_GREEN);
+                    return true;
+                }
+                Reporter.log("Could not find inline locator By." + oldByMethod + "(\"" + oldByValue
+                        + "\") in file (AST + text fallback both failed): " + filePath, LogLevel.ERROR);
                 return false;
             }
 

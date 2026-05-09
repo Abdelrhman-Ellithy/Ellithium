@@ -9,30 +9,39 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Aggregates AI healing suggestions during a test run.
- * Critical for CI/CD environments where direct file modification is disabled.
- * Generates a comprehensive Markdown report at the end of the suite.
+ * Aggregates AI healing events during a test run and generates a Markdown report.
+ *
+ * <p>The report is ALWAYS generated at suite end, regardless of LOCAL or CI mode.
+ * In LOCAL mode it serves as an audit trail; in CI mode it's the primary output
+ * since source files are not modified directly.</p>
  */
 public class AIHealingReporter {
 
     private static final ConcurrentLinkedQueue<HealedLocatorEntry> queuedChanges = new ConcurrentLinkedQueue<>();
 
     /**
-     * Queues a healing suggestion for the report.
+     * Queues a healing event with full context for the report.
+     */
+    public static void queueChange(String filePath, String brokenLocator, HealingResult result,
+                                   String pageClassName, String methodName, String actionType, int lineNumber) {
+        queuedChanges.add(new HealedLocatorEntry(filePath, brokenLocator, result,
+                pageClassName, methodName, actionType, lineNumber));
+        Reporter.log("Healing queued for report: " + brokenLocator + " → " + result.getNewLocatorExpression(), LogLevel.INFO_YELLOW);
+    }
+
+    /**
+     * Backward-compatible overload (legacy callers).
      */
     public static void queueChange(String filePath, String brokenLocator, HealingResult result) {
-        queuedChanges.add(new HealedLocatorEntry(filePath, brokenLocator, result));
-        Reporter.log("Healing suggestion queued for report: " + brokenLocator + " -> " + result.getNewLocatorExpression(), LogLevel.INFO_YELLOW);
+        queueChange(filePath, brokenLocator, result, null, null, null, 0);
     }
 
     /**
      * Generates the healing-report.md file.
-     * Call this in the test suite teardown (e.g., GeneralHandler.onExecutionFinish or CustomTestNGListener.onExecutionFinish).
+     * Call this in the test suite teardown.
      */
     public static void generateReport() {
         if (queuedChanges.isEmpty()) {
@@ -49,15 +58,30 @@ public class AIHealingReporter {
         try (FileWriter writer = new FileWriter(reportFile)) {
             writer.write("# Ellithium AI Healing Report\n\n");
             writer.write("Generated at: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n\n");
-            writer.write("The following locators failed during execution and were successfully healed by the AI Engine. ");
-            writer.write("Since the framework is running in CI mode, these changes were not written to the source code.\n\n");
-            writer.write("## Suggested Fixes\n\n");
+            writer.write("The following locators failed during execution and were healed by the AI Engine.\n\n");
+            writer.write("| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |\n");
+            writer.write("|---|------|--------|--------|----------------|----------------|------------|\n");
 
+            int index = 1;
             for (HealedLocatorEntry entry : queuedChanges) {
-                writer.write("### File: `" + entry.filePath + "`\n");
-                writer.write("- **Broken Locator:** `" + entry.brokenLocator + "`\n");
-                writer.write("- **Suggested Locator:** `" + entry.result.getNewLocatorExpression() + "`\n");
-                writer.write("- **Confidence:** `" + String.format("%.2f", entry.result.getConfidence()) + "`\n");
+                writer.write("| " + index++
+                        + " | `" + (entry.filePath != null ? entry.filePath : "unknown") + "`"
+                        + " | " + (entry.methodName != null ? entry.methodName : "-")
+                        + " | " + (entry.actionType != null ? entry.actionType : "-")
+                        + " | `" + entry.brokenLocator + "`"
+                        + " | `" + entry.result.getNewLocatorExpression() + "`"
+                        + " | " + String.format("%.2f", entry.result.getConfidence())
+                        + " |\n");
+            }
+
+            writer.write("\n## Detailed Reasoning\n\n");
+            index = 1;
+            for (HealedLocatorEntry entry : queuedChanges) {
+                writer.write("### " + index++ + ". " + entry.brokenLocator + "\n");
+                if (entry.pageClassName != null) writer.write("- **Class:** `" + entry.pageClassName + "`\n");
+                if (entry.methodName != null) writer.write("- **Method:** `" + entry.methodName + "`\n");
+                if (entry.lineNumber > 0) writer.write("- **Line:** " + entry.lineNumber + "\n");
+                writer.write("- **Healed to:** `" + entry.result.getNewLocatorExpression() + "`\n");
                 if (entry.result.getReasoning() != null && !entry.result.getReasoning().isEmpty()) {
                     writer.write("- **Reasoning:** " + entry.result.getReasoning() + "\n");
                 }
@@ -74,11 +98,20 @@ public class AIHealingReporter {
         final String filePath;
         final String brokenLocator;
         final HealingResult result;
+        final String pageClassName;
+        final String methodName;
+        final String actionType;
+        final int lineNumber;
 
-        HealedLocatorEntry(String filePath, String brokenLocator, HealingResult result) {
+        HealedLocatorEntry(String filePath, String brokenLocator, HealingResult result,
+                          String pageClassName, String methodName, String actionType, int lineNumber) {
             this.filePath = filePath;
             this.brokenLocator = brokenLocator;
             this.result = result;
+            this.pageClassName = pageClassName;
+            this.methodName = methodName;
+            this.actionType = actionType;
+            this.lineNumber = lineNumber;
         }
     }
 }

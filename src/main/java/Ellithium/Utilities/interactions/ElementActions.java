@@ -70,8 +70,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of text from the elements
      */
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery).until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, WebElement::getText);
     }
 
@@ -85,8 +85,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getAttributeFromMultipleElements(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, element -> element.getDomAttribute(attribute));
     }
     /**
@@ -99,8 +98,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, element -> element.getDomProperty(property));
     }
 
@@ -127,9 +125,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getDomAttribute(attribute);
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        return element.getDomAttribute(attribute);
     }
 
     /**
@@ -142,9 +139,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getDomProperty(property);
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        return element.getDomProperty(property);
     }
 
     /**
@@ -550,9 +546,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public boolean isElementEnabled(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            boolean enabled = findWebElement(locator).isEnabled();
+            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+            boolean enabled = element.isEnabled();
             if (enabled) {
                 Reporter.log("Element is enabled: " + locator, LogLevel.INFO_BLUE);
             } else {
@@ -596,9 +591,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public boolean isElementSelected(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            boolean selected = findWebElement(locator).isSelected();
+            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+            boolean selected = element.isSelected();
             if (selected) {
                 Reporter.log("Element is selected: " + locator, LogLevel.INFO_BLUE);
             } else {
@@ -681,9 +675,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void clearElement(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            findWebElement(locator).clear();
+            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+            element.clear();
             Reporter.log("Element cleared: " + locator, LogLevel.INFO_BLUE);
         } catch (TimeoutException e) {
             Reporter.log("Clear failed – element not visible within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
@@ -719,10 +712,13 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(locator));
-            // Re-locate element right before JavaScript execution to avoid stale element
-            WebElement element = findWebElement(locator);
+            WebElement element;
+            try {
+                getFluentWait(timeout, pollingEvery).until(ExpectedConditions.presenceOfElementLocated(locator));
+                element = findWebElement(locator);
+            } catch (TimeoutException e) {
+                element = findWebElement(locator);
+            }
             ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
             Reporter.log("Scrolled into view: " + locator, LogLevel.INFO_BLUE);
         } catch (TimeoutException e) {

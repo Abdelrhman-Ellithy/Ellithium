@@ -1,0 +1,20 @@
+[
+  {
+    "source": {
+      "testId": "TC-TEXT-1",
+      "sourceFile": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\req6969713529420079748.txt",
+      "description": "Login test requirements"
+    },
+    "assets": {
+      "targetPackage": "tests",
+      "testClass": "LoginTest",
+      "testMethod": "testValidLogin",
+      "pomClass": "LoginPage",
+      "pomMethods": [
+        "login"
+      ],
+      "featureFile": ""
+    },
+    "generatedAt": "May 9, 2026, 12:12:17 PM"
+  }
+]
