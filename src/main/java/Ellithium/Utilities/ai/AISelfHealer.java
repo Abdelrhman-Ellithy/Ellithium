@@ -32,6 +32,10 @@ public class AISelfHealer {
     private static volatile HealingStrategy globalStrategy = HealingStrategy.DISABLED;
     private static volatile double confidenceThreshold = 0.85;
 
+    // Runtime locator cache: avoids re-calling the AI for the same broken locator
+    private static final java.util.concurrent.ConcurrentHashMap<String, By> healedLocatorCache
+            = new java.util.concurrent.ConcurrentHashMap<>();
+
     /**
      * Initializes the self-healer globally. Called once at framework startup.
      *
@@ -114,6 +118,18 @@ public class AISelfHealer {
 
         Reporter.log("AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
+        // Fast path: check runtime cache first
+        By cached = healedLocatorCache.get(brokenLocator.toString());
+        if (cached != null) {
+            try {
+                WebElement el = driver.findElement(cached);
+                Reporter.log("AI Self-Healing (cached): reusing healed locator " + cached, LogLevel.INFO_YELLOW);
+                return el;
+            } catch (Exception ignored) {
+                healedLocatorCache.remove(brokenLocator.toString());
+            }
+        }
+
         // Step 1: Detect Mobile Context
         boolean isMobile = driver instanceof AppiumDriver;
 
@@ -190,7 +206,10 @@ public class AISelfHealer {
         try {
             By newLocator = parseByFromExpression(result.getNewLocatorExpression());
             if (newLocator != null) {
-                return driver.findElement(newLocator);
+                WebElement el = driver.findElement(newLocator);
+                // Cache the healed locator for future calls
+                healedLocatorCache.put(brokenLocator.toString(), newLocator);
+                return el;
             }
         } catch (Exception e) {
             Reporter.log("AI Self-Healing: New locator also failed: " + e.getMessage(), LogLevel.ERROR);
@@ -250,21 +269,101 @@ public class AISelfHealer {
     }
 
     /**
-     * Resolves the POM source file path and field name from the stack trace.
+     * Resolves the POM source file path AND the exact field name from the stack trace.
+     * Uses the exact line number from the stack frame to read the source file and
+     * scan upward from the call site to find the By field declaration that holds the broken locator.
      */
     private static SourceLocation resolveSourceLocation(StackTraceElement[] stackTrace) {
-        // Walk the stack to find the first frame from the user's Page Object (not framework code)
         for (StackTraceElement frame : stackTrace) {
             String className = frame.getClassName();
-            if (!className.startsWith("Ellithium.")
-                    && !className.startsWith("org.openqa.selenium")
-                    && !className.startsWith("java.")
-                    && !className.startsWith("sun.")) {
-                // This is likely the user's POM class
-                String filePath = "src/main/java/" + className.replace('.', '/') + ".java";
-                // Field name resolution requires additional AST analysis
-                return new SourceLocation(filePath, null);
+            // Skip framework, Selenium, and JDK internals
+            if (className.startsWith("Ellithium.")
+                    || className.startsWith("org.openqa.selenium")
+                    || className.startsWith("java.")
+                    || className.startsWith("sun.")
+                    || className.startsWith("io.cucumber")
+                    || className.startsWith("io.qameta")
+                    || className.startsWith("org.testng")
+                    || className.startsWith("net.bytebuddy")) {
+                continue;
             }
+
+            // Derive file path from class name (try test directory first, then main)
+            String classFilePart = className.replace('.', '/') + ".java";
+            String resolvedPath = null;
+            for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
+                String candidate = root + classFilePart;
+                if (new java.io.File(candidate).exists()) {
+                    resolvedPath = candidate;
+                    break;
+                }
+            }
+            if (resolvedPath == null) {
+                continue; // file not found in either location
+            }
+
+            // Read the source file and scan upward from the stack frame's line number
+            // to find the By field declaration that was being used
+            int callSiteLine = frame.getLineNumber();
+            String fieldName = resolveFieldNameFromSource(resolvedPath, callSiteLine);
+
+            Reporter.log("AI Healer: Located source at " + resolvedPath
+                    + ":" + callSiteLine
+                    + (fieldName != null ? " → field '" + fieldName + "'" : ""), LogLevel.INFO_BLUE);
+            return new SourceLocation(resolvedPath, fieldName);
+        }
+        return null;
+    }
+
+    /**
+     * Reads the source file around the given line number to find the By field
+     * declaration that the call at that line is using.
+     *
+     * Strategy:
+     * 1. Read the file line at callSiteLine — it may directly contain a By.xxx call inline.
+     * 2. If not, look at the token on the call site line that matches a field reference
+     *    and scan upward through the file to find "private ... By fieldName = ..." or
+     *    "By fieldName = ..." to extract fieldName.
+     */
+    private static String resolveFieldNameFromSource(String filePath, int callSiteLine) {
+        try {
+            java.util.List<String> lines = java.nio.file.Files.readAllLines(
+                    java.nio.file.Paths.get(filePath));
+
+            if (callSiteLine < 1 || callSiteLine > lines.size()) return null;
+
+            // Line at the call site (0-indexed)
+            String callLine = lines.get(callSiteLine - 1).trim();
+
+            // Pattern: look for a simple variable reference like "someField" or "this.someField"
+            // We try to extract the identifier used as locator argument
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("(?:this\\.)?([a-zA-Z_][a-zA-Z0-9_]*)")
+                    .matcher(callLine);
+            java.util.List<String> candidates = new java.util.ArrayList<>();
+            while (m.find()) candidates.add(m.group(1));
+
+            // Walk upward from call site looking for "By <candidate>" declarations
+            for (int i = callSiteLine - 2; i >= 0; i--) {
+                String srcLine = lines.get(i).trim();
+                // Match field declarations like: private final By sortBtn = By.cssSelector(...);
+                java.util.regex.Matcher fieldMatcher = java.util.regex.Pattern
+                        .compile("(?:private|protected|public)?\\s*(?:final\\s+)?By\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=")
+                        .matcher(srcLine);
+                if (fieldMatcher.find()) {
+                    String foundField = fieldMatcher.group(1);
+                    // Prefer a candidate that matches a field referenced on the call site
+                    if (candidates.contains(foundField)) {
+                        return foundField;
+                    }
+                    // Otherwise, return the first matching field within reasonable range
+                    if (callSiteLine - i <= 50) {
+                        return foundField;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Reporter.log("AI Healer: Could not read source file for field resolution: " + e.getMessage(), LogLevel.WARN);
         }
         return null;
     }

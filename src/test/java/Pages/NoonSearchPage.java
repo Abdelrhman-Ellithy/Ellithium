@@ -10,7 +10,7 @@ import java.util.List;
 public class NoonSearchPage {
     WebDriver driver;
     DriverActions driverActions;
-    private final By searchField=By.id("search-input");
+    private final By searchField=By.id("search-0-input");
     private final By sortBtn=By.cssSelector("button[class*='DesktopSortDropdown_trigger']");
     private final By lowToHigh =By.xpath("//a[contains(text(),'Price: Low to High')]");
     private final By sortBtnText=By.cssSelector("span[class*='DesktopSort_text']");
