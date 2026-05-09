@@ -59,6 +59,15 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Manages browser cookies: add, delete, get, and delete all.
+     *
+     * @return a new {@link CookieActions} instance
+     */
+    public CookieActions<T> cookies() {
+        return new CookieActions<>(driver);
+    }
+
+    /**
      * Handles browser and native alert dialogs (accept, dismiss, get text, send keys).
      *
      * @return a new {@link AlertActions} instance
