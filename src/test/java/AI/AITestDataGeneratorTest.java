@@ -44,4 +44,36 @@ public class AITestDataGeneratorTest {
         // It should catch the exception and return an empty list
         Assert.assertEquals(payloads.size(), 0);
     }
+
+    @Test
+    public void testGenerateFuzzingData_HandlesNullSchema() throws Exception {
+        LLMProvider provider = mock(LLMProvider.class);
+
+        // If schema is null, it should fail gracefully and return empty list
+        List<String> payloads = AITestDataGenerator.generateFuzzingData(null, 5, provider);
+
+        Assert.assertEquals(payloads.size(), 0);
+        // Ensure we don't even waste LLM tokens if schema is null
+        verify(provider, never()).ask(anyString(), anyString());
+    }
+
+    @Test
+    public void testGenerateFuzzingData_HandlesZeroRecords() throws Exception {
+        LLMProvider provider = mock(LLMProvider.class);
+
+        List<String> payloads = AITestDataGenerator.generateFuzzingData("Schema", 0, provider);
+
+        Assert.assertEquals(payloads.size(), 0);
+        verify(provider, never()).ask(anyString(), anyString());
+    }
+
+    @Test
+    public void testGenerateFuzzingData_HandlesLlmException() throws Exception {
+        LLMProvider provider = mock(LLMProvider.class);
+        when(provider.ask(anyString(), anyString())).thenThrow(new RuntimeException("Network Error"));
+
+        List<String> payloads = AITestDataGenerator.generateFuzzingData("Schema", 2, provider);
+
+        Assert.assertEquals(payloads.size(), 0);
+    }
 }

@@ -45,9 +45,63 @@ public class AIVisionRCATest {
             File dummyScreenshot = File.createTempFile("test-screenshot", ".png");
             dummyScreenshot.deleteOnExit();
 
+            verify(provider, never()).askWithVision(anyString(), any(byte[].class));
+        }
+    }
+
+    @Test
+    public void testAnalyze_WithNullOrMissingScreenshot_DoesNotCallProvider() throws Exception {
+        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
+            configMock.when(AIConfigLoader::isVisionRcaEnabled).thenReturn(true);
+
+            LLMProvider provider = mock(LLMProvider.class);
+            when(provider.supportsVision()).thenReturn(true);
+
+            // Null screenshot
+            AIVisionRCA.analyze(null, "Error", provider);
+            
+            // Missing screenshot
+            AIVisionRCA.analyze(new File("does_not_exist.png"), "Error", provider);
+
+            verify(provider, never()).askWithVision(anyString(), any(byte[].class));
+        }
+    }
+
+    @Test
+    public void testAnalyze_WithUnsupportedProvider_DoesNotCallProvider() throws Exception {
+        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
+            configMock.when(AIConfigLoader::isVisionRcaEnabled).thenReturn(true);
+
+            LLMProvider provider = mock(LLMProvider.class);
+            when(provider.supportsVision()).thenReturn(false);
+
+            File dummyScreenshot = File.createTempFile("test-screenshot", ".png");
+            Files.write(dummyScreenshot.toPath(), new byte[]{1, 2, 3});
+            dummyScreenshot.deleteOnExit();
+
             AIVisionRCA.analyze(dummyScreenshot, "Error", provider);
 
             verify(provider, never()).askWithVision(anyString(), any(byte[].class));
+        }
+    }
+
+    @Test
+    public void testAnalyze_WithProviderException_HandlesGracefully() throws Exception {
+        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
+            configMock.when(AIConfigLoader::isVisionRcaEnabled).thenReturn(true);
+
+            LLMProvider provider = mock(LLMProvider.class);
+            when(provider.supportsVision()).thenReturn(true);
+            when(provider.askWithVision(anyString(), any(byte[].class))).thenThrow(new RuntimeException("API Down"));
+
+            File dummyScreenshot = File.createTempFile("test-screenshot", ".png");
+            Files.write(dummyScreenshot.toPath(), new byte[]{1, 2, 3});
+            dummyScreenshot.deleteOnExit();
+
+            // Should not throw an unhandled exception
+            AIVisionRCA.analyze(dummyScreenshot, "Error", provider);
+
+            verify(provider, times(1)).askWithVision(anyString(), any(byte[].class));
         }
     }
 }

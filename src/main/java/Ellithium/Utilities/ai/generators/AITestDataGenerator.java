@@ -41,6 +41,11 @@ public class AITestDataGenerator {
             return payloads;
         }
 
+        if (count <= 0 || schemaDescription == null || schemaDescription.trim().isEmpty()) {
+            Reporter.log("AITestDataGenerator skipped: Invalid schema or count.", LogLevel.WARN);
+            return payloads;
+        }
+
         try {
             Reporter.log("Generating " + count + " edge-case test data payloads via AI...", LogLevel.INFO_BLUE);
             

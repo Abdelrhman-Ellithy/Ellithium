@@ -32,4 +32,35 @@ public class DataScrubberTest {
         Assert.assertTrue(scrubbed.contains("[MASKED_KEY]"));
         Assert.assertFalse(scrubbed.contains("AIzaSyA_testKey12345"));
     }
+
+    @Test
+    public void testScrub_HandlesNullAndEmpty() {
+        Assert.assertEquals(DataScrubber.scrub(null), null);
+        Assert.assertEquals(DataScrubber.scrub(""), "");
+    }
+
+    @Test
+    public void testScrub_MasksMultiplePIIOnSameLine() {
+        String input = "Users a@b.com, c@d.com and e@f.com joined.";
+        String scrubbed = DataScrubber.scrub(input);
+        Assert.assertEquals(scrubbed, "Users ***@***.***, ***@***.*** and ***@***.*** joined.");
+    }
+
+    @Test
+    public void testScrub_MasksEdgeCaseAPIKeys() {
+        String input1 = "authorization: \"Bearer custom_token_123\"";
+        String input2 = "x-api-key=\"secret_4567890\"";
+        
+        Assert.assertTrue(DataScrubber.scrub(input1).contains("[MASKED_KEY]"));
+        Assert.assertTrue(DataScrubber.scrub(input2).contains("[MASKED_KEY]"));
+    }
+
+    @Test
+    public void testScrub_HandlesInvalidJWTGracefully() {
+        // Just somewhat looking like a JWT but invalid
+        String invalidJwt = "eyJhbG.invalid.format";
+        String scrubbed = DataScrubber.scrub(invalidJwt);
+        // It shouldn't crash and shouldn't mask because it doesn't match the strict regex
+        Assert.assertEquals(scrubbed, invalidJwt);
+    }
 }

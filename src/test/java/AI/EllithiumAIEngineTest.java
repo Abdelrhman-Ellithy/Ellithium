@@ -10,6 +10,8 @@ import java.nio.file.Files;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class EllithiumAIEngineTest {
 
@@ -48,5 +50,37 @@ public class EllithiumAIEngineTest {
         engine.generateFrom(reqFile.getAbsolutePath());
 
         verify(provider, times(1)).ask(anyString(), anyString());
+    }
+
+    @Test
+    public void testGenerateFrom_SkipsWhenAlreadyGenerated() throws Exception {
+        // Here we test idempotency via TraceabilityManager
+        LLMProvider provider = mock(LLMProvider.class);
+        
+        File reqFile = File.createTempFile("req", ".txt");
+        Files.write(reqFile.toPath(), "TC-IDEMP-1 | Idempotent test".getBytes());
+        reqFile.deleteOnExit();
+
+        // Let's manually mark it as generated via mockStatic
+        try (MockedStatic<Ellithium.Utilities.ai.TraceabilityManager> traceMock = Mockito.mockStatic(Ellithium.Utilities.ai.TraceabilityManager.class)) {
+            traceMock.when(() -> Ellithium.Utilities.ai.TraceabilityManager.isAlreadyGenerated(anyString(), anyString())).thenReturn(true);
+
+            EllithiumAIEngine engine = new EllithiumAIEngine(provider);
+            engine.generateFrom(reqFile.getAbsolutePath());
+
+            // Provider should NOT be asked
+            verify(provider, never()).ask(anyString(), anyString());
+        }
+    }
+
+    @Test
+    public void testGenerateFrom_WithMissingFile_DoesNotCrash() throws Exception {
+        LLMProvider provider = mock(LLMProvider.class);
+        EllithiumAIEngine engine = new EllithiumAIEngine(provider);
+        
+        // This should log an error and return without throwing an exception
+        engine.generateFrom("missing_file.json");
+        
+        verify(provider, never()).ask(anyString(), anyString());
     }
 }

@@ -127,7 +127,13 @@ public class AISelfHealer {
         // Step 4: Build prompt and query LLM
         String systemPrompt = buildSystemPrompt(isMobile);
         String userPrompt = buildUserPrompt(brokenLocator.toString(), safeDom);
-        String llmResponse = provider.ask(systemPrompt, userPrompt);
+        String llmResponse;
+        try {
+            llmResponse = provider.ask(systemPrompt, userPrompt);
+        } catch (Exception e) {
+            Reporter.log("AI Self-Healing: LLM Provider failed - " + e.getMessage(), LogLevel.ERROR);
+            return null;
+        }
 
         // Step 5: Parse response into HealingResult
         HealingResult result = parseHealingResponse(llmResponse);
