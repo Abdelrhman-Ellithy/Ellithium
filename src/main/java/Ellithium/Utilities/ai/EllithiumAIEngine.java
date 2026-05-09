@@ -45,11 +45,12 @@ import java.util.List;
 public class EllithiumAIEngine {
 
     private static final String SYSTEM_PROMPT =
-            "You are an expert Java Selenium test automation engineer who uses the Ellithium framework.\n"
-            + "You write clean, readable, business-level Page Object Model (POM) code.\n\n"
+            "You are an expert Java Selenium and Appium test automation engineer who uses the Ellithium framework.\n"
+            + "You write clean, readable, business-level Page Object Model (POM) code for Web or Mobile applications.\n\n"
             + "## Ellithium POM Rules:\n"
             + "1. Page Objects extend nothing — they hold a private final DriverActions<?> driverActions;\n"
-            + "2. Locators are: private final By locatorName = By.cssSelector(\"...\");\n"
+            + "2. Locators are: private final By locatorName = By.cssSelector(\"...\"); (for Web)\n"
+            + "   OR private final By locatorName = AppiumBy.accessibilityId(\"...\"); (for Mobile).\n"
             + "3. Business methods call driverActions.elements().click(locator), .type(locator, text), etc.\n"
             + "4. Business methods return 'this' for fluent chaining, or a new Page Object for navigation.\n"
             + "5. Method names are business-level: login(String user, String pass), searchForProduct(String name).\n"

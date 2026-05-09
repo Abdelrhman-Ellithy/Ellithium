@@ -5,6 +5,8 @@ import Ellithium.Utilities.ai.models.HealingResult;
 import Ellithium.Utilities.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import io.appium.java_client.AppiumBy;
+import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -111,19 +113,22 @@ public class AISelfHealer {
 
         Reporter.log("AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
-        // Step 1: Capture and minimize DOM
+        // Step 1: Detect Mobile Context
+        boolean isMobile = driver instanceof AppiumDriver;
+
+        // Step 2: Capture and minimize DOM
         String rawDom = driver.getPageSource();
         String minimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.minimize(rawDom);
 
-        // Step 2: Scrub PII
+        // Step 3: Scrub PII
         String safeDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(minimizedDom);
 
-        // Step 3: Build prompt and query LLM
-        String systemPrompt = buildSystemPrompt();
+        // Step 4: Build prompt and query LLM
+        String systemPrompt = buildSystemPrompt(isMobile);
         String userPrompt = buildUserPrompt(brokenLocator.toString(), safeDom);
         String llmResponse = provider.ask(systemPrompt, userPrompt);
 
-        // Step 4: Parse response into HealingResult
+        // Step 5: Parse response into HealingResult
         HealingResult result = parseHealingResponse(llmResponse);
         if (result == null) {
             Reporter.log("AI Self-Healing: Failed to parse LLM response", LogLevel.ERROR);
@@ -182,14 +187,21 @@ public class AISelfHealer {
     /**
      * Builds the system prompt that teaches the LLM Ellithium's conventions.
      */
-    private static String buildSystemPrompt() {
-        return "You are an expert Selenium test automation engineer. "
-                + "You are given a broken CSS/XPath/ID locator and a DOM snippet. "
+    private static String buildSystemPrompt(boolean isMobile) {
+        String prompt = "You are an expert Selenium and Appium test automation engineer. "
+                + "You are given a broken locator and a " + (isMobile ? "Mobile XML tree" : "HTML DOM snippet") + ". "
                 + "Your job is to find the correct new locator for the same UI element. "
                 + "Respond ONLY in this JSON format: "
-                + "{\"locator\": \"By.cssSelector(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"} "
-                + "Use By.cssSelector, By.id, By.xpath, By.name, or By.className. "
-                + "If the element genuinely does not exist in the DOM, set confidence to 0.0.";
+                + "{\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"} ";
+        
+        if (isMobile) {
+            prompt += "Use AppiumBy.accessibilityId, AppiumBy.androidUIAutomator, AppiumBy.iOSClassChain, By.id, or By.xpath. ";
+        } else {
+            prompt += "Use By.cssSelector, By.id, By.xpath, By.name, or By.className. ";
+        }
+        
+        prompt += "If the element genuinely does not exist, set confidence to 0.0.";
+        return prompt;
     }
 
     /**
@@ -259,6 +271,18 @@ public class AISelfHealer {
             } else if (expression.startsWith("By.className(")) {
                 String value = extractValue(expression);
                 return By.className(value);
+            } else if (expression.startsWith("AppiumBy.accessibilityId(")) {
+                String value = extractValue(expression);
+                return AppiumBy.accessibilityId(value);
+            } else if (expression.startsWith("AppiumBy.androidUIAutomator(")) {
+                String value = extractValue(expression);
+                return AppiumBy.androidUIAutomator(value);
+            } else if (expression.startsWith("AppiumBy.iOSClassChain(")) {
+                String value = extractValue(expression);
+                return AppiumBy.iOSClassChain(value);
+            } else if (expression.startsWith("AppiumBy.iOSNsPredicateString(")) {
+                String value = extractValue(expression);
+                return AppiumBy.iOSNsPredicateString(value);
             }
         } catch (Exception e) {
             Reporter.log("Failed to parse By expression: " + expression, LogLevel.ERROR);
