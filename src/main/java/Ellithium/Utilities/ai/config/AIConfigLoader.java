@@ -52,7 +52,8 @@ public class AIConfigLoader {
         try {
             String configPath = ConfigContext.getAiFilePath();
 
-            String strategy = PropertyHelper.getDataFromProperties(configPath, "ai.healing.strategy");
+            String strategyRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.strategy");
+            String strategy = strategyRaw != null ? resolveEnvironmentVariables(strategyRaw) : null;
             if (strategy != null && !strategy.isEmpty()) {
                 try {
                     healingStrategy = HealingStrategy.valueOf(strategy.trim().toUpperCase());
@@ -61,7 +62,8 @@ public class AIConfigLoader {
                 }
             }
 
-            String threshold = PropertyHelper.getDataFromProperties(configPath, "ai.healing.confidenceThreshold");
+            String thresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.confidenceThreshold");
+            String threshold = thresholdRaw != null ? resolveEnvironmentVariables(thresholdRaw) : null;
             if (threshold != null && !threshold.isEmpty()) {
                 try {
                     confidenceThreshold = Double.parseDouble(threshold.trim());
@@ -75,7 +77,8 @@ public class AIConfigLoader {
             llmModel = getPropertyOrDefault(configPath, "ai.llm.model", "");
             llmBaseUrl = getPropertyOrDefault(configPath, "ai.llm.baseUrl", "");
 
-            String mode = PropertyHelper.getDataFromProperties(configPath, "ai.execution.mode");
+            String modeRaw = PropertyHelper.getDataFromProperties(configPath, "ai.execution.mode");
+            String mode = modeRaw != null ? resolveEnvironmentVariables(modeRaw) : null;
             if (mode != null && !mode.isEmpty()) {
                 try {
                     executionMode = ExecutionMode.valueOf(mode.trim().toUpperCase());
@@ -84,7 +87,8 @@ public class AIConfigLoader {
                 }
             }
 
-            String rca = PropertyHelper.getDataFromProperties(configPath, "ai.vision.rca.enabled");
+            String rcaRaw = PropertyHelper.getDataFromProperties(configPath, "ai.vision.rca.enabled");
+            String rca = rcaRaw != null ? resolveEnvironmentVariables(rcaRaw) : null;
             if (rca != null && !rca.isEmpty()) {
                 visionRcaEnabled = Boolean.parseBoolean(rca.trim());
             }
@@ -102,7 +106,43 @@ public class AIConfigLoader {
 
     private static String getPropertyOrDefault(String configPath, String key, String defaultValue) {
         String value = PropertyHelper.getDataFromProperties(configPath, key);
-        return (value != null && !value.isEmpty()) ? value.trim() : defaultValue;
+        if (value != null && !value.isEmpty()) {
+            return resolveEnvironmentVariables(value.trim());
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Resolves environment variables in a property value.
+     * Replaces ${ENV_VAR} with actual environment variable values.
+     */
+    private static String resolveEnvironmentVariables(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+
+        if (value.contains("${") && value.contains("}")) {
+            String resolvedValue = value;
+            int startIndex = 0;
+            while ((startIndex = resolvedValue.indexOf("${", startIndex)) != -1) {
+                int endIndex = resolvedValue.indexOf("}", startIndex);
+                if (endIndex == -1) break;
+
+                String placeholder = resolvedValue.substring(startIndex, endIndex + 1);
+                String envVarName = resolvedValue.substring(startIndex + 2, endIndex);
+
+                String envVarValue = System.getenv(envVarName);
+                if (envVarValue == null) {
+                    Logger.warn("Environment variable '" + envVarName + "' not found. Using placeholder as-is.");
+                    envVarValue = placeholder;
+                }
+
+                resolvedValue = resolvedValue.replace(placeholder, envVarValue);
+                startIndex += envVarValue.length();
+            }
+            return resolvedValue;
+        }
+        return value;
     }
 
     public static HealingStrategy getHealingStrategy() { return healingStrategy; }
