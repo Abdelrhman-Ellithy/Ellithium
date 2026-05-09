@@ -7,7 +7,7 @@ import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
 
 /**
- * Reads AI-related configuration from Ellithium's standard {@code config.properties} file.
+ * Reads AI-related configuration from Ellithium's standard {@code ai-config.properties} file.
  * Follows the same pattern as {@code WaitManager.initializeTimeoutAndPolling()}.
  *
  * <p>Expected properties:</p>
@@ -50,7 +50,7 @@ public class AIConfigLoader {
     public static void initialize() {
         if (initialized) return;
         try {
-            String configPath = ConfigContext.getConfigFilePath();
+            String configPath = ConfigContext.getAiFilePath();
 
             String strategy = PropertyHelper.getDataFromProperties(configPath, "ai.healing.strategy");
             if (strategy != null && !strategy.isEmpty()) {
@@ -96,7 +96,7 @@ public class AIConfigLoader {
                     + " | Provider: " + llmProviderName, LogLevel.INFO_YELLOW);
 
         } catch (Exception e) {
-            Logger.warn("Could not load AI config from config.properties. AI features disabled. Error: " + e.getMessage());
+            Logger.warn("Could not load AI config from ai-config.properties. AI features disabled. Error: " + e.getMessage());
         }
     }
 
