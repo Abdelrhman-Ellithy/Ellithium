@@ -271,18 +271,39 @@ public class AISelfHealer {
             } else if (expression.startsWith("By.className(")) {
                 String value = extractValue(expression);
                 return By.className(value);
+            } else if (expression.startsWith("By.linkText(")) {
+                String value = extractValue(expression);
+                return By.linkText(value);
+            } else if (expression.startsWith("By.partialLinkText(")) {
+                String value = extractValue(expression);
+                return By.partialLinkText(value);
+            } else if (expression.startsWith("By.tagName(")) {
+                String value = extractValue(expression);
+                return By.tagName(value);
             } else if (expression.startsWith("AppiumBy.accessibilityId(")) {
                 String value = extractValue(expression);
                 return AppiumBy.accessibilityId(value);
             } else if (expression.startsWith("AppiumBy.androidUIAutomator(")) {
                 String value = extractValue(expression);
                 return AppiumBy.androidUIAutomator(value);
+            } else if (expression.startsWith("AppiumBy.androidViewTag(")) {
+                String value = extractValue(expression);
+                return AppiumBy.androidViewTag(value);
+            } else if (expression.startsWith("AppiumBy.androidDataMatcher(")) {
+                String value = extractValue(expression);
+                return AppiumBy.androidDataMatcher(value);
             } else if (expression.startsWith("AppiumBy.iOSClassChain(")) {
                 String value = extractValue(expression);
                 return AppiumBy.iOSClassChain(value);
             } else if (expression.startsWith("AppiumBy.iOSNsPredicateString(")) {
                 String value = extractValue(expression);
                 return AppiumBy.iOSNsPredicateString(value);
+            } else if (expression.startsWith("AppiumBy.image(")) {
+                String value = extractValue(expression);
+                return AppiumBy.image(value);
+            } else if (expression.startsWith("AppiumBy.custom(")) {
+                String value = extractValue(expression);
+                return AppiumBy.custom(value);
             }
         } catch (Exception e) {
             Reporter.log("Failed to parse By expression: " + expression, LogLevel.ERROR);
