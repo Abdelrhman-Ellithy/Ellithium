@@ -357,14 +357,15 @@ public class AISelfHealer {
         sb.append("A test automation locator has failed. Analyze the context and the current DOM ");
         sb.append("to find the CORRECT element the test was trying to interact with.\n\n");
         sb.append("CRITICAL RULES:\n");
-        sb.append("1. The METHOD NAME is a STRONG HINT for the element's purpose ");
+        sb.append("1. PRIORITY 1: Verify the SYNTAX of the original locator. If the locator has a syntax error (e.g., malformed XPath, invalid CSS pseudo-classes, or typos in attributes), your first goal must be to FIX the syntax while strictly preserving the original intent and locator type, rather than suggesting a completely different locator strategy.\n");
+        sb.append("2. The METHOD NAME is a STRONG HINT for the element's purpose ");
         sb.append("(e.g., setUserName → username input, clickLoginBtn → login/submit button)\n");
-        sb.append("2. The ACTION TYPE tells you what kind of element to look for ");
+        sb.append("3. The ACTION TYPE tells you what kind of element to look for ");
         sb.append("(sendData → input/textarea, clickOnElement → button/link/clickable)\n");
-        sb.append("3. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
-        sb.append("4. Prefer stable locators: id > name > data-testid > css > xpath\n");
-        sb.append("5. Respond ONLY in JSON: {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"}\n");
-        sb.append("6. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
+        sb.append("4. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
+        sb.append("5. Prefer stable locators: id > name > data-testid > css > xpath\n");
+        sb.append("6. Respond ONLY in JSON: {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"}\n");
+        sb.append("7. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
 
         if (isMobile) {
             sb.append("Use AppiumBy.accessibilityId, AppiumBy.androidUIAutomator, AppiumBy.iOSClassChain, By.id, or By.xpath.\n");

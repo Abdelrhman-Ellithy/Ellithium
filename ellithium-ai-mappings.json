@@ -16,5 +16,59 @@
       "featureFile": ""
     },
     "generatedAt": "May 9, 2026, 12:12:17 PM"
+  },
+  {
+    "source": {
+      "testId": "TC-TEXT-1",
+      "sourceFile": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\req17992984679658917400.txt",
+      "description": "Login test requirements"
+    },
+    "assets": {
+      "targetPackage": "tests",
+      "testClass": "LoginTest",
+      "testMethod": "testValidLogin",
+      "pomClass": "LoginPage",
+      "pomMethods": [
+        "login"
+      ],
+      "featureFile": ""
+    },
+    "generatedAt": "May 9, 2026, 5:26:21 PM"
+  },
+  {
+    "source": {
+      "testId": "TC-TEXT-1",
+      "sourceFile": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\req11995887962997419285.txt",
+      "description": "Login test requirements"
+    },
+    "assets": {
+      "targetPackage": "tests",
+      "testClass": "LoginTest",
+      "testMethod": "testValidLogin",
+      "pomClass": "LoginPage",
+      "pomMethods": [
+        "login"
+      ]
+    },
+    "generatedAt": "May 9, 2026, 5:27:19 PM"
+  },
+  {
+    "source": {
+      "testId": "TC_checkSelected_AI",
+      "sourceFile": "src/test/resources/testcases/manual_dropdown_test.txt",
+      "description": "Title: Verify Dropdown Option Selection\nDescription: The user navigates to the Dropdown page and selects Option 1, then verifies it is selected.\n\nPreconditions:\n1. The user is on the Dropdown page of the HerokuApp internet website.\n\nSteps:\n1. Locate the dropdown menu element on the page.\n2. Select the option with the visible text \"Option 1\" from the dropdown.\n3. Retrieve the currently selected option from the dropdown menu.\n\nExpected Results:\n1. The retrieved selected text should exactly match \"Option 1\"."
+    },
+    "assets": {
+      "targetPackage": "tests",
+      "testClass": "DropdownTest",
+      "testMethod": "testVerifyDropdownOptionSelection",
+      "pomClass": "DropdownPage",
+      "pomMethods": [
+        "selectOptionByText",
+        "getSelectedOptionText"
+      ],
+      "featureFile": "src/test/resources/features/Dropdown.feature"
+    },
+    "generatedAt": "May 9, 2026, 5:32:35 PM"
   }
 ]

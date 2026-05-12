@@ -1,12 +1,13 @@
 package Ellithium.Utilities.ai.readers;
 
 import Ellithium.Utilities.ai.models.TestCaseSource;
-import Ellithium.Utilities.helpers.TextHelper;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of TestCaseReader that parses test cases from a plain text file.
@@ -14,38 +15,43 @@ import java.util.List;
  * starting with "ID: [testId]" followed by the description.
  */
 public class TextTestCaseReader implements TestCaseReader {
+    private static final Pattern ID_LINE_PATTERN =
+            Pattern.compile("(?im)^\\s*ID\\s*:\\s*([^\\r\\n]+)\\s*$");
 
     @Override
     public List<TestCaseSource> read(String filePath) {
         List<TestCaseSource> testCases = new ArrayList<>();
         try {
-            // Read all lines using standard Java NIO
             String fullText = java.nio.file.Files.readString(java.nio.file.Paths.get(filePath));
             if (fullText == null || fullText.trim().isEmpty()) {
                 return testCases;
             }
 
-            // A simple parser for demonstration. In a real scenario, this would
-            // use regex to reliably split on "ID: TC-01" markers.
-            String[] blocks = fullText.split("\n\n");
-            int counter = 1;
+            String normalized = fullText.replace("\r\n", "\n");
+            Matcher matcher = ID_LINE_PATTERN.matcher(normalized);
 
-            for (String block : blocks) {
-                if (block.trim().isEmpty()) continue;
+            List<int[]> idRanges = new ArrayList<>();
+            List<String> ids = new ArrayList<>();
+            while (matcher.find()) {
+                ids.add(matcher.group(1).trim());
+                idRanges.add(new int[]{matcher.start(), matcher.end()});
+            }
 
-                String id = "TC-TEXT-" + counter++;
-                String description = block.trim();
+            if (ids.isEmpty()) {
+                // No explicit ID markers: treat entire document as a single testcase.
+                testCases.add(new TestCaseSource("TC-TEXT-1", filePath, normalized.trim()));
+                return testCases;
+            }
 
-                // If the block starts with "ID:", parse it explicitly
-                if (block.startsWith("ID:")) {
-                    int newLineIndex = block.indexOf("\n");
-                    if (newLineIndex > 0) {
-                        id = block.substring(3, newLineIndex).trim();
-                        description = block.substring(newLineIndex).trim();
-                    }
+            for (int i = 0; i < ids.size(); i++) {
+                int contentStart = idRanges.get(i)[1];
+                int contentEnd = (i + 1 < ids.size()) ? idRanges.get(i + 1)[0] : normalized.length();
+                String description = normalized.substring(contentStart, contentEnd).trim();
+                if (description.isEmpty()) {
+                    Reporter.log("Text test case '" + ids.get(i) + "' has empty description. Skipping.", LogLevel.WARN);
+                    continue;
                 }
-
-                testCases.add(new TestCaseSource(id, filePath, description));
+                testCases.add(new TestCaseSource(ids.get(i), filePath, description));
             }
         } catch (Exception e) {
             Reporter.log("Failed to parse Text test cases from file: " + filePath + " | Error: " + e.getMessage(), LogLevel.ERROR);

@@ -72,6 +72,7 @@ public class NoonSearchPage {
     }
 
     public void clickDell() {
+        driverActions.elements().clickOnElement(By.cssSelector("a[href*='/electronics-and-mobiles/dell/']"));
         driverActions.elements().clickOnElement(dellBtn);
         driverActions.waits().waitForElementToBeVisible(resultsLoadedHeader);
     }

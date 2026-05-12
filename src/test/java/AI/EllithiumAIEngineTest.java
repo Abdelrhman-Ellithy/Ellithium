@@ -1,12 +1,16 @@
 package AI;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
+import Ellithium.Utilities.ai.TraceabilityManager;
+import Ellithium.Utilities.ai.models.TraceabilityRecord;
 import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.Utilities.ai.readers.TextTestCaseReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -39,15 +43,20 @@ public class EllithiumAIEngineTest {
         File reqFile = File.createTempFile("req", ".txt");
         Files.write(reqFile.toPath(), "Login test requirements".getBytes());
         reqFile.deleteOnExit();
+        File outputRoot = Files.createTempDirectory("ai-gen-out").toFile();
+        outputRoot.deleteOnExit();
 
-        // This will create files in the actual project structure if we don't mock the file generation.
-        // For a unit test, we should mock PomClassGenerator if we had injection,
-        // but since EllithiumAIEngine has static methods calling static methods, we rely on the actual AST execution.
-        // Since we are creating a POM in "pages" which is a standard structure, we should be careful.
-        // We can just verify the LLM provider is called.
-        
-        EllithiumAIEngine engine = new EllithiumAIEngine(provider);
-        engine.generateFrom(reqFile.getAbsolutePath());
+        EllithiumAIEngine engine = new EllithiumAIEngine(
+                provider,
+                outputRoot.getAbsolutePath(),
+                outputRoot.getAbsolutePath(),
+                false
+        );
+        try (MockedStatic<TraceabilityManager> traceMock = Mockito.mockStatic(TraceabilityManager.class)) {
+            traceMock.when(() -> TraceabilityManager.isAlreadyGenerated(anyString(), anyString())).thenReturn(false);
+            engine.generateFrom(reqFile.getAbsolutePath());
+            traceMock.verify(() -> TraceabilityManager.saveRecord(any(TraceabilityRecord.class)), times(1));
+        }
 
         verify(provider, times(1)).ask(anyString(), anyString());
     }
@@ -82,5 +91,45 @@ public class EllithiumAIEngineTest {
         engine.generateFrom("missing_file.json");
         
         verify(provider, never()).ask(anyString(), anyString());
+    }
+
+    @Test
+    public void testGenerateFrom_WhenLlmResponseMissingRequiredFields_SkipsGeneration() throws Exception {
+        LLMProvider provider = mock(LLMProvider.class);
+        when(provider.ask(anyString(), anyString())).thenReturn("{\"pomClass\":\"LoginPage\"}");
+
+        File reqFile = File.createTempFile("req", ".txt");
+        Files.write(reqFile.toPath(), "ID: TC-INVALID\nDescription: validate missing response fields".getBytes());
+        reqFile.deleteOnExit();
+
+        EllithiumAIEngine engine = new EllithiumAIEngine(provider);
+        engine.generateFrom(reqFile.getAbsolutePath());
+
+        verify(provider, times(1)).ask(anyString(), anyString());
+    }
+
+    @Test
+    public void testTextReader_ParsesSingleMultilineCaseWithoutSplittingOnBlankLines() throws Exception {
+        String content = "ID: TC_checkSelected_AI\r\n"
+                + "Title: Verify Dropdown Option Selection\r\n"
+                + "Description: Select option 1 and validate selection.\r\n\r\n"
+                + "Preconditions:\r\n"
+                + "1. User is on Dropdown page.\r\n\r\n"
+                + "Steps:\r\n"
+                + "1. Locate dropdown.\r\n"
+                + "2. Select Option 1.\r\n\r\n"
+                + "Expected Results:\r\n"
+                + "1. Selected option is Option 1.\r\n";
+
+        File reqFile = File.createTempFile("req-reader", ".txt");
+        Files.write(reqFile.toPath(), content.getBytes());
+        reqFile.deleteOnExit();
+
+        TextTestCaseReader reader = new TextTestCaseReader();
+        List<Ellithium.Utilities.ai.models.TestCaseSource> cases = reader.read(reqFile.getAbsolutePath());
+
+        Assert.assertEquals(cases.size(), 1, "Reader should keep one testcase for one ID block");
+        Assert.assertEquals(cases.get(0).getTestId(), "TC_checkSelected_AI");
+        Assert.assertTrue(cases.get(0).getDescription().contains("Expected Results"));
     }
 }

@@ -1,7 +1,6 @@
 package Ellithium.Utilities.ai;
 
 import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.config.AIConfigLoader.ExecutionMode;
 import Ellithium.Utilities.ai.generators.FeatureFileModifier;
 import Ellithium.Utilities.ai.generators.PomClassGenerator;
 import Ellithium.Utilities.ai.models.GeneratedAssets;
@@ -18,8 +17,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The central facade and entry point for all Ellithium AI capabilities.
@@ -73,6 +72,7 @@ public class EllithiumAIEngine {
 
     private final LLMProvider llmProvider;
     private final String outputBasePath;
+    private final String testOutputBasePath;
     private final boolean generateBDD;
 
     /**
@@ -81,8 +81,13 @@ public class EllithiumAIEngine {
      * @param generateBDD    Whether to also generate/update BDD .feature files
      */
     public EllithiumAIEngine(LLMProvider llmProvider, String outputBasePath, boolean generateBDD) {
-        this.llmProvider = llmProvider;
-        this.outputBasePath = outputBasePath;
+        this(llmProvider, outputBasePath, "src/test/java", generateBDD);
+    }
+
+    public EllithiumAIEngine(LLMProvider llmProvider, String outputBasePath, String testOutputBasePath, boolean generateBDD) {
+        this.llmProvider = Objects.requireNonNull(llmProvider, "llmProvider must not be null");
+        this.outputBasePath = (outputBasePath == null || outputBasePath.isBlank()) ? "src/main/java" : outputBasePath;
+        this.testOutputBasePath = (testOutputBasePath == null || testOutputBasePath.isBlank()) ? "src/test/java" : testOutputBasePath;
         this.generateBDD = generateBDD;
         AIConfigLoader.initialize();
     }
@@ -148,6 +153,10 @@ public class EllithiumAIEngine {
                     + "Description: " + safeDescription;
 
             String response = llmProvider.ask(SYSTEM_PROMPT, userPrompt);
+            if (response == null || response.trim().isEmpty()) {
+                Reporter.log("LLM returned an empty response for test: " + testCase.getTestId(), LogLevel.ERROR);
+                return null;
+            }
 
             // Parse structured JSON response
             return parseAndGenerateAssets(response, testCase);
@@ -166,12 +175,16 @@ public class EllithiumAIEngine {
         try {
             JsonObject json = JsonParser.parseString(llmResponse).getAsJsonObject();
 
-            String pomClass    = json.get("pomClass").getAsString();
-            String pomPackage  = json.get("pomPackage").getAsString();
-            String testClass   = json.get("testClass").getAsString();
-            String testPackage = json.get("testPackage").getAsString();
-            String testMethod  = json.get("testMethod").getAsString();
-            String testBody    = json.get("testBody").getAsString();
+            String pomClass = readRequiredString(json, "pomClass", testCase);
+            String pomPackage = readRequiredString(json, "pomPackage", testCase);
+            String testClass = readRequiredString(json, "testClass", testCase);
+            String testPackage = readRequiredString(json, "testPackage", testCase);
+            String testMethod = readRequiredString(json, "testMethod", testCase);
+            String testBody = readRequiredString(json, "testBody", testCase);
+            if (pomClass == null || pomPackage == null || testClass == null
+                    || testPackage == null || testMethod == null || testBody == null) {
+                return null;
+            }
 
             List<String> locatorFields = jsonArrayToList(json, "locatorFields");
             List<String> methodBodies  = jsonArrayToList(json, "methodBodies");
@@ -179,16 +192,20 @@ public class EllithiumAIEngine {
 
             // Build file paths
             String pomPath  = outputBasePath + "/" + pomPackage.replace('.', '/') + "/" + pomClass + ".java";
-            String testPath = "src/test/java/" + testPackage.replace('.', '/') + "/" + testClass + ".java";
+            String testPath = testOutputBasePath + "/" + testPackage.replace('.', '/') + "/" + testClass + ".java";
 
             // Generate POM class
             if (!new java.io.File(pomPath).exists()) {
                 PomClassGenerator.createPomClass(pomPath, pomPackage, pomClass, locatorFields, methodBodies);
             } else {
-                // Inject methods into existing class
-                for (int i = 0; i < locatorFields.size() && i < methodBodies.size(); i++) {
-                    PomClassGenerator.injectIntoExistingPom(pomPath, locatorFields.get(i),
-                            extractMethodSignature(methodBodies.get(i)), extractMethodBody(methodBodies.get(i)));
+                // Inject fields and methods into existing class (allow uneven list lengths).
+                int max = Math.max(locatorFields.size(), methodBodies.size());
+                for (int i = 0; i < max; i++) {
+                    String locatorField = i < locatorFields.size() ? locatorFields.get(i) : null;
+                    String fullMethod = i < methodBodies.size() ? methodBodies.get(i) : null;
+                    String methodSignature = fullMethod != null ? extractMethodSignature(fullMethod) : null;
+                    String methodBody = fullMethod != null ? extractMethodBody(fullMethod) : null;
+                    PomClassGenerator.injectIntoExistingPom(pomPath, locatorField, methodSignature, methodBody);
                 }
             }
 
@@ -201,7 +218,8 @@ public class EllithiumAIEngine {
                 featureFile = json.get("featureFile").getAsString();
                 String scenarioTitle = json.has("scenarioTitle") ? json.get("scenarioTitle").getAsString() : "";
                 String gherkin = json.has("gherkinScenario") ? json.get("gherkinScenario").getAsString() : "";
-                if (!FeatureFileModifier.scenarioExists(featureFile, scenarioTitle)) {
+                if (featureFile != null && !featureFile.isBlank() && gherkin != null && !gherkin.isBlank()
+                        && !FeatureFileModifier.scenarioExists(featureFile, scenarioTitle)) {
                     FeatureFileModifier.appendScenarios(featureFile, gherkin);
                 }
             }
@@ -252,6 +270,20 @@ public class EllithiumAIEngine {
             json.getAsJsonArray(key).forEach(e -> result.add(e.getAsString()));
         }
         return result;
+    }
+
+    private String readRequiredString(JsonObject json, String key, TestCaseSource testCase) {
+        if (!json.has(key) || json.get(key).isJsonNull()) {
+            Reporter.log("LLM response missing required field '" + key
+                    + "' for test " + testCase.getTestId(), LogLevel.ERROR);
+            return null;
+        }
+        String value = json.get(key).getAsString();
+        if (value == null || value.isBlank()) {
+            Reporter.log("LLM response field '" + key + "' is blank for test " + testCase.getTestId(), LogLevel.ERROR);
+            return null;
+        }
+        return value.trim();
     }
 
     private String extractMethodSignature(String fullMethod) {
