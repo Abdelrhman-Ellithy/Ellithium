@@ -90,7 +90,7 @@
         <mysqlVersion>9.7.0</mysqlVersion>
         <postgresqlVersion>42.7.11</postgresqlVersion>
         <mssqlVersion>13.4.0.jre11</mssqlVersion>
-        <oracleDBVersion>23.26.1.0.0</oracleDBVersion>
+        <oracleDBVersion>23.26.2.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>7.5.0</redisDBVersion>
         <couchBaseVersion>3.11.2</couchBaseVersion>
