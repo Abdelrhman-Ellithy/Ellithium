@@ -32,22 +32,13 @@ public class SQLDatabaseProvider implements AutoCloseable {
     private final Cache<String, Map<String, String>> columnDataTypesCache;
     private final Cache<String, List<String>> primaryKeysCache;
     private final Cache<String, Map<String, String>> foreignKeysCache;
-    private static final Map<SQLDBType, String> dbTypeConnectionMap = new HashMap<>();
     private static final Map<SQLDBType, Properties> dbTypeProperties = new HashMap<>();
     private final ThreadLocal<Connection> transactionConnection = new ThreadLocal<>();
 
-    static {
-        dbTypeConnectionMap.put(SQLDBType.MY_SQL, "jdbc:mysql://");
-        dbTypeConnectionMap.put(SQLDBType.SQL_SERVER, "jdbc:sqlserver://");
-        dbTypeConnectionMap.put(SQLDBType.POSTGRES_SQL, "jdbc:postgresql://");
-        dbTypeConnectionMap.put(SQLDBType.ORACLE_SID, "jdbc:oracle:thin:@");
-        dbTypeConnectionMap.put(SQLDBType.ORACLE_SERVICE_NAME, "jdbc:oracle:thin:@//");
-        dbTypeConnectionMap.put(SQLDBType.IBM_DB2, "jdbc:db2://");
-        dbTypeConnectionMap.put(SQLDBType.SQLITE, "jdbc:sqlite:");
-
-        // Initialize database-specific properties
+    static {        // Initialize database-specific properties
         Properties mysqlProps = new Properties();
-        mysqlProps.setProperty("useSSL", "false");
+        mysqlProps.setProperty("useSSL", "true");
+        mysqlProps.setProperty("allowPublicKeyRetrieval", "true");
         mysqlProps.setProperty("serverTimezone", "UTC");
         mysqlProps.setProperty("rewriteBatchedStatements", "true");
         dbTypeProperties.put(SQLDBType.MY_SQL, mysqlProps);
@@ -55,10 +46,12 @@ public class SQLDatabaseProvider implements AutoCloseable {
         Properties postgresProps = new Properties();
         postgresProps.setProperty("ApplicationName", "Ellithium");
         postgresProps.setProperty("reWriteBatchedInserts", "true");
+        postgresProps.setProperty("sslmode", "prefer");
         dbTypeProperties.put(SQLDBType.POSTGRES_SQL, postgresProps);
 
+        // SQL Server: encrypt + trustServerCertificate are set in the JDBC URL itself.
+        // Only add non-URL connection properties here.
         Properties sqlServerProps = new Properties();
-        sqlServerProps.setProperty("trustServerCertificate", "true");
         sqlServerProps.setProperty("sendStringParametersAsUnicode", "true");
         dbTypeProperties.put(SQLDBType.SQL_SERVER, sqlServerProps);
 
@@ -94,7 +87,8 @@ public class SQLDatabaseProvider implements AutoCloseable {
         foreignKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
 
         // Initialize the connection pool
-        HikariConfig config = createHikariConfig(dbType, dbTypeConnectionMap.get(this.dbType) + this.serverIP + ":" + this.port + "/" + this.dataBaseName);
+        String jdbcUrl = buildJdbcUrl(dbType, serverIP, port, dataBaseName);
+        HikariConfig config = createHikariConfig(dbType, jdbcUrl);
         this.dataSource = new HikariDataSource(config);
         Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
     }
@@ -137,9 +131,42 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
 
         // Initialize the connection pool
-        HikariConfig config = createHikariConfig(dbType, dbTypeConnectionMap.get(dbType) + dataBaseName);
+        String jdbcUrl = buildJdbcUrl(dbType, null, null, dataBaseName);
+        HikariConfig config = createHikariConfig(dbType, jdbcUrl);
         this.dataSource = new HikariDataSource(config);
         Reporter.log("Initialized SQLDatabaseProvider with HikariCP connection pool.", LogLevel.INFO_BLUE);
+    }
+
+    /**
+     * Builds the correct JDBC URL for the specified database type.
+     * Each database vendor uses a different URL format:
+     * - MySQL:           jdbc:mysql://host:port/database
+     * - PostgreSQL:      jdbc:postgresql://host:port/database
+     * - SQL Server:      jdbc:sqlserver://host:port;databaseName=database;encrypt=true;trustServerCertificate=true
+     * - Oracle (SID):    jdbc:oracle:thin:@host:port:SID
+     * - Oracle (Service):jdbc:oracle:thin:@//host:port/serviceName
+     * - IBM DB2:         jdbc:db2://host:port/database
+     * - SQLite:          jdbc:sqlite:path
+     *
+     * @param dbType       The type of database
+     * @param serverIP     Database server address
+     * @param port         Database port number
+     * @param databaseName Name of the database (or SID/service name for Oracle)
+     * @return Properly formatted JDBC URL
+     */
+    private String buildJdbcUrl(SQLDBType dbType, String serverIP, String port, String databaseName) {
+        return switch (dbType) {
+            case SQL_SERVER -> "jdbc:sqlserver://" + serverIP + ":" + port
+                    + ";databaseName=" + databaseName
+                    + ";encrypt=true"
+                    + ";trustServerCertificate=true";
+            case ORACLE_SID -> "jdbc:oracle:thin:@" + serverIP + ":" + port + ":" + databaseName;
+            case ORACLE_SERVICE_NAME -> "jdbc:oracle:thin:@//" + serverIP + ":" + port + "/" + databaseName;
+            case MY_SQL -> "jdbc:mysql://" + serverIP + ":" + port + "/" + databaseName;
+            case POSTGRES_SQL -> "jdbc:postgresql://" + serverIP + ":" + port + "/" + databaseName;
+            case IBM_DB2 -> "jdbc:db2://" + serverIP + ":" + port + "/" + databaseName;
+            case SQLITE -> "jdbc:sqlite:" + databaseName;
+        };
     }
 
     /**
@@ -180,6 +207,10 @@ public class SQLDatabaseProvider implements AutoCloseable {
 
         config.setValidationTimeout(5000);
         config.setLeakDetectionThreshold(60000);
+
+        // Add database-specific connection properties
+        // NOTE: For SQL Server, encrypt/trustServerCertificate are already in the URL
+        // so we only add non-URL properties here
         Properties dbProps = dbTypeProperties.get(dbType);
         if (dbProps != null) {
             mergedProps.putAll(dbProps);
@@ -189,6 +220,9 @@ public class SQLDatabaseProvider implements AutoCloseable {
         }
 
         config.setConnectionTestQuery(getValidationQuery(dbType));
+
+        Reporter.log("JDBC URL: " + jdbcUrl, LogLevel.DEBUG);
+
         return config;
     }
 
@@ -323,7 +357,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
      */
     public String buildPaginatedQuery(String baseQuery, int page, int pageSize, SQLDBType dbType) {
         return switch (dbType) {
-            case MY_SQL, SQLITE, POSTGRES_SQL -> baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
+            case MY_SQL, SQLITE, POSTGRES_SQL, IBM_DB2 -> baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
             case SQL_SERVER -> "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" +
                     baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " +
                     (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
@@ -716,14 +750,23 @@ public class SQLDatabaseProvider implements AutoCloseable {
     public boolean executeUpdates(String... sqlStatements) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            for (String sql : sqlStatements) {
-                try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                    statement.executeUpdate();
+            try {
+                for (String sql : sqlStatements) {
+                    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                        statement.executeUpdate();
+                    }
                 }
+                connection.commit();
+                Reporter.log("Executed multiple updates successfully", LogLevel.INFO_BLUE);
+                return true;
+            } catch (SQLException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                handleSQLException("Failed to execute updates, rolling back", e);
             }
-            connection.commit();
-            Reporter.log("Executed multiple updates successfully", LogLevel.INFO_BLUE);
-            return true;
         } catch (SQLException e) {
             handleSQLException("Database connection error or updates failed", e);
         }
