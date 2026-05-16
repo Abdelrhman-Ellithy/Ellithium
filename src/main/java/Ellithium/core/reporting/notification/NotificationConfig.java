@@ -339,9 +339,7 @@ public class NotificationConfig {
             if (isFieldMissing(getSmtpUsername(), "SMTP username", configType)) return false;
             if (isFieldMissing(getSmtpPassword(), "SMTP password", configType)) return false;
             if (isFieldMissing(getFromEmail(), "From email", configType)) return false;
-            if (isFieldMissing(getToEmail(), "To email", configType)) return false;
-            
-            return true;
+            return !isFieldMissing(getToEmail(), "To email", configType);
         } catch (Exception e) {
             Reporter.log("Failed to validate email configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;
@@ -361,9 +359,7 @@ public class NotificationConfig {
             String configType = "Slack";
             if (isFieldMissing(getSlackWebhookUrl(), "Slack webhook URL", configType)) return false;
             if (isFieldMissing(getSlackChannel(), "Slack channel", configType)) return false;
-            if (isFieldMissing(getSlackUsername(), "Slack username", configType)) return false;
-            
-            return true;
+            return !isFieldMissing(getSlackUsername(), "Slack username", configType);
         } catch (Exception e) {
             Reporter.log("Failed to validate Slack configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;

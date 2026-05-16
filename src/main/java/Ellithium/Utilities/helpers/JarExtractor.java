@@ -122,19 +122,7 @@ public class JarExtractor {
                 }
 
                 File parent = targetFile.getParentFile();
-                if (!parent.exists() && !parent.mkdirs()) {
-                    System.err.println("Failed to create parent directory: " + parent.getPath());
-                    deleteDirectory(targetDirectory);
-                    return false;
-                }
-
-                try {
-                    Path tempFile = Files.createTempFile("jar_extract", null);
-                    Files.copy(jar.getInputStream(entry), tempFile, StandardCopyOption.REPLACE_EXISTING);
-                    Files.move(tempFile, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (IOException e) {
-                    System.err.println("Failed to extract file: " + targetFile.getPath());
-                    deleteDirectory(targetDirectory);
+                if (!extractJarFile(jar, entry, targetFile, targetDirectory, parent)) {
                     return false;
                 }
             }
@@ -146,6 +134,25 @@ public class JarExtractor {
             deleteDirectory(targetDirectory);
             return false;
         }
+    }
+
+    private static boolean extractJarFile(JarFile jar, JarEntry entry, File targetFile, File targetDirectory, File parent) {
+        if (!parent.exists() && !parent.mkdirs()) {
+            System.err.println("Failed to create parent directory: " + parent.getPath());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+
+        try {
+            Path tempFile = Files.createTempFile("jar_extract", null);
+            Files.copy(jar.getInputStream(entry), tempFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(tempFile, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            System.err.println("Failed to extract file: " + targetFile.getPath());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+        return true;
     }
 
     /**
