@@ -357,7 +357,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
      */
     public String buildPaginatedQuery(String baseQuery, int page, int pageSize, SQLDBType dbType) {
         return switch (dbType) {
-            case MY_SQL, SQLITE, POSTGRES_SQL -> baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
+            case MY_SQL, SQLITE, POSTGRES_SQL, IBM_DB2 -> baseQuery + " LIMIT " + pageSize + " OFFSET " + (page * pageSize);
             case SQL_SERVER -> "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum, * FROM (" +
                     baseQuery + ") AS BaseQuery) AS RowConstrainedResult WHERE RowNum > " +
                     (page * pageSize) + " AND RowNum <= " + ((page + 1) * pageSize);
@@ -383,8 +383,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
 
-            try {
-                ResultSet resultSet = statement.executeQuery(query);
+            try (ResultSet resultSet = statement.executeQuery(query)) {
                 rowSet.populate(resultSet);
                 Reporter.log("Executed query successfully: " + query, LogLevel.INFO_BLUE);
                 return rowSet;
