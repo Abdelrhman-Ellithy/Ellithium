@@ -632,7 +632,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
                     totalRowsAffected += Math.max(rows, 0);
                 }
             } catch (SQLException e) {
-                connection.rollback();
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
                 handleSQLException("Batch insert failed", e);
             }
         } catch (SQLException e) {
@@ -695,11 +699,6 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return result;
     }
 
-    /**
-     * Executes an update SQL statement with retry logic for SQLite.
-     * @param sql The SQL update statement
-     * @return true if at least one row was affected, false otherwise
-     */
     public boolean executeUpdate(String sql) {
         try (Connection connection = dataSource.getConnection()) {
             if (dbType == SQLDBType.SQLITE) {
@@ -710,24 +709,27 @@ public class SQLDatabaseProvider implements AutoCloseable {
                         Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
                         return result > 0;
                     } catch (SQLException e) {
-                        if (e.getMessage().contains("database is locked") && (--retries) > 0) {
+                        if (e.getMessage() != null && e.getMessage().contains("database is locked") && (--retries) > 0) {
                             Thread.sleep(1000);
+                        } else {
+                            throw e;
                         }
                     }
                 }
-            }
-            try (Statement statement = connection.createStatement()) {
-                int result = statement.executeUpdate(sql);
-                Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
-                return result > 0;
+            } else {
+                try (Statement statement = connection.createStatement()) {
+                    int result = statement.executeUpdate(sql);
+                    Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
+                    return result > 0;
+                }
             }
         } catch (SQLException e) {
             handleSQLException("Failed to execute update: " + sql, e);
-            return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new SQLRuntimeException("Update interrupted", e);
         }
+        return false;
     }
 
     /**
@@ -736,7 +738,6 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @return true if all statements executed successfully, false otherwise
      */
     public boolean executeUpdates(String... sqlStatements) {
-        boolean success = true;
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try (Statement statement = connection.createStatement()) {
@@ -745,16 +746,19 @@ public class SQLDatabaseProvider implements AutoCloseable {
                 }
                 connection.commit();
                 Reporter.log("Executed multiple updates successfully", LogLevel.INFO_BLUE);
+                return true;
             } catch (SQLException e) {
-                connection.rollback();
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
                 handleSQLException("Failed to execute updates, rolling back", e);
-                success = false;
             }
         } catch (SQLException e) {
             handleSQLException("Database connection error", e);
-            success = false;
         }
-        return success;
+        return false;
     }
 
     /**
@@ -841,7 +845,8 @@ public class SQLDatabaseProvider implements AutoCloseable {
             throw new IllegalArgumentException("Table name cannot be null or empty");
         }
         // Add regex pattern to ensure table name contains only valid characters
-        if (!tableName.matches("^[a-zA-Z0-9_]+$")) {
+        // Allowed: alphanumeric, underscores, dots (schemas), and brackets (SQL Server schemas)
+        if (!tableName.matches("^[a-zA-Z0-9_.\\[\\]]+$")) {
             throw new IllegalArgumentException("Invalid table name format");
         }
     }
