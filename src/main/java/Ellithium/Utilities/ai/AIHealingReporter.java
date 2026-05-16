@@ -92,6 +92,12 @@ public class AIHealingReporter {
         } catch (IOException e) {
             Reporter.log("Failed to write AI Healing Report: " + e.getMessage(), LogLevel.ERROR);
         }
+
+        // Apply deferred source patches (LOCAL mode only — safe since test execution is complete)
+        AISelfHealer.applyDeferredPatches();
+
+        // Flush baseline fingerprints to disk
+        BaselineStore.flush();
     }
 
     private static class HealedLocatorEntry {

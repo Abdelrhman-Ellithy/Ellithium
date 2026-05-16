@@ -50,7 +50,9 @@ public class Reporter {
     public static void log(String message, LogLevel logLevel, String additionalParameter) {
         String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
         logByLevel(logLevel, coloredMessage);
-        if (ConfigContext.isOnExecution()) {
+        // Only attach to Allure report if the log level is at or above the configured threshold.
+        // This prevents DEBUG/TRACE internal framework logs from polluting the test report.
+        if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
             Allure.step(message + additionalParameter, allureStatusMap.get(logLevel));
         }
     }
@@ -69,6 +71,21 @@ public class Reporter {
             case DEBUG -> debug(message);
             default ->  {}
         }
+    }
+
+    /**
+     * Checks whether a log message at the given level should be attached to the Allure report.
+     * Maps Ellithium LogLevel to Log4j2 Level and checks against the effective logger threshold.
+     * DEBUG/TRACE messages are excluded from the report when the logger is at INFO or above.
+     */
+    private static boolean shouldAttachToReport(LogLevel logLevel) {
+        org.apache.logging.log4j.Logger log4jLogger = org.apache.logging.log4j.LogManager.getLogger(Reporter.class);
+        return switch (logLevel) {
+            case TRACE -> log4jLogger.isTraceEnabled();
+            case DEBUG -> log4jLogger.isDebugEnabled();
+            // INFO variants, WARN, ERROR always show in the report
+            default -> true;
+        };
     }
 
     /**

@@ -33,14 +33,4 @@ public class DropDownPage {
         return texts.get(0);
     }
 
-//    private final By dropdown = By.id("dropdown");
-//
-//    public DropdownPage selectOptionByText(String text) {
-//        driverActions.elements().selectByVisibleText(dropdown, text);
-//        return this;
-//    }
-//
-////    public String getSelectedOptionText() {
-////        return driverActions.elements().getFirstSelectedOption(dropdown);
-////    }
 }

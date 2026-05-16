@@ -1,6 +1,9 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.ai.AISelfHealer;
+import Ellithium.Utilities.ai.BaselineStore;
+import Ellithium.Utilities.ai.SemanticLocatorResolver;
+import Ellithium.Utilities.ai.models.ElementFingerprint;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
@@ -39,15 +42,50 @@ public class BaseActions<T extends WebDriver> {
      */
     public WebElement findWebElement(By locator) {
         try {
-            return driver.findElement(locator);
+            WebElement element = driver.findElement(locator);
+            // Silently capture fingerprint for Tier 1 baseline healing
+            BaselineStore.capture(driver, locator, element);
+            return element;
         } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException e) {
             // InvalidSelectorException covers empty/blank locators (e.g. By.tagName(""))
-            WebElement healed = AISelfHealer.attemptHeal(
-                    driver, locator, Thread.currentThread().getStackTrace());
-            if (healed != null) {
-                return healed;
+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+
+            // TIER 1: Algorithmic match against stored baseline (fast, free, deterministic)
+            WebElement algorithmicMatch = BaselineStore.tryAlgorithmicHeal(driver, locator);
+            if (algorithmicMatch != null) {
+                // Save baseline + queue source patch for POM correction
+                BaselineStore.capture(driver, locator, algorithmicMatch);
+                AISelfHealer.queueSourcePatch(locator, algorithmicMatch, stack);
+                return algorithmicMatch;
             }
-            throw e;
+
+            // TIER 1.5: Semantic Strategy Search (zero cost, uses method/field name context)
+            String actionType = extractActionFromStack(stack);
+            String callerMethod = extractCallerMethodName(stack);
+            String fieldName = extractFieldNameFromStack(stack, locator);
+            String locatorValue = extractLocatorValue(locator);
+            ElementFingerprint baseline = BaselineStore.getBaseline(locator.toString());
+            WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
+                    driver, callerMethod, fieldName, actionType, locatorValue, baseline);
+            if (semanticMatch != null) {
+                // Save baseline under the ORIGINAL broken locator key
+                // so next test heals via Tier 1 (instant) instead of Tier 1.5
+                BaselineStore.capture(driver, locator, semanticMatch);
+                AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
+                return semanticMatch;
+            }
+
+            // TIER 2: LLM-based semantic healing (slow, costly, but handles drastic changes)
+            WebElement llmMatch = AISelfHealer.attemptHeal(driver, locator, stack);
+            if (llmMatch != null) {
+                // Save baseline under original key for Tier 1 reuse
+                BaselineStore.capture(driver, locator, llmMatch);
+                return llmMatch;
+            }
+
+            // All healing tiers failed — throw AssertionError so Allure marks as "failed" not "broken"
+            throw new AssertionError("Element not found and could not be healed: " + locator
+                    + " | All healing tiers exhausted (Tier 1: Baseline, Tier 1.5: Semantic, Tier 2: LLM)", e);
         }
     }
 
@@ -81,7 +119,7 @@ public class BaseActions<T extends WebDriver> {
             By healedLocator = AISelfHealer.healLocator(driver, locator, Thread.currentThread().getStackTrace());
             if (healedLocator != null) {
                 // If the cache was hit or AI found it, log it
-                AISelfHealer.CachedLocator cached = AISelfHealer.healedLocatorCacheThread.get().get(locator.toString());
+                AISelfHealer.CachedLocator cached = AISelfHealer.getGlobalHealedCache().get(locator.toString());
                 if (cached != null) {
                     Ellithium.core.reporting.Reporter.log("AI Self-Healing (cached list): reusing healed locator " 
                             + cached.newLocator + " for field '" + cached.originalField 
@@ -101,7 +139,7 @@ public class BaseActions<T extends WebDriver> {
      * @return List of found WebElements
      */
     public List<WebElement> findWebElements(By locator) {
-        AISelfHealer.CachedLocator cached = AISelfHealer.healedLocatorCacheThread.get().get(locator.toString());
+        AISelfHealer.CachedLocator cached = AISelfHealer.getGlobalHealedCache().get(locator.toString());
         if (cached != null) {
             return driver.findElements(cached.newLocator);
         }
@@ -301,5 +339,100 @@ public class BaseActions<T extends WebDriver> {
                 break;
             }
         }
+    }
+
+    // ──────────────────────── Context Extraction for Tier 1.5 ────────────────────────
+
+    /**
+     * Extracts the Ellithium interaction method name from the stack (e.g., "sendData", "clickOnElement").
+     */
+    private static String extractActionFromStack(StackTraceElement[] stack) {
+        for (StackTraceElement frame : stack) {
+            String cls = frame.getClassName();
+            if (cls.startsWith("Ellithium.Utilities.interactions.")) {
+                String method = frame.getMethodName();
+                if (!method.equals("findWebElement") && !method.equals("waitForVisibilityAndFindElement")
+                        && !method.equals("getFluentWait") && !method.equals("findWebElements")
+                        && !method.equals("waitForVisibilityAndFindElements")
+                        && !method.equals("extractActionFromStack")) {
+                    return method;
+                }
+            }
+        }
+        return "unknown";
+    }
+
+    /**
+     * Extracts the caller's POM method name from the stack (e.g., "setUserEmail", "clickLoginBtn").
+     */
+    private static String extractCallerMethodName(StackTraceElement[] stack) {
+        for (StackTraceElement frame : stack) {
+            String cls = frame.getClassName();
+            if (cls.startsWith("Ellithium.") || cls.startsWith("org.openqa.selenium")
+                    || cls.startsWith("java.") || cls.startsWith("sun.")
+                    || cls.startsWith("io.cucumber") || cls.startsWith("io.qameta")
+                    || cls.startsWith("org.testng") || cls.startsWith("net.bytebuddy")) {
+                continue;
+            }
+            return frame.getMethodName();
+        }
+        return null;
+    }
+
+    /**
+     * Attempts to extract the By field name from source code at the call site.
+     */
+    private static String extractFieldNameFromStack(StackTraceElement[] stack, By locator) {
+        for (StackTraceElement frame : stack) {
+            String cls = frame.getClassName();
+            if (cls.startsWith("Ellithium.") || cls.startsWith("org.openqa.selenium")
+                    || cls.startsWith("java.") || cls.startsWith("sun.")) {
+                continue;
+            }
+            // Resolve source file
+            String classFilePart = cls.replace('.', '/') + ".java";
+            for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
+                String path = root + classFilePart;
+                if (new java.io.File(path).exists()) {
+                    try {
+                        java.util.List<String> lines = java.nio.file.Files.readAllLines(
+                                java.nio.file.Paths.get(path));
+                        int lineNum = frame.getLineNumber();
+                        if (lineNum >= 1 && lineNum <= lines.size()) {
+                            // Look for By field variable used at call site
+                            String callLine = lines.get(lineNum - 1).trim();
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                                    "(?:this\\.)?([a-zA-Z_][a-zA-Z0-9_]*)").matcher(callLine);
+                            while (m.find()) {
+                                String candidate = m.group(1);
+                                // Check if it's declared as a By field above
+                                for (int i = Math.min(lineNum - 2, lines.size() - 1); i >= 0; i--) {
+                                    if (lines.get(i).contains("By " + candidate)
+                                            || lines.get(i).contains("By\t" + candidate)) {
+                                        return candidate;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    break;
+                }
+            }
+            break; // only check first user frame
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the value portion from a By locator's toString().
+     * "By.id: emailField" → "emailField", "By.cssSelector: #login" → "#login"
+     */
+    private static String extractLocatorValue(By locator) {
+        String str = locator.toString();
+        int colonIdx = str.indexOf(':');
+        if (colonIdx >= 0 && colonIdx < str.length() - 1) {
+            return str.substring(colonIdx + 1).trim();
+        }
+        return null;
     }
 }

@@ -10,6 +10,23 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.events.WebDriverListener;
 public class seleniumListener implements WebDriverListener {
+
+    /**
+     * Thread-local flag to suppress logging during internal AI operations
+     * (e.g., ElementFingerprint capture reads 13+ attributes per element).
+     * Set to true via {@link #suppressLogging()} and reset via {@link #resumeLogging()}.
+     */
+    private static final ThreadLocal<Boolean> SUPPRESS_LOGGING = ThreadLocal.withInitial(() -> false);
+
+    /** Suppress all listener logging on the current thread. */
+    public static void suppressLogging() { SUPPRESS_LOGGING.set(true); }
+
+    /** Resume listener logging on the current thread. */
+    public static void resumeLogging() { SUPPRESS_LOGGING.set(false); }
+
+    /** Returns true if logging is currently suppressed. */
+    private static boolean isSuppressed() { return SUPPRESS_LOGGING.get(); }
+
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         String sentData = buildSentDataString(keysToSend);
@@ -32,21 +49,23 @@ public class seleniumListener implements WebDriverListener {
        Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url);
    }
    @Override
-   public void afterGetCurrentUrl(WebDriver driver, String url) {
-       Reporter.log("Current URL retrieved: " + url, LogLevel.INFO_BLUE);
-   }
+    public void afterGetCurrentUrl(WebDriver driver, String url) {
+        if (isSuppressed()) return;
+        Reporter.log("Current URL retrieved: " + url, LogLevel.DEBUG);
+    }
     @Override
     public void afterDefaultContent(WebDriver.TargetLocator targetLocator, WebDriver driver) {
         Reporter.log("Switched Back To Default Content From Frame" , LogLevel.INFO_BLUE);
     }
    @Override
    public void afterGetTitle(WebDriver driver, String title) {
-       Reporter.log("Page title retrieved: " + title, LogLevel.INFO_BLUE);
+       Reporter.log("Page title retrieved: " + title, LogLevel.DEBUG);
    }
    @Override
-   public void afterGetPageSource(WebDriver driver, String source) {
-       Reporter.log("Page source retrieved", LogLevel.INFO_BLUE);
-   }
+    public void afterGetPageSource(WebDriver driver, String source) {
+        if (isSuppressed()) return;
+        Reporter.log("Page source retrieved", LogLevel.DEBUG);
+    }
    @Override
    public void afterClose(WebDriver driver) {
        Reporter.log("WebDriver closed", LogLevel.INFO_BLUE);
@@ -59,19 +78,20 @@ public class seleniumListener implements WebDriverListener {
 
    @Override
    public void afterGetWindowHandles(WebDriver driver, Set<String> result) {
-       Reporter.log("Window handles retrieved: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Window handles retrieved: " + result, LogLevel.DEBUG);
    }
    @Override
    public void afterGetWindowHandle(WebDriver driver, String result) {
-       Reporter.log("Window handle retrieved: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Window handle retrieved: " + result, LogLevel.DEBUG);
    }
    @Override
-   public void afterExecuteScript(WebDriver driver, String script, Object[] args, Object result) {
-       Reporter.log("Executed script: " + script + ", Result: " + result, LogLevel.INFO_BLUE);
-   }
+    public void afterExecuteScript(WebDriver driver, String script, Object[] args, Object result) {
+        if (isSuppressed()) return;
+        Reporter.log("Executed script: " + script + ", Result: " + result, LogLevel.DEBUG);
+    }
    @Override
    public void afterExecuteAsyncScript(WebDriver driver, String script, Object[] args, Object result) {
-       Reporter.log("Executed async script: " + script + ", Result: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Executed async script: " + script + ", Result: " + result, LogLevel.DEBUG);
    }
    @Override
    public void afterClick(WebElement element) {
@@ -82,12 +102,14 @@ public class seleniumListener implements WebDriverListener {
        Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE);
    }
     @Override
-   public void afterGetTagName(WebElement element, String result) {
-       Reporter.log("Tag name retrieved: " + result, LogLevel.INFO_BLUE);
-   }
+    public void afterGetTagName(WebElement element, String result) {
+        if (isSuppressed()) return;
+        Reporter.log("Tag name retrieved: " + result, LogLevel.DEBUG);
+    }
    @Override
    public void afterGetAttribute(WebElement element, String name, String result) {
-       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + element.getAttribute(name), LogLevel.INFO_BLUE);
+       if (isSuppressed()) return;
+       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + element.getAttribute(name), LogLevel.DEBUG);
    }
    @Override
    public void afterIsSelected(WebElement element, boolean result) {
@@ -270,7 +292,8 @@ public class seleniumListener implements WebDriverListener {
 
     @Override
     public void afterGetText(WebElement element, String result) {
-        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.INFO_BLUE);
+        if (isSuppressed()) return;
+        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.DEBUG);
     }
 
 //    @Override

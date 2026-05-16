@@ -11,10 +11,15 @@ import Ellithium.Utilities.ai.readers.JsonTestCaseReader;
 import Ellithium.Utilities.ai.readers.TestCaseReader;
 import Ellithium.Utilities.ai.readers.TextTestCaseReader;
 import Ellithium.Utilities.ai.sanitizers.DataScrubber;
+import Ellithium.Utilities.ai.sanitizers.DOMMinimizer;
+import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.HeadlessMode;
+import Ellithium.core.driver.LocalDriverType;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.openqa.selenium.WebDriver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,26 +39,65 @@ import java.util.Objects;
  * <ol>
  *   <li>Reads natural-language test cases from a JSON or text file</li>
  *   <li>Checks {@link TraceabilityManager} — skips already-generated tests</li>
- *   <li>Sends each new test case to the configured LLM with Ellithium's system prompt</li>
+ *   <li><b>Live DOM grounding (if URL provided):</b> opens a headless browser,
+ *       navigates to the target URL, captures and minimizes the live DOM</li>
+ *   <li>Sends each new test case (+ live DOM if available) to the configured LLM</li>
  *   <li>Parses the LLM's structured JSON response</li>
  *   <li>Generates the POM class (or injects into existing) and the test class</li>
+ *   <li>Generated test classes include proper TestNG scaffolding:
+ *       {@code @BeforeMethod}/{@code @AfterMethod} with DriverFactory lifecycle</li>
  *   <li>Optionally generates or updates the BDD .feature file</li>
  *   <li>Saves the mapping to {@code ellithium-ai-mappings.json}</li>
  * </ol>
  */
 public class EllithiumAIEngine {
 
+    // ──────────────────────── System Prompt ────────────────────────
+
+    /**
+     * The system prompt uses ACTUAL Ellithium API patterns from the real codebase:
+     * - Page Objects hold a {@code DriverActions<?>} field
+     * - Actions accessed via: driverActions.elements().sendData(), .clickOnElement(), .getText()
+     * - Select via: driverActions.select().selectDropdownByText()
+     * - Mouse via: driverActions.mouse().hoverOverElement(), .doubleClick()
+     * - Navigation via: driverActions.navigation()
+     * - Waits via: driverActions.waits()
+     */
     private static final String SYSTEM_PROMPT =
-            "You are an expert Java Selenium and Appium test automation engineer who uses the Ellithium framework.\n"
-            + "You write clean, readable, business-level Page Object Model (POM) code for Web or Mobile applications.\n\n"
+            "You are an expert Java test automation engineer who uses the Ellithium framework.\n"
+            + "You write clean, readable, business-level Page Object Model (POM) code.\n\n"
             + "## Ellithium POM Rules:\n"
-            + "1. Page Objects extend nothing — they hold a private final DriverActions<?> driverActions;\n"
-            + "2. Locators are: private final By locatorName = By.cssSelector(\"...\"); (for Web)\n"
-            + "   OR private final By locatorName = AppiumBy.accessibilityId(\"...\"); (for Mobile).\n"
-            + "3. Business methods call driverActions.elements().click(locator), .type(locator, text), etc.\n"
-            + "4. Business methods return 'this' for fluent chaining, or a new Page Object for navigation.\n"
-            + "5. Method names are business-level: login(String user, String pass), searchForProduct(String name).\n"
-            + "6. Never use Thread.sleep(). Never use raw driver.findElement().\n\n"
+            + "1. Page Objects extend nothing — they hold these fields:\n"
+            + "   WebDriver driver;\n"
+            + "   DriverActions driverActions;\n"
+            + "2. Constructor takes WebDriver and initializes both:\n"
+            + "   public LoginPage(WebDriver driver) {\n"
+            + "       this.driver = driver;\n"
+            + "       driverActions = new DriverActions<>(driver);\n"
+            + "   }\n"
+            + "3. Locators are: private final By locatorName = By.cssSelector(\"...\");\n"
+            + "   OR AppiumBy.accessibilityId(\"...\") for mobile.\n"
+            + "4. Business methods use REAL Ellithium API:\n"
+            + "   - driverActions.elements().sendData(locator, data)\n"
+            + "   - driverActions.elements().clickOnElement(locator)\n"
+            + "   - driverActions.elements().getText(locator)\n"
+            + "   - driverActions.elements().getAttributeValue(locator, attr)\n"
+            + "   - driverActions.elements().clearElement(locator)\n"
+            + "   - driverActions.elements().isElementDisplayed(locator)\n"
+            + "   - driverActions.select().selectDropdownByText(locator, option)\n"
+            + "   - driverActions.select().selectDropdownByIndex(locator, index)\n"
+            + "   - driverActions.mouse().hoverOverElement(locator)\n"
+            + "   - driverActions.mouse().doubleClick(locator)\n"
+            + "   - driverActions.mouse().rightClick(locator)\n"
+            + "   - driverActions.waits().waitForElementToBeVisible(locator, timeout, polling)\n"
+            + "   - driverActions.waits().waitForElementToBeClickable(locator, timeout, polling)\n"
+            + "5. Business methods return 'this' for fluent chaining, or a new Page Object for navigation.\n"
+            + "6. Method names are business-level: login(String user, String pass), searchForProduct(String name).\n"
+            + "7. Never use Thread.sleep(). Never use raw driver.findElement().\n"
+            + "8. Required imports:\n"
+            + "   import Ellithium.Utilities.interactions.DriverActions;\n"
+            + "   import org.openqa.selenium.By;\n"
+            + "   import org.openqa.selenium.WebDriver;\n\n"
             + "## Response Format (strict JSON, no markdown):\n"
             + "{\n"
             + "  \"pomClass\": \"LoginPage\",\n"
@@ -64,7 +108,7 @@ public class EllithiumAIEngine {
             + "  \"testClass\": \"LoginTest\",\n"
             + "  \"testPackage\": \"tests\",\n"
             + "  \"testMethod\": \"testLoginWithValidCredentials\",\n"
-            + "  \"testBody\": \"new LoginPage(driver).login(email, pass);\",\n"
+            + "  \"testBody\": \"LoginPage loginPage = new LoginPage(driver);\\nloginPage.login(email, pass);\",\n"
             + "  \"featureFile\": \"src/test/resources/features/Login.feature\",\n"
             + "  \"scenarioTitle\": \"User logs in with valid credentials\",\n"
             + "  \"gherkinScenario\": \"Scenario: User logs in...\\n  Given ...\\n  When ...\\n  Then ...\"\n"
@@ -96,6 +140,8 @@ public class EllithiumAIEngine {
     public EllithiumAIEngine(LLMProvider llmProvider) {
         this(llmProvider, "src/main/java", true);
     }
+
+    // ──────────────────────── Main Entry Point ────────────────────────
 
     /**
      * Reads natural-language test cases from the given file and generates all required assets.
@@ -137,8 +183,11 @@ public class EllithiumAIEngine {
         Reporter.log("EllithiumAIEngine: Done. Generated=" + generated + " Skipped=" + skipped, LogLevel.INFO_GREEN);
     }
 
+    // ──────────────────────── Test Case Processing ────────────────────────
+
     /**
      * Processes a single test case through the LLM and writes generated files.
+     * If the test case has a targetUrl, captures live DOM for grounded generation.
      */
     private GeneratedAssets processTestCase(TestCaseSource testCase) {
         try {
@@ -147,11 +196,10 @@ public class EllithiumAIEngine {
             // Scrub PII from the description before sending to LLM
             String safeDescription = DataScrubber.scrub(testCase.getDescription());
 
-            // Query LLM
-            String userPrompt = "Generate Ellithium test code for the following test case:\n"
-                    + "ID: " + testCase.getTestId() + "\n"
-                    + "Description: " + safeDescription;
+            // Build user prompt with optional live DOM context
+            String userPrompt = buildUserPrompt(testCase, safeDescription);
 
+            // Query LLM
             String response = llmProvider.ask(SYSTEM_PROMPT, userPrompt);
             if (response == null || response.trim().isEmpty()) {
                 Reporter.log("LLM returned an empty response for test: " + testCase.getTestId(), LogLevel.ERROR);
@@ -167,6 +215,75 @@ public class EllithiumAIEngine {
             return null;
         }
     }
+
+    /**
+     * Builds the user prompt. If a target URL is provided, captures the live DOM
+     * using a headless browser for grounded code generation.
+     */
+    private String buildUserPrompt(TestCaseSource testCase, String safeDescription) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Generate Ellithium test code for the following test case:\n");
+        prompt.append("ID: ").append(testCase.getTestId()).append("\n");
+        prompt.append("Description: ").append(safeDescription).append("\n");
+
+        if (testCase.hasTargetUrl()) {
+            prompt.append("Target URL: ").append(testCase.getTargetUrl()).append("\n");
+
+            // Live DOM grounding — capture real DOM from the target URL
+            String liveDom = captureLiveDom(testCase.getTargetUrl());
+            if (liveDom != null && !liveDom.isBlank()) {
+                prompt.append("\n## Live DOM Snapshot (from ").append(testCase.getTargetUrl()).append("):\n");
+                prompt.append("Use these REAL elements for your locators. Do NOT hallucinate locators.\n");
+                prompt.append("```\n").append(liveDom).append("\n```\n");
+            }
+        }
+
+        return prompt.toString();
+    }
+
+    // ──────────────────────── Live DOM Capture ────────────────────────
+
+    /**
+     * Opens a headless Chrome browser, navigates to the URL, captures the page source,
+     * minimizes it, and closes the browser. This provides real DOM context to the LLM
+     * so it generates locators that actually exist on the page.
+     *
+     * @param url The target URL to capture
+     * @return Minimized DOM string, or null if capture failed
+     */
+    private String captureLiveDom(String url) {
+        WebDriver headlessDriver = null;
+        try {
+            Reporter.log("Live DOM Grounding: Capturing DOM from " + url, LogLevel.INFO_BLUE);
+
+            // Use Ellithium's DriverFactory for headless Chrome
+            headlessDriver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.True);
+            headlessDriver.get(url);
+
+            // Small wait for dynamic content to render
+            Thread.sleep(2000);
+
+            String rawDom = headlessDriver.getPageSource();
+            String minimized = DOMMinimizer.minimize(rawDom);
+            String scrubbed = DataScrubber.scrub(minimized);
+
+            Reporter.log("Live DOM Grounding: Captured " + scrubbed.length() + " chars from " + url, LogLevel.INFO_GREEN);
+            return scrubbed;
+
+        } catch (Exception e) {
+            Reporter.log("Live DOM Grounding failed for " + url + ": " + e.getMessage()
+                    + " — proceeding without DOM context", LogLevel.WARN);
+            return null;
+        } finally {
+            if (headlessDriver != null) {
+                try {
+                    DriverFactory.quitDriver();
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    // ──────────────────────── Response Parsing & File Generation ────────────────────────
 
     /**
      * Parses the LLM's JSON response and writes the POM, test, and feature files.
@@ -209,8 +326,10 @@ public class EllithiumAIEngine {
                 }
             }
 
-            // Generate TestNG test class
-            generateTestClass(testPath, testPackage, testClass, testMethod, testBody, pomPackage, pomClass);
+            // Generate TestNG test class with PROPER scaffolding
+            String targetUrl = testCase.hasTargetUrl() ? testCase.getTargetUrl() : null;
+            generateTestClass(testPath, testPackage, testClass, testMethod, testBody,
+                    pomPackage, pomClass, targetUrl);
 
             // Generate BDD feature file if enabled
             String featureFile = null;
@@ -236,33 +355,83 @@ public class EllithiumAIEngine {
         }
     }
 
-    /** Generates a TestNG test class file. */
+    // ──────────────────────── Test Class Generation (Fixed Scaffolding) ────────────────────────
+
+    /**
+     * Generates a TestNG test class with proper Ellithium scaffolding:
+     * <ul>
+     *   <li>{@code @BeforeMethod}: Initializes Chrome via {@code DriverFactory.getNewLocalDriver()}</li>
+     *   <li>{@code @BeforeMethod}: Navigates to targetUrl if provided</li>
+     *   <li>{@code @Test}: Contains the LLM-generated test body</li>
+     *   <li>{@code @AfterMethod}: Calls {@code DriverFactory.quitDriver()}</li>
+     * </ul>
+     */
     private void generateTestClass(String outputPath, String packageName, String className,
-                                    String testMethod, String testBody, String pomPackage, String pomClass) {
+                                    String testMethod, String testBody, String pomPackage,
+                                    String pomClass, String targetUrl) {
         try {
             java.nio.file.Path path = java.nio.file.Paths.get(outputPath);
             if (java.nio.file.Files.exists(path)) return; // Don't overwrite existing
 
-            String content = "package " + packageName + ";\n\n"
-                    + "import " + pomPackage + "." + pomClass + ";\n"
-                    + "import org.openqa.selenium.WebDriver;\n"
-                    + "import org.testng.annotations.Test;\n\n"
-                    + "/**\n * Auto-generated by Ellithium AI Engine.\n */\n"
-                    + "public class " + className + " {\n\n"
-                    + "    private WebDriver driver; // Initialize via Ellithium's DriverFactory\n\n"
-                    + "    @Test\n"
-                    + "    public void " + testMethod + "() {\n"
-                    + "        " + testBody.trim() + "\n"
-                    + "    }\n"
-                    + "}\n";
+            StringBuilder content = new StringBuilder();
+
+            // Package declaration
+            content.append("package ").append(packageName).append(";\n\n");
+
+            // Imports
+            content.append("import ").append(pomPackage).append(".").append(pomClass).append(";\n");
+            content.append("import Ellithium.core.driver.DriverFactory;\n");
+            content.append("import Ellithium.core.driver.LocalDriverType;\n");
+            content.append("import Ellithium.core.driver.HeadlessMode;\n");
+            content.append("import org.openqa.selenium.WebDriver;\n");
+            content.append("import org.testng.annotations.AfterMethod;\n");
+            content.append("import org.testng.annotations.BeforeMethod;\n");
+            content.append("import org.testng.annotations.Test;\n\n");
+
+            // Class declaration
+            content.append("/**\n");
+            content.append(" * Auto-generated by Ellithium AI Engine.\n");
+            content.append(" */\n");
+            content.append("public class ").append(className).append(" {\n\n");
+
+            // Field
+            content.append("    private WebDriver driver;\n\n");
+
+            // @BeforeMethod — driver init + navigation
+            content.append("    @BeforeMethod\n");
+            content.append("    public void setUp() {\n");
+            content.append("        driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False);\n");
+            if (targetUrl != null && !targetUrl.isBlank()) {
+                content.append("        driver.get(\"").append(escapeJavaString(targetUrl)).append("\");\n");
+            }
+            content.append("    }\n\n");
+
+            // @Test
+            content.append("    @Test\n");
+            content.append("    public void ").append(testMethod).append("() {\n");
+            // Indent test body properly
+            for (String line : testBody.trim().split("\\n")) {
+                content.append("        ").append(line.trim()).append("\n");
+            }
+            content.append("    }\n\n");
+
+            // @AfterMethod — driver cleanup
+            content.append("    @AfterMethod\n");
+            content.append("    public void tearDown() {\n");
+            content.append("        DriverFactory.quitDriver();\n");
+            content.append("    }\n");
+
+            content.append("}\n");
 
             java.nio.file.Files.createDirectories(path.getParent());
-            java.nio.file.Files.writeString(path, content);
+            java.nio.file.Files.writeString(path, content.toString());
             Reporter.log("Test class generated: " + outputPath, LogLevel.INFO_GREEN);
         } catch (java.io.IOException e) {
             Reporter.log("Failed to generate test class: " + e.getMessage(), LogLevel.ERROR);
         }
     }
+
+    // ──────────────────────── Utilities ────────────────────────
 
     private List<String> jsonArrayToList(JsonObject json, String key) {
         List<String> result = new ArrayList<>();
@@ -295,5 +464,12 @@ public class EllithiumAIEngine {
         int start = fullMethod.indexOf('{') + 1;
         int end = fullMethod.lastIndexOf('}');
         return (start > 0 && end > start) ? fullMethod.substring(start, end).trim() : "";
+    }
+
+    /**
+     * Escapes a string for use inside a Java string literal.
+     */
+    private static String escapeJavaString(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 }

@@ -2,6 +2,7 @@ package Ellithium.Utilities.ai;
 
 import Ellithium.Utilities.ai.config.AIConfigLoader;
 import Ellithium.Utilities.ai.config.HealingStrategy;
+import Ellithium.Utilities.ai.models.ElementFingerprint;
 import Ellithium.Utilities.ai.models.HealingResult;
 import Ellithium.Utilities.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
@@ -12,7 +13,10 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +40,7 @@ public class AISelfHealer {
     private static volatile HealingStrategy globalStrategy = HealingStrategy.DISABLED;
     private static volatile double confidenceThreshold = 0.85;
 
-    // Runtime locator cache: ThreadLocal ensures isolated cache per parallel test thread
+    // Global runtime locator cache: shared across threads, persisted at suite end
     public static class CachedLocator {
         public final By newLocator;
         public final String originalField;
@@ -45,8 +49,82 @@ public class AISelfHealer {
             this.originalField = originalField;
         }
     }
-    public static final ThreadLocal<java.util.concurrent.ConcurrentHashMap<String, CachedLocator>> healedLocatorCacheThread
-            = ThreadLocal.withInitial(java.util.concurrent.ConcurrentHashMap::new);
+    private static final ConcurrentHashMap<String, CachedLocator> globalHealedCache = new ConcurrentHashMap<>();
+
+    // Deferred source patches — queued during test, applied at suite end
+    private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();
+
+    /** Represents a deferred source code patch. */
+    public static class SourcePatch {
+        public final String filePath;
+        public final String fieldName;
+        public final String byMethod;
+        public final String byValue;
+        public final String newLocatorExpression;
+        public SourcePatch(String filePath, String fieldName, String byMethod, String byValue, String newLocatorExpression) {
+            this.filePath = filePath;
+            this.fieldName = fieldName;
+            this.byMethod = byMethod;
+            this.byValue = byValue;
+            this.newLocatorExpression = newLocatorExpression;
+        }
+    }
+
+    // ──────────────────────── Public Source Patching API ────────────────────────
+
+    /**
+     * Queues a source patch from Tier 1 or Tier 1.5 healing.
+     * Called by {@link BaseActions} after a successful heal so the POM source file
+     * gets corrected at suite end (if strategy is HEAL_AND_NOTIFY).
+     *
+     * @param brokenLocator  The original broken By locator
+     * @param healedElement  The element that was found by healing
+     * @param stackTrace     The call stack for source location resolution
+     */
+    public static void queueSourcePatch(By brokenLocator, WebElement healedElement, StackTraceElement[] stackTrace) {
+        try {
+            // Only patch source when HEAL_AND_NOTIFY is active
+            HealingStrategy strategy = getEffectiveStrategy();
+            if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
+
+            // Resolve source location (file path, field name)
+            SourceLocation srcLoc = resolveSourceLocation(stackTrace);
+            if (srcLoc == null || srcLoc.filePath == null) return;
+
+            // Parse broken locator to get byMethod + byValue
+            HealingContext tempCtx = new HealingContext();
+            parseByLocator(brokenLocator.toString(), tempCtx);
+            if (tempCtx.byMethod == null) return;
+
+            // Reconstruct cleanest locator from healed element and convert to Java source
+            By healedBy = Ellithium.Utilities.ai.models.ElementFingerprint.reconstructLocator(healedElement);
+            if (healedBy == null) return;
+            String javaExpression = byToJavaExpression(healedBy);
+            if (javaExpression == null) return;
+
+            pendingPatches.add(new SourcePatch(
+                    srcLoc.filePath, srcLoc.fieldName,
+                    tempCtx.byMethod, tempCtx.byValue, javaExpression));
+
+            Reporter.log("Source patch queued: By." + tempCtx.byMethod + "(\"" + tempCtx.byValue + "\") → "
+                    + javaExpression + " in " + srcLoc.filePath, LogLevel.DEBUG);
+        } catch (Exception e) {
+            // Source patching must never crash the test
+        }
+    }
+
+    /**
+     * Converts a By locator to a Java source code expression.
+     * E.g., {@code By.id: username} → {@code By.id("username")}
+     */
+    public static String byToJavaExpression(By locator) {
+        String str = locator.toString();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("By\\.([a-zA-Z]+):\\s*(.*)").matcher(str);
+        if (!m.find()) return null;
+        String method = m.group(1);
+        String value = m.group(2).trim();
+        return "By." + method + "(\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\")";
+    }
 
     // ──────────────────────── Initialization ────────────────────────
 
@@ -96,6 +174,7 @@ public class AISelfHealer {
         String fieldName;          // e.g. "usernameField" or null for inline
         int lineNumber;            // stack frame line number
         boolean isMobile;
+        byte[] screenshot;         // PNG screenshot for vision-capable LLMs (null if not captured)
     }
 
     // ──────────────────────── Source Location DTO ────────────────────────
@@ -120,27 +199,31 @@ public class AISelfHealer {
 
     /**
      * Primary entry point: attempts to heal a broken locator and return the found element.
+     * Uses a global shared cache for cross-thread healing reuse.
      */
     public static WebElement attemptHeal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace) {
         if (getEffectiveStrategy() == HealingStrategy.DISABLED || getEffectiveProvider() == null) {
             return null;
         }
 
-        Reporter.log("AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
+        Reporter.log("[TIER 2] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
         By newLocator = healLocator(driver, brokenLocator, stackTrace);
 
         if (newLocator != null) {
-            CachedLocator cached = healedLocatorCacheThread.get().get(brokenLocator.toString());
+            CachedLocator cached = globalHealedCache.get(brokenLocator.toString());
             if (cached != null) {
                 Reporter.log("AI Self-Healing (cached): reusing healed locator " + cached.newLocator
                         + " for field '" + cached.originalField + "' (original: " + brokenLocator + ")", LogLevel.INFO_YELLOW);
             }
             try {
-                return driver.findElement(newLocator);
+                WebElement found = driver.findElement(newLocator);
+                // Capture the healed element as new baseline
+                BaselineStore.capture(driver, brokenLocator, found);
+                return found;
             } catch (Exception e) {
                 Reporter.log("AI Self-Healing: Healed locator also failed: " + e.getMessage(), LogLevel.ERROR);
-                healedLocatorCacheThread.get().remove(brokenLocator.toString());
+                globalHealedCache.remove(brokenLocator.toString());
             }
         }
         return null;
@@ -155,8 +238,8 @@ public class AISelfHealer {
         LLMProvider provider = getEffectiveProvider();
         if (strategy == HealingStrategy.DISABLED || provider == null) return null;
 
-        // Fast path: cache hit
-        CachedLocator cached = healedLocatorCacheThread.get().get(brokenLocator.toString());
+        // Fast path: global cache hit
+        CachedLocator cached = globalHealedCache.get(brokenLocator.toString());
         if (cached != null) return cached.newLocator;
 
         // ── Step 1-2: Collect rich context ──
@@ -166,96 +249,190 @@ public class AISelfHealer {
         String systemPrompt = buildSystemPrompt(ctx.isMobile);
         String userPrompt = buildUserPrompt(ctx);
 
-        // ── Step 4: Query LLM ──
+        // ── Step 4: Query LLM with retry + exponential backoff ──
+        // Use vision (screenshot) if available and provider supports it
         String llmResponse;
-        try {
-            llmResponse = provider.ask(systemPrompt, userPrompt);
-        } catch (Exception e) {
-            Reporter.log("AI Self-Healing: LLM Provider failed - " + e.getMessage(), LogLevel.ERROR);
+        if (ctx.screenshot != null && provider.supportsVision()) {
+            String combinedPrompt = systemPrompt + "\n\n" + userPrompt;
+            llmResponse = queryLLMWithVisionRetry(provider, combinedPrompt, ctx.screenshot, 3);
+        } else {
+            llmResponse = queryLLMWithRetry(provider, systemPrompt, userPrompt, 3);
+        }
+        if (llmResponse == null || llmResponse.isBlank()) {
+            Reporter.log("AI Self-Healing: LLM returned no response after retries", LogLevel.ERROR);
             return null;
         }
 
-        // ── Step 5: Parse response ──
-        HealingResult result = parseHealingResponse(llmResponse);
-        if (result == null) {
-            Reporter.log("AI Self-Healing: Failed to parse LLM response", LogLevel.ERROR);
-            return null;
-        }
-        Reporter.log("AI Healing Result: " + result.toString(), LogLevel.INFO_BLUE);
-
-        // ── Step 6: Check confidence ──
-        if (!result.isConfidentEnough(confidenceThreshold)) {
-            Reporter.log("AI Healing confidence (" + String.format("%.2f", result.getConfidence())
-                    + ") below threshold (" + confidenceThreshold + "). SUGGEST_ONLY mode forced.", LogLevel.INFO_YELLOW);
-            Reporter.log("[AI Suggestion] " + result.getNewLocatorExpression()
-                    + " | Reason: " + result.getReasoning(), LogLevel.INFO_BLUE);
+        // ── Step 5: Parse multi-candidate response ──
+        List<HealingResult> candidates = parseMultiCandidateResponse(llmResponse);
+        if (candidates.isEmpty()) {
+            Reporter.log("AI Self-Healing: Failed to parse any candidates from LLM response", LogLevel.ERROR);
             return null;
         }
 
-        if (strategy == HealingStrategy.SUGGEST_ONLY) {
-            Reporter.log("[AI Suggestion] " + result.getNewLocatorExpression()
-                    + " | Confidence: " + String.format("%.2f", result.getConfidence())
-                    + " | Reason: " + result.getReasoning(), LogLevel.INFO_BLUE);
+        // ── Step 6: Validate candidates against baseline + live DOM ──
+        ElementFingerprint baseline = BaselineStore.getBaseline(brokenLocator.toString());
+        By acceptedLocator = null;
+        HealingResult acceptedResult = null;
+
+        for (HealingResult candidate : candidates) {
+            if (!candidate.isConfidentEnough(confidenceThreshold)) {
+                Reporter.log("AI Candidate skipped (confidence " + String.format("%.2f", candidate.getConfidence())
+                        + " < " + confidenceThreshold + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                continue;
+            }
+
+            if (strategy == HealingStrategy.SUGGEST_ONLY) {
+                Reporter.log("[AI Suggestion] " + candidate.getNewLocatorExpression()
+                        + " | Confidence: " + String.format("%.2f", candidate.getConfidence())
+                        + " | Reason: " + candidate.getReasoning(), LogLevel.INFO_BLUE);
+                continue;
+            }
+
+            By candidateLocator = parseByFromExpression(candidate.getNewLocatorExpression());
+            if (candidateLocator == null) continue;
+
+            // Validate: element must exist
+            WebElement foundEl;
+            try {
+                foundEl = driver.findElement(candidateLocator);
+            } catch (Exception e) {
+                Reporter.log("AI Candidate validation failed (not found): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                continue;
+            }
+
+            // Cross-validate against baseline fingerprint if available
+            if (baseline != null) {
+                double matchScore = baseline.scoreSimilarity(foundEl);
+                if (matchScore < 0.40) {
+                    Reporter.log("AI Candidate rejected (baseline mismatch, score=" + String.format("%.2f", matchScore)
+                            + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                    continue;
+                }
+            }
+
+            // Candidate accepted!
+            acceptedLocator = candidateLocator;
+            acceptedResult = candidate;
+            break;
+        }
+
+        if (acceptedLocator == null || acceptedResult == null) {
+            if (strategy == HealingStrategy.SUGGEST_ONLY) return null;
+            Reporter.log("AI Self-Healing: No candidate passed validation", LogLevel.ERROR);
             return null;
         }
 
-        // ── Step 7: Parse and validate the healed locator ──
-        By newLocator = parseByFromExpression(result.getNewLocatorExpression());
-        if (newLocator == null) {
-            Reporter.log("AI Self-Healing: Failed to parse expression: " + result.getNewLocatorExpression(), LogLevel.ERROR);
-            return null;
-        }
+        Reporter.log("AI Healing Accepted: " + acceptedResult.toString(), LogLevel.INFO_GREEN);
 
-        // Validate: actually try to find the element with the new locator
-        try {
-            driver.findElement(newLocator);
-        } catch (Exception e) {
-            Reporter.log("AI Self-Healing: Healed locator validation failed (element not found): "
-                    + result.getNewLocatorExpression(), LogLevel.ERROR);
-            return null;
-        }
-
-        // ── Step 8: Cache + Modify Source + Report ──
+        // ── Step 7: Cache + Deferred Source Patch + Report ──
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
-        healedLocatorCacheThread.get().put(brokenLocator.toString(),
-                new CachedLocator(newLocator, fieldLabel != null ? fieldLabel : "unknown"));
+        globalHealedCache.put(brokenLocator.toString(),
+                new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown"));
 
-        // ALWAYS queue for report (both LOCAL and CI)
+        // ALWAYS queue for report
         AIHealingReporter.queueChange(
                 ctx.filePath != null ? ctx.filePath : "unknown",
                 brokenLocator.toString(),
-                result,
+                acceptedResult,
                 ctx.pageClassName,
                 ctx.methodName,
                 ctx.actionType,
                 ctx.lineNumber);
 
-        // Source modification (LOCAL mode only)
-        if (!AIConfigLoader.isCI() && ctx.filePath != null) {
-            boolean written = false;
-
-            if (ctx.fieldName != null) {
-                // Strategy A: field variable
-                written = JavaSourceModifier.updateLocatorValue(
-                        ctx.filePath, ctx.fieldName, result.getNewLocatorExpression());
-            } else if (ctx.byMethod != null) {
-                // Strategy B: inline By.xxx() — match by content
-                written = JavaSourceModifier.updateLocatorByOldValue(
-                        ctx.filePath, ctx.byMethod, ctx.byValue, result.getNewLocatorExpression());
-            }
-
-            if (written) {
-                Reporter.log("AI Self-Healing: Source file updated successfully", LogLevel.INFO_GREEN);
-            }
+        // Deferred source modification — queue patch for suite end (never mid-test)
+        if (ctx.filePath != null) {
+            pendingPatches.add(new SourcePatch(
+                    ctx.filePath, ctx.fieldName, ctx.byMethod, ctx.byValue,
+                    acceptedResult.getNewLocatorExpression()));
         }
 
         if (strategy == HealingStrategy.HEAL_AND_NOTIFY) {
             Reporter.log("[AI HEALED & NOTIFIED] Locator healed: " + brokenLocator
-                    + " → " + result.getNewLocatorExpression()
+                    + " → " + acceptedResult.getNewLocatorExpression()
                     + " | File: " + (ctx.filePath != null ? ctx.filePath : "unknown"), LogLevel.INFO_YELLOW);
         }
 
-        return newLocator;
+        return acceptedLocator;
+    }
+
+    // ──────────────────────── LLM Retry Logic ────────────────────────
+
+    /**
+     * Queries the LLM with exponential backoff retry.
+     */
+    private static String queryLLMWithRetry(LLMProvider provider, String systemPrompt, String userPrompt, int maxRetries) {
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                String response = provider.ask(systemPrompt, userPrompt);
+                if (response != null && !response.isBlank()) return response;
+            } catch (Exception e) {
+                if (attempt == maxRetries) {
+                    Reporter.log("AI Self-Healing: LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
+                    return null;
+                }
+                long waitMs = (long) Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+                Reporter.log("AI Self-Healing: LLM attempt " + attempt + " failed, retrying in " + waitMs + "ms...", LogLevel.WARN);
+                try { Thread.sleep(waitMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Queries the LLM with vision support (screenshot) and exponential backoff retry.
+     * Falls back to text-only if the provider doesn't actually support vision at runtime.
+     */
+    private static String queryLLMWithVisionRetry(LLMProvider provider, String prompt, byte[] screenshot, int maxRetries) {
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                String response = provider.askWithVision(prompt, screenshot);
+                if (response != null && !response.isBlank()) return response;
+            } catch (UnsupportedOperationException e) {
+                // Provider lied about vision support — fall back to text-only
+                Reporter.log("AI Self-Healing: Vision not supported at runtime, falling back to text-only", LogLevel.WARN);
+                return queryLLMWithRetry(provider, "", prompt, maxRetries);
+            } catch (Exception e) {
+                if (attempt == maxRetries) {
+                    Reporter.log("AI Self-Healing: Vision LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
+                    return null;
+                }
+                long waitMs = (long) Math.pow(2, attempt) * 500;
+                Reporter.log("AI Self-Healing: Vision LLM attempt " + attempt + " failed, retrying in " + waitMs + "ms...", LogLevel.WARN);
+                try { Thread.sleep(waitMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
+            }
+        }
+        return null;
+    }
+
+    // ──────────────────────── Deferred Patch Application ────────────────────────
+
+    /**
+     * Applies all deferred source patches. Called at suite end by {@link AIHealingReporter#generateReport()}.
+     * Only applies in LOCAL mode — CI mode leaves source files untouched.
+     */
+    public static void applyDeferredPatches() {
+        if (AIConfigLoader.isCI() || pendingPatches.isEmpty()) return;
+
+        java.util.LinkedHashMap<String, SourcePatch> uniquePatches = new java.util.LinkedHashMap<>();
+        for (SourcePatch patch : pendingPatches) {
+            String key = patch.filePath + "|" + patch.byMethod + "|" + patch.byValue;
+            uniquePatches.putIfAbsent(key, patch);
+        }
+        pendingPatches.clear();
+
+        Reporter.log("AI Self-Healing: Applying " + uniquePatches.size() + " source patches...", LogLevel.INFO_YELLOW);
+        int applied = 0;
+        for (SourcePatch patch : uniquePatches.values()) {
+            boolean written = false;
+            if (patch.fieldName != null) {
+                written = JavaSourceModifier.updateLocatorValue(patch.filePath, patch.fieldName, patch.newLocatorExpression);
+            } else if (patch.byMethod != null) {
+                written = JavaSourceModifier.updateLocatorByOldValue(patch.filePath, patch.byMethod, patch.byValue, patch.newLocatorExpression);
+            }
+            if (written) applied++;
+        }
+        Reporter.log("AI Self-Healing: " + applied + "/" + uniquePatches.size() + " source patches applied", LogLevel.INFO_GREEN);
     }
 
     // ──────────────────────── Context Collection ────────────────────────
@@ -295,6 +472,19 @@ public class AISelfHealer {
         Reporter.log("Page source retrieved", LogLevel.INFO_BLUE);
         String minimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.minimize(rawDom);
         ctx.minimizedDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(minimizedDom);
+
+        // Capture screenshot for vision-capable LLMs (GPT-4o, Gemini Pro Vision, etc.)
+        LLMProvider provider = getEffectiveProvider();
+        if (provider != null && provider.supportsVision()) {
+            try {
+                if (driver instanceof org.openqa.selenium.TakesScreenshot screenshotDriver) {
+                    ctx.screenshot = screenshotDriver.getScreenshotAs(org.openqa.selenium.OutputType.BYTES);
+                    Reporter.log("Screenshot captured for visual healing (" + ctx.screenshot.length + " bytes)", LogLevel.INFO_BLUE);
+                }
+            } catch (Exception e) {
+                Reporter.log("Failed to capture screenshot for visual healing: " + e.getMessage(), LogLevel.WARN);
+            }
+        }
 
         return ctx;
     }
@@ -364,7 +554,14 @@ public class AISelfHealer {
         sb.append("(sendData → input/textarea, clickOnElement → button/link/clickable)\n");
         sb.append("4. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
         sb.append("5. Prefer stable locators: id > name > data-testid > css > xpath\n");
-        sb.append("6. Respond ONLY in JSON: {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"}\n");
+        sb.append("6. Respond ONLY in JSON with your TOP 3 candidates ranked by confidence:\n");
+        sb.append("{\"candidates\": [\n");
+        sb.append("  {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"},\n");
+        sb.append("  {\"locator\": \"By.cssSelector(\\\"...\\\")\", \"confidence\": 0.88, \"reasoning\": \"...\"},\n");
+        sb.append("  {\"locator\": \"By.xpath(\\\"...\\\")\", \"confidence\": 0.72, \"reasoning\": \"...\"}\n");
+        sb.append("]}\n");
+        sb.append("If only one candidate is viable, return a single-element array. ");
+        sb.append("Also accept legacy single-object format: {\"locator\": ..., \"confidence\": ..., \"reasoning\": ...}\n");
         sb.append("7. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
 
         if (isMobile) {
@@ -500,16 +697,60 @@ public class AISelfHealer {
 
     // ──────────────────────── Response Parsing ────────────────────────
 
-    private static HealingResult parseHealingResponse(String response) {
-        if (response == null || response.trim().isEmpty()) return null;
+    /**
+     * Parses LLM response into a list of healing candidates.
+     * Handles both multi-candidate format ({"candidates": [...]}) and
+     * legacy single-object format ({"locator": ..., "confidence": ...}).
+     * Lenient: strips markdown fences and extra whitespace.
+     */
+    static List<HealingResult> parseMultiCandidateResponse(String response) {
+        List<HealingResult> results = new ArrayList<>();
+        if (response == null || response.trim().isEmpty()) return results;
+
+        // Strip markdown code fences if present
+        String cleaned = response.trim();
+        if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\s*", "").replaceAll("\\s*```$", "").trim();
+        }
+
         try {
-            com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(response).getAsJsonObject();
+            com.google.gson.JsonElement root = com.google.gson.JsonParser.parseString(cleaned);
+
+            if (root.isJsonObject()) {
+                com.google.gson.JsonObject obj = root.getAsJsonObject();
+
+                // Multi-candidate format: {"candidates": [...]}
+                if (obj.has("candidates") && obj.get("candidates").isJsonArray()) {
+                    com.google.gson.JsonArray arr = obj.getAsJsonArray("candidates");
+                    for (com.google.gson.JsonElement el : arr) {
+                        HealingResult r = parseSingleCandidate(el.getAsJsonObject());
+                        if (r != null) results.add(r);
+                    }
+                } else if (obj.has("locator")) {
+                    // Legacy single-object format
+                    HealingResult r = parseSingleCandidate(obj);
+                    if (r != null) results.add(r);
+                }
+            } else if (root.isJsonArray()) {
+                // Bare array format: [{...}, {...}]
+                for (com.google.gson.JsonElement el : root.getAsJsonArray()) {
+                    HealingResult r = parseSingleCandidate(el.getAsJsonObject());
+                    if (r != null) results.add(r);
+                }
+            }
+        } catch (Exception e) {
+            Reporter.log("Failed to parse AI healing response: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return results;
+    }
+
+    private static HealingResult parseSingleCandidate(com.google.gson.JsonObject json) {
+        try {
             String locator = json.get("locator").getAsString();
-            double confidence = json.get("confidence").getAsDouble();
+            double confidence = json.has("confidence") ? json.get("confidence").getAsDouble() : 0.5;
             String reasoning = json.has("reasoning") ? json.get("reasoning").getAsString() : "";
             return new HealingResult(locator, confidence, reasoning);
         } catch (Exception e) {
-            Reporter.log("Failed to parse AI healing response: " + e.getMessage(), LogLevel.ERROR);
             return null;
         }
     }
@@ -551,6 +792,10 @@ public class AISelfHealer {
     public static void cleanup() {
         llmProviderThread.remove();
         strategyThread.remove();
-        healedLocatorCacheThread.remove();
+    }
+
+    /** Returns the global healed cache (for use by BaseActions findWebElements). */
+    public static ConcurrentHashMap<String, CachedLocator> getGlobalHealedCache() {
+        return globalHealedCache;
     }
 }
