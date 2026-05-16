@@ -97,44 +97,56 @@ public class JsonHelper {
         File jsonFile = new File(filePath);
         
         synchronized (getFileLock(filePath)) {
-            if (!jsonFile.exists()) {
-                try {
-                    if (jsonFile.createNewFile()) {
-                        log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
-                    }
-                } catch (IOException e) {
-                    log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
-                    Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.toString());
-                }
-            }
+            createJsonFileIfNotExists(jsonFile, filePath);
+            JsonArray jsonArray = readExistingJsonArray(jsonFile);
+            appendDataToJsonArray(data, jsonArray);
+            writeJsonArrayToFile(jsonFile, filePath, jsonArray);
+        }
+    }
 
-            // Read existing content, ensuring it's a JSON array; otherwise, initialize a new array.
-            JsonArray jsonArray = new JsonArray();
-            try (FileReader reader = new FileReader(jsonFile)) {
-                JsonElement existingElement = JsonParser.parseReader(reader);
-                if (existingElement != null && existingElement.isJsonArray()) {
-                    jsonArray = existingElement.getAsJsonArray();
+    private static void createJsonFileIfNotExists(File jsonFile, String filePath) {
+        if (!jsonFile.exists()) {
+            try {
+                if (jsonFile.createNewFile()) {
+                    log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
                 }
-            } catch (Exception ex) {
-                // ...ignore errors and use new jsonArray...
-            }
-
-            // Append new data to existing array.
-            for (Map<String, String> record : data) {
-                JsonObject jsonObject = new JsonObject();
-                for (Map.Entry<String, String> entry : record.entrySet()) {
-                    jsonObject.add(entry.getKey(), new JsonPrimitive(entry.getValue()));
-                }
-                jsonArray.add(jsonObject);
-            }
-
-            try (FileWriter writer = new FileWriter(jsonFile)) {
-                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
-                log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
             } catch (IOException e) {
-                log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
+                log("Failed to create JSON file: ", LogLevel.ERROR, filePath);
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.toString());
             }
+        }
+    }
+
+    private static JsonArray readExistingJsonArray(File jsonFile) {
+        JsonArray jsonArray = new JsonArray();
+        try (FileReader reader = new FileReader(jsonFile)) {
+            JsonElement existingElement = JsonParser.parseReader(reader);
+            if (existingElement != null && existingElement.isJsonArray()) {
+                jsonArray = existingElement.getAsJsonArray();
+            }
+        } catch (Exception ex) {
+            // ...ignore errors and use new jsonArray...
+        }
+        return jsonArray;
+    }
+
+    private static void appendDataToJsonArray(List<Map<String, String>> data, JsonArray jsonArray) {
+        for (Map<String, String> record : data) {
+            JsonObject jsonObject = new JsonObject();
+            for (Map.Entry<String, String> entry : record.entrySet()) {
+                jsonObject.add(entry.getKey(), new JsonPrimitive(entry.getValue()));
+            }
+            jsonArray.add(jsonObject);
+        }
+    }
+
+    private static void writeJsonArrayToFile(File jsonFile, String filePath, JsonArray jsonArray) {
+        try (FileWriter writer = new FileWriter(jsonFile)) {
+            writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
+            log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
+        } catch (IOException e) {
+            log("Failed to write JSON file: ", LogLevel.ERROR, filePath);
+            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.toString());
         }
     }
 

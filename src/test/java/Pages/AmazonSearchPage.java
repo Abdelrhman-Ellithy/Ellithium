@@ -8,14 +8,12 @@ import org.openqa.selenium.WebDriver;
 import java.util.List;
 
 public class AmazonSearchPage {
-    private WebDriver driver;
     private DriverActions driverActions;
     private final By searchBar= By.id("twotabsearchtextbox");
     private final By searchBtn =By.id("nav-search-submit-button");
     private final By searchItemName=By.cssSelector("h2[class ='a-size-base-plus a-spacing-none a-color-base a-text-normal']");
     private final By searchItemPrice=By.className("a-price-whole");
     public AmazonSearchPage(WebDriver driver){
-        this.driver=driver;
         driverActions=new DriverActions<>(driver);
         driverActions.navigation().navigateToUrl(JsonHelper.getJsonKeyValue("src/test/resources/TestData/TestData.json","baseUrl"));
     }

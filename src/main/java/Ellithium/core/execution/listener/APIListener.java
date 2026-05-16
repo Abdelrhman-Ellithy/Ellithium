@@ -144,6 +144,13 @@ public class APIListener implements Filter {
                            FilterContext ctx) {
         Response response = ctx.next(requestSpec, responseSpec);
 
+        logRequestDetails(requestSpec);
+        logResponseDetails(response);
+
+        return response;
+    }
+
+    private void logRequestDetails(FilterableRequestSpecification requestSpec) {
         // Request logging
         try {
             Reporter.log("Request Method: ", LogLevel.INFO_BLUE, requestSpec.getMethod());
@@ -189,7 +196,9 @@ public class APIListener implements Filter {
         } catch (Exception e) {
             Reporter.log("Error logging request body: " + e.getMessage(), LogLevel.ERROR);
         }
+    }
 
+    private void logResponseDetails(Response response) {
         // Response logging
         try {
             Reporter.log("Response Status Code: ", LogLevel.INFO_BLUE, String.valueOf(response.getStatusCode()));
@@ -227,6 +236,5 @@ public class APIListener implements Filter {
         } catch (Exception e) {
             Reporter.log("Error logging response time: " + e.getMessage(), LogLevel.ERROR);
         }
-        return response;
     }
 }

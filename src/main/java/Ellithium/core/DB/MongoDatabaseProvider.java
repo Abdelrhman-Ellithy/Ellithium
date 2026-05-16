@@ -298,7 +298,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document inserted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to insert document. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to insert document", e);
+            throw new NoSQLRuntimeException("Failed to insert document", e);
         }
     }
 
@@ -317,7 +317,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document updated successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to update document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to update document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to update document: " + docId, e);
         }
     }
 
@@ -335,7 +335,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document deleted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to delete document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to delete document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to delete document: " + docId, e);
         }
     }
 
@@ -355,7 +355,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Index created successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to create index. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to create index", e);
+            throw new NoSQLRuntimeException("Failed to create index", e);
         }
     }
 
