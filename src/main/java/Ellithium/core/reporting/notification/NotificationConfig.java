@@ -315,6 +315,14 @@ public class NotificationConfig {
         }
     }
     
+    private boolean isFieldMissing(String value, String fieldName, String configType) {
+        if (value == null || value.trim().isEmpty()) {
+            Reporter.log(fieldName + " is missing from " + configType + " configuration", LogLevel.ERROR);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Validates email configuration.
      * @return true if email configuration is valid
@@ -325,44 +333,13 @@ public class NotificationConfig {
                 return false;
             }
             
-            String smtpHost = getSmtpHost();
-            String smtpPort = getSmtpPort();
-            String username = getSmtpUsername();
-            String password = getSmtpPassword();
-            String fromEmail = getFromEmail();
-            String toEmail = getToEmail();
-            
-            if (smtpHost == null || smtpHost.trim().isEmpty()) {
-                Reporter.log("SMTP host is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (smtpPort == null || smtpPort.trim().isEmpty()) {
-                Reporter.log("SMTP port is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (username == null || username.trim().isEmpty()) {
-                Reporter.log("SMTP username is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (password == null || password.trim().isEmpty()) {
-                Reporter.log("SMTP password is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (fromEmail == null || fromEmail.trim().isEmpty()) {
-                Reporter.log("From email is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (toEmail == null || toEmail.trim().isEmpty()) {
-                Reporter.log("To email is missing from email configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            return true;
+            String configType = "email";
+            if (isFieldMissing(getSmtpHost(), "SMTP host", configType)) return false;
+            if (isFieldMissing(getSmtpPort(), "SMTP port", configType)) return false;
+            if (isFieldMissing(getSmtpUsername(), "SMTP username", configType)) return false;
+            if (isFieldMissing(getSmtpPassword(), "SMTP password", configType)) return false;
+            if (isFieldMissing(getFromEmail(), "From email", configType)) return false;
+            return !isFieldMissing(getToEmail(), "To email", configType);
         } catch (Exception e) {
             Reporter.log("Failed to validate email configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;
@@ -379,26 +356,10 @@ public class NotificationConfig {
                 return false;
             }
             
-            String webhookUrl = getSlackWebhookUrl();
-            String channel = getSlackChannel();
-            String username = getSlackUsername();
-            
-            if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
-                Reporter.log("Slack webhook URL is missing from Slack configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (channel == null || channel.trim().isEmpty()) {
-                Reporter.log("Slack channel is missing from Slack configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            if (username == null || username.trim().isEmpty()) {
-                Reporter.log("Slack username is missing from Slack configuration", LogLevel.ERROR);
-                return false;
-            }
-            
-            return true;
+            String configType = "Slack";
+            if (isFieldMissing(getSlackWebhookUrl(), "Slack webhook URL", configType)) return false;
+            if (isFieldMissing(getSlackChannel(), "Slack channel", configType)) return false;
+            return !isFieldMissing(getSlackUsername(), "Slack username", configType);
         } catch (Exception e) {
             Reporter.log("Failed to validate Slack configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;

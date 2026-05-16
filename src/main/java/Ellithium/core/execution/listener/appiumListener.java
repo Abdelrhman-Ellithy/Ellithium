@@ -48,10 +48,8 @@ public class appiumListener implements MethodCallListener {
     }
 
     private String extractScriptName(Object[] args) {
-        if (args.length >= 2 && args[1] instanceof Map<?, ?> scriptArgs) {
-            if (scriptArgs.containsKey("script")) {
-                return scriptArgs.get("script").toString();
-            }
+        if (args.length >= 2 && args[1] instanceof Map<?, ?> scriptArgs && scriptArgs.containsKey("script")) {
+            return scriptArgs.get("script").toString();
         }
         return args[0].toString();
     }
@@ -77,17 +75,13 @@ public class appiumListener implements MethodCallListener {
 
     private String extractScriptDetails(Object[] args) {
         if (args.length >= 2 && args[1] instanceof Map<?, ?> scriptArgs) {
-            if (scriptArgs.containsKey("script") && "mobile: pressKey".equals(scriptArgs.get("script"))) {
-                if (scriptArgs.containsKey("args")) {
-                    Object scriptParams = scriptArgs.get("args");
-                    if (scriptParams instanceof List && !((List<?>) scriptParams).isEmpty()) {
-                        Object param = ((List<?>) scriptParams).get(0);
-                        if (param instanceof Map<?, ?> keyMap) {
-                            if (keyMap.containsKey("keycode")) {
-                                int keyCode = ((Number) keyMap.get("keycode")).intValue();
-                                return KEYCODE_MAP.getOrDefault(keyCode, "KEY_" + keyCode);
-                            }
-                        }
+            if (scriptArgs.containsKey("script") && "mobile: pressKey".equals(scriptArgs.get("script")) && scriptArgs.containsKey("args")) {
+                Object scriptParams = scriptArgs.get("args");
+                if (scriptParams instanceof List && !((List<?>) scriptParams).isEmpty()) {
+                    Object param = ((List<?>) scriptParams).get(0);
+                    if (param instanceof Map<?, ?> keyMap && keyMap.containsKey("keycode")) {
+                        int keyCode = ((Number) keyMap.get("keycode")).intValue();
+                        return KEYCODE_MAP.getOrDefault(keyCode, "KEY_" + keyCode);
                     }
                 }
             }

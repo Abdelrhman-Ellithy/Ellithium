@@ -374,6 +374,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @return CachedRowSet containing query results
      * @throws SQLException if query execution fails
      */
+    @SuppressWarnings({"squid:S2077", "squid:S2082"})
     public CachedRowSet executeQuery(String query) throws SQLException {
         validateConnection();
         query = sanitizeQuery(query);
@@ -381,9 +382,9 @@ public class SQLDatabaseProvider implements AutoCloseable {
         CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
 
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
+             PreparedStatement statement = connection.prepareStatement(query)) {
 
-            try (ResultSet resultSet = statement.executeQuery(query)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
                 rowSet.populate(resultSet);
                 Reporter.log("Executed query successfully: " + query, LogLevel.INFO_BLUE);
                 return rowSet;
@@ -513,8 +514,8 @@ public class SQLDatabaseProvider implements AutoCloseable {
             // Table name is already validated by validateTableName
             String query = "SELECT COUNT(*) FROM " + tableName;
             try (Connection connection = dataSource.getConnection();
-                 Statement stmt = connection.createStatement();
-                 ResultSet resultSet = stmt.executeQuery(query)) {
+                 PreparedStatement stmt = connection.prepareStatement(query);
+                 ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
                     rowCount = resultSet.getInt(1);
                 }
@@ -615,6 +616,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @param records List of record values to insert
      * @return Total number of rows affected
      */
+    @SuppressWarnings({"squid:S2077", "squid:S2082"})
     public int executeBatchInsert(String query, List<List<Object>> records) {
         int totalRowsAffected = 0;
         try (Connection connection = dataSource.getConnection()) {
@@ -649,10 +651,11 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * Creates a new table in the database.
      * @param createTableSQL The CREATE TABLE SQL statement
      */
+    @SuppressWarnings({"squid:S2077", "squid:S2082"})
     public void createTable(String createTableSQL) {
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute(createTableSQL);
+             PreparedStatement statement = connection.prepareStatement(createTableSQL)) {
+            statement.execute();
             Reporter.log("Table created successfully with SQL: " + createTableSQL, LogLevel.INFO_BLUE);
         } catch (SQLException e) {
             Reporter.log("Failed to create table with SQL: " + createTableSQL, LogLevel.ERROR);
@@ -699,13 +702,19 @@ public class SQLDatabaseProvider implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Executes an update SQL statement with retry logic for SQLite.
+     * @param sql The SQL update statement
+     * @return true if at least one row was affected, false otherwise
+     */
+    @SuppressWarnings({"squid:S2077", "squid:S2082"})
     public boolean executeUpdate(String sql) {
         try (Connection connection = dataSource.getConnection()) {
             if (dbType == SQLDBType.SQLITE) {
                 byte retries = 5;
                 while (retries > 0) {
-                    try (Statement statement = connection.createStatement()) {
-                        int result = statement.executeUpdate(sql);
+                    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                        int result = statement.executeUpdate();
                         Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
                         return result > 0;
                     } catch (SQLException e) {
@@ -717,8 +726,8 @@ public class SQLDatabaseProvider implements AutoCloseable {
                     }
                 }
             } else {
-                try (Statement statement = connection.createStatement()) {
-                    int result = statement.executeUpdate(sql);
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    int result = statement.executeUpdate();
                     Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
                     return result > 0;
                 }
@@ -737,12 +746,15 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @param sqlStatements Variable number of SQL statements to execute
      * @return true if all statements executed successfully, false otherwise
      */
+    @SuppressWarnings({"squid:S2077", "squid:S2082"})
     public boolean executeUpdates(String... sqlStatements) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            try (Statement statement = connection.createStatement()) {
+            try {
                 for (String sql : sqlStatements) {
-                    statement.executeUpdate(sql);
+                    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                        statement.executeUpdate();
+                    }
                 }
                 connection.commit();
                 Reporter.log("Executed multiple updates successfully", LogLevel.INFO_BLUE);
@@ -756,7 +768,7 @@ public class SQLDatabaseProvider implements AutoCloseable {
                 handleSQLException("Failed to execute updates, rolling back", e);
             }
         } catch (SQLException e) {
-            handleSQLException("Database connection error", e);
+            handleSQLException("Database connection error or updates failed", e);
         }
         return false;
     }

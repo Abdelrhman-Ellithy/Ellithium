@@ -301,8 +301,10 @@ public class PropertyHelperTests {
         try {
             PropertyHelper.setDataToProperties(TEST_FILE, null, "value");
             fail("Should throw exception for null key");
+        } catch (NullPointerException e) {
+            // Expected exception
         } catch (Exception e) {
-            assertTrue(e instanceof NullPointerException);
+            fail("Expected NullPointerException but got " + e.getClass().getName());
         }
     }
 

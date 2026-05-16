@@ -275,7 +275,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Key set successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set key: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set key: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set key: " + key, e);
         }
     }
 
@@ -294,7 +294,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Key set with expiry successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set key with expiry: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set key with expiry: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set key with expiry: " + key, e);
         }
     }
 
@@ -330,7 +330,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Hash fields set successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set hash fields for key: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set hash fields for key: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set hash fields for key: " + key, e);
         }
     }
 
@@ -366,7 +366,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Values pushed successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to push values to list: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to push values to list: " + key, e);
+            throw new NoSQLRuntimeException("Failed to push values to list: " + key, e);
         }
     }
 
@@ -404,7 +404,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Members added successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to add members to set: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to add members to set: " + key, e);
+            throw new NoSQLRuntimeException("Failed to add members to set: " + key, e);
         }
     }
 
@@ -441,7 +441,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Pipeline commands executed successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to execute pipeline commands. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to execute pipeline commands", e);
+            throw new NoSQLRuntimeException("Failed to execute pipeline commands", e);
         }
     }
 }
