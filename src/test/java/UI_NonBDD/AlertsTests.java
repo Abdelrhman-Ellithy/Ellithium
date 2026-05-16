@@ -8,6 +8,10 @@ import org.testng.annotations.Test;
 
 public class AlertsTests extends BaseTests {
     boolean debug=false;
+
+    private void sleepIfDebug(Sleep sleep) {
+        if (debug) sleep.sleepSeconds(2);
+    }
     @Test(priority = 1)
     public void alertClicked(){
         Sleep sleep=new Sleep();
@@ -59,21 +63,21 @@ public class AlertsTests extends BaseTests {
     @Test(priority = 1)
     public void correctPromptEntered()  {
         Sleep sleep=new Sleep();
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         AlertsPage alertsPage=home.clickAlerts();
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         alertsPage.clickJsPrompt();
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         String input="Abdelrahman Ellithy";
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         alertsPage.sendPrompt(input);
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         alertsPage.alert_accept();
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         String expectedResult ="You entered: "+input;
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
         String actualResult=alertsPage.getResultMessage();
         Assert.assertTrue(actualResult.contains(expectedResult),"Sending Prompt failed");
-        if (debug) sleep.sleepSeconds(2);
+        sleepIfDebug(sleep);
     }
 }

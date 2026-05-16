@@ -68,6 +68,7 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
  * @see <a href="https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast">CDP Screencast</a>
  * @see <a href="https://github.com/jcodec/jcodec">JCodec Documentation</a>
  */
+@SuppressWarnings("squid:S3011")
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
@@ -490,7 +491,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     continue;
                 }
             } catch (Exception ignored) {}
-            break;
+            // If we reach here, we couldn't unwrap further
+            return null;
         }
 
         return null;
@@ -841,44 +843,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
                 // B. Parallel Process
                 List<BufferedImage> processedBatch = rawBatch.parallelStream()
-                        .map(frameBytes -> {
-                            try {
-                                BufferedImage original = ImageIO.read(new ByteArrayInputStream(frameBytes));
-                                if (original == null) return null;
-
-                                int origW = original.getWidth();
-                                int origH = original.getHeight();
-
-                                boolean needsScaling = (origW > MAX_WIDTH || origH > MAX_HEIGHT);
-                                int newW = origW;
-                                int newH = origH;
-
-                                if (needsScaling) {
-                                    double scale = Math.min((double) MAX_WIDTH / origW, (double) MAX_HEIGHT / origH);
-                                    newW = (int) (origW * scale);
-                                    newH = (int) (origH * scale);
-                                }
-
-                                int evenW = (newW % 2 == 0) ? newW : newW - 1;
-                                int evenH = (newH % 2 == 0) ? newH : newH - 1;
-
-                                if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-                                    return original;
-                                }
-
-                                BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
-                                Graphics2D g2d = resized.createGraphics();
-                                if (needsScaling) {
-                                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                                }
-                                g2d.drawImage(original, 0, 0, evenW, evenH, null);
-                                g2d.dispose();
-
-                                return resized;
-                            } catch (Exception e) {
-                                return null;
-                            }
-                        })
+                        .map(frameBytes -> processFrame(frameBytes, MAX_WIDTH, MAX_HEIGHT))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
@@ -931,6 +896,45 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         // Calculate uncompressed size: Width * Height * 3 bytes (BGR)
         return ((long) w * h * 3);
+    }
+
+    private BufferedImage processFrame(byte[] frameBytes, int maxWidth, int maxHeight) {
+        try {
+            BufferedImage original = ImageIO.read(new ByteArrayInputStream(frameBytes));
+            if (original == null) return null;
+
+            int origW = original.getWidth();
+            int origH = original.getHeight();
+
+            boolean needsScaling = (origW > maxWidth || origH > maxHeight);
+            int newW = origW;
+            int newH = origH;
+
+            if (needsScaling) {
+                double scale = Math.min((double) maxWidth / origW, (double) maxHeight / origH);
+                newW = (int) (origW * scale);
+                newH = (int) (origH * scale);
+            }
+
+            int evenW = (newW % 2 == 0) ? newW : newW - 1;
+            int evenH = (newH % 2 == 0) ? newH : newH - 1;
+
+            if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
+                return original;
+            }
+
+            BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
+            Graphics2D g2d = resized.createGraphics();
+            if (needsScaling) {
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            }
+            g2d.drawImage(original, 0, 0, evenW, evenH, null);
+            g2d.dispose();
+
+            return resized;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

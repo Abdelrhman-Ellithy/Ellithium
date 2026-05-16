@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 /**
  * Helper class to execute OS commands and interact with the system.
  */
+@SuppressWarnings("squid:S2076")
 public class CommandExecutor {
 
     /**
@@ -316,9 +317,8 @@ public class CommandExecutor {
             commandList.add("/c");
             Collections.addAll(commandList, command);
         } else {
-            commandList.add("/bin/bash");
-            commandList.add("-c");
-            commandList.add(String.join(" ", command));
+            // Run process directly without bash -c to avoid shell injection
+            Collections.addAll(commandList, command);
         }
         return new ProcessBuilder(commandList);
     }

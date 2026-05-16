@@ -316,19 +316,17 @@ public class seleniumListener implements WebDriverListener {
         if (element == null) return "";
         try {
             String name = element.getAccessibleName();
-            if (name == null || name.isBlank()) {
-                name = element.getText();
+            if (name != null && !name.isBlank()) return name.trim();
+            
+            name = element.getText();
+            if (name != null && !name.isBlank()) return name.trim();
+            
+            String[] attributes = {"placeholder", "value", "id"};
+            for (String attr : attributes) {
+                name = element.getAttribute(attr);
+                if (name != null && !name.isBlank()) return name.trim();
             }
-            if (name == null || name.isBlank()) {
-                name = element.getAttribute("placeholder");
-            }
-            if (name == null || name.isBlank()) {
-                name = element.getAttribute("value");
-            }
-            if (name == null || name.isBlank()) {
-                name = element.getAttribute("id");
-            }
-            return (name != null) ? name.trim() : "";
+            return "";
         } catch (Exception e) {
             return "";
         }

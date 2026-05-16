@@ -43,97 +43,116 @@ public class JarExtractor {
             return false;
         }
         synchronized (getFileLock(jarFile.getAbsolutePath())) {
-            try (JarFile jar = new JarFile(jarFile)) {
-                for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
-                    JarEntry entry = entries.nextElement();
-                    if (!entry.getName().startsWith(folderPathInJar)) {
-                        continue;
-                    }
-
-                    String targetPath = entry.getName().substring(folderPathInJar.length());
-                    File targetFile = new File(targetDirectory, targetPath);
-
-                    try {
-                        String canonicalDestPath = targetFile.getCanonicalPath();
-                        if (!canonicalDestPath.startsWith(normalizedTargetPath)) {
-                            System.err.println("Security violation - Path traversal attempt detected: " + entry.getName());
-                            deleteDirectory(targetDirectory);
-                            return false;
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Invalid path detected: " + entry.getName());
-                        deleteDirectory(targetDirectory);
-                        return false;
-                    }
-                }
-            } catch (IOException e) {
-                System.err.println("Error validating JAR entries: " + e.getMessage());
-                deleteDirectory(targetDirectory);
+            if (!validateJarEntries(jarFile, folderPathInJar, targetDirectory, normalizedTargetPath)) {
                 return false;
             }
         }
-        boolean hasValidEntries = false;
+        
         synchronized (getFileLock(jarFile.getAbsolutePath())) {
-            Map<String, Boolean> processedPaths = new HashMap<>();
-            try (JarFile jar = new JarFile(jarFile)) {
-                for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
-                    JarEntry entry = entries.nextElement();
-                    if (!entry.getName().startsWith(folderPathInJar) || !entry.isDirectory()) {
-                        continue;
-                    }
-
-                    hasValidEntries = true;
-                    String targetPath = entry.getName().substring(folderPathInJar.length());
-                    File targetFile = new File(targetDirectory, targetPath);
-
-                    if (!targetFile.exists() && !targetFile.mkdirs()) {
-                        System.err.println("Failed to create directory: " + targetFile.getPath());
-                        deleteDirectory(targetDirectory);
-                        return false;
-                    }
-                    processedPaths.put(targetFile.getPath(), true);
-                }
-
-                for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
-                    JarEntry entry = entries.nextElement();
-                    if (!entry.getName().startsWith(folderPathInJar) || entry.isDirectory()) {
-                        continue;
-                    }
-
-                    hasValidEntries = true;
-                    String targetPath = entry.getName().substring(folderPathInJar.length());
-                    File targetFile = new File(targetDirectory, targetPath);
-
-                    if (processedPaths.containsKey(targetFile.getPath())) {
-                        targetFile = new File(targetFile.getPath() + ".file");
-                    }
-
-                    File parent = targetFile.getParentFile();
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        System.err.println("Failed to create parent directory: " + parent.getPath());
-                        deleteDirectory(targetDirectory);
-                        return false;
-                    }
-
-                    try {
-                        Path tempFile = Files.createTempFile("jar_extract", null);
-                        Files.copy(jar.getInputStream(entry), tempFile, StandardCopyOption.REPLACE_EXISTING);
-                        Files.move(tempFile, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                    } catch (IOException e) {
-                        System.err.println("Failed to extract file: " + targetFile.getPath());
-                        deleteDirectory(targetDirectory);
-                        return false;
-                    }
-                }
-
-                return hasValidEntries;
-
-            } catch (IOException e) {
-                System.err.println("Error extracting from JAR: " + e.getMessage());
-                deleteDirectory(targetDirectory);
-                return false;
-            }
+            return extractJarEntries(jarFile, folderPathInJar, targetDirectory);
         }
+    }
+
+    private static boolean validateJarEntries(File jarFile, String folderPathInJar, File targetDirectory, String normalizedTargetPath) {
+        try (JarFile jar = new JarFile(jarFile)) {
+            for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.getName().startsWith(folderPathInJar)) {
+                    continue;
+                }
+
+                String targetPath = entry.getName().substring(folderPathInJar.length());
+                File targetFile = new File(targetDirectory, targetPath);
+
+                try {
+                    String canonicalDestPath = targetFile.getCanonicalPath();
+                    if (!canonicalDestPath.startsWith(normalizedTargetPath)) {
+                        System.err.println("Security violation - Path traversal attempt detected: " + entry.getName());
+                        deleteDirectory(targetDirectory);
+                        return false;
+                    }
+                } catch (IOException e) {
+                    System.err.println("Invalid path detected: " + entry.getName());
+                    deleteDirectory(targetDirectory);
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error validating JAR entries: " + e.getMessage());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+    }
+
+    private static boolean extractJarEntries(File jarFile, String folderPathInJar, File targetDirectory) {
+        boolean hasValidEntries = false;
+        Map<String, Boolean> processedPaths = new HashMap<>();
+        try (JarFile jar = new JarFile(jarFile)) {
+            for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.getName().startsWith(folderPathInJar) || !entry.isDirectory()) {
+                    continue;
+                }
+
+                hasValidEntries = true;
+                String targetPath = entry.getName().substring(folderPathInJar.length());
+                File targetFile = new File(targetDirectory, targetPath);
+
+                if (!targetFile.exists() && !targetFile.mkdirs()) {
+                    System.err.println("Failed to create directory: " + targetFile.getPath());
+                    deleteDirectory(targetDirectory);
+                    return false;
+                }
+                processedPaths.put(targetFile.getPath(), true);
+            }
+
+            for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.getName().startsWith(folderPathInJar) || entry.isDirectory()) {
+                    continue;
+                }
+
+                hasValidEntries = true;
+                String targetPath = entry.getName().substring(folderPathInJar.length());
+                File targetFile = new File(targetDirectory, targetPath);
+
+                if (processedPaths.containsKey(targetFile.getPath())) {
+                    targetFile = new File(targetFile.getPath() + ".file");
+                }
+
+                File parent = targetFile.getParentFile();
+                if (!extractJarFile(jar, entry, targetFile, targetDirectory, parent)) {
+                    return false;
+                }
+            }
+
+            return hasValidEntries;
+
+        } catch (IOException e) {
+            System.err.println("Error extracting from JAR: " + e.getMessage());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+    }
+
+    private static boolean extractJarFile(JarFile jar, JarEntry entry, File targetFile, File targetDirectory, File parent) {
+        if (!parent.exists() && !parent.mkdirs()) {
+            System.err.println("Failed to create parent directory: " + parent.getPath());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+
+        try {
+            Path tempFile = Files.createTempFile("jar_extract", null);
+            Files.copy(jar.getInputStream(entry), tempFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(tempFile, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            System.err.println("Failed to extract file: " + targetFile.getPath());
+            deleteDirectory(targetDirectory);
+            return false;
+        }
+        return true;
     }
 
     /**
