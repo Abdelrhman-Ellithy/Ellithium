@@ -108,14 +108,14 @@ public class ModelCalibrationRunner {
 
             if (query.isBlank()) { skipped++; continue; }
 
-            float[] queryVec = ONNXEmbeddingHealer.embed(query);
+            float[] queryVec = ONNXEmbeddingHealer.embed(query, true);
             if (queryVec == null) { skipped++; continue; }
 
             // Build element document from fingerprint fields
             String elementDoc = buildFingerprintDocument(fp);
             if (elementDoc.isBlank()) { skipped++; continue; }
 
-            float[] elementVec = ONNXEmbeddingHealer.embed(elementDoc);
+            float[] elementVec = ONNXEmbeddingHealer.embed(elementDoc, false);
             if (elementVec == null) { skipped++; continue; }
 
             double similarity = ONNXEmbeddingHealer.cosineSimilarity(queryVec, elementVec);

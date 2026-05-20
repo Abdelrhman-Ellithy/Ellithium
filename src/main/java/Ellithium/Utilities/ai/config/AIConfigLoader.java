@@ -206,14 +206,11 @@ public class AIConfigLoader {
 
     /**
      * Returns true when Tier 3 local embedding is active.
-     * Requires a valid license key AND the encrypted model resource present in the JAR.
-     * Delegates to LicenseValidator once it is wired; returns false until then.
+     * Enabled automatically when the fine-tuned model is present in the JAR resources.
+     * No license key required while the model is in development/testing mode.
      */
     public static boolean isOnnxEnabled() {
-        if (licenseKey == null || licenseKey.isBlank()) return false;
-        // Model resource check — path is populated when the Kaggle fine-tuned model is embedded
-        boolean modelPresent = AIConfigLoader.class.getResourceAsStream("/ai-models/tier3.onnx.enc") != null;
-        if (!modelPresent) return false;
-        return LicenseValidator.isTier3Enabled();
+        return AIConfigLoader.class.getResourceAsStream(
+                "/Ellithium-ai-model/model_quantized.onnx") != null;
     }
 }

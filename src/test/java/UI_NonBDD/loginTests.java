@@ -22,6 +22,7 @@ public class loginTests extends BaseTests {
         login.setPassword(password);
         var secureAreaPage=login.clickLoginBtn();
         String actualMessage=secureAreaPage.getLoginMessage();
+        System.out.println(actualMessage);
         AssertionExecutor.hard.assertTrue(actualMessage.toLowerCase().contains(expectedMessage.toLowerCase()));
     }
     @Test(priority = 2)
@@ -32,6 +33,7 @@ public class loginTests extends BaseTests {
         var secureAreaPage=login.clickLoginBtn();
         String actualMessage=secureAreaPage.getLoginMessage();
         String expectedMessage="You logged into a secure area!";
+        System.out.println(actualMessage);
         AssertionExecutor.hard.assertTrue(actualMessage.toLowerCase().contains(expectedMessage.toLowerCase()));
     }
 }

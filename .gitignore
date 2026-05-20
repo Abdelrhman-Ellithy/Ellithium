@@ -17,6 +17,8 @@ Test-Output/*
 # Test Data Files
 src/test/resources/TestData/DB-Info.json
 src/test/resources/TestData/Items and Prices.xlsx
+kaggle-finetune
+src/main/resources/Ellithium-ai-model
 
 ai-service.md
 ai-service-arch.png

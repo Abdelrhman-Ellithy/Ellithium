@@ -16,6 +16,6 @@ public class SecureAreaPage {
     }
 
     public String getLoginMessage() {
-        return driverActions.elements().getText(By.cssSelector("i.fa"));
+        return driverActions.elements().getText(By.id("login"));
     }
 }

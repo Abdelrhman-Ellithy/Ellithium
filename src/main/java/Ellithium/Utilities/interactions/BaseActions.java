@@ -50,35 +50,38 @@ public class BaseActions<T extends WebDriver> {
             // InvalidSelectorException covers empty/blank locators (e.g. By.tagName(""))
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
 
+            // Extract context once — used by all tiers and container resolution
+            String actionType   = extractActionFromStack(stack);
+            String callerMethod = extractCallerMethodName(stack);
+            String fieldName    = extractFieldNameFromStack(stack, locator);
+            String locatorValue = extractLocatorValue(locator);
+            ElementFingerprint baseline = BaselineStore.getBaseline(locator.toString());
+
             // TIER 1: Algorithmic match against stored baseline (fast, free, deterministic)
             WebElement algorithmicMatch = BaselineStore.tryAlgorithmicHeal(driver, locator);
+            algorithmicMatch = resolveInteractiveElement(algorithmicMatch, actionType, "TIER 1");
             if (algorithmicMatch != null) {
-                // Save baseline + queue source patch for POM correction
                 BaselineStore.capture(driver, locator, algorithmicMatch);
                 AISelfHealer.queueSourcePatch(locator, algorithmicMatch, stack);
                 return algorithmicMatch;
             }
 
             // TIER 2: Semantic Strategy Search (zero cost, uses method/field name context)
-            String actionType = extractActionFromStack(stack);
-            String callerMethod = extractCallerMethodName(stack);
-            String fieldName = extractFieldNameFromStack(stack, locator);
-            String locatorValue = extractLocatorValue(locator);
-            ElementFingerprint baseline = BaselineStore.getBaseline(locator.toString());
             WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
                     driver, callerMethod, fieldName, actionType, locatorValue, baseline);
+            semanticMatch = resolveInteractiveElement(semanticMatch, actionType, "TIER 2");
             if (semanticMatch != null) {
-                // Save baseline under the ORIGINAL broken locator key
-                // so next test heals via Tier 1 (instant) instead of Tier 2
                 BaselineStore.capture(driver, locator, semanticMatch);
                 AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
                 return semanticMatch;
             }
 
-            // TIER 3: Local ONNX Embedding (paid feature — active when license + model are present)
+            // TIER 3: Local ONNX Embedding (active when fine-tuned model is present)
             if (Ellithium.Utilities.ai.ONNXEmbeddingHealer.isAvailable()) {
                 WebElement onnxMatch = Ellithium.Utilities.ai.ONNXEmbeddingHealer.tryEmbeddingHeal(
                         driver, locator, actionType, callerMethod, fieldName, locatorValue, baseline);
+                // Tier 3 already filters to interactive elements — resolve is a safety net
+                onnxMatch = resolveInteractiveElement(onnxMatch, actionType, "TIER 3");
                 if (onnxMatch != null) {
                     BaselineStore.capture(driver, locator, onnxMatch);
                     AISelfHealer.queueSourcePatch(locator, onnxMatch, stack);
@@ -88,16 +91,93 @@ public class BaseActions<T extends WebDriver> {
 
             // TIER 4: LLM-based semantic healing (slow, costly, but handles drastic changes)
             WebElement llmMatch = AISelfHealer.attemptHeal(driver, locator, stack);
+            llmMatch = resolveInteractiveElement(llmMatch, actionType, "TIER 4");
             if (llmMatch != null) {
-                // Save baseline under original key for Tier 1 reuse
                 BaselineStore.capture(driver, locator, llmMatch);
                 return llmMatch;
             }
 
             // All healing tiers failed — throw AssertionError so Allure marks as "failed" not "broken"
             throw new AssertionError("Element not found and could not be healed: " + locator
-                    + " | All healing tiers exhausted (Tier 1: Algorithmic, Tier 2: Semantic, Tier 4: LLM)", e);
+                    + " | All healing tiers exhausted (Tier 1: Algorithmic, Tier 2: Semantic, Tier 3: ONNX, Tier 4: LLM)", e);
         }
+    }
+
+    /**
+     * For click-type actions, resolves container elements (form, div, section…) to their
+     * inner interactive child (submit button, button, input[type=submit]).
+     *
+     * Rationale: The LLM and other tiers sometimes return a container element whose ID or
+     * text matches the semantic intent (e.g. {@code <form id="login">}) but clicking a
+     * container does not trigger form submission. This method descends one level to the
+     * actual clickable element inside.
+     *
+     * Returns the original element unchanged when:
+     *  - the action is not a click type
+     *  - the element is already interactive (button, input, a, or role=button)
+     *  - the element is null
+     *
+     * Returns null when the element IS a container but contains no visible interactive child
+     * (signals the tier to fall through rather than click something wrong).
+     */
+    private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
+                                                         String tierLabel) {
+        if (healed == null || !isClickLikeAction(actionType)) return healed;
+        try {
+            String tag = healed.getTagName().toLowerCase();
+            // Already an interactive leaf — nothing to resolve
+            if (INTERACTIVE_TAGS.contains(tag)) return healed;
+
+            // div/span with explicit interactive role is fine as-is
+            String role = healed.getAttribute("role");
+            if (role != null && INTERACTIVE_ROLES.contains(role)) return healed;
+
+            // Container element — resolve to inner interactive child
+            for (String selector : INNER_INTERACTIVE_SELECTORS) {
+                try {
+                    WebElement inner = healed.findElement(By.cssSelector(selector));
+                    if (inner.isDisplayed()) {
+                        Ellithium.core.reporting.Reporter.log(
+                                "[" + tierLabel + "] Resolved container <" + tag
+                                + "> → inner interactive <" + inner.getTagName() + ">",
+                                Ellithium.core.logging.LogLevel.INFO_YELLOW);
+                        return inner;
+                    }
+                } catch (NoSuchElementException ignored) {}
+            }
+
+            // Container with no interactive child — reject
+            Ellithium.core.reporting.Reporter.log(
+                    "[" + tierLabel + "] Healed element is container <" + tag
+                    + "> with no interactive child for click action — skipping",
+                    Ellithium.core.logging.LogLevel.WARN);
+            return null;
+        } catch (Exception ex) {
+            return healed; // Defensive: never block healing on an unexpected exception
+        }
+    }
+
+    private static final java.util.Set<String> INTERACTIVE_TAGS = new java.util.HashSet<>(
+            java.util.Arrays.asList("button", "a", "input", "select", "textarea", "option"));
+
+    private static final java.util.Set<String> INTERACTIVE_ROLES = new java.util.HashSet<>(
+            java.util.Arrays.asList("button", "link", "menuitem", "menuitemcheckbox",
+                    "menuitemradio", "tab", "option", "checkbox", "radio"));
+
+    // Tried in priority order: submit button first (most specific), then any button, then input
+    private static final String[] INNER_INTERACTIVE_SELECTORS = {
+            "button[type='submit']",
+            "input[type='submit']",
+            "button",
+            "input[type='button']",
+            "a"
+    };
+
+    private static boolean isClickLikeAction(String actionType) {
+        if (actionType == null || actionType.equals("unknown")) return false;
+        String lower = actionType.toLowerCase();
+        return lower.contains("click") || lower.contains("tap")
+                || lower.contains("press") || lower.contains("hover");
     }
 
     /**
