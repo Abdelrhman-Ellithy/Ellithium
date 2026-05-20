@@ -52,6 +52,76 @@ import java.util.Objects;
  */
 public class EllithiumAIEngine {
 
+    // ──────────────────────── Static In-Context Generation API ────────────────────────
+
+    /**
+     * Generates and <b>immediately executes</b> code from natural-language steps
+     * using the tester's <b>currently running, authenticated browser</b>.
+     *
+     * <p>No new browser is opened. No credentials are shared. The AI sees only
+     * the current page's Accessibility Tree and generates locators from real elements.</p>
+     *
+     * <h3>Example</h3>
+     * <pre>
+     * // In a running test — driver is already logged in, on the checkout page:
+     * EllithiumAIEngine.continueFrom(driver, llmProvider,
+     *     "Fill shipping name 'John', city 'Cairo', then click 'Place Order'");
+     * </pre>
+     *
+     * @param driver             The tester's live, authenticated WebDriver
+     * @param llmProvider        The LLM provider (Gemini, OpenAI, etc.)
+     * @param naturalLanguageSteps The steps to generate, in plain English
+     */
+    public static void continueFrom(WebDriver driver, LLMProvider llmProvider, String naturalLanguageSteps) {
+        Ellithium.Utilities.ai.generators.LiveContextGenerator.continueFrom(driver, llmProvider, naturalLanguageSteps);
+    }
+
+    /**
+     * Reads natural-language steps from a file and generates/executes code using
+     * the tester's current browser state.
+     *
+     * <h3>Example file (checkout-steps.txt)</h3>
+     * <pre>
+     * Fill in shipping name with "John Doe"
+     * Select country "Egypt" from dropdown
+     * Click "Place Order" button
+     * Verify order confirmation message appears
+     * </pre>
+     *
+     * @param driver      The tester's live, authenticated WebDriver
+     * @param llmProvider The LLM provider
+     * @param filePath    Path to the steps file
+     */
+    public static void continueFromFile(WebDriver driver, LLMProvider llmProvider, String filePath) {
+        Ellithium.Utilities.ai.generators.LiveContextGenerator.continueFromFile(driver, llmProvider, filePath);
+    }
+
+    /**
+     * Starts a Playwright codegen-style interaction recorder.
+     *
+     * <p>Records every click, type, and navigation performed through the returned
+     * decorated driver. Injects a floating toolbar into the page showing a
+     * recording indicator and interaction count.</p>
+     *
+     * <p><b>Important:</b> Set {@code rootLogger.level=DEBUG} in {@code log4j2.properties}
+     * before starting the recorder for full interaction capture.</p>
+     *
+     * <h3>Example</h3>
+     * <pre>
+     * var recorder = EllithiumAIEngine.startRecording(driver);
+     * WebDriver recDriver = recorder.getDriver();
+     * // ... perform manual actions via recDriver ...
+     * recorder.stop();
+     * recorder.generateCode(llmProvider);
+     * </pre>
+     *
+     * @param driver The WebDriver to record interactions on
+     * @return The recorder instance
+     */
+    public static Ellithium.Utilities.ai.generators.InteractionRecorder startRecording(WebDriver driver) {
+        return Ellithium.Utilities.ai.generators.InteractionRecorder.start(driver);
+    }
+
     // ──────────────────────── System Prompt ────────────────────────
 
     /**
@@ -66,6 +136,9 @@ public class EllithiumAIEngine {
     private static final String SYSTEM_PROMPT =
             "You are an expert Java test automation engineer who uses the Ellithium framework.\n"
             + "You write clean, readable, business-level Page Object Model (POM) code.\n\n"
+            + "## Reference Documentation:\n"
+            + "- GitHub: https://github.com/Abdelrhman-Ellithy/Ellithium\n"
+            + "- Website: https://abdelrhman-ellithy.github.io/ellithium.github.io/\n\n"
             + "## Ellithium POM Rules:\n"
             + "1. Page Objects extend nothing — they hold these fields:\n"
             + "   WebDriver driver;\n"
@@ -77,7 +150,15 @@ public class EllithiumAIEngine {
             + "   }\n"
             + "3. Locators are: private final By locatorName = By.cssSelector(\"...\");\n"
             + "   OR AppiumBy.accessibilityId(\"...\") for mobile.\n"
-            + "4. Business methods use REAL Ellithium API:\n"
+            + "4. Business methods use REAL Ellithium API Structure (accessed via driverActions):\n"
+            + "   - .elements() -> ElementActions (sendData, clickOnElement, getText, clearElement, isElementDisplayed)\n"
+            + "   - .waits() -> WaitActions (waitForElementToBeVisible, waitForElementToBeClickable)\n"
+            + "   - .select() -> SelectActions (selectDropdownByText, selectDropdownByIndex)\n"
+            + "   - .mouse() -> MouseActions (hoverOverElement, doubleClick, rightClick)\n"
+            + "   - .mobileActions() -> MobileActions (swipe, longPress, pinch, tap)\n"
+            + "   - .windows() -> WindowActions (switchToWindow, closeWindow)\n"
+            + "   - .frames() -> FrameActions (switchToFrame, switchToDefaultContent)\n"
+            + "   - .alerts() -> AlertActions (acceptAlert, dismissAlert, getAlertText)\n"
             + "   - driverActions.elements().sendData(locator, data)\n"
             + "   - driverActions.elements().clickOnElement(locator)\n"
             + "   - driverActions.elements().getText(locator)\n"
@@ -263,9 +344,10 @@ public class EllithiumAIEngine {
             // Small wait for dynamic content to render
             Thread.sleep(2000);
 
-            String rawDom = headlessDriver.getPageSource();
-            String minimized = DOMMinimizer.minimize(rawDom);
-            String scrubbed = DataScrubber.scrub(minimized);
+            // Use AX tree (universal, works on all browsers) with HTML fallback
+            String optimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer
+                    .getOptimalDOMRepresentation(headlessDriver);
+            String scrubbed = DataScrubber.scrub(optimizedDom);
 
             Reporter.log("Live DOM Grounding: Captured " + scrubbed.length() + " chars from " + url, LogLevel.INFO_GREEN);
             return scrubbed;

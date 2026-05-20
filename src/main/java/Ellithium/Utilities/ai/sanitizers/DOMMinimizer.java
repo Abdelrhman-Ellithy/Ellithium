@@ -27,6 +27,33 @@ import java.util.regex.Pattern;
  */
 public class DOMMinimizer {
 
+    /**
+     * Returns the best possible DOM representation for an LLM prompt.
+     *
+     * <p>Strategy:</p>
+     * <ol>
+     *   <li>Try {@link AccessibilityTreeExtractor#extractTree(org.openqa.selenium.WebDriver)}
+     *       — works on Chrome, Firefox, Safari, Edge, Appium WebView via JavaScript injection</li>
+     *   <li>Fall back to {@link #minimize(String)} on raw page source for native mobile or
+     *       when JS injection fails</li>
+     * </ol>
+     *
+     * @param driver The WebDriver instance (any browser)
+     * @return Compact DOM representation suitable for LLM context
+     */
+    public static String getOptimalDOMRepresentation(org.openqa.selenium.WebDriver driver) {
+        // Try Accessibility Tree first (10-50x smaller, semantically richer)
+        String axTree = AccessibilityTreeExtractor.extractTree(driver);
+        if (axTree != null && !axTree.isBlank()) {
+            return axTree;
+        }
+
+        // Fallback: regex-based HTML minimization
+        Reporter.log("DOMMinimizer: AX tree unavailable, falling back to HTML minimization", LogLevel.DEBUG);
+        String rawSource = driver.getPageSource();
+        return minimize(rawSource);
+    }
+
     // Tags that are completely useless for locator healing
     private static final Pattern SCRIPT_TAG     = Pattern.compile("<script[^>]*>[\\s\\S]*?</script>",   Pattern.CASE_INSENSITIVE);
     private static final Pattern STYLE_TAG      = Pattern.compile("<style[^>]*>[\\s\\S]*?</style>",     Pattern.CASE_INSENSITIVE);

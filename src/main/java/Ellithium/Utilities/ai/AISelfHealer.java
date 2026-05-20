@@ -309,6 +309,20 @@ public class AISelfHealer {
                             + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
                     continue;
                 }
+
+                // Tag-type cross-validation: if baseline says <input> but candidate is <button>, reject
+                String baselineTag = baseline.getTagName();
+                if (baselineTag != null && !baselineTag.isBlank()) {
+                    try {
+                        String candidateTag = foundEl.getTagName();
+                        if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
+                            Reporter.log("AI Candidate rejected (tag mismatch: expected <" + baselineTag
+                                    + "> but found <" + candidateTag + ">): "
+                                    + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                            continue;
+                        }
+                    } catch (Exception ignored) {}
+                }
             }
 
             // Candidate accepted!
@@ -467,11 +481,9 @@ public class AISelfHealer {
             ctx.callSiteSource = readCallSiteSource(ctx.filePath, ctx.lineNumber);
         }
 
-        // Capture and minimize DOM
-        String rawDom = driver.getPageSource();
-        Reporter.log("Page source retrieved", LogLevel.INFO_BLUE);
-        String minimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.minimize(rawDom);
-        ctx.minimizedDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(minimizedDom);
+        // Capture DOM using best available method (AX tree → HTML fallback)
+        String optimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.getOptimalDOMRepresentation(driver);
+        ctx.minimizedDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(optimizedDom);
 
         // Capture screenshot for vision-capable LLMs (GPT-4o, Gemini Pro Vision, etc.)
         LLMProvider provider = getEffectiveProvider();
@@ -546,21 +558,35 @@ public class AISelfHealer {
         sb.append("You are an expert Selenium/Appium test automation engineer performing locator healing.\n");
         sb.append("A test automation locator has failed. Analyze the context and the current DOM ");
         sb.append("to find the CORRECT element the test was trying to interact with.\n\n");
+        sb.append("## Reference Documentation:\n");
+        sb.append("- GitHub: https://github.com/Abdelrhman-Ellithy/Ellithium\n");
+        sb.append("- Website: https://abdelrhman-ellithy.github.io/ellithium.github.io/\n\n");
         sb.append("CRITICAL RULES:\n");
         sb.append("1. PRIORITY 1: Verify the SYNTAX of the original locator. If the locator has a syntax error (e.g., malformed XPath, invalid CSS pseudo-classes, or typos in attributes), your first goal must be to FIX the syntax while strictly preserving the original intent and locator type, rather than suggesting a completely different locator strategy.\n");
         sb.append("2. The METHOD NAME is a STRONG HINT for the element's purpose ");
         sb.append("(e.g., setUserName → username input, clickLoginBtn → login/submit button)\n");
-        sb.append("3. The ACTION TYPE tells you what kind of element to look for ");
-        sb.append("(sendData → input/textarea, clickOnElement → button/link/clickable)\n");
+        sb.append("3. The ACTION TYPE tells you what kind of element to look for based on Ellithium's DriverActions subclasses:\n");
+        sb.append("4. Use Ellithium's API Structure:\n");
+        sb.append("   - .elements() -> ElementActions (sendData, clickOnElement, getText, clearElement, isElementDisplayed)\n");
+        sb.append("   - .waits() -> WaitActions (waitForElementToBeVisible, waitForElementToBeClickable)\n");
+        sb.append("   - .select() -> SelectActions (selectDropdownByText, selectDropdownByIndex)\n");
+        sb.append("   - .mouse() -> MouseActions (hoverOverElement, doubleClick)\n");
+        sb.append("   - .mobileActions() -> MobileActions (swipe, longPress, pinch, tap)\n");
+        sb.append("   - ElementActions (sendData → input/textarea, clickOnElement → button/link/clickable, getText, clearElement)\n");
+        sb.append("   - SelectActions (selectDropdownByText, selectDropdownByIndex → select)\n");
+        sb.append("   - WaitActions (waitForElementToBeVisible, waitForElementToBeClickable)\n");
+        sb.append("   - MouseActions (hoverOverElement, doubleClick)\n");
+        sb.append("   - MobileActions (swipe, longPress, pinch, tap)\n");
         sb.append("4. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
         sb.append("5. Prefer stable locators: id > name > data-testid > css > xpath\n");
-        sb.append("6. Respond ONLY in JSON with your TOP 3 candidates ranked by confidence:\n");
+        int maxCandidates = AIConfigLoader.getMaxCandidates();
+        sb.append("6. Respond ONLY in JSON with your TOP ").append(maxCandidates).append(" candidates ranked by confidence (highest first):\n");
         sb.append("{\"candidates\": [\n");
         sb.append("  {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"},\n");
         sb.append("  {\"locator\": \"By.cssSelector(\\\"...\\\")\", \"confidence\": 0.88, \"reasoning\": \"...\"},\n");
-        sb.append("  {\"locator\": \"By.xpath(\\\"...\\\")\", \"confidence\": 0.72, \"reasoning\": \"...\"}\n");
+        sb.append("  ...\n");
         sb.append("]}\n");
-        sb.append("If only one candidate is viable, return a single-element array. ");
+        sb.append("Return up to ").append(maxCandidates).append(" candidates. If only one is viable, return a single-element array. ");
         sb.append("Also accept legacy single-object format: {\"locator\": ..., \"confidence\": ..., \"reasoning\": ...}\n");
         sb.append("7. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
 

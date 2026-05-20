@@ -24,7 +24,8 @@ import Ellithium.core.reporting.Reporter;
 public class AIConfigLoader {
 
     private static HealingStrategy healingStrategy = HealingStrategy.DISABLED;
-    private static double confidenceThreshold = 0.85;
+    private static double confidenceThreshold = 0.70;
+    private static int maxCandidates = 3;
     private static String llmProviderName = "";
     private static String llmApiKey = "";
     private static String llmModel = "";
@@ -68,7 +69,22 @@ public class AIConfigLoader {
                 try {
                     confidenceThreshold = Double.parseDouble(threshold.trim());
                 } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.healing.confidenceThreshold: " + threshold + ". Using 0.85.");
+                    Logger.warn("Invalid ai.healing.confidenceThreshold: " + threshold + ". Using 0.70.");
+                }
+            }
+
+            String maxCandidatesRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.maxCandidates");
+            String maxCandidatesStr = maxCandidatesRaw != null ? resolveEnvironmentVariables(maxCandidatesRaw) : null;
+            if (maxCandidatesStr != null && !maxCandidatesStr.isEmpty()) {
+                try {
+                    int parsed = Integer.parseInt(maxCandidatesStr.trim());
+                    if (parsed >= 1 && parsed <= 10) {
+                        maxCandidates = parsed;
+                    } else {
+                        Logger.warn("ai.healing.maxCandidates must be between 1-10. Using default: 3.");
+                    }
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.healing.maxCandidates: " + maxCandidatesStr + ". Using 3.");
                 }
             }
 
@@ -154,4 +170,5 @@ public class AIConfigLoader {
     public static ExecutionMode getExecutionMode() { return executionMode; }
     public static boolean isCI() { return executionMode == ExecutionMode.CI; }
     public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
+    public static int getMaxCandidates() { return maxCandidates; }
 }
