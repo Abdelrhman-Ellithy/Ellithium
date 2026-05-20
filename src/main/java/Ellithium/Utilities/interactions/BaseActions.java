@@ -59,7 +59,7 @@ public class BaseActions<T extends WebDriver> {
                 return algorithmicMatch;
             }
 
-            // TIER 1.5: Semantic Strategy Search (zero cost, uses method/field name context)
+            // TIER 2: Semantic Strategy Search (zero cost, uses method/field name context)
             String actionType = extractActionFromStack(stack);
             String callerMethod = extractCallerMethodName(stack);
             String fieldName = extractFieldNameFromStack(stack, locator);
@@ -69,13 +69,24 @@ public class BaseActions<T extends WebDriver> {
                     driver, callerMethod, fieldName, actionType, locatorValue, baseline);
             if (semanticMatch != null) {
                 // Save baseline under the ORIGINAL broken locator key
-                // so next test heals via Tier 1 (instant) instead of Tier 1.5
+                // so next test heals via Tier 1 (instant) instead of Tier 2
                 BaselineStore.capture(driver, locator, semanticMatch);
                 AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
                 return semanticMatch;
             }
 
-            // TIER 2: LLM-based semantic healing (slow, costly, but handles drastic changes)
+            // TIER 3: Local ONNX Embedding (paid feature — active when license + model are present)
+            if (Ellithium.Utilities.ai.ONNXEmbeddingHealer.isAvailable()) {
+                WebElement onnxMatch = Ellithium.Utilities.ai.ONNXEmbeddingHealer.tryEmbeddingHeal(
+                        driver, locator, actionType, callerMethod, fieldName, locatorValue, baseline);
+                if (onnxMatch != null) {
+                    BaselineStore.capture(driver, locator, onnxMatch);
+                    AISelfHealer.queueSourcePatch(locator, onnxMatch, stack);
+                    return onnxMatch;
+                }
+            }
+
+            // TIER 4: LLM-based semantic healing (slow, costly, but handles drastic changes)
             WebElement llmMatch = AISelfHealer.attemptHeal(driver, locator, stack);
             if (llmMatch != null) {
                 // Save baseline under original key for Tier 1 reuse
@@ -85,7 +96,7 @@ public class BaseActions<T extends WebDriver> {
 
             // All healing tiers failed — throw AssertionError so Allure marks as "failed" not "broken"
             throw new AssertionError("Element not found and could not be healed: " + locator
-                    + " | All healing tiers exhausted (Tier 1: Baseline, Tier 1.5: Semantic, Tier 2: LLM)", e);
+                    + " | All healing tiers exhausted (Tier 1: Algorithmic, Tier 2: Semantic, Tier 4: LLM)", e);
         }
     }
 
@@ -96,9 +107,11 @@ public class BaseActions<T extends WebDriver> {
      */
     protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
+            // W1 fix: use the WebElement returned directly by the condition — avoids a
+            // second findElement() call that races with page changes after the wait resolves.
+            WebElement element = getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            return driver.findElement(locator);
+            return element;
         } catch (org.openqa.selenium.TimeoutException | org.openqa.selenium.InvalidSelectorException e) {
             // Covers both missing elements and invalid/empty locators
             return findWebElement(locator);
@@ -341,7 +354,7 @@ public class BaseActions<T extends WebDriver> {
         }
     }
 
-    // ──────────────────────── Context Extraction for Tier 1.5 ────────────────────────
+    // ──────────────────────── Context Extraction for Tier 2 ────────────────────────
 
     /**
      * Extracts the Ellithium interaction method name from the stack (e.g., "sendData", "clickOnElement").

@@ -9,7 +9,7 @@ docker-entrypoint.sh
 Dockerfile
 
 src/test/resources/TestData/MobileApps/browserstack.json
-
+.claude
 # Test Output Management
 Test-Output/*
 !Test-Output/.gitkeep
@@ -17,6 +17,12 @@ Test-Output/*
 # Test Data Files
 src/test/resources/TestData/DB-Info.json
 src/test/resources/TestData/Items and Prices.xlsx
+
+ai-service.md
+ai-service-arch.png
+architecture-with-ellithium-mcp.md
+latest-aggreed-ai-service-design.md
+mcp-arch.png
 
 # Preserve specific Test-Output structure
 !Test-Output/Logs/

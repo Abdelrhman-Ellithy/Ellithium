@@ -96,6 +96,9 @@ public class AIHealingReporter {
         // Apply deferred source patches (LOCAL mode only — safe since test execution is complete)
         AISelfHealer.applyDeferredPatches();
 
+        // Flush structured telemetry to JSON before baseline flush
+        HealingTelemetryStore.flush();
+
         // Flush baseline fingerprints to disk
         BaselineStore.flush();
     }

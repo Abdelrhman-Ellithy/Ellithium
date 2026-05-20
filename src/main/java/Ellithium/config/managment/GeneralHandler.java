@@ -81,6 +81,7 @@ public class GeneralHandler {
         if (aiProvider != null) {
             AISelfHealer.initialize(aiProvider, AIConfigLoader.getHealingStrategy(), AIConfigLoader.getConfidenceThreshold());
         }
+        Ellithium.Utilities.ai.ONNXEmbeddingHealer.initialize();
     }
     
     public static List<Parameter> getParameters(){

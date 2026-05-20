@@ -175,6 +175,10 @@ public class AISelfHealer {
         int lineNumber;            // stack frame line number
         boolean isMobile;
         byte[] screenshot;         // PNG screenshot for vision-capable LLMs (null if not captured)
+        // W2 fix: last-known baseline attributes give the LLM context on what the element used to look like
+        ElementFingerprint baseline;
+        // W4 fix: canonical semantic query assembled by SemanticQueryBuilder
+        String semanticQuery;
     }
 
     // ──────────────────────── Source Location DTO ────────────────────────
@@ -206,7 +210,7 @@ public class AISelfHealer {
             return null;
         }
 
-        Reporter.log("[TIER 2] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
+        Reporter.log("[TIER 4] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
         By newLocator = healLocator(driver, brokenLocator, stackTrace);
 
@@ -481,6 +485,13 @@ public class AISelfHealer {
             ctx.callSiteSource = readCallSiteSource(ctx.filePath, ctx.lineNumber);
         }
 
+        // W2 fix: fetch stored baseline fingerprint for last-known attribute context
+        ctx.baseline = BaselineStore.getBaseline(brokenLocator.toString());
+
+        // W4 fix: build canonical semantic query from all available context
+        ctx.semanticQuery = SemanticQueryBuilder.buildFromContext(
+                ctx.actionType, ctx.brokenLocatorStr, ctx.methodName, ctx.baseline);
+
         // Capture DOM using best available method (AX tree → HTML fallback)
         String optimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.getOptimalDOMRepresentation(driver);
         ctx.minimizedDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(optimizedDom);
@@ -615,8 +626,29 @@ public class AISelfHealer {
             else if (ctx.actionType.equals("getText")) sb.append(" (reading text from element)");
             sb.append("\n");
         }
+
+        // W4 fix: semantic intent gives the LLM a de-camelCased, action-expanded search query
+        if (ctx.semanticQuery != null && !ctx.semanticQuery.isBlank()) {
+            sb.append("- Semantic intent: ").append(ctx.semanticQuery).append("\n");
+        }
+
         if (ctx.callSiteSource != null) {
             sb.append("- Source code at call site:\n").append(ctx.callSiteSource).append("\n");
+        }
+
+        // W2 fix: last-known element state from BaselineStore fingerprint
+        if (ctx.baseline != null) {
+            sb.append("\nLAST KNOWN ELEMENT STATE:\n");
+            if (ctx.baseline.getTagName() != null)     sb.append("- Tag: ").append(ctx.baseline.getTagName()).append("\n");
+            if (ctx.baseline.getId() != null)           sb.append("- id: ").append(ctx.baseline.getId()).append("\n");
+            if (ctx.baseline.getName() != null)         sb.append("- name: ").append(ctx.baseline.getName()).append("\n");
+            if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(ctx.baseline.getAriaLabel()).append("\n");
+            if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(ctx.baseline.getPlaceholder()).append("\n");
+            if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(ctx.baseline.getDataTestId()).append("\n");
+            if (ctx.baseline.getText() != null && !ctx.baseline.getText().isBlank())
+                sb.append("- text: ").append(ctx.baseline.getText()).append("\n");
+            if (ctx.baseline.getRole() != null)         sb.append("- role: ").append(ctx.baseline.getRole()).append("\n");
+            if (ctx.baseline.getType() != null)         sb.append("- type: ").append(ctx.baseline.getType()).append("\n");
         }
 
         if (ctx.minimizedDom != null && !ctx.minimizedDom.isEmpty()) {

@@ -32,6 +32,10 @@ public class AIConfigLoader {
     private static String llmBaseUrl = "";
     private static ExecutionMode executionMode = ExecutionMode.LOCAL;
     private static boolean visionRcaEnabled = false;
+    // Tier 3 ONNX embedding config (paid feature)
+    private static String licenseKey = "";
+    private static double onnxSimilarityThreshold = 0.82;
+    private static int onnxMaxCandidates = 10;
     private static boolean initialized = false;
 
     /**
@@ -109,6 +113,29 @@ public class AIConfigLoader {
                 visionRcaEnabled = Boolean.parseBoolean(rca.trim());
             }
 
+            // Tier 3 ONNX config
+            licenseKey = getPropertyOrDefault(configPath, "ai.license.key", "");
+
+            String onnxThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold");
+            String onnxThreshold = onnxThresholdRaw != null ? resolveEnvironmentVariables(onnxThresholdRaw) : null;
+            if (onnxThreshold != null && !onnxThreshold.isEmpty()) {
+                try {
+                    onnxSimilarityThreshold = Double.parseDouble(onnxThreshold.trim());
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.onnx.similarityThreshold: " + onnxThreshold + ". Using 0.82.");
+                }
+            }
+
+            String onnxMaxRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.maxCandidates");
+            String onnxMax = onnxMaxRaw != null ? resolveEnvironmentVariables(onnxMaxRaw) : null;
+            if (onnxMax != null && !onnxMax.isEmpty()) {
+                try {
+                    onnxMaxCandidates = Integer.parseInt(onnxMax.trim());
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.onnx.maxCandidates: " + onnxMax + ". Using 10.");
+                }
+            }
+
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
                     + " | Mode: " + executionMode
@@ -171,4 +198,22 @@ public class AIConfigLoader {
     public static boolean isCI() { return executionMode == ExecutionMode.CI; }
     public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
     public static int getMaxCandidates() { return maxCandidates; }
+
+    // ── Tier 3 ONNX getters ──
+    public static String getLicenseKey() { return licenseKey; }
+    public static double getOnnxSimilarityThreshold() { return onnxSimilarityThreshold; }
+    public static int getOnnxMaxCandidates() { return onnxMaxCandidates; }
+
+    /**
+     * Returns true when Tier 3 local embedding is active.
+     * Requires a valid license key AND the encrypted model resource present in the JAR.
+     * Delegates to LicenseValidator once it is wired; returns false until then.
+     */
+    public static boolean isOnnxEnabled() {
+        if (licenseKey == null || licenseKey.isBlank()) return false;
+        // Model resource check — path is populated when the Kaggle fine-tuned model is embedded
+        boolean modelPresent = AIConfigLoader.class.getResourceAsStream("/ai-models/tier3.onnx.enc") != null;
+        if (!modelPresent) return false;
+        return LicenseValidator.isTier3Enabled();
+    }
 }

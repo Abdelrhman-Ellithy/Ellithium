@@ -171,6 +171,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.logException(e);
         }
         finally {
+            Ellithium.Utilities.ai.ONNXEmbeddingHealer.shutdown();
             AIHealingReporter.generateReport();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();

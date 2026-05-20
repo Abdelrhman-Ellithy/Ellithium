@@ -5,6 +5,8 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -16,53 +18,66 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages persistence and lookup of {@link ElementFingerprint} baselines.
+ * Tier 1 — Algorithmic locator healing via stored element fingerprints.
  *
- * <p><b>Tier 1 Healing:</b> When a locator fails, this store is checked FIRST.
- * If a baseline fingerprint exists for the broken locator, it scans the current DOM
- * for the best-matching element using a weighted attribute scoring algorithm.
- * This is instant, free, and deterministic — no LLM call needed.</p>
+ * <h3>Multi-fingerprint history</h3>
+ * Each locator key retains the last {@value #MAX_HISTORY} fingerprints (ring buffer).
+ * On heal, the candidate is scored against ALL stored fingerprints; the maximum is used.
+ * This handles elements that have oscillated through multiple states across test runs.
  *
- * <p><b>Persistence:</b> Baselines are stored in {@code Test-Output/healing-baselines.json}.
- * The file is loaded lazily on first access and saved after every capture.</p>
- *
- * <p>Thread-safe: All operations are synchronized on an internal lock.</p>
- *
- * <p>Compatible with Selenium WebDriver and Appium (Android/iOS).</p>
+ * <h3>Healing cascade within Tier 1</h3>
+ * <ol>
+ *   <li><b>Mutation pre-pass</b> — O(1) broken-locator mutations via
+ *       {@link LocatorMutationEngine} (covers convention renames, attribute swaps)</li>
+ *   <li><b>Attribute pre-search</b> — direct lookups on the most stable stored
+ *       attributes before any broad DOM scan</li>
+ *   <li><b>Tag-narrowed, visibility-filtered DOM scan</b> — scans only elements of
+ *       the same tag type, skipping hidden/disabled elements</li>
+ * </ol>
  */
 public class BaselineStore {
 
     private static final String BASELINE_FILE = "Test-Output" + File.separator + "healing-baselines.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
+    static final int MAX_HISTORY = 3;
 
-    /** In-memory store: locatorKey → fingerprint. Loaded lazily from disk. */
-    private static final ConcurrentHashMap<String, ElementFingerprint> baselines = new ConcurrentHashMap<>();
+    /**
+     * In-memory store: locatorKey → immutable ordered list of up to MAX_HISTORY fingerprints.
+     * Newest fingerprint is always LAST in the list.
+     * The list itself is replaced atomically via ConcurrentHashMap.compute().
+     */
+    private static final ConcurrentHashMap<String, List<ElementFingerprint>> baselines =
+            new ConcurrentHashMap<>();
     private static volatile boolean loaded = false;
 
     // ──────────────────────── Capture ────────────────────────
 
     /**
      * Captures and stores a fingerprint for a successfully-found element.
-     * Called silently after every successful {@code findWebElement()} — zero overhead
-     * since fingerprinting only reads attributes (no DOM traversal).
-     *
-     * @param driver  The WebDriver (Selenium or Appium)
-     * @param locator The By locator that successfully found the element
-     * @param element The found WebElement
+     * Maintains a ring buffer of the last {@value #MAX_HISTORY} fingerprints per locator key.
      */
     public static void capture(WebDriver driver, By locator, WebElement element) {
         try {
             ensureLoaded();
             ElementFingerprint fp = ElementFingerprint.capture(driver, locator, element);
-            baselines.put(fp.getLocatorKey(), fp);
+            baselines.compute(fp.getLocatorKey(), (k, existing) -> {
+                List<ElementFingerprint> updated = new ArrayList<>();
+                if (existing != null && !existing.isEmpty()) {
+                    int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
+                    updated.addAll(existing.subList(start, existing.size()));
+                }
+                updated.add(fp);
+                return List.copyOf(updated);
+            });
             saveToDiskAsync();
         } catch (Exception e) {
-            // Fingerprinting must NEVER crash the test — silently swallow
             Reporter.log("BaselineStore: capture failed (non-fatal): " + e.getMessage(), LogLevel.WARN);
         }
     }
@@ -70,129 +85,188 @@ public class BaselineStore {
     // ──────────────────────── Lookup ────────────────────────
 
     /**
-     * Retrieves the stored fingerprint for a given locator key.
-     *
-     * @param locatorKey The {@code By.toString()} of the broken locator
-     * @return The stored fingerprint, or null if no baseline exists
+     * Returns the most recent fingerprint for a locator key, or null if absent.
      */
     public static ElementFingerprint getBaseline(String locatorKey) {
         ensureLoaded();
-        return baselines.get(locatorKey);
+        List<ElementFingerprint> history = baselines.get(locatorKey);
+        if (history == null || history.isEmpty()) return null;
+        return history.get(history.size() - 1);
+    }
+
+    /**
+     * Returns the full fingerprint history (up to MAX_HISTORY entries) for a locator key.
+     * Newest last. Returns an empty list if no baseline exists.
+     */
+    public static List<ElementFingerprint> getAllBaselines(String locatorKey) {
+        ensureLoaded();
+        List<ElementFingerprint> history = baselines.get(locatorKey);
+        return history != null ? history : List.of();
     }
 
     // ──────────────────────── Tier 1 Algorithmic Healing ────────────────────────
 
     /**
-     * Attempts to heal a broken locator using stored baseline fingerprints
-     * and weighted attribute scoring against the current DOM.
+     * Attempts to heal a broken locator using stored baseline fingerprints.
      *
-     * <p>This is the Tier 1 healing path — fast, free, deterministic.
-     * Called BEFORE the LLM-based Tier 2.</p>
-     *
-     * @param driver        The WebDriver
-     * @param brokenLocator The locator that failed
-     * @return The healed WebElement, or null if no confident match was found
+     * <p>Three-step cascade:
+     * <ol>
+     *   <li>Mutation pre-pass via {@link LocatorMutationEngine}</li>
+     *   <li>Attribute-targeted direct lookups (data-testid, aria-label, placeholder, name)</li>
+     *   <li>Tag-narrowed, visibility-filtered full DOM scan</li>
+     * </ol>
      */
     public static WebElement tryAlgorithmicHeal(WebDriver driver, By brokenLocator) {
         ensureLoaded();
-        ElementFingerprint baseline = baselines.get(brokenLocator.toString());
+        List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
+        ElementFingerprint baseline = (history != null && !history.isEmpty())
+                ? history.get(history.size() - 1) : null;
+
         if (baseline == null) {
-            Reporter.log("BaselineStore: No baseline found for " + brokenLocator
-                    + " — skipping Tier 1 (algorithmic healing)", LogLevel.DEBUG);
+            Reporter.log("BaselineStore: No baseline for " + brokenLocator
+                    + " — skipping Tier 1", LogLevel.DEBUG);
             return null;
         }
 
-        Reporter.log("BaselineStore: Baseline found for " + brokenLocator
-                + " — attempting Tier 1 algorithmic match", LogLevel.DEBUG);
+        Reporter.log("BaselineStore: Baseline found (" + history.size() + " history entries) for "
+                + brokenLocator + " — Tier 1 healing", LogLevel.DEBUG);
 
-        // Suppress listener logging during DOM scanning — prevents 30+ attribute logs per element
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
-        ScoredCandidate best;
         try {
-            best = findBestMatch(driver, baseline);
+            // ── Step A: Mutation pre-pass (O(1), no DOM scan) ──
+            WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
+            if (mutationMatch != null) {
+                Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null);
+                return mutationMatch;
+            }
+
+            // ── Step B: Attribute pre-search (direct targeted lookups) ──
+            WebElement attrMatch = tryAttributePreSearch(driver, baseline, history);
+            if (attrMatch != null) {
+                Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                double score = scoreBestHistory(attrMatch, history);
+                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null);
+                return attrMatch;
+            }
+
+            // ── Step C: Tag-narrowed DOM scan with visibility filter ──
+            ScoredCandidate best = findBestMatch(driver, baseline, history);
+
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+
+            if (best == null) {
+                Reporter.log("BaselineStore: Tier 1 found no candidates in DOM", LogLevel.DEBUG);
+                HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false);
+                return null;
+            }
+
+            if (best.score >= 0.60) {
+                Reporter.log("BaselineStore: Tier 1 MATCH — score=" + String.format("%.2f", best.score)
+                        + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
+                        LogLevel.INFO_GREEN);
+                acceptHeal(driver, brokenLocator, best.element, best.score,
+                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator);
+                return best.element;
+            } else {
+                Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
+                        + " (below 0.60) — falling through to Tier 2", LogLevel.DEBUG);
+                HealingTelemetryStore.record(1, brokenLocator.toString(), null, best.score, false);
+                return null;
+            }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
-
-        if (best == null) {
-            Reporter.log("BaselineStore: Tier 1 found no candidates in the DOM", LogLevel.DEBUG);
-            return null;
-        }
-
-        if (best.score >= 0.60) {
-            Reporter.log("BaselineStore: Tier 1 MATCH — score=" + String.format("%.2f", best.score)
-                    + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
-                    LogLevel.INFO_GREEN);
-
-            // Update the baseline with the new successful fingerprint
-            try {
-                ElementFingerprint updatedFp = ElementFingerprint.capture(driver, best.reconstructedLocator, best.element);
-                baselines.put(brokenLocator.toString(), updatedFp);
-                saveToDiskAsync();
-            } catch (Exception ignored) {}
-
-            // Queue for healing report
-            AIHealingReporter.queueChange(
-                    "algorithmic-baseline", brokenLocator.toString(),
-                    new Ellithium.Utilities.ai.models.HealingResult(
-                            best.reconstructedLocator.toString(), best.score,
-                            "[TIER 1 - Algorithmic] " + best.reasoning),
-                    null, null, null, 0);
-
-            return best.element;
-        } else {
-            Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
-                    + " (below 0.60 threshold) — falling through to Tier 1.5",
-                    LogLevel.DEBUG);
-            return null;
-        }
     }
 
-    // ──────────────────────── Algorithmic Matching ────────────────────────
+    // ──────────────────────── Attribute Pre-Search (T1-C) ────────────────────────
 
     /**
-     * Scans the current DOM for interactive elements and scores each against
-     * the stored baseline fingerprint.
-     *
-     * @param driver   The WebDriver
-     * @param baseline The stored fingerprint of the element we're looking for
-     * @return The highest-scoring candidate, or null if no candidates found
+     * Tries direct attribute lookups using the most stable stored attributes before
+     * committing to a full DOM scan. Returns immediately if exactly one element is
+     * found and scores >= the lookup threshold against any history fingerprint.
      */
-    public static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline) {
-        List<WebElement> candidates;
-        try {
-            // Get all interactive elements — works on both Selenium and Appium
-            candidates = driver.findElements(By.cssSelector(
-                    "input, button, select, textarea, a, form, label, "
-                    + "[role='button'], [role='link'], [role='textbox'], [role='checkbox'], "
-                    + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"));
-        } catch (Exception e) {
-            // CSS selector not supported (some Appium drivers) — fallback to XPath
-            try {
-                candidates = driver.findElements(By.xpath(
-                        "//*[self::input or self::button or self::select or self::textarea "
-                        + "or self::a or self::form or self::label]"));
-            } catch (Exception ex) {
-                Reporter.log("BaselineStore: Failed to query DOM for candidates: " + ex.getMessage(), LogLevel.WARN);
-                return null;
-            }
-        }
+    private static WebElement tryAttributePreSearch(WebDriver driver, ElementFingerprint baseline,
+                                                     List<ElementFingerprint> history) {
+        // Priority 1: data-testid (most stable)
+        WebElement found = tryDirectLookup(driver,
+                baseline.getDataTestId() != null
+                        ? By.cssSelector("[data-testid='" + baseline.getDataTestId() + "']") : null,
+                history, 0.85);
+        if (found != null) return found;
 
-        if (candidates.isEmpty()) {
-            return null;
-        }
+        found = tryDirectLookup(driver,
+                baseline.getDataTestId() != null
+                        ? By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']") : null,
+                history, 0.80);
+        if (found != null) return found;
+
+        // Priority 2: aria-label
+        found = tryDirectLookup(driver,
+                baseline.getAriaLabel() != null
+                        ? By.cssSelector("[aria-label='" + escapeAttr(baseline.getAriaLabel()) + "']") : null,
+                history, 0.80);
+        if (found != null) return found;
+
+        // Priority 3: placeholder (inputs only)
+        found = tryDirectLookup(driver,
+                baseline.getPlaceholder() != null
+                        ? By.cssSelector("[placeholder='" + escapeAttr(baseline.getPlaceholder()) + "']") : null,
+                history, 0.80);
+        if (found != null) return found;
+
+        // Priority 4: name
+        found = tryDirectLookup(driver,
+                baseline.getName() != null ? By.name(baseline.getName()) : null,
+                history, 0.75);
+        return found;
+    }
+
+    private static WebElement tryDirectLookup(WebDriver driver, By locator,
+                                               List<ElementFingerprint> history, double threshold) {
+        if (locator == null) return null;
+        try {
+            List<WebElement> results = driver.findElements(locator);
+            if (results.size() == 1) {
+                WebElement candidate = results.get(0);
+                if (candidate.isDisplayed() && scoreBestHistory(candidate, history) >= threshold) {
+                    return candidate;
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    // ──────────────────────── Tag-Narrowed DOM Scan (T1-D) ────────────────────────
+
+    /**
+     * Scans DOM for the best-matching element. Uses tag-narrowed candidate collection
+     * (when tagName is known), visibility filter, and early termination at score >= 0.90.
+     * Scores each candidate against ALL history fingerprints and takes the maximum.
+     */
+    public static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline,
+                                                List<ElementFingerprint> history) {
+        List<WebElement> candidates = collectCandidates(driver, baseline);
+        if (candidates.isEmpty()) return null;
 
         ScoredCandidate best = null;
 
         for (WebElement candidate : candidates) {
             try {
-                double score = baseline.scoreSimilarity(candidate);
+                // Visibility filter — non-visible elements are almost never the right candidate
+                if (!candidate.isDisplayed()) continue;
+
+                // Score against ALL history fingerprints, take max (T1-E)
+                double score = scoreBestHistory(candidate, history);
 
                 if (best == null || score > best.score) {
                     By locator = ElementFingerprint.reconstructLocator(candidate);
                     if (locator != null) {
                         String reasoning = buildMatchReasoning(baseline, candidate);
                         best = new ScoredCandidate(candidate, locator, score, reasoning);
+
+                        // Early termination — no point scanning further
+                        if (score >= 0.90) break;
                     }
                 }
             } catch (Exception ignored) {
@@ -203,42 +277,115 @@ public class BaselineStore {
         return best;
     }
 
+    // Backward-compatible overload for callers that only have a single baseline
+    public static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline) {
+        return findBestMatch(driver, baseline, List.of(baseline));
+    }
+
     /**
-     * Builds a human-readable explanation of why a candidate matched.
+     * Collects candidate WebElements. Prefers tag-narrowed collection when tagName is known,
+     * falling back to the broad interactive-elements selector.
      */
+    private static List<WebElement> collectCandidates(WebDriver driver, ElementFingerprint baseline) {
+        // Tag-narrowed first (T1-D): 10-30x fewer candidates on complex pages
+        if (isNonBlank(baseline.getTagName())) {
+            try {
+                List<WebElement> tagCandidates = driver.findElements(By.tagName(baseline.getTagName()));
+                if (!tagCandidates.isEmpty()) return tagCandidates;
+            } catch (Exception ignored) {}
+        }
+
+        // Broad interactive-element fallback
+        try {
+            return driver.findElements(By.cssSelector(
+                    "input, button, select, textarea, a, form, label, "
+                    + "[role='button'], [role='link'], [role='textbox'], [role='checkbox'], "
+                    + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"));
+        } catch (Exception e) {
+            try {
+                return driver.findElements(By.xpath(
+                        "//*[self::input or self::button or self::select or self::textarea "
+                        + "or self::a or self::form or self::label]"));
+            } catch (Exception ex) {
+                Reporter.log("BaselineStore: Failed to query DOM: " + ex.getMessage(), LogLevel.WARN);
+                return List.of();
+            }
+        }
+    }
+
+    /**
+     * Scores a candidate against ALL history fingerprints and returns the maximum score.
+     */
+    private static double scoreBestHistory(WebElement candidate, List<ElementFingerprint> history) {
+        double max = 0.0;
+        for (ElementFingerprint fp : history) {
+            try {
+                double s = fp.scoreSimilarity(candidate);
+                if (s > max) max = s;
+            } catch (Exception ignored) {}
+        }
+        return max;
+    }
+
+    // ──────────────────────── Accept Heal Helper ────────────────────────
+
+    private static void acceptHeal(WebDriver driver, By brokenLocator, WebElement healed,
+                                    double score, String tierLabel, By reconstructedLocator) {
+        By bestLocator = reconstructedLocator != null
+                ? reconstructedLocator
+                : ElementFingerprint.reconstructLocator(healed);
+        String locatorStr = bestLocator != null ? bestLocator.toString() : brokenLocator.toString();
+
+        // Update baseline with fresh fingerprint
+        try {
+            if (bestLocator != null) {
+                ElementFingerprint updatedFp = ElementFingerprint.capture(driver, bestLocator, healed);
+                baselines.compute(brokenLocator.toString(), (k, existing) -> {
+                    List<ElementFingerprint> updated = new ArrayList<>();
+                    if (existing != null && !existing.isEmpty()) {
+                        int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
+                        updated.addAll(existing.subList(start, existing.size()));
+                    }
+                    updated.add(updatedFp);
+                    return List.copyOf(updated);
+                });
+                saveToDiskAsync();
+            }
+        } catch (Exception ignored) {}
+
+        AIHealingReporter.queueChange(
+                "algorithmic-baseline", brokenLocator.toString(),
+                new Ellithium.Utilities.ai.models.HealingResult(locatorStr, score, tierLabel),
+                null, null, null, 0);
+
+        HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true);
+    }
+
+    // ──────────────────────── Reasoning ────────────────────────
+
     private static String buildMatchReasoning(ElementFingerprint baseline, WebElement candidate) {
         StringBuilder sb = new StringBuilder("Matched by:");
         try {
-            String candidateId = candidate.getAttribute("id");
-            if (candidateId != null && candidateId.equals(baseline.getId())) {
-                sb.append(" id='").append(candidateId).append("'");
-            }
-            String candidateName = candidate.getAttribute("name");
-            if (candidateName != null && candidateName.equals(baseline.getName())) {
-                sb.append(" name='").append(candidateName).append("'");
-            }
-            String candidateAriaLabel = candidate.getAttribute("aria-label");
-            if (candidateAriaLabel != null && candidateAriaLabel.equals(baseline.getAriaLabel())) {
-                sb.append(" aria-label='").append(candidateAriaLabel).append("'");
-            }
-            String candidateTag = candidate.getTagName();
-            if (candidateTag != null && candidateTag.equalsIgnoreCase(baseline.getTagName())) {
-                sb.append(" tag='").append(candidateTag).append("'");
-            }
-            String candidateText = candidate.getText();
-            if (candidateText != null && baseline.getText() != null
-                    && candidateText.contains(baseline.getText())) {
-                sb.append(" text(partial)");
-            }
+            String cid = candidate.getAttribute("id");
+            if (cid != null && cid.equals(baseline.getId())) sb.append(" id='").append(cid).append("'");
+            String cn = candidate.getAttribute("name");
+            if (cn != null && cn.equals(baseline.getName())) sb.append(" name='").append(cn).append("'");
+            String cal = candidate.getAttribute("aria-label");
+            if (cal != null && cal.equals(baseline.getAriaLabel())) sb.append(" aria-label='").append(cal).append("'");
+            String cdt = candidate.getAttribute("data-testid");
+            if (cdt != null && cdt.equals(baseline.getDataTestId())) sb.append(" data-testid='").append(cdt).append("'");
+            String cph = candidate.getAttribute("placeholder");
+            if (cph != null && cph.equals(baseline.getPlaceholder())) sb.append(" placeholder='").append(cph).append("'");
+            String ct = candidate.getTagName();
+            if (ct != null && ct.equalsIgnoreCase(baseline.getTagName())) sb.append(" tag='").append(ct).append("'");
+            String txt = candidate.getText();
+            if (txt != null && baseline.getText() != null && txt.contains(baseline.getText())) sb.append(" text(partial)");
         } catch (Exception ignored) {}
         return sb.toString();
     }
 
     // ──────────────────────── Result Model ────────────────────────
 
-    /**
-     * A candidate element with its similarity score and reasoning.
-     */
     public static class ScoredCandidate {
         public final WebElement element;
         public final By reconstructedLocator;
@@ -255,9 +402,6 @@ public class BaselineStore {
 
     // ──────────────────────── Persistence ────────────────────────
 
-    /**
-     * Loads baselines from disk into memory. Called lazily on first access.
-     */
     private static void ensureLoaded() {
         if (loaded) return;
         synchronized (LOCK) {
@@ -269,72 +413,93 @@ public class BaselineStore {
 
     private static void loadFromDisk() {
         Path path = Paths.get(BASELINE_FILE);
-        if (!Files.exists(path)) {
-            return;
-        }
+        if (!Files.exists(path)) return;
         try (Reader reader = new FileReader(path.toFile())) {
-            Type listType = new TypeToken<ArrayList<ElementFingerprint>>() {}.getType();
-            List<ElementFingerprint> list = GSON.fromJson(reader, listType);
-            if (list != null) {
-                for (ElementFingerprint fp : list) {
-                    if (fp.getLocatorKey() != null) {
-                        baselines.put(fp.getLocatorKey(), fp);
+            JsonElement root = JsonParser.parseReader(reader);
+
+            if (root.isJsonArray()) {
+                // ── Backward compat: old flat List<ElementFingerprint> format ──
+                Type listType = new TypeToken<List<ElementFingerprint>>() {}.getType();
+                List<ElementFingerprint> list = GSON.fromJson(root, listType);
+                if (list != null) {
+                    for (ElementFingerprint fp : list) {
+                        if (fp.getLocatorKey() != null) {
+                            baselines.put(fp.getLocatorKey(), List.of(fp));
+                        }
                     }
+                    Reporter.log("BaselineStore: Loaded " + list.size()
+                            + " baselines (legacy format) from disk", LogLevel.INFO_BLUE);
                 }
-                Reporter.log("BaselineStore: Loaded " + list.size() + " baselines from disk", LogLevel.INFO_BLUE);
+            } else if (root.isJsonObject()) {
+                // ── Current format: Map<String, List<ElementFingerprint>> ──
+                Type mapType = new TypeToken<Map<String, List<ElementFingerprint>>>() {}.getType();
+                Map<String, List<ElementFingerprint>> map = GSON.fromJson(root, mapType);
+                if (map != null) {
+                    int total = 0;
+                    for (Map.Entry<String, List<ElementFingerprint>> entry : map.entrySet()) {
+                        if (entry.getKey() != null && entry.getValue() != null) {
+                            baselines.put(entry.getKey(), List.copyOf(entry.getValue()));
+                            total += entry.getValue().size();
+                        }
+                    }
+                    Reporter.log("BaselineStore: Loaded " + baselines.size()
+                            + " locators (" + total + " fingerprints) from disk", LogLevel.INFO_BLUE);
+                }
             }
         } catch (Exception e) {
             Reporter.log("BaselineStore: Failed to load baselines (non-fatal): " + e.getMessage(), LogLevel.WARN);
         }
     }
 
-    /**
-     * Saves baselines to disk asynchronously to avoid blocking the test thread.
-     */
     private static void saveToDiskAsync() {
-        // Use a daemon thread for non-blocking I/O
-        Thread saveThread = new Thread(() -> {
+        Thread t = new Thread(() -> {
             synchronized (LOCK) {
                 try {
                     Path path = Paths.get(BASELINE_FILE);
                     Files.createDirectories(path.getParent());
-                    List<ElementFingerprint> list = new ArrayList<>(baselines.values());
+                    // Serialize as ordered map for readability
+                    Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
                     try (Writer writer = new FileWriter(path.toFile())) {
-                        GSON.toJson(list, writer);
+                        GSON.toJson(out, writer);
                     }
-                } catch (Exception e) {
-                    // Persistence failure must never crash the test
-                }
+                } catch (Exception ignored) {}
             }
         }, "baseline-store-save");
-        saveThread.setDaemon(true);
-        saveThread.start();
+        t.setDaemon(true);
+        t.start();
     }
 
-    /**
-     * Forces a synchronous save. Called at suite end.
-     */
     public static void flush() {
         synchronized (LOCK) {
             try {
                 Path path = Paths.get(BASELINE_FILE);
                 Files.createDirectories(path.getParent());
-                List<ElementFingerprint> list = new ArrayList<>(baselines.values());
+                Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
                 try (Writer writer = new FileWriter(path.toFile())) {
-                    GSON.toJson(list, writer);
+                    GSON.toJson(out, writer);
                 }
-                Reporter.log("BaselineStore: Flushed " + list.size() + " baselines to disk", LogLevel.INFO_GREEN);
+                int total = baselines.values().stream().mapToInt(List::size).sum();
+                Reporter.log("BaselineStore: Flushed " + baselines.size()
+                        + " locators (" + total + " fingerprints) to disk", LogLevel.INFO_GREEN);
             } catch (Exception e) {
-                Reporter.log("BaselineStore: Failed to flush baselines: " + e.getMessage(), LogLevel.ERROR);
+                Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }
         }
     }
 
-    /**
-     * Clears all in-memory baselines. Used for testing.
-     */
     public static void clear() {
         baselines.clear();
         loaded = false;
+    }
+
+    // ──────────────────────── Helpers ────────────────────────
+
+    private static boolean isNonBlank(String s) {
+        return s != null && !s.isBlank();
+    }
+
+    private static String escapeAttr(String value) {
+        if (value == null) return "";
+        return value.replace("'", "\\'");
     }
 }
