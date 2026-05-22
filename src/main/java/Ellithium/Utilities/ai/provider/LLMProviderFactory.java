@@ -17,7 +17,7 @@ public class LLMProviderFactory {
         String apiKey = AIConfigLoader.getLlmApiKey();
         String model = AIConfigLoader.getLlmModel();
 
-        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
+        if (apiKey == null || apiKey.isEmpty()) {
             Reporter.log("AI API Key is missing or default! AI self-healing will be disabled.", LogLevel.WARN);
             return null;
         }

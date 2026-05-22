@@ -37,15 +37,45 @@ public class ONNXEmbeddingHealer {
     private static final String TOKENIZER_RESOURCE = "/Ellithium-ai-model/tokenizer.json";
     private static final String BGE_QUERY_PREFIX   =
             "Represent this sentence for searching relevant passages: ";
-    private static final int MAX_SEQ_LEN = 64;
+    // Token budget fed to the model. Raised 128 → 256 so richer element documents (parent/sibling
+    // context + longer text) survive tokenization instead of being clipped. MUST match the
+    // MAX_SEQ_LEN used in 02_finetune.py and 03_export_onnx.py — retrain/re-export after changing.
+    private static final int MAX_SEQ_LEN = 256;
+
+    // Character caps for element-document fields. Generous so long product titles / status messages
+    // contribute; the tokenizer's MAX_SEQ_LEN is the real ceiling. Truncate, never drop.
+    private static final int MAX_TEXT_CHARS  = 240;
+    private static final int MAX_CLASS_CHARS = 200;
+
+    // Two candidates whose cosine scores differ by less than this are treated as tied — the
+    // baseline fingerprint then breaks the tie (prevents arbitrary picks on repeated/identical
+    // elements like table rows or product-card grids).
+    private static final double SCORE_TIE_EPSILON = 0.02;
 
     private static volatile boolean initialized = false;
     private static volatile boolean available   = false;
+    // Pooling selected at init from ai.onnx.pooling — MUST match the embedded model's export.
+    private static volatile boolean useClsPooling = true;
+
+    /**
+     * Per-thread similarity score of the most recent Tier 3 heal. Set immediately before
+     * {@link #tryEmbeddingHeal} returns a non-null element, read by the caller to attach heal
+     * provenance (confidence) to the gated capture / source patch.
+     */
+    private static final ThreadLocal<Double> LAST_HEAL_SCORE = ThreadLocal.withInitial(() -> 0.0);
+
+    /** Similarity score (0.0–1.0) of the most recent Tier 3 heal on this thread. */
+    public static double getLastHealScore() { return LAST_HEAL_SCORE.get(); }
 
     // Held as Object to avoid NoClassDefFoundError when optional JARs are absent
     private static Object ortEnvironment = null;
     private static Object ortSession     = null;
     private static Object tokenizer      = null;  // ai.djl.huggingface.tokenizers.HuggingFaceTokenizer
+
+    // Reflection handles resolved ONCE at init (were re-resolved on every embed() — i.e. per
+    // candidate). getMethod()/Class.forName() do linear method scans + security checks; caching them
+    // removes ~9 reflective lookups per embedding with zero behaviour change.
+    private static Method mEncode, mGetIds, mGetMask, mGetTypes, mCreateTensor, mSessionRun, mOnnxGetValue;
 
     // ──────────────────────── Lifecycle ────────────────────────
 
@@ -60,7 +90,7 @@ public class ONNXEmbeddingHealer {
         InputStream modelIs = ONNXEmbeddingHealer.class.getResourceAsStream(MODEL_RESOURCE);
         if (modelIs == null) {
             Reporter.log("[TIER 3] Model not found at " + MODEL_RESOURCE + " — Tier 3 unavailable",
-                    LogLevel.DEBUG);
+                    LogLevel.WARN);
             return;
         }
 
@@ -68,22 +98,29 @@ public class ONNXEmbeddingHealer {
             byte[] modelBytes     = readAllBytes(modelIs);
             byte[] tokenizerBytes = loadResource(TOKENIZER_RESOURCE);
             if (tokenizerBytes == null) {
-                Reporter.log("[TIER 3] Tokenizer not found — Tier 3 unavailable", LogLevel.WARN);
+                Reporter.log("[TIER 3] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 3 unavailable", LogLevel.WARN);
                 return;
             }
 
             initOrtSession(modelBytes);
             initTokenizer(tokenizerBytes);
+            useClsPooling = !"mean".equalsIgnoreCase(AIConfigLoader.getOnnxPooling());
             available = true;
             Reporter.log("[TIER 3] ONNX session active — " + modelBytes.length / 1024
-                    + " KB INT8 model loaded", LogLevel.INFO_GREEN);
+                    + " KB INT8 model loaded | pooling=" + (useClsPooling ? "cls" : "mean"),
+                    LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
-            Reporter.log("[TIER 3] Required JARs (onnxruntime / djl-tokenizers) not on classpath"
-                    + " — Tier 3 unavailable", LogLevel.DEBUG);
+            Reporter.log("[TIER 3] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
+                    + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
         } catch (Exception e) {
-            Reporter.log("[TIER 3] Init failed: " + e.getMessage() + " — Tier 3 unavailable",
-                    LogLevel.WARN);
+            Reporter.log("[TIER 3] Init failed: " + e.getClass().getSimpleName()
+                    + ": " + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
+        } catch (Throwable t) {
+            // Catches Error subtypes: ExceptionInInitializerError (native lib load failure in DJL),
+            // UnsatisfiedLinkError (missing native DLL), NoClassDefFoundError (cascade from static init)
+            Reporter.log("[TIER 3] Init failed (native/JVM error): " + t.getClass().getSimpleName()
+                    + ": " + t.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
         }
     }
 
@@ -116,14 +153,21 @@ public class ONNXEmbeddingHealer {
                                                String fieldName, String locatorValue,
                                                ElementFingerprint baseline) {
         if (!available) return null;
+        LAST_HEAL_SCORE.set(0.0);   // reset per attempt — never leak a prior heal's score to the gate
 
         String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
         if (query.isBlank()) return null;
 
-        float[] queryVector = embed(query, true);
-        if (queryVector == null) return null;
+        Reporter.log("[TIER 3] Embedding search for: " + locator + " | query=\"" + query + "\"",
+                LogLevel.INFO_BLUE);
 
-        return scoreAndSelectCandidate(driver, queryVector, baseline, locator);
+        float[] queryVector = embed(query, true);
+        if (queryVector == null) {
+            Reporter.log("[TIER 3] Embedding failed (tokenizer error) — falling through to Tier 4", LogLevel.WARN);
+            return null;
+        }
+
+        return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType);
     }
 
     // ──────────────────────── Embedding ────────────────────────
@@ -139,14 +183,12 @@ public class ONNXEmbeddingHealer {
         if (!available || ortSession == null || tokenizer == null) return null;
         String input = isQuery ? BGE_QUERY_PREFIX + text : text;
         try {
-            // Step 1: Tokenize via DJL HuggingFaceTokenizer (reflection)
-            Object encoding = tokenizer.getClass()
-                    .getMethod("encode", String.class)
-                    .invoke(tokenizer, input);
+            // Step 1: Tokenize via DJL HuggingFaceTokenizer (cached reflection handles)
+            Object encoding = mEncode.invoke(tokenizer, input);
 
-            long[] ids     = (long[]) encoding.getClass().getMethod("getIds").invoke(encoding);
-            long[] mask    = (long[]) encoding.getClass().getMethod("getAttentionMask").invoke(encoding);
-            long[] typeIds = (long[]) encoding.getClass().getMethod("getTypeIds").invoke(encoding);
+            long[] ids     = (long[]) mGetIds.invoke(encoding);
+            long[] mask    = (long[]) mGetMask.invoke(encoding);
+            long[] typeIds = (long[]) mGetTypes.invoke(encoding);
 
             // Step 2: Truncate + pad to MAX_SEQ_LEN
             int seqLen        = Math.min(ids.length, MAX_SEQ_LEN);
@@ -157,37 +199,33 @@ public class ONNXEmbeddingHealer {
             System.arraycopy(mask,    0, paddedMask, 0, seqLen);
             System.arraycopy(typeIds, 0, paddedType, 0, seqLen);
 
-            // Step 3: Build ORT tensors via reflection
+            // Step 3: Build ORT tensors (cached createTensor handle)
             long[] shape = {1L, (long) MAX_SEQ_LEN};
-            Class<?> envClass    = Class.forName("ai.onnxruntime.OrtEnvironment");
-            Class<?> tensorClass = Class.forName("ai.onnxruntime.OnnxTensor");
-            Method   create      = tensorClass.getMethod("createTensor", envClass,
-                    LongBuffer.class, long[].class);
+            Object tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedIds),  shape);
+            Object tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedMask), shape);
+            Object tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedType), shape);
 
-            Object tIds  = create.invoke(null, ortEnvironment, LongBuffer.wrap(paddedIds),  shape);
-            Object tMask = create.invoke(null, ortEnvironment, LongBuffer.wrap(paddedMask), shape);
-            Object tType = create.invoke(null, ortEnvironment, LongBuffer.wrap(paddedType), shape);
-
-            // Step 4: Run ORT session
+            // Step 4: Run ORT session (cached run handle)
             Map<String, Object> inputs = new LinkedHashMap<>();
             inputs.put("input_ids",      tIds);
             inputs.put("attention_mask", tMask);
             inputs.put("token_type_ids", tType);
 
-            Object result = ortSession.getClass()
-                    .getMethod("run", Map.class)
-                    .invoke(ortSession, inputs);
+            Object result = mSessionRun.invoke(ortSession, inputs);
 
             // Step 5: Extract last_hidden_state (first output)
             // OrtSession.Result implements Iterable<Map.Entry<String, OnnxValue>>
             Iterator<?> it    = ((Iterable<?>) result).iterator();
             Map.Entry<?, ?> e = (Map.Entry<?, ?>) it.next();
             Object onnxValue  = e.getValue();
-            float[][][] tokenEmbeddings =
-                    (float[][][]) onnxValue.getClass().getMethod("getValue").invoke(onnxValue);
+            float[][][] tokenEmbeddings = (float[][][]) mOnnxGetValue.invoke(onnxValue);
 
-            // Step 6: Mean pool over valid (non-padding) tokens
-            float[] pooled = meanPool(tokenEmbeddings[0], paddedMask);
+            // Step 6: pool token embeddings. MUST match the embedded model's training/export pooling
+            // (ai.onnx.pooling): CLS for BGE, mean for MiniLM-style. Runtime-switchable so a model
+            // can be A/B-tested without recompiling.
+            float[] pooled = useClsPooling
+                    ? clsPool(tokenEmbeddings[0])
+                    : meanPool(tokenEmbeddings[0], paddedMask);
 
             // Step 7: L2 normalise
             return l2Normalize(pooled);
@@ -200,29 +238,66 @@ public class ONNXEmbeddingHealer {
 
     // ──────────────────────── Candidate Scoring ────────────────────────
 
+    // ONE inclusive, priority-ordered candidate list used for ALL actions. Ordered so the
+    // highest-value elements are scored first (the per-attempt cap then reaches them), but NOTHING
+    // is excluded up front — the model decides, not a hardcoded tag filter. Earlier versions
+    // narrowed to the baseline's tag (excluding the right element if it changed tag) and dropped
+    // clickable div/span/custom components; both caused real misses. Dedup preserves this order.
+    private static final String[] CANDIDATE_SELECTORS = {
+        // 1. Interactive controls + ARIA widgets (buttons, links, inputs, custom clickables)
+        "button, a, input, select, textarea, summary, "
+            + "[role='button'], [role='link'], [role='tab'], [role='menuitem'], "
+            + "[role='checkbox'], [role='radio'], [role='switch'], [role='option'], [onclick]",
+        // 2. Status / headings / labels (status-bearing + semantic text)
+        "[role='alert'], [role='status'], [role='heading'], [role='log'], "
+            + "h1, h2, h3, h4, h5, h6, label, legend",
+        // 3. Test- / accessibility- / identity-tagged (stable, high-signal identity)
+        "[data-testid], [data-test], [data-cy], [aria-label], [placeholder], [title], [name], [id]",
+        // 4. Descriptive / tabular / generic text (broad fallback — nothing excluded)
+        "p, li, td, th, dt, dd, article, section, aside, span, div",
+    };
+
     private static WebElement scoreAndSelectCandidate(WebDriver driver, float[] queryVector,
                                                        ElementFingerprint baseline,
-                                                       By brokenLocator) {
-        double threshold    = AIConfigLoader.getOnnxSimilarityThreshold();
-        int    maxCandidates = AIConfigLoader.getOnnxMaxCandidates();
+                                                       By brokenLocator, String actionType) {
+        boolean isReadable   = SemanticLocatorResolver.ElementCategory.READABLE
+                == SemanticLocatorResolver.categorizeAction(actionType);
+        double  threshold    = isReadable
+                ? AIConfigLoader.getOnnxReadableThreshold()
+                : AIConfigLoader.getOnnxSimilarityThreshold();
+        int     maxCandidates = isReadable
+                ? AIConfigLoader.getOnnxReadableMaxCandidates()
+                : AIConfigLoader.getOnnxMaxCandidates();
 
-        List<WebElement> candidates = collectCandidates(driver, baseline);
+        List<WebElement> candidates = collectCandidates(driver, baseline, actionType);
 
-        double     bestScore   = -1.0;
-        WebElement bestElement = null;
-        int        count       = 0;
+        double     bestScore          = -1.0;
+        WebElement bestElement        = null;
+        double     bestTieScore       = -1.0;               // baseline proximity of the current best
+        List<WebElement> borderline   = new ArrayList<>();  // 0.45 ≤ score < threshold
+        int        scored             = 0;
 
-        for (WebElement candidate : candidates) {
-            if (count++ >= maxCandidates) break;
+        // ONE batched executeScript fetches the unambiguous attributes for every candidate, replacing
+        // ~12 WebDriver round-trips PER candidate. type/getText/isDisplayed stay native (semantics).
+        // Null → graceful fallback to per-element reads (e.g. Appium native context with no JS).
+        List<Map<String, Object>> batch = fetchCandidateAttributes(driver, candidates);
+        String bestDoc = null;
+
+        for (int i = 0; i < candidates.size(); i++) {
+            if (scored >= maxCandidates) break;
+            WebElement candidate = candidates.get(i);
             try {
                 if (!candidate.isDisplayed()) continue;
+                scored++;
 
-                // Check ElementVectorCache before re-embedding
-                String  cacheKey  = buildCacheKey(candidate);
+                Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
+                String  cacheKey  = (attrs != null) ? buildCacheKey(attrs) : buildCacheKey(candidate);
                 float[] docVector = ElementVectorCache.getInstance().get(cacheKey);
+                String  doc       = null;
 
                 if (docVector == null) {
-                    String doc = buildElementDocument(candidate);
+                    doc = (attrs != null) ? buildElementDocument(attrs, candidate)
+                                          : buildElementDocument(candidate);
                     if (doc.isBlank()) continue;
                     docVector = embed(doc, false);
                     if (docVector != null && !cacheKey.isEmpty()) {
@@ -232,57 +307,220 @@ public class ONNXEmbeddingHealer {
 
                 if (docVector == null) continue;
 
-                // Vectors are L2-normalised → dot product == cosine similarity
                 double score = dotProduct(queryVector, docVector);
-                if (score > bestScore) {
-                    bestScore   = score;
-                    bestElement = candidate;
+                if (score > bestScore + SCORE_TIE_EPSILON) {
+                    // Clear winner on cosine.
+                    bestScore     = score;
+                    bestElement   = candidate;
+                    bestTieScore  = baselineProximity(baseline, candidate);
+                    bestDoc       = doc;
+                } else if (score >= bestScore - SCORE_TIE_EPSILON && bestElement != null) {
+                    // Near-tie (e.g. a grid of identical "Add to cart" buttons / repeated rows):
+                    // cosine can't choose, so prefer the candidate closest to the stored baseline.
+                    // With no baseline, keep the earlier DOM-order element (do nothing).
+                    double tie = baselineProximity(baseline, candidate);
+                    if (tie > bestTieScore) {
+                        bestElement  = candidate;
+                        bestTieScore = tie;
+                        bestScore    = Math.max(bestScore, score);
+                        bestDoc      = doc;
+                    }
                 }
+                if (score >= 0.45 && score < threshold) borderline.add(candidate);
             } catch (Exception ignored) {}
         }
 
         if (bestElement != null && bestScore >= threshold) {
             Reporter.log(String.format("[TIER 3] Embedding match: score=%.4f (threshold=%.2f)",
                     bestScore, threshold), LogLevel.INFO_GREEN);
-            HealingTelemetryStore.record(3, brokenLocator.toString(),
-                    buildElementDocument(bestElement), bestScore, true);
+            // Reuse the doc computed during scoring (avoid a redundant attribute re-read for telemetry).
+            String doc = bestDoc != null ? bestDoc : buildElementDocument(bestElement);
+            HealingTelemetryStore.record(3, brokenLocator.toString(), doc, bestScore, true);
+            LAST_HEAL_SCORE.set(bestScore);
             return bestElement;
         }
 
+        // Context-enrichment pass: if first attempt scored borderline, re-embed top candidates
+        // with parent tag/class/id context (mirrors the accessibility-tree context the LLM has).
+        if (!borderline.isEmpty() && driver instanceof org.openqa.selenium.JavascriptExecutor) {
+            Reporter.log("[TIER 3] First pass borderline — running context-enrichment pass on "
+                    + Math.min(borderline.size(), 5) + " candidates", LogLevel.INFO_BLUE);
+            WebElement enrichedMatch = contextEnrichmentPass(driver, queryVector, borderline, threshold);
+            if (enrichedMatch != null) {
+                Reporter.log("[TIER 3] Embedding match via context-enrichment pass", LogLevel.INFO_GREEN);
+                HealingTelemetryStore.record(3, brokenLocator.toString(),
+                        buildElementDocument(enrichedMatch), threshold, true);
+                // Enrichment matches only just clear the use-threshold, so they read as the threshold
+                // value — comfortably below the store bar, i.e. used-this-time but not persisted.
+                LAST_HEAL_SCORE.set(threshold);
+                return enrichedMatch;
+            }
+        }
+
         if (bestElement != null) {
-            Reporter.log(String.format("[TIER 3] Best score %.4f below threshold %.2f — no match",
-                    bestScore, threshold), LogLevel.DEBUG);
+            Reporter.log(String.format("[TIER 3] Best score %.4f below threshold %.2f — falling through to Tier 4",
+                    bestScore, threshold), LogLevel.INFO_YELLOW);
             HealingTelemetryStore.record(3, brokenLocator.toString(),
                     buildElementDocument(bestElement), bestScore, false);
+        } else {
+            Reporter.log("[TIER 3] No candidates scored — falling through to Tier 4", LogLevel.INFO_YELLOW);
         }
         return null;
     }
 
-    private static List<WebElement> collectCandidates(WebDriver driver, ElementFingerprint baseline) {
-        try {
-            if (baseline != null && baseline.getTagName() != null
-                    && !baseline.getTagName().isBlank()) {
-                return driver.findElements(By.tagName(baseline.getTagName()));
-            }
-            return driver.findElements(By.cssSelector(
-                    "input, button, select, textarea, a, [role='button'], [role='link']"));
-        } catch (Exception e) {
-            return Collections.emptyList();
+    /**
+     * Second-pass enrichment: for each borderline candidate, builds an enriched document that
+     * includes parent tag/class/id and nearby label text via a single JS call — giving the
+     * model the same structural context that the Tier 4 LLM gets from the accessibility tree.
+     */
+    private static WebElement contextEnrichmentPass(WebDriver driver, float[] queryVector,
+                                                     List<WebElement> borderline, double threshold) {
+        double     bestScore   = -1.0;
+        WebElement bestElement = null;
+        int limit = Math.min(borderline.size(), 5);
+        for (int i = 0; i < limit; i++) {
+            WebElement candidate = borderline.get(i);
+            try {
+                String enrichedDoc = buildContextEnrichedDocument(driver, candidate);
+                if (enrichedDoc.isBlank()) continue;
+                float[] enrichedVector = embed(enrichedDoc, false);
+                if (enrichedVector == null) continue;
+                double score = dotProduct(queryVector, enrichedVector);
+                if (score > bestScore) {
+                    bestScore   = score;
+                    bestElement = candidate;
+                }
+            } catch (Exception ignored) {}
         }
+        return (bestElement != null && bestScore >= threshold) ? bestElement : null;
     }
 
+    /** Appends parent tag + class tokens + nearby label text to the base element document. */
+    private static String buildContextEnrichedDocument(WebDriver driver, WebElement element) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(buildElementDocument(element));
+        try {
+            Object parentCtx = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "var e=arguments[0], p=e.parentElement, ctx='';" +
+                    "if(p){" +
+                    "  ctx+=p.tagName.toLowerCase();" +
+                    "  if(p.id) ctx+=' '+p.id;" +
+                    "  if(p.className) ctx+=' '+p.className.replace(/[-_]/g,' ');" +
+                    "  var lbl=p.querySelector('label');" +
+                    "  if(lbl&&lbl.textContent) ctx+=' '+lbl.textContent.trim().substring(0,40);" +
+                    "}" +
+                    "return ctx.trim();",
+                    element);
+            if (parentCtx instanceof String s && !s.isBlank()) sb.append(" ").append(s.trim());
+        } catch (Exception ignored) {}
+        return sb.toString().trim();
+    }
+
+    /**
+     * Collects candidate elements for ALL actions from one inclusive, priority-ordered list.
+     * Nothing is excluded by tag/category — the baseline is used only for SCORING (tiebreak), never
+     * to filter out elements, so an element that changed tag/structure is still reachable. Dedup by
+     * element preserves priority order; the per-attempt cap (in the scoring loop) bounds the cost.
+     */
+    private static List<WebElement> collectCandidates(WebDriver driver,
+                                                       ElementFingerprint baseline,
+                                                       String actionType) {
+        java.util.LinkedHashMap<String, WebElement> seen = new java.util.LinkedHashMap<>();
+        for (String selector : CANDIDATE_SELECTORS) {
+            try {
+                for (WebElement el : driver.findElements(By.cssSelector(selector))) {
+                    String key = buildCacheKey(el);
+                    seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
+                }
+            } catch (Exception ignored) {}
+        }
+        return new ArrayList<>(seen.values());
+    }
+
+    /**
+     * Cache key for an element's embedding vector. Returns "" (do-not-cache) unless the element has a
+     * STABLE identity (id / name / data-testid) — caching on tag alone collided every attribute-less
+     * &lt;div&gt; to one key ("div||") and served the wrong vector. Callers skip caching on "".
+     */
     private static String buildCacheKey(WebElement el) {
         try {
-            String tag  = el.getTagName();
-            String id   = el.getAttribute("id");
-            String name = el.getAttribute("name");
-            return tag + "|" + (id   != null ? id   : "")
-                       + "|" + (name != null ? name : "");
+            return cacheKey(el.getTagName(), el.getAttribute("id"),
+                    el.getAttribute("name"), el.getAttribute("data-testid"));
         } catch (Exception e) { return ""; }
     }
 
+    /** Cache key from pre-fetched (batched) attributes — identical format to the WebElement version. */
+    private static String buildCacheKey(Map<String, Object> attrs) {
+        return cacheKey(strOf(attrs.get("tag")), strOf(attrs.get("id")),
+                strOf(attrs.get("name")), strOf(attrs.get("data-testid")));
+    }
+
+    private static String cacheKey(String tag, String id, String name, String testid) {
+        boolean hasIdentity = (id != null && !id.isBlank())
+                || (name != null && !name.isBlank())
+                || (testid != null && !testid.isBlank());
+        if (!hasIdentity) return "";   // no stable key → never cache (avoid collisions)
+        return nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid);
+    }
+
+    /**
+     * Fetches the unambiguous string attributes for ALL candidates in ONE executeScript round-trip.
+     * Returns a list aligned by index with {@code candidates} (entries may be null); returns null when
+     * the driver has no JS (Appium native) or the call fails → caller falls back to per-element reads.
+     * Excludes {@code type} (Selenium default-value semantics) and text/visibility (read natively).
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> fetchCandidateAttributes(WebDriver driver,
+                                                                      List<WebElement> candidates) {
+        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor) || candidates.isEmpty()) return null;
+        try {
+            Object res = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].map(function(el){"
+                            + " if(!el) return null;"
+                            + " function a(n){ return el.getAttribute(n); }"
+                            + " return {'id':a('id'),'name':a('name'),'class':a('class'),"
+                            + "  'aria-label':a('aria-label'),'data-testid':a('data-testid'),'role':a('role'),"
+                            + "  'placeholder':a('placeholder'),'resource-id':a('resource-id'),"
+                            + "  'content-desc':a('content-desc'),'data-test':a('data-test'),"
+                            + "  'title':a('title'),'label':a('label'),"
+                            + "  'tag':el.tagName?el.tagName.toLowerCase():null};"
+                            + "});", candidates);
+            if (res instanceof List<?> rows) {
+                List<Map<String, Object>> out = new ArrayList<>(rows.size());
+                for (Object row : rows) out.add(row instanceof Map<?, ?> ? (Map<String, Object>) row : null);
+                return out;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private static String nz(String s) { return s != null ? s : ""; }
+
     // ──────────────────────── Math ────────────────────────
 
+    /**
+     * Tiebreak signal for near-equal cosine scores: how well the candidate matches the stored
+     * baseline fingerprint (0.0–1.0). Returns -1 when there is no baseline, so DOM order is kept.
+     */
+    private static double baselineProximity(ElementFingerprint baseline, WebElement candidate) {
+        if (baseline == null) return -1.0;
+        try {
+            return baseline.scoreSimilarity(candidate);
+        } catch (Exception e) {
+            return -1.0;
+        }
+    }
+
+    /**
+     * CLS pooling: the BGE sentence embedding is the [CLS] token's hidden state (row 0 of the
+     * sequence). Cloned so the subsequent in-place L2 normalisation never mutates the ORT output
+     * buffer. Attention mask is irrelevant for CLS (token 0 is always present/attended).
+     */
+    private static float[] clsPool(float[][] tokenEmbeddings) {
+        return tokenEmbeddings[0].clone();
+    }
+
+    /** Mean pooling over non-padding tokens (for MiniLM-style models exported with mean pooling). */
     private static float[] meanPool(float[][] tokenEmbeddings, long[] attentionMask) {
         int hiddenSize = tokenEmbeddings[0].length;
         float[] pooled = new float[hiddenSize];
@@ -339,6 +577,12 @@ public class ONNXEmbeddingHealer {
         ortSession = ortEnvironment.getClass()
                 .getMethod("createSession", byte[].class, optClass)
                 .invoke(ortEnvironment, modelBytes, opts);
+
+        // Resolve ORT reflection handles once (reused by every embed()).
+        Class<?> tensorClass = Class.forName("ai.onnxruntime.OnnxTensor");
+        mCreateTensor = tensorClass.getMethod("createTensor", envClass, LongBuffer.class, long[].class);
+        mSessionRun   = ortSession.getClass().getMethod("run", Map.class);
+        mOnnxGetValue = Class.forName("ai.onnxruntime.OnnxValue").getMethod("getValue");
     }
 
     private static void initTokenizer(byte[] tokenizerBytes) throws Exception {
@@ -348,6 +592,13 @@ public class ONNXEmbeddingHealer {
             Files.write(tmp, tokenizerBytes);
             Class<?> cls = Class.forName("ai.djl.huggingface.tokenizers.HuggingFaceTokenizer");
             tokenizer = cls.getMethod("newInstance", Path.class).invoke(null, tmp);
+
+            // Resolve tokenizer/encoding reflection handles once (reused by every embed()).
+            mEncode = cls.getMethod("encode", String.class);
+            Class<?> encClass = Class.forName("ai.djl.huggingface.tokenizers.Encoding");
+            mGetIds   = encClass.getMethod("getIds");
+            mGetMask  = encClass.getMethod("getAttentionMask");
+            mGetTypes = encClass.getMethod("getTypeIds");
         } finally {
             try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
         }
@@ -355,37 +606,117 @@ public class ONNXEmbeddingHealer {
 
     // ──────────────────────── Document Builder ────────────────────────
 
+    // Canonical field order — MUST stay byte-for-byte in sync with 01_data_generation.py build_doc().
+    private static final String[] DOC_FIELD_ORDER = {
+        "id", "name", "resource-id", "accessibility-id", "aria-label", "content-desc", "role",
+        "placeholder", "data-testid", "data-test", "title", "type", "label"
+    };
+
     /**
-     * Builds a concise document string from a WebElement's visible attributes
-     * for embedding as a DOM candidate. Mirrors buildFingerprintDocument() output.
+     * Single source of truth for the element-document string. Both the per-WebElement path and the
+     * batched-attributes path call this with their own attribute resolver, so the document is
+     * byte-identical regardless of how the values were fetched (guarantees train/serve + cache parity).
+     *
+     * @param attr resolves an attribute name → value (or null)
+     * @param tag  element tag (lowercase), or null
+     * @param text element visible text (Selenium getText semantics), or null
      */
-    public static String buildElementDocument(WebElement element) {
-        if (element == null) return "";
+    private static String assembleDocument(java.util.function.Function<String, String> attr,
+                                           String tag, String text) {
         StringBuilder sb = new StringBuilder();
-        appendAttr(sb, element, "id");
-        appendAttr(sb, element, "name");
-        appendAttr(sb, element, "aria-label");
-        appendAttr(sb, element, "placeholder");
-        appendAttr(sb, element, "data-testid");
-        appendAttr(sb, element, "data-test");
-        appendAttr(sb, element, "title");
-        appendAttr(sb, element, "type");
-        try {
-            String tag  = element.getTagName();
-            String text = element.getText();
-            if (tag  != null && !tag.isBlank())  sb.append(" ").append(tag.trim());
-            if (text != null && !text.isBlank() && text.length() <= 80)
-                sb.append(" ").append(text.trim());
-        } catch (Exception ignored) {}
+        for (String field : DOC_FIELD_ORDER) appendVal(sb, attr.apply(field));
+        String cls = attr.apply("class");
+        if (cls != null && !cls.isBlank()) {
+            String tokens = cls.replaceAll("[_-]", " ").replaceAll("\\s{2,}", " ").toLowerCase().trim();
+            if (tokens.length() > MAX_CLASS_CHARS) tokens = tokens.substring(0, MAX_CLASS_CHARS);
+            sb.append(" ").append(tokens);
+        }
+        if (tag != null && !tag.isBlank()) sb.append(" ").append(tag.trim());
+        if (text != null && !text.isBlank()) {
+            String t = text.trim();
+            if (t.length() > MAX_TEXT_CHARS) t = t.substring(0, MAX_TEXT_CHARS);
+            sb.append(" ").append(t);
+        }
         return sb.toString().trim();
     }
 
-    private static void appendAttr(StringBuilder sb, WebElement el, String attr) {
-        try {
-            String v = el.getAttribute(attr);
-            if (v != null && !v.isBlank()) sb.append(" ").append(v.trim());
-        } catch (Exception ignored) {}
+    /**
+     * Builds an element document by reading each attribute from the live WebElement (one WebDriver
+     * round-trip per attribute). Used for single-element callers and as the fallback when the
+     * batched read is unavailable.
+     */
+    public static String buildElementDocument(WebElement element) {
+        if (element == null) return "";
+        return assembleDocument(name -> safeAttr(element, name), safeTag(element), safeText(element));
     }
+
+    /**
+     * Builds an element document from PRE-FETCHED attributes (one batched executeScript for all
+     * candidates) — eliminates ~12 per-candidate WebDriver round-trips. {@code type} and {@code text}
+     * stay native because Selenium's getAttribute("type") (default "text" for inputs) and getText()
+     * (rendered, whitespace-collapsed) have semantics plain JS does not replicate; reading them
+     * natively keeps the document identical to {@link #buildElementDocument(WebElement)}.
+     */
+    private static String buildElementDocument(Map<String, Object> attrs, WebElement element) {
+        if (attrs == null) return buildElementDocument(element);
+        String tag = strOf(attrs.get("tag"));
+        return assembleDocument(
+                name -> "type".equals(name) ? safeAttr(element, "type") : strOf(attrs.get(name)),
+                tag,
+                safeText(element));   // native — getText() semantics
+    }
+
+    private static String safeAttr(WebElement el, String name) {
+        try { return el.getAttribute(name); } catch (Exception e) { return null; }
+    }
+    private static String safeTag(WebElement el) {
+        try { return el.getTagName(); } catch (Exception e) { return null; }
+    }
+    private static String safeText(WebElement el) {
+        try { return el.getText(); } catch (Exception e) { return null; }
+    }
+    private static String strOf(Object o) { return o != null ? o.toString() : null; }
+
+    /**
+     * Builds an element document from a stored {@link ElementFingerprint}, using the SAME canonical
+     * field order as {@link #buildElementDocument(WebElement)} so calibration scores documents in the
+     * exact shape the model sees at train and inference time (no third doc format). Appium-only and
+     * non-captured fields are simply absent (null) for web baselines.
+     */
+    public static String buildElementDocument(ElementFingerprint fp) {
+        if (fp == null) return "";
+        StringBuilder sb = new StringBuilder();
+        appendVal(sb, fp.getId());
+        appendVal(sb, fp.getName());
+        // resource-id / accessibility-id: not captured in fingerprint (Appium runtime only)
+        appendVal(sb, fp.getAriaLabel());
+        // content-desc: Appium runtime only
+        appendVal(sb, fp.getRole());
+        appendVal(sb, fp.getPlaceholder());
+        appendVal(sb, fp.getDataTestId());
+        // data-test / title: not captured in fingerprint
+        appendVal(sb, fp.getType());
+        // label: Appium runtime only
+        String cls = fp.getClassName();
+        if (cls != null && !cls.isBlank()) {
+            String tokens = cls.replaceAll("[_-]", " ").replaceAll("\\s{2,}", " ").toLowerCase().trim();
+            if (tokens.length() > MAX_CLASS_CHARS) tokens = tokens.substring(0, MAX_CLASS_CHARS);
+            sb.append(" ").append(tokens);
+        }
+        if (fp.getTagName() != null && !fp.getTagName().isBlank()) sb.append(" ").append(fp.getTagName().trim());
+        String text = fp.getText();
+        if (text != null && !text.isBlank()) {
+            String t = text.trim();
+            if (t.length() > MAX_TEXT_CHARS) t = t.substring(0, MAX_TEXT_CHARS);
+            sb.append(" ").append(t);
+        }
+        return sb.toString().trim();
+    }
+
+    private static void appendVal(StringBuilder sb, String v) {
+        if (v != null && !v.isBlank()) sb.append(" ").append(v.trim());
+    }
+
 
     // ──────────────────────── IO Helpers ────────────────────────
 

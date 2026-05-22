@@ -5,6 +5,7 @@ import Ellithium.Utilities.ai.config.HealingStrategy;
 import Ellithium.Utilities.ai.models.ElementFingerprint;
 import Ellithium.Utilities.ai.models.HealingResult;
 import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.Utilities.interactions.BaseActions;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumBy;
@@ -54,21 +55,36 @@ public class AISelfHealer {
     // Deferred source patches — queued during test, applied at suite end
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();
 
-    /** Represents a deferred source code patch. */
+    /** Represents a deferred source code patch with heal provenance for gating + conflict resolution. */
     public static class SourcePatch {
         public final String filePath;
         public final String fieldName;
         public final String byMethod;
         public final String byValue;
         public final String newLocatorExpression;
-        public SourcePatch(String filePath, String fieldName, String byMethod, String byValue, String newLocatorExpression) {
+        public final double confidence;   // heal confidence 0.0–1.0
+        public final int    tier;         // 1 = algorithmic, 3 = ONNX, 4 = LLM
+        public SourcePatch(String filePath, String fieldName, String byMethod, String byValue,
+                           String newLocatorExpression, double confidence, int tier) {
             this.filePath = filePath;
             this.fieldName = fieldName;
             this.byMethod = byMethod;
             this.byValue = byValue;
             this.newLocatorExpression = newLocatorExpression;
+            this.confidence = confidence;
+            this.tier = tier;
         }
     }
+
+    /**
+     * Per-thread confidence of the most recent accepted Tier 4 (LLM) heal. Set inside
+     * {@link #healLocator} when a candidate is accepted, read to attach provenance to the gated
+     * capture / source patch.
+     */
+    private static final ThreadLocal<Double> LAST_HEAL_CONFIDENCE = ThreadLocal.withInitial(() -> 0.0);
+
+    /** Confidence (0.0–1.0) of the most recent accepted Tier 4 heal on this thread. */
+    public static double getLastHealConfidence() { return LAST_HEAL_CONFIDENCE.get(); }
 
     // ──────────────────────── Public Source Patching API ────────────────────────
 
@@ -80,12 +96,24 @@ public class AISelfHealer {
      * @param brokenLocator  The original broken By locator
      * @param healedElement  The element that was found by healing
      * @param stackTrace     The call stack for source location resolution
+     * @param confidence     Heal confidence 0.0–1.0 (gates persistence + resolves conflicts)
+     * @param tier           Originating tier (1 = algorithmic, 3 = ONNX, 4 = LLM)
      */
-    public static void queueSourcePatch(By brokenLocator, WebElement healedElement, StackTraceElement[] stackTrace) {
+    public static void queueSourcePatch(By brokenLocator, WebElement healedElement,
+                                        StackTraceElement[] stackTrace, double confidence, int tier) {
         try {
             // Only patch source when HEAL_AND_NOTIFY is active
             HealingStrategy strategy = getEffectiveStrategy();
             if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
+
+            // Gate: never rewrite source from a low-confidence heal. A below-bar heal is used for the
+            // current action but must not be committed to the .java file.
+            if (confidence < AIConfigLoader.getHealingStoreThreshold()) {
+                Reporter.log(String.format("Source patch skipped: Tier %d heal confidence %.2f below "
+                        + "store threshold %.2f — source left untouched", tier, confidence,
+                        AIConfigLoader.getHealingStoreThreshold()), LogLevel.DEBUG);
+                return;
+            }
 
             // Resolve source location (file path, field name)
             SourceLocation srcLoc = resolveSourceLocation(stackTrace);
@@ -104,10 +132,11 @@ public class AISelfHealer {
 
             pendingPatches.add(new SourcePatch(
                     srcLoc.filePath, srcLoc.fieldName,
-                    tempCtx.byMethod, tempCtx.byValue, javaExpression));
+                    tempCtx.byMethod, tempCtx.byValue, javaExpression, confidence, tier));
 
             Reporter.log("Source patch queued: By." + tempCtx.byMethod + "(\"" + tempCtx.byValue + "\") → "
-                    + javaExpression + " in " + srcLoc.filePath, LogLevel.DEBUG);
+                    + javaExpression + " in " + srcLoc.filePath
+                    + " (tier " + tier + ", conf " + String.format("%.2f", confidence) + ")", LogLevel.DEBUG);
         } catch (Exception e) {
             // Source patching must never crash the test
         }
@@ -209,6 +238,7 @@ public class AISelfHealer {
         if (getEffectiveStrategy() == HealingStrategy.DISABLED || getEffectiveProvider() == null) {
             return null;
         }
+        LAST_HEAL_CONFIDENCE.set(0.0);   // reset per attempt — never leak a prior heal's confidence to the gate
 
         Reporter.log("[TIER 4] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
@@ -222,8 +252,8 @@ public class AISelfHealer {
             }
             try {
                 WebElement found = driver.findElement(newLocator);
-                // Capture the healed element as new baseline
-                BaselineStore.capture(driver, brokenLocator, found);
+                // Capture the healed element as new baseline (gated by LLM confidence)
+                BaselineStore.capture(driver, brokenLocator, found, getLastHealConfidence(), 4);
                 return found;
             } catch (Exception e) {
                 Reporter.log("AI Self-Healing: Healed locator also failed: " + e.getMessage(), LogLevel.ERROR);
@@ -309,23 +339,33 @@ public class AISelfHealer {
             if (baseline != null) {
                 double matchScore = baseline.scoreSimilarity(foundEl);
                 if (matchScore < 0.40) {
-                    Reporter.log("AI Candidate rejected (baseline mismatch, score=" + String.format("%.2f", matchScore)
-                            + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
-                    continue;
-                }
-
-                // Tag-type cross-validation: if baseline says <input> but candidate is <button>, reject
-                String baselineTag = baseline.getTagName();
-                if (baselineTag != null && !baselineTag.isBlank()) {
-                    try {
-                        String candidateTag = foundEl.getTagName();
-                        if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
-                            Reporter.log("AI Candidate rejected (tag mismatch: expected <" + baselineTag
-                                    + "> but found <" + candidateTag + ">): "
-                                    + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
-                            continue;
-                        }
-                    } catch (Exception ignored) {}
+                    // score == 0.0 means COMPLETE mismatch — baseline was likely captured from a
+                    // wrong prior healing (e.g. Tier 2 incorrectly stored a container element).
+                    // If LLM is highly confident, trust it over the stale/wrong baseline.
+                    if (matchScore == 0.0 && candidate.getConfidence() >= 0.85) {
+                        Reporter.log("[TIER 4] Stale baseline detected (score=0.0); trusting high-confidence LLM "
+                                + "(confidence=" + String.format("%.2f", candidate.getConfidence()) + "): "
+                                + candidate.getNewLocatorExpression(), LogLevel.WARN);
+                        // Fall through — candidate is accepted, skip tag-type check too
+                    } else {
+                        Reporter.log("AI Candidate rejected (baseline mismatch, score=" + String.format("%.2f", matchScore)
+                                + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                        continue;
+                    }
+                } else {
+                    // Tag-type cross-validation: if baseline says <input> but candidate is <button>, reject
+                    String baselineTag = baseline.getTagName();
+                    if (baselineTag != null && !baselineTag.isBlank()) {
+                        try {
+                            String candidateTag = foundEl.getTagName();
+                            if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
+                                Reporter.log("AI Candidate rejected (tag mismatch: expected <" + baselineTag
+                                        + "> but found <" + candidateTag + ">): "
+                                        + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                                continue;
+                            }
+                        } catch (Exception ignored) {}
+                    }
                 }
             }
 
@@ -343,6 +383,9 @@ public class AISelfHealer {
 
         Reporter.log("AI Healing Accepted: " + acceptedResult.toString(), LogLevel.INFO_GREEN);
 
+        // Record Tier 4 confidence for the caller's gated capture provenance.
+        LAST_HEAL_CONFIDENCE.set(acceptedResult.getConfidence());
+
         // ── Step 7: Cache + Deferred Source Patch + Report ──
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
         globalHealedCache.put(brokenLocator.toString(),
@@ -358,11 +401,14 @@ public class AISelfHealer {
                 ctx.actionType,
                 ctx.lineNumber);
 
-        // Deferred source modification — queue patch for suite end (never mid-test)
-        if (ctx.filePath != null) {
+        // Deferred source modification — queue patch for suite end (never mid-test).
+        // Only queue when the LLM is confident enough to persist; conflicts are resolved by
+        // confidence at apply time (Tier 4 LLM outranks Tier 3 / Tier 1).
+        if (ctx.filePath != null
+                && acceptedResult.getConfidence() >= AIConfigLoader.getHealingStoreThreshold()) {
             pendingPatches.add(new SourcePatch(
                     ctx.filePath, ctx.fieldName, ctx.byMethod, ctx.byValue,
-                    acceptedResult.getNewLocatorExpression()));
+                    acceptedResult.getNewLocatorExpression(), acceptedResult.getConfidence(), 4));
         }
 
         if (strategy == HealingStrategy.HEAL_AND_NOTIFY) {
@@ -426,22 +472,37 @@ public class AISelfHealer {
     // ──────────────────────── Deferred Patch Application ────────────────────────
 
     /**
+     * Deduplicates queued patches by file+field, keeping the HIGHEST-confidence patch per target.
+     * This guarantees a verified Tier 4 LLM heal (e.g. By.id("flash")) wins over a low-confidence
+     * Tier 1/3 guess (e.g. By.tagName("h2")) when both healed the same field in one run.
+     */
+    public static java.util.Map<String, SourcePatch> resolvePatchConflicts(Iterable<SourcePatch> patches) {
+        java.util.LinkedHashMap<String, SourcePatch> uniquePatches = new java.util.LinkedHashMap<>();
+        for (SourcePatch patch : patches) {
+            String key = patch.filePath + "|" + patch.byMethod + "|" + patch.byValue;
+            SourcePatch existing = uniquePatches.get(key);
+            if (existing == null || patch.confidence > existing.confidence) {
+                uniquePatches.put(key, patch);
+            }
+        }
+        return uniquePatches;
+    }
+
+    /**
      * Applies all deferred source patches. Called at suite end by {@link AIHealingReporter#generateReport()}.
      * Only applies in LOCAL mode — CI mode leaves source files untouched.
      */
     public static void applyDeferredPatches() {
         if (AIConfigLoader.isCI() || pendingPatches.isEmpty()) return;
 
-        java.util.LinkedHashMap<String, SourcePatch> uniquePatches = new java.util.LinkedHashMap<>();
-        for (SourcePatch patch : pendingPatches) {
-            String key = patch.filePath + "|" + patch.byMethod + "|" + patch.byValue;
-            uniquePatches.putIfAbsent(key, patch);
-        }
+        java.util.Map<String, SourcePatch> uniquePatches = resolvePatchConflicts(pendingPatches);
         pendingPatches.clear();
 
         Reporter.log("AI Self-Healing: Applying " + uniquePatches.size() + " source patches...", LogLevel.INFO_YELLOW);
         int applied = 0;
+        double storeThreshold = AIConfigLoader.getHealingStoreThreshold();
         for (SourcePatch patch : uniquePatches.values()) {
+            if (patch.confidence < storeThreshold) continue; // defense-in-depth; queue sites also gate
             boolean written = false;
             if (patch.fieldName != null) {
                 written = JavaSourceModifier.updateLocatorValue(patch.filePath, patch.fieldName, patch.newLocatorExpression);
@@ -577,21 +638,16 @@ public class AISelfHealer {
         sb.append("2. The METHOD NAME is a STRONG HINT for the element's purpose ");
         sb.append("(e.g., setUserName → username input, clickLoginBtn → login/submit button)\n");
         sb.append("3. The ACTION TYPE tells you what kind of element to look for based on Ellithium's DriverActions subclasses:\n");
-        sb.append("4. Use Ellithium's API Structure:\n");
-        sb.append("   - .elements() -> ElementActions (sendData, clickOnElement, getText, clearElement, isElementDisplayed)\n");
-        sb.append("   - .waits() -> WaitActions (waitForElementToBeVisible, waitForElementToBeClickable)\n");
-        sb.append("   - .select() -> SelectActions (selectDropdownByText, selectDropdownByIndex)\n");
-        sb.append("   - .mouse() -> MouseActions (hoverOverElement, doubleClick)\n");
-        sb.append("   - .mobileActions() -> MobileActions (swipe, longPress, pinch, tap)\n");
-        sb.append("   - ElementActions (sendData → input/textarea, clickOnElement → button/link/clickable, getText, clearElement)\n");
-        sb.append("   - SelectActions (selectDropdownByText, selectDropdownByIndex → select)\n");
-        sb.append("   - WaitActions (waitForElementToBeVisible, waitForElementToBeClickable)\n");
-        sb.append("   - MouseActions (hoverOverElement, doubleClick)\n");
-        sb.append("   - MobileActions (swipe, longPress, pinch, tap)\n");
-        sb.append("4. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
-        sb.append("5. Prefer stable locators: id > name > data-testid > css > xpath\n");
+        sb.append("4. Use Ellithium's API structure to map action → element type:\n");
+        sb.append("   - .elements() ElementActions: sendData → input/textarea, clickOnElement → button/link, getText/clearElement\n");
+        sb.append("   - .select() SelectActions: selectDropdownBy* → select\n");
+        sb.append("   - .waits() WaitActions: waitForElementToBeVisible/Clickable\n");
+        sb.append("   - .mouse() MouseActions: hoverOverElement, doubleClick\n");
+        sb.append("   - .mobileActions() MobileActions: swipe, longPress, pinch, tap\n");
+        sb.append("5. If the broken locator value is empty or nonsensical, use the method name as PRIMARY signal\n");
+        sb.append("6. Prefer stable locators: id > name > data-testid > css > xpath\n");
         int maxCandidates = AIConfigLoader.getMaxCandidates();
-        sb.append("6. Respond ONLY in JSON with your TOP ").append(maxCandidates).append(" candidates ranked by confidence (highest first):\n");
+        sb.append("7. Respond ONLY in JSON with your TOP ").append(maxCandidates).append(" candidates ranked by confidence (highest first):\n");
         sb.append("{\"candidates\": [\n");
         sb.append("  {\"locator\": \"By.id(\\\"...\\\")\", \"confidence\": 0.95, \"reasoning\": \"...\"},\n");
         sb.append("  {\"locator\": \"By.cssSelector(\\\"...\\\")\", \"confidence\": 0.88, \"reasoning\": \"...\"},\n");
@@ -599,7 +655,7 @@ public class AISelfHealer {
         sb.append("]}\n");
         sb.append("Return up to ").append(maxCandidates).append(" candidates. If only one is viable, return a single-element array. ");
         sb.append("Also accept legacy single-object format: {\"locator\": ..., \"confidence\": ..., \"reasoning\": ...}\n");
-        sb.append("7. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
+        sb.append("8. If the element genuinely does not exist on the page, set confidence to 0.0\n\n");
 
         if (isMobile) {
             sb.append("Use AppiumBy.accessibilityId, AppiumBy.androidUIAutomator, AppiumBy.iOSClassChain, By.id, or By.xpath.\n");
@@ -652,10 +708,26 @@ public class AISelfHealer {
         }
 
         if (ctx.minimizedDom != null && !ctx.minimizedDom.isEmpty()) {
-            sb.append("\nCURRENT DOM:\n").append(ctx.minimizedDom);
+            // Token-budget guard: a complex SPA's minimized DOM can still blow the model's context
+            // window. Cap by characters (~4 chars/token) so the high-signal context above always
+            // survives; when vision is available the screenshot compensates for the truncation.
+            String dom = ctx.minimizedDom;
+            if (dom.length() > MAX_DOM_CHARS) {
+                dom = dom.substring(0, MAX_DOM_CHARS)
+                        + "\n<!-- DOM truncated at " + MAX_DOM_CHARS + " chars to fit context window -->";
+            }
+            sb.append("\nCURRENT DOM:\n").append(dom);
         }
         return sb.toString();
     }
+
+    /**
+     * Safety valve only — modern LLMs (Gemini/Claude/GPT) have very large context windows, so the
+     * minimized DOM is sent in full almost always. This cap exists purely to avoid a pathological
+     * multi-MB DOM blowing the request; it is intentionally generous (~50k tokens) so we never clip
+     * away the element the test is looking for.
+     */
+    private static final int MAX_DOM_CHARS = 200_000;
 
     // ──────────────────────── Source Location Resolution ────────────────────────
 

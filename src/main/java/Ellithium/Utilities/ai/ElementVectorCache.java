@@ -13,9 +13,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <ul>
  *   <li>Full invalidation on every navigation event (URL change, refresh, back/forward).
  *       Wired via {@link #invalidate()} in {@code NavigationActions}.</li>
- *   <li>Partial invalidation on DOM mutation: {@link #markDomMutated()} sets a flag;
- *       the next {@link #get} call triggers a delta re-embed for changed elements only.
- *       (Full implementation active when Tier 3 model is embedded.)</li>
+ *   <li>DOM mutation: {@link #markDomMutated()} sets a flag; while set, {@link #get} returns
+ *       {@code null} (cache miss) so callers re-embed against the mutated DOM rather than serving a
+ *       stale vector. {@link #clearMutationFlag()} re-enables hits after a re-embed pass. A
+ *       MutationObserver JS hook may call {@link #markDomMutated()} on SPAs that re-render without
+ *       navigating; until that hook is wired, the flag simply stays clear (navigation-only policy).</li>
  * </ul>
  *
  * <p>Thread-safe: {@link ConcurrentHashMap} for the vector store; {@link AtomicBoolean}
@@ -39,6 +41,8 @@ public class ElementVectorCache {
      * Callers should treat a {@code null} return as a cache miss and compute the vector.
      */
     public float[] get(String elementKey) {
+        if (elementKey == null || elementKey.isEmpty()) return null; // keyless element — never cached
+        if (domMutated.get()) return null;                           // stale after a DOM mutation — re-embed
         return vectors.get(elementKey);
     }
 

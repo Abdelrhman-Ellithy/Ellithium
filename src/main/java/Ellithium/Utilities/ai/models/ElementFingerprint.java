@@ -19,6 +19,9 @@ import org.openqa.selenium.WebElement;
  */
 public class ElementFingerprint {
 
+    /** Max characters of element text retained in a fingerprint (was 100; raised for richer signal). */
+    private static final int TEXT_CAP = 240;
+
     // ── Identity ──
     private String locatorKey;           // Original By.toString(), e.g. "By.id: user" (the broken one)
     private String healedLocatorKey;     // Reconstructed best locator, e.g. "By.id: username" (the real one)
@@ -40,6 +43,8 @@ public class ElementFingerprint {
     // ── Structural (JS-dependent, gracefully skipped for Appium) ──
     private String parentTag;        // parent element's tag name
     private int childIndex;          // index among siblings
+    private String prevSiblingTag;   // previous element sibling's tag name
+    private String nextSiblingTag;   // next element sibling's tag name
 
     // ── Metadata ──
     private long lastSeenEpoch;      // System.currentTimeMillis()
@@ -97,34 +102,37 @@ public class ElementFingerprint {
         By reconstructed = reconstructLocator(element);
         fp.healedLocatorKey = (reconstructed != null) ? reconstructed.toString() : null;
 
-        // Text — truncated to 100 chars to avoid bloating the baseline file
+        // Text — truncated to 240 chars (was 100) so longer titles/messages survive for scoring
         try {
             String rawText = element.getText();
-            fp.text = (rawText != null && rawText.length() > 100)
-                    ? rawText.substring(0, 100) : rawText;
+            fp.text = (rawText != null && rawText.length() > TEXT_CAP)
+                    ? rawText.substring(0, TEXT_CAP) : rawText;
         } catch (Exception ignored) {
             fp.text = null;
         }
 
-        // Structural: parent tag + child index via JS (gracefully skipped if unavailable)
+        // Structural: parent tag + child index + sibling tags via ONE JS call
+        // (gracefully skipped if unavailable, e.g. Appium native context).
         fp.parentTag = null;
         fp.childIndex = -1;
+        fp.prevSiblingTag = null;
+        fp.nextSiblingTag = null;
         if (driver instanceof JavascriptExecutor) {
             try {
                 JavascriptExecutor js = (JavascriptExecutor) driver;
-                Object parentTagResult = js.executeScript(
-                        "return arguments[0].parentElement ? arguments[0].parentElement.tagName.toLowerCase() : null;",
+                Object result = js.executeScript(
+                        "var el=arguments[0], p=el.parentElement;"
+                                + "var prev=el.previousElementSibling, next=el.nextElementSibling;"
+                                + "return [p?p.tagName.toLowerCase():null,"
+                                + " p?Array.from(p.children).indexOf(el):-1,"
+                                + " prev?prev.tagName.toLowerCase():null,"
+                                + " next?next.tagName.toLowerCase():null];",
                         element);
-                if (parentTagResult != null) {
-                    fp.parentTag = parentTagResult.toString();
-                }
-                Object childIndexResult = js.executeScript(
-                        "var el = arguments[0]; var parent = el.parentElement;"
-                                + "if (!parent) return -1;"
-                                + "return Array.from(parent.children).indexOf(el);",
-                        element);
-                if (childIndexResult instanceof Number) {
-                    fp.childIndex = ((Number) childIndexResult).intValue();
+                if (result instanceof java.util.List<?> r && r.size() == 4) {
+                    if (r.get(0) != null) fp.parentTag = r.get(0).toString();
+                    if (r.get(1) instanceof Number n) fp.childIndex = n.intValue();
+                    if (r.get(2) != null) fp.prevSiblingTag = r.get(2).toString();
+                    if (r.get(3) != null) fp.nextSiblingTag = r.get(3).toString();
                 }
             } catch (Exception ignored) {
                 // JS not supported (some Appium contexts) — skip gracefully
@@ -159,6 +167,37 @@ public class ElementFingerprint {
      * @return Similarity score between 0.0 and 1.0
      */
     public double scoreSimilarity(WebElement candidate) {
+        return scoreSimilarity(candidate, null);
+    }
+
+    /**
+     * Lightweight structural snapshot of a candidate (parent tag, sibling tags, child index),
+     * gathered by the caller via JavascriptExecutor so {@link #scoreSimilarity(WebElement, StructuralContext)}
+     * can reward parent/sibling/position matches — a strong, layout-stable signal that survives
+     * id/class churn.
+     */
+    public static class StructuralContext {
+        public final String parentTag;
+        public final int childIndex;
+        public final String prevSiblingTag;
+        public final String nextSiblingTag;
+        public StructuralContext(String parentTag, int childIndex,
+                                 String prevSiblingTag, String nextSiblingTag) {
+            this.parentTag = parentTag;
+            this.childIndex = childIndex;
+            this.prevSiblingTag = prevSiblingTag;
+            this.nextSiblingTag = nextSiblingTag;
+        }
+    }
+
+    /**
+     * Similarity scoring with optional structural context. When {@code sc} is non-null, parent tag,
+     * child index, and previous/next sibling tags contribute to BOTH numerator and denominator —
+     * so a candidate sitting in the same DOM position as the baseline is boosted, and one in a
+     * different position is discriminated against. When {@code sc} is null (no driver available),
+     * structural terms are omitted entirely so a full attribute match still normalises to 1.0.
+     */
+    public double scoreSimilarity(WebElement candidate, StructuralContext sc) {
         int score = 0;
         int dynamicMax = 0;
 
@@ -175,8 +214,7 @@ public class ElementFingerprint {
             if (this.id.equals(cid)) {
                 score += 25;
             } else if (isNonBlank(cid)) {
-                double j = tokenJaccard(this.id, cid);
-                if (j >= 0.5) score += 12;
+                if (jaccard(idTokens(), cid) >= 0.5) score += 12;
             }
         }
 
@@ -187,8 +225,7 @@ public class ElementFingerprint {
             if (this.name.equals(cname)) {
                 score += 20;
             } else if (isNonBlank(cname)) {
-                double j = tokenJaccard(this.name, cname);
-                if (j >= 0.5) score += 10;
+                if (jaccard(nameTokens(), cname) >= 0.5) score += 10;
             }
         }
 
@@ -256,43 +293,71 @@ public class ElementFingerprint {
             }
         }
 
-        // parentTag structural: 3 pts
-        if (isNonBlank(this.parentTag)) {
-            dynamicMax += 3;
-            // parentTag is not queryable from WebElement directly; skip if unavailable
-            // (only BaselineStore can enrich this via JS; leave as bonus when both known)
-        }
-
-        // childIndex structural: 2 pts
-        if (this.childIndex >= 0) {
-            dynamicMax += 2;
-            // Same note — enriched by BaselineStore JS execution, not queryable here
+        // ── Structural scoring (only when the caller supplied a StructuralContext) ──
+        // Layout position is one of the most churn-resistant signals: id/class can be regenerated by
+        // a framework while the element keeps its place (same parent, same neighbours). Points are
+        // added to BOTH numerator and denominator so they genuinely reward a positional match and
+        // never just penalise (the bug in the earlier version).
+        if (sc != null) {
+            if (isNonBlank(this.parentTag)) {
+                dynamicMax += 3;
+                if (this.parentTag.equalsIgnoreCase(sc.parentTag)) score += 3;
+            }
+            if (this.childIndex >= 0 && sc.childIndex >= 0) {
+                dynamicMax += 2;
+                if (this.childIndex == sc.childIndex) score += 2;
+            }
+            if (isNonBlank(this.prevSiblingTag)) {
+                dynamicMax += 2;
+                if (this.prevSiblingTag.equalsIgnoreCase(sc.prevSiblingTag)) score += 2;
+            }
+            if (isNonBlank(this.nextSiblingTag)) {
+                dynamicMax += 2;
+                if (this.nextSiblingTag.equalsIgnoreCase(sc.nextSiblingTag)) score += 2;
+            }
         }
 
         if (dynamicMax == 0) return 0.0;
         return Math.min(1.0, score / (double) dynamicMax);
     }
 
+    // Precompiled once (was recompiled on every String.split call inside the per-candidate hot loop).
+    private static final java.util.regex.Pattern TOKEN_SPLIT =
+            java.util.regex.Pattern.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_\\s]+");
+    private static final java.util.regex.Pattern WS_SPLIT = java.util.regex.Pattern.compile("\\s+");
+
+    // Cached token sets for THIS baseline's id/name — constant across all candidates, so they are
+    // computed once instead of N(candidates)×D(history) times. Transient: never serialized by Gson.
+    private transient java.util.Set<String> idTokensCache;
+    private transient java.util.Set<String> nameTokensCache;
+
+    private java.util.Set<String> idTokens() {
+        if (idTokensCache == null) idTokensCache = tokenSet(this.id);
+        return idTokensCache;
+    }
+
+    private java.util.Set<String> nameTokens() {
+        if (nameTokensCache == null) nameTokensCache = tokenSet(this.name);
+        return nameTokensCache;
+    }
+
     /**
-     * Token-level Jaccard similarity between two identifier strings.
-     * Splits on camelCase, hyphen, underscore — then computes |intersection|/|union|.
-     * "login-btn" vs "loginBtn" → tokens {"login","btn"} vs {"login","btn"} → 1.0
+     * Token-level Jaccard between this baseline's cached token set and a candidate string.
+     * "login-btn" vs "loginBtn" → {"login","btn"} vs {"login","btn"} → 1.0
      */
-    private static double tokenJaccard(String a, String b) {
-        java.util.Set<String> ta = tokenSet(a);
+    private static double jaccard(java.util.Set<String> ta, String b) {
         java.util.Set<String> tb = tokenSet(b);
         if (ta.isEmpty() && tb.isEmpty()) return 1.0;
         if (ta.isEmpty() || tb.isEmpty()) return 0.0;
-        java.util.Set<String> intersection = new java.util.HashSet<>(ta);
-        intersection.retainAll(tb);
-        java.util.Set<String> union = new java.util.HashSet<>(ta);
-        union.addAll(tb);
-        return intersection.size() / (double) union.size();
+        int inter = 0;
+        for (String t : ta) if (tb.contains(t)) inter++;
+        return inter / (double) (ta.size() + tb.size() - inter);   // |∩| / |∪| without extra sets
     }
 
     private static java.util.Set<String> tokenSet(String s) {
         java.util.Set<String> tokens = new java.util.HashSet<>();
-        for (String p : s.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_\\s]+")) {
+        if (s == null) return tokens;
+        for (String p : TOKEN_SPLIT.split(s)) {
             String t = p.strip().toLowerCase();
             if (!t.isEmpty()) tokens.add(t);
         }
@@ -300,20 +365,17 @@ public class ElementFingerprint {
     }
 
     /**
-     * CSS class set Jaccard similarity.
-     * Splits both class strings on whitespace and computes |intersection|/|union|.
+     * CSS class set Jaccard similarity. Splits both class strings on whitespace.
      */
     private static double classJaccard(String a, String b) {
-        java.util.Set<String> sa = new java.util.HashSet<>(java.util.Arrays.asList(a.split("\\s+")));
-        java.util.Set<String> sb = new java.util.HashSet<>(java.util.Arrays.asList(b.split("\\s+")));
+        java.util.Set<String> sa = new java.util.HashSet<>(java.util.Arrays.asList(WS_SPLIT.split(a)));
+        java.util.Set<String> sb = new java.util.HashSet<>(java.util.Arrays.asList(WS_SPLIT.split(b)));
         sa.remove(""); sb.remove("");
         if (sa.isEmpty() && sb.isEmpty()) return 1.0;
         if (sa.isEmpty() || sb.isEmpty()) return 0.0;
-        java.util.Set<String> intersection = new java.util.HashSet<>(sa);
-        intersection.retainAll(sb);
-        java.util.Set<String> union = new java.util.HashSet<>(sa);
-        union.addAll(sb);
-        return intersection.size() / (double) union.size();
+        int inter = 0;
+        for (String t : sa) if (sb.contains(t)) inter++;
+        return inter / (double) (sa.size() + sb.size() - inter);
     }
 
     // ──────────────────── Utility Methods ────────────────────
@@ -338,7 +400,7 @@ public class ElementFingerprint {
     private static String safeGetText(WebElement element) {
         try {
             String t = element.getText();
-            return (t != null && t.length() > 100) ? t.substring(0, 100) : t;
+            return (t != null && t.length() > TEXT_CAP) ? t.substring(0, TEXT_CAP) : t;
         } catch (Exception e) {
             return null;
         }
@@ -400,6 +462,8 @@ public class ElementFingerprint {
     public String getDataTestId() { return dataTestId; }
     public String getParentTag() { return parentTag; }
     public int getChildIndex() { return childIndex; }
+    public String getPrevSiblingTag() { return prevSiblingTag; }
+    public String getNextSiblingTag() { return nextSiblingTag; }
     public long getLastSeenEpoch() { return lastSeenEpoch; }
     public String getPageUrl() { return pageUrl; }
 

@@ -610,6 +610,15 @@
                 </includes>
             </resource>
             <resource>
+                <!-- ONNX model + tokenizer for Tier 3 AI healing.
+                     filtering=false is mandatory: Maven's text-based substitution corrupts binary files. -->
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>Ellithium-ai-model/**</include>
+                </includes>
+            </resource>
+            <resource>
                 <directory>src/main/resources/properties</directory>
                 <filtering>true</filtering>
                 <includes>

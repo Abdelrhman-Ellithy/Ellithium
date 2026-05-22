@@ -15,7 +15,7 @@ public class SecureAreaPage {
         driverActions = new DriverActions(driver);
     }
 
-    public String getLoginMessage() {
-        return driverActions.elements().getText(By.id("login"));
+    public String getSecureAreaMessage() {
+        return driverActions.elements().getText(By.id("message"));
     }
 }

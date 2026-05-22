@@ -24,7 +24,7 @@ public class LoginPage {
     }
 
     public SecureAreaPage clickLoginBtn() {
-        driverActions.elements().clickOnElement(By.id("login"));
+        driverActions.elements().clickOnElement(By.id("button"));
         return new SecureAreaPage(driver);
     }
 }

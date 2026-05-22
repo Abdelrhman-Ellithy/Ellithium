@@ -91,6 +91,14 @@ public class SemanticQueryBuilder {
         String lastDataTestId  = fingerprint != null ? fingerprint.getDataTestId()  : null;
         String lastTagName     = fingerprint != null ? fingerprint.getTagName()     : null;
 
+        // READABLE intent (getText/verify…) describes WHICH element to read, not its rendered content.
+        // Injecting the last-known text makes the embedding match on lexical overlap with page copy
+        // (e.g. method "getLoginMessage" + last text "Login Page" wrongly pulled toward the <h2>
+        // instead of the flash message). Drop raw last-text for READABLE; keep structural signals.
+        boolean isReadable = SemanticLocatorResolver.ElementCategory.READABLE
+                == SemanticLocatorResolver.categorizeAction(actionType);
+        if (isReadable) lastText = null;
+
         return build(actionType, locatorValue, methodName, null,
                 lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName);
     }

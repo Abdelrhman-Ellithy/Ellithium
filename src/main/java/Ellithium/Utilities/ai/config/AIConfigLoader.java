@@ -25,6 +25,11 @@ public class AIConfigLoader {
 
     private static HealingStrategy healingStrategy = HealingStrategy.DISABLED;
     private static double confidenceThreshold = 0.70;
+    // High-confidence bar a heal must clear to be PROMOTED to a stored baseline / source patch.
+    // Separate from the per-tier use-threshold: a heal may be used for the current action but only
+    // persisted (baseline + .java patch) when it clears this bar. Prevents a low-confidence heal
+    // from poisoning the baseline store or rewriting source with a wrong locator.
+    private static double healingStoreThreshold = 0.85;
     private static int maxCandidates = 3;
     private static String llmProviderName = "";
     private static String llmApiKey = "";
@@ -34,8 +39,13 @@ public class AIConfigLoader {
     private static boolean visionRcaEnabled = false;
     // Tier 3 ONNX embedding config (paid feature)
     private static String licenseKey = "";
-    private static double onnxSimilarityThreshold = 0.82;
-    private static int onnxMaxCandidates = 10;
+    // Pooling MUST match the embedded model's training/export. "cls" for BGE (default); "mean" for
+    // MiniLM-style models. Runtime-switchable so a model can be A/B-tested without recompiling.
+    private static String onnxPooling = "cls";
+    private static double onnxSimilarityThreshold = 0.80;
+    private static double onnxReadableThreshold   = 0.65;   // lower for READABLE — text-heavy elements score lower
+    private static int onnxMaxCandidates         = 10;
+    private static int onnxReadableMaxCandidates  = 50;     // wider net for text-bearing element search
     private static boolean initialized = false;
 
     /**
@@ -74,6 +84,16 @@ public class AIConfigLoader {
                     confidenceThreshold = Double.parseDouble(threshold.trim());
                 } catch (NumberFormatException e) {
                     Logger.warn("Invalid ai.healing.confidenceThreshold: " + threshold + ". Using 0.70.");
+                }
+            }
+
+            String storeThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.storeThreshold");
+            String storeThreshold = storeThresholdRaw != null ? resolveEnvironmentVariables(storeThresholdRaw) : null;
+            if (storeThreshold != null && !storeThreshold.isEmpty()) {
+                try {
+                    healingStoreThreshold = Double.parseDouble(storeThreshold.trim());
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.healing.storeThreshold: " + storeThreshold + ". Using 0.85.");
                 }
             }
 
@@ -116,6 +136,17 @@ public class AIConfigLoader {
             // Tier 3 ONNX config
             licenseKey = getPropertyOrDefault(configPath, "ai.license.key", "");
 
+            String poolingRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.pooling");
+            String pooling = poolingRaw != null ? resolveEnvironmentVariables(poolingRaw) : null;
+            if (pooling != null && !pooling.isBlank()) {
+                String p = pooling.trim().toLowerCase();
+                if (p.equals("cls") || p.equals("mean")) {
+                    onnxPooling = p;
+                } else {
+                    Logger.warn("Invalid ai.onnx.pooling: " + pooling + ". Use 'cls' or 'mean'. Using cls.");
+                }
+            }
+
             String onnxThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold");
             String onnxThreshold = onnxThresholdRaw != null ? resolveEnvironmentVariables(onnxThresholdRaw) : null;
             if (onnxThreshold != null && !onnxThreshold.isEmpty()) {
@@ -133,6 +164,26 @@ public class AIConfigLoader {
                     onnxMaxCandidates = Integer.parseInt(onnxMax.trim());
                 } catch (NumberFormatException e) {
                     Logger.warn("Invalid ai.onnx.maxCandidates: " + onnxMax + ". Using 10.");
+                }
+            }
+
+            String readableThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold.readable");
+            String readableThreshold = readableThresholdRaw != null ? resolveEnvironmentVariables(readableThresholdRaw) : null;
+            if (readableThreshold != null && !readableThreshold.isEmpty()) {
+                try {
+                    onnxReadableThreshold = Double.parseDouble(readableThreshold.trim());
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.onnx.similarityThreshold.readable: " + readableThreshold + ". Using 0.65.");
+                }
+            }
+
+            String readableMaxRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.maxCandidates.readable");
+            String readableMax = readableMaxRaw != null ? resolveEnvironmentVariables(readableMaxRaw) : null;
+            if (readableMax != null && !readableMax.isEmpty()) {
+                try {
+                    onnxReadableMaxCandidates = Integer.parseInt(readableMax.trim());
+                } catch (NumberFormatException e) {
+                    Logger.warn("Invalid ai.onnx.maxCandidates.readable: " + readableMax + ". Using 50.");
                 }
             }
 
@@ -190,6 +241,8 @@ public class AIConfigLoader {
 
     public static HealingStrategy getHealingStrategy() { return healingStrategy; }
     public static double getConfidenceThreshold() { return confidenceThreshold; }
+    /** High-confidence bar a heal must clear to be persisted as a baseline / source patch. */
+    public static double getHealingStoreThreshold() { return healingStoreThreshold; }
     public static String getLlmProviderName() { return llmProviderName; }
     public static String getLlmApiKey() { return llmApiKey; }
     public static String getLlmModel() { return llmModel; }
@@ -200,9 +253,13 @@ public class AIConfigLoader {
     public static int getMaxCandidates() { return maxCandidates; }
 
     // ── Tier 3 ONNX getters ──
-    public static String getLicenseKey() { return licenseKey; }
-    public static double getOnnxSimilarityThreshold() { return onnxSimilarityThreshold; }
-    public static int getOnnxMaxCandidates() { return onnxMaxCandidates; }
+    public static String getLicenseKey()                  { return licenseKey; }
+    /** "cls" (BGE) or "mean" (MiniLM) — MUST match the embedded model's training/export pooling. */
+    public static String getOnnxPooling()                 { return onnxPooling; }
+    public static double getOnnxSimilarityThreshold()     { return onnxSimilarityThreshold; }
+    public static double getOnnxReadableThreshold()       { return onnxReadableThreshold; }
+    public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }
+    public static int    getOnnxReadableMaxCandidates()   { return onnxReadableMaxCandidates; }
 
     /**
      * Returns true when Tier 3 local embedding is active.

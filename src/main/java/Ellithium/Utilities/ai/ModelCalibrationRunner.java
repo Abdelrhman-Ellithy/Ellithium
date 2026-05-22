@@ -8,176 +8,164 @@ import java.io.*;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * CLI tool that calibrates the Tier 3 ONNX similarity threshold for the currently
- * configured model and baseline dataset.
+ * CLI tool that calibrates the Tier 3 ONNX similarity thresholds for the currently
+ * configured model and baseline dataset — on a PRECISION basis.
  *
- * <h3>How to run</h3>
- * <pre>
- * java -cp ellithium-*.jar Ellithium.Utilities.ai.ModelCalibrationRunner [licenseKey]
- * </pre>
- * <p>The license key argument is optional — the tool reads {@code ai-config.properties}
- * if none is supplied.</p>
- *
- * <h3>What it does</h3>
+ * <h3>Why this is precision-first (and what the old version got wrong)</h3>
+ * The previous calibrator recommended the 10th percentile of true-positive scores and never looked
+ * at where WRONG elements score — so it could not bound false heals and tended to recommend a
+ * dangerously low threshold. It also paired each fingerprint's query against its OWN document
+ * (degenerate self-similarity) and built documents in a third, inconsistent format. This version:
  * <ol>
- *   <li>Loads all stored locator-to-fingerprint pairs from {@code healing-baselines.json}.</li>
- *   <li>For each pair, builds a {@link SemanticQueryBuilder} query and calls
- *       {@link ONNXEmbeddingHealer#embed(String)} to get the query vector.</li>
- *   <li>Embeds the corresponding element document string via
- *       {@link ONNXEmbeddingHealer#buildElementDocument} proxy (fingerprint fields).</li>
- *   <li>Computes cosine similarity between the two vectors.</li>
- *   <li>Calculates the 10th-percentile score of true-positive pairs.</li>
- *   <li>Writes {@code Test-Output/calibration-results.json} with the recommended threshold.</li>
+ *   <li>Builds a query per baseline and scores it against the matching document (POSITIVE) and
+ *       against a sample of OTHER baselines' documents (NEGATIVES) — a real cross-element negative
+ *       distribution.</li>
+ *   <li>Uses {@link ONNXEmbeddingHealer#buildElementDocument(ElementFingerprint)} — the SAME field
+ *       order the model sees at train/inference time.</li>
+ *   <li>Sweeps a precision/recall curve and recommends two thresholds:
+ *       <b>useThreshold</b> = max-F0.5 operating point (precision-weighted), and
+ *       <b>storeThreshold</b> = the negative-P99 floor (almost no wrong element clears it).</li>
  * </ol>
  *
- * <p><b>Pre-requisite:</b> {@code ONNXEmbeddingHealer.isAvailable()} must return {@code true}
- * (model embedded + license key valid). Until then the tool exits early with instructions.</p>
+ * <h3>How to run</h3>
+ * <pre>java -cp ellithium-*.jar Ellithium.Utilities.ai.ModelCalibrationRunner [licenseKey]</pre>
+ * Pre-requisite: {@code ONNXEmbeddingHealer.isAvailable()} must be true (model embedded).
  */
 public class ModelCalibrationRunner {
 
-    private static final String BASELINE_FILE   = "Test-Output" + File.separator + "healing-baselines.json";
-    private static final String OUTPUT_FILE      = "Test-Output" + File.separator + "calibration-results.json";
-    private static final Gson   GSON             = new GsonBuilder().setPrettyPrinting().create();
+    private static final String BASELINE_FILE = "Test-Output" + File.separator + "healing-baselines.json";
+    private static final String OUTPUT_FILE   = "Test-Output" + File.separator + "calibration-results.json";
+    private static final Gson   GSON          = new GsonBuilder().setPrettyPrinting().create();
+
+    // How many cross-element negatives to score per positive query.
+    private static final int NEG_SAMPLES_PER_QUERY = 12;
 
     public static void main(String[] args) {
-        System.out.println("=== Ellithium Tier 3 Model Calibration Runner ===");
+        System.out.println("=== Ellithium Tier 3 Model Calibration Runner (precision-first) ===");
         System.out.println("Timestamp: " + Instant.now());
 
-        // Optional license key override from CLI argument
         if (args.length > 0 && !args[0].isBlank()) {
             System.setProperty("ellithium.license.key.override", args[0]);
         }
 
-        // Initialise config + ONNX session
         Ellithium.Utilities.ai.config.AIConfigLoader.initialize();
         ONNXEmbeddingHealer.initialize();
 
         if (!ONNXEmbeddingHealer.isAvailable()) {
-            System.err.println("[CALIBRATION] Tier 3 model is not available.");
-            System.err.println("  → Ensure ai.license.key is set in ai-config.properties.");
-            System.err.println("  → Ensure /ai-models/tier3.onnx.enc is bundled in the JAR.");
-            System.err.println("  → Re-run after embedding the fine-tuned model.");
+            System.err.println("[CALIBRATION] Tier 3 model is not available — embed the model and re-run.");
             return;
         }
 
-        // Load baseline store
         Map<String, List<ElementFingerprint>> baselines = loadBaselines();
-        if (baselines.isEmpty()) {
-            System.err.println("[CALIBRATION] No baselines found in " + BASELINE_FILE
-                    + ". Run a test suite first to capture baselines.");
+        if (baselines.size() < 2) {
+            System.err.println("[CALIBRATION] Need >= 2 baselines for a negative distribution. "
+                    + "Run a test suite first to capture baselines.");
+            return;
+        }
+        System.out.println("[CALIBRATION] Loaded " + baselines.size() + " locator keys.");
+
+        // 1. Pre-embed one representative document per baseline (the positive document pool).
+        List<Item> items = buildItems(baselines);
+        if (items.size() < 2) {
+            System.err.println("[CALIBRATION] Too few embeddable baselines.");
             return;
         }
 
-        System.out.println("[CALIBRATION] Loaded " + baselines.size() + " locator keys ("
-                + baselines.values().stream().mapToInt(List::size).sum() + " fingerprints).");
+        // 2. Score positives (query vs its own doc) and negatives (query vs other docs).
+        List<Double> positives = new ArrayList<>();
+        List<Double> negatives = new ArrayList<>();
+        Random rng = new Random(42);
 
-        List<PairScore> scores = computePairScores(baselines);
-        if (scores.isEmpty()) {
-            System.err.println("[CALIBRATION] No embedding pairs could be scored. "
-                    + "Check that the model produces non-null embeddings.");
-            return;
+        for (Item item : items) {
+            positives.add(ONNXEmbeddingHealer.cosineSimilarity(item.queryVec, item.docVec));
+            for (int s = 0; s < NEG_SAMPLES_PER_QUERY; s++) {
+                Item other = items.get(rng.nextInt(items.size()));
+                if (other == item) continue;
+                negatives.add(ONNXEmbeddingHealer.cosineSimilarity(item.queryVec, other.docVec));
+            }
         }
+        Collections.sort(positives);
+        Collections.sort(negatives);
 
-        CalibrationResult result = computeResult(scores);
+        CalibrationResult result = computeResult(positives, negatives);
         writeOutput(result);
         printSummary(result);
 
         ONNXEmbeddingHealer.shutdown();
     }
 
-    // ──────────────────────── Scoring ────────────────────────
+    // ──────────────────────── Item construction ────────────────────────
 
-    private static List<PairScore> computePairScores(Map<String, List<ElementFingerprint>> baselines) {
-        List<PairScore> scores = new ArrayList<>();
-        int processed = 0, skipped = 0;
-
-        for (Map.Entry<String, List<ElementFingerprint>> entry : baselines.entrySet()) {
-            String locatorKey = entry.getKey();
-            List<ElementFingerprint> history = entry.getValue();
+    private static List<Item> buildItems(Map<String, List<ElementFingerprint>> baselines) {
+        List<Item> items = new ArrayList<>();
+        int skipped = 0;
+        for (Map.Entry<String, List<ElementFingerprint>> e : baselines.entrySet()) {
+            List<ElementFingerprint> history = e.getValue();
             if (history.isEmpty()) continue;
-
-            // Use the most recent fingerprint
             ElementFingerprint fp = history.get(history.size() - 1);
 
-            // Build semantic query from fingerprint fields
-            String query = SemanticQueryBuilder.buildFromContext(
-                    null, locatorKey, null, fp);
+            String query = SemanticQueryBuilder.buildFromContext(null, e.getKey(), null, fp);
+            String doc   = ONNXEmbeddingHealer.buildElementDocument(fp);   // shared, canonical format
+            if (query.isBlank() || doc.isBlank()) { skipped++; continue; }
 
-            if (query.isBlank()) { skipped++; continue; }
+            float[] qv = ONNXEmbeddingHealer.embed(query, true);
+            float[] dv = ONNXEmbeddingHealer.embed(doc, false);
+            if (qv == null || dv == null) { skipped++; continue; }
 
-            float[] queryVec = ONNXEmbeddingHealer.embed(query, true);
-            if (queryVec == null) { skipped++; continue; }
+            items.add(new Item(qv, dv));
+        }
+        System.out.println("[CALIBRATION] Embedded " + items.size() + " items, skipped " + skipped + ".");
+        return items;
+    }
 
-            // Build element document from fingerprint fields
-            String elementDoc = buildFingerprintDocument(fp);
-            if (elementDoc.isBlank()) { skipped++; continue; }
+    // ──────────────────────── PR-curve threshold selection ────────────────────────
 
-            float[] elementVec = ONNXEmbeddingHealer.embed(elementDoc, false);
-            if (elementVec == null) { skipped++; continue; }
+    private static CalibrationResult computeResult(List<Double> positives, List<Double> negatives) {
+        double posP10 = percentile(positives, 10);
+        double posP50 = percentile(positives, 50);
+        double negP95 = percentile(negatives, 95);
+        double negP99 = percentile(negatives, 99);
+        double posMean = positives.stream().mapToDouble(d -> d).average().orElse(0);
+        double negMean = negatives.stream().mapToDouble(d -> d).average().orElse(0);
 
-            double similarity = ONNXEmbeddingHealer.cosineSimilarity(queryVec, elementVec);
-            scores.add(new PairScore(locatorKey, query, elementDoc, similarity));
-            processed++;
+        // Sweep thresholds; pick the one maximizing F0.5 (precision weighted 2x recall).
+        double bestF = -1, bestT = 0.5, bestP = 0, bestR = 0;
+        for (int i = 0; i <= 100; i++) {
+            double t = i / 100.0;
+            long tp = positives.stream().filter(p -> p >= t).count();
+            long fn = positives.size() - tp;
+            long fp = negatives.stream().filter(nv -> nv >= t).count();
+            if (tp == 0) continue;
+            double precision = tp / (double) (tp + fp);
+            double recall    = tp / (double) (tp + fn);
+            double beta2 = 0.25; // F0.5
+            double denom = (beta2 * precision) + recall;
+            double f = denom == 0 ? 0 : (1 + beta2) * (precision * recall) / denom;
+            if (f > bestF) { bestF = f; bestT = t; bestP = precision; bestR = recall; }
         }
 
-        System.out.println("[CALIBRATION] Scored " + processed + " pairs, skipped " + skipped
-                + " (no query or embed failed).");
-        return scores;
-    }
+        double useThreshold   = round2(bestT);
+        // Store/patch bar: above almost all wrong elements. Never below the F0.5 use point.
+        double storeThreshold = round2(Math.max(bestT, negP99));
 
-    private static String buildFingerprintDocument(ElementFingerprint fp) {
-        StringBuilder sb = new StringBuilder();
-        append(sb, fp.getTagName());
-        append(sb, fp.getId());
-        append(sb, fp.getName());
-        append(sb, fp.getAriaLabel());
-        append(sb, fp.getPlaceholder());
-        append(sb, fp.getDataTestId());
-        append(sb, fp.getRole());
-        append(sb, fp.getType());
-        if (fp.getText() != null && fp.getText().length() <= 80) append(sb, fp.getText());
-        return sb.toString().trim();
-    }
-
-    private static void append(StringBuilder sb, String val) {
-        if (val != null && !val.isBlank()) sb.append(" ").append(val.trim());
-    }
-
-    // ──────────────────────── Result Computation ────────────────────────
-
-    private static CalibrationResult computeResult(List<PairScore> scores) {
-        List<Double> sortedScores = scores.stream()
-                .map(s -> s.similarity)
-                .sorted()
-                .collect(Collectors.toList());
-
-        double p10  = percentile(sortedScores, 10);
-        double p25  = percentile(sortedScores, 25);
-        double p50  = percentile(sortedScores, 50);
-        double p90  = percentile(sortedScores, 90);
-        double mean = sortedScores.stream().mapToDouble(d -> d).average().orElse(0.0);
-
-        // Recommended threshold = 10th percentile of true-positive scores.
-        // Accept any candidate scoring above the worst 10% of known-good pairs.
-        double recommendedThreshold = Math.round(p10 * 100.0) / 100.0;
-
-        return new CalibrationResult(
-                Instant.now().toString(),
-                scores.size(),
-                recommendedThreshold,
-                p10, p25, p50, p90, mean,
-                scores);
+        return new CalibrationResult(Instant.now().toString(),
+                positives.size(), negatives.size(),
+                useThreshold, storeThreshold,
+                round4(bestP), round4(bestR), round4(bestF),
+                round4(posP10), round4(posP50), round4(posMean),
+                round4(negMean), round4(negP95), round4(negP99));
     }
 
     private static double percentile(List<Double> sorted, int p) {
         if (sorted.isEmpty()) return 0.0;
         int idx = (int) Math.ceil(p / 100.0 * sorted.size()) - 1;
-        idx = Math.max(0, Math.min(idx, sorted.size() - 1));
-        return sorted.get(idx);
+        return sorted.get(Math.max(0, Math.min(idx, sorted.size() - 1)));
     }
+
+    private static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
+    private static double round4(double v) { return Math.round(v * 10000.0) / 10000.0; }
 
     // ──────────────────────── I/O ────────────────────────
 
@@ -201,66 +189,57 @@ public class ModelCalibrationRunner {
         try {
             File out = new File(OUTPUT_FILE);
             out.getParentFile().mkdirs();
-            try (Writer writer = new FileWriter(out)) {
-                GSON.toJson(result, writer);
-            }
+            try (Writer writer = new FileWriter(out)) { GSON.toJson(result, writer); }
             System.out.println("[CALIBRATION] Results written to " + OUTPUT_FILE);
         } catch (IOException e) {
             System.err.println("[CALIBRATION] Failed to write output: " + e.getMessage());
         }
     }
 
-    private static void printSummary(CalibrationResult result) {
-        System.out.println("\n── Calibration Summary ─────────────────────────────────");
-        System.out.printf("  Pairs scored:          %d%n", result.totalPairs);
-        System.out.printf("  Mean similarity:       %.4f%n", result.meanSimilarity);
-        System.out.printf("  P10 / P25 / P50 / P90: %.4f / %.4f / %.4f / %.4f%n",
-                result.p10, result.p25, result.p50, result.p90);
-        System.out.printf("  Recommended threshold: %.2f%n", result.recommendedThreshold);
+    private static void printSummary(CalibrationResult r) {
+        System.out.println("\n── Calibration Summary (precision-first) ───────────────");
+        System.out.printf("  Positives: %d   Negatives: %d%n", r.positivePairs, r.negativePairs);
+        System.out.printf("  Positive mean=%.4f P10=%.4f P50=%.4f%n", r.positiveMean, r.positiveP10, r.positiveP50);
+        System.out.printf("  Negative mean=%.4f P95=%.4f P99=%.4f%n", r.negativeMean, r.negativeP95, r.negativeP99);
+        System.out.printf("  F0.5-optimal: t=%.2f (precision=%.4f recall=%.4f F0.5=%.4f)%n",
+                r.useThreshold, r.precisionAtUse, r.recallAtUse, r.f05AtUse);
         System.out.println("────────────────────────────────────────────────────────");
-        System.out.println("→ Set ai.onnx.similarityThreshold=" + result.recommendedThreshold
-                + " in ai-config.properties");
+        System.out.println("→ ai.onnx.similarityThreshold = " + r.useThreshold + "   (use: accept a heal for the action)");
+        System.out.println("→ ai.healing.storeThreshold    = " + r.storeThreshold + "   (persist baseline + patch source)");
+        if (r.negativeP95 >= r.useThreshold) {
+            System.out.println("  WARNING: wrong elements score above the use threshold (neg-P95 >= use). "
+                    + "The bi-encoder cannot separate these classes alone — add the cross-encoder reranker.");
+        }
     }
 
     // ──────────────────────── Data Models ────────────────────────
 
-    static class PairScore {
-        final String locatorKey;
-        final String query;
-        final String elementDoc;
-        final double similarity;
-
-        PairScore(String locatorKey, String query, String elementDoc, double similarity) {
-            this.locatorKey  = locatorKey;
-            this.query       = query;
-            this.elementDoc  = elementDoc;
-            this.similarity  = similarity;
+    private static class Item {
+        final float[] queryVec, docVec;
+        Item(float[] queryVec, float[] docVec) {
+            this.queryVec = queryVec; this.docVec = docVec;
         }
     }
 
     static class CalibrationResult {
         final String generatedAt;
-        final int    totalPairs;
-        final double recommendedThreshold;
-        final double p10;
-        final double p25;
-        final double p50;
-        final double p90;
-        final double meanSimilarity;
-        final List<PairScore> pairs;
+        final int positivePairs, negativePairs;
+        final double useThreshold, storeThreshold;
+        final double precisionAtUse, recallAtUse, f05AtUse;
+        final double positiveP10, positiveP50, positiveMean;
+        final double negativeMean, negativeP95, negativeP99;
 
-        CalibrationResult(String generatedAt, int totalPairs, double recommendedThreshold,
-                          double p10, double p25, double p50, double p90, double meanSimilarity,
-                          List<PairScore> pairs) {
-            this.generatedAt           = generatedAt;
-            this.totalPairs            = totalPairs;
-            this.recommendedThreshold  = recommendedThreshold;
-            this.p10                   = p10;
-            this.p25                   = p25;
-            this.p50                   = p50;
-            this.p90                   = p90;
-            this.meanSimilarity        = meanSimilarity;
-            this.pairs                 = pairs;
+        CalibrationResult(String generatedAt, int positivePairs, int negativePairs,
+                          double useThreshold, double storeThreshold,
+                          double precisionAtUse, double recallAtUse, double f05AtUse,
+                          double positiveP10, double positiveP50, double positiveMean,
+                          double negativeMean, double negativeP95, double negativeP99) {
+            this.generatedAt = generatedAt;
+            this.positivePairs = positivePairs; this.negativePairs = negativePairs;
+            this.useThreshold = useThreshold; this.storeThreshold = storeThreshold;
+            this.precisionAtUse = precisionAtUse; this.recallAtUse = recallAtUse; this.f05AtUse = f05AtUse;
+            this.positiveP10 = positiveP10; this.positiveP50 = positiveP50; this.positiveMean = positiveMean;
+            this.negativeMean = negativeMean; this.negativeP95 = negativeP95; this.negativeP99 = negativeP99;
         }
     }
 }

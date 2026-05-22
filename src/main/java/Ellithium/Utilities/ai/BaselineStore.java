@@ -1,5 +1,6 @@
 package Ellithium.Utilities.ai;
 
+import Ellithium.Utilities.ai.config.AIConfigLoader;
 import Ellithium.Utilities.ai.models.ElementFingerprint;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -57,15 +58,46 @@ public class BaselineStore {
             new ConcurrentHashMap<>();
     private static volatile boolean loaded = false;
 
+    /**
+     * Per-thread score of the most recent Tier 1 heal. Set immediately before
+     * {@link #tryAlgorithmicHeal} returns a non-null element and read by the caller
+     * to attach heal provenance (confidence) to the gated capture / source patch.
+     */
+    private static final ThreadLocal<Double> LAST_HEAL_SCORE = ThreadLocal.withInitial(() -> 0.0);
+
+    /** Score (0.0–1.0) of the most recent Tier 1 heal on this thread. */
+    public static double getLastHealScore() { return LAST_HEAL_SCORE.get(); }
+
     // ──────────────────────── Capture ────────────────────────
 
     /**
-     * Captures and stores a fingerprint for a successfully-found element.
-     * Maintains a ring buffer of the last {@value #MAX_HISTORY} fingerprints per locator key.
+     * Captures the genuine element found directly by its locator (ground truth, always trusted).
      */
     public static void capture(WebDriver driver, By locator, WebElement element) {
+        capture(driver, locator, element, 1.0, 0);
+    }
+
+    /**
+     * Captures and stores a fingerprint for an element, gated by heal confidence.
+     *
+     * <p>A heal whose confidence is below {@code ai.healing.storeThreshold} is used for the
+     * current action but NOT persisted — this prevents a low-confidence guess (e.g. a Tier 3
+     * cosine of 0.74 picking the wrong heading) from poisoning the baseline store.</p>
+     *
+     * @param confidence heal confidence 0.0–1.0 (1.0 = element found directly, not healed)
+     * @param tier       originating tier (0 = direct find, 1/3/4 = heal tiers) — for logging
+     */
+    public static void capture(WebDriver driver, By locator, WebElement element,
+                               double confidence, int tier) {
         try {
             ensureLoaded();
+            if (tier > 0 && confidence < AIConfigLoader.getHealingStoreThreshold()) {
+                Reporter.log(String.format(
+                        "BaselineStore: Tier %d heal used (confidence=%.2f) but NOT persisted "
+                        + "(below store threshold %.2f) — baseline left untouched",
+                        tier, confidence, AIConfigLoader.getHealingStoreThreshold()), LogLevel.DEBUG);
+                return;
+            }
             ElementFingerprint fp = ElementFingerprint.capture(driver, locator, element);
             baselines.compute(fp.getLocatorKey(), (k, existing) -> {
                 List<ElementFingerprint> updated = new ArrayList<>();
@@ -117,6 +149,7 @@ public class BaselineStore {
      * </ol>
      */
     public static WebElement tryAlgorithmicHeal(WebDriver driver, By brokenLocator) {
+        LAST_HEAL_SCORE.set(0.0);   // reset per attempt — never leak a prior heal's score to the gate
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
         ElementFingerprint baseline = (history != null && !history.isEmpty())
@@ -138,6 +171,7 @@ public class BaselineStore {
             if (mutationMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null);
+                LAST_HEAL_SCORE.set(0.92);
                 return mutationMatch;
             }
 
@@ -147,6 +181,7 @@ public class BaselineStore {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 double score = scoreBestHistory(attrMatch, history);
                 acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null);
+                LAST_HEAL_SCORE.set(score);
                 return attrMatch;
             }
 
@@ -167,6 +202,7 @@ public class BaselineStore {
                         LogLevel.INFO_GREEN);
                 acceptHeal(driver, brokenLocator, best.element, best.score,
                         "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator);
+                LAST_HEAL_SCORE.set(best.score);
                 return best.element;
             } else {
                 Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
@@ -249,15 +285,20 @@ public class BaselineStore {
         List<WebElement> candidates = collectCandidates(driver, baseline);
         if (candidates.isEmpty()) return null;
 
+        // Batch-fetch structural context (parent/sibling/position) for ALL candidates in ONE JS
+        // round-trip, so structural scoring is cheap and layout-stable matches get boosted.
+        List<ElementFingerprint.StructuralContext> structural = fetchStructuralContexts(driver, candidates);
+
         ScoredCandidate best = null;
 
-        for (WebElement candidate : candidates) {
+        for (int i = 0; i < candidates.size(); i++) {
+            WebElement candidate = candidates.get(i);
             try {
                 // Visibility filter — non-visible elements are almost never the right candidate
                 if (!candidate.isDisplayed()) continue;
 
-                // Score against ALL history fingerprints, take max (T1-E)
-                double score = scoreBestHistory(candidate, history);
+                // Score against ALL history fingerprints, take max (T1-E), with structural context
+                double score = scoreBestHistory(candidate, structural.get(i), history);
 
                 if (best == null || score > best.score) {
                     By locator = ElementFingerprint.reconstructLocator(candidate);
@@ -313,18 +354,63 @@ public class BaselineStore {
         }
     }
 
-    /**
-     * Scores a candidate against ALL history fingerprints and returns the maximum score.
-     */
+    /** Scores a candidate against ALL history fingerprints (no structural context). */
     private static double scoreBestHistory(WebElement candidate, List<ElementFingerprint> history) {
+        return scoreBestHistory(candidate, null, history);
+    }
+
+    /**
+     * Scores a candidate against ALL history fingerprints and returns the maximum score, optionally
+     * using the candidate's structural context (parent/sibling/position) to reward layout matches.
+     */
+    private static double scoreBestHistory(WebElement candidate,
+                                           ElementFingerprint.StructuralContext sc,
+                                           List<ElementFingerprint> history) {
         double max = 0.0;
         for (ElementFingerprint fp : history) {
             try {
-                double s = fp.scoreSimilarity(candidate);
+                double s = fp.scoreSimilarity(candidate, sc);
                 if (s > max) max = s;
             } catch (Exception ignored) {}
         }
         return max;
+    }
+
+    /**
+     * Fetches parent tag, child index, and previous/next sibling tags for every candidate in a
+     * SINGLE {@code executeScript} round-trip (one network call regardless of candidate count).
+     * Returns a list aligned by index with {@code candidates}; entries are {@code null} when the
+     * driver has no JS (e.g. Appium native) or the call fails — structural scoring is then skipped.
+     */
+    private static List<ElementFingerprint.StructuralContext> fetchStructuralContexts(
+            WebDriver driver, List<WebElement> candidates) {
+        List<ElementFingerprint.StructuralContext> out = new ArrayList<>();
+        for (int i = 0; i < candidates.size(); i++) out.add(null);
+        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor) || candidates.isEmpty()) return out;
+        try {
+            Object res = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].map(function(el){"
+                            + " if(!el) return null;"
+                            + " var p=el.parentElement,"
+                            + "     prev=el.previousElementSibling, next=el.nextElementSibling;"
+                            + " return [p?p.tagName.toLowerCase():null,"
+                            + "  p?Array.prototype.indexOf.call(p.children,el):-1,"
+                            + "  prev?prev.tagName.toLowerCase():null,"
+                            + "  next?next.tagName.toLowerCase():null];"
+                            + "});", candidates);
+            if (res instanceof List<?> rows) {
+                for (int i = 0; i < rows.size() && i < out.size(); i++) {
+                    if (rows.get(i) instanceof List<?> r && r.size() == 4) {
+                        String pt = r.get(0) != null ? r.get(0).toString() : null;
+                        int    ci = r.get(1) instanceof Number n ? n.intValue() : -1;
+                        String ps = r.get(2) != null ? r.get(2).toString() : null;
+                        String ns = r.get(3) != null ? r.get(3).toString() : null;
+                        out.set(i, new ElementFingerprint.StructuralContext(pt, ci, ps, ns));
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return out;
     }
 
     // ──────────────────────── Accept Heal Helper ────────────────────────
@@ -336,9 +422,10 @@ public class BaselineStore {
                 : ElementFingerprint.reconstructLocator(healed);
         String locatorStr = bestLocator != null ? bestLocator.toString() : brokenLocator.toString();
 
-        // Update baseline with fresh fingerprint
+        // Update baseline with fresh fingerprint — only when the heal clears the store threshold,
+        // so a low-confidence Tier 1 match cannot persist a wrong fingerprint for future runs.
         try {
-            if (bestLocator != null) {
+            if (bestLocator != null && score >= AIConfigLoader.getHealingStoreThreshold()) {
                 ElementFingerprint updatedFp = ElementFingerprint.capture(driver, bestLocator, healed);
                 baselines.compute(brokenLocator.toString(), (k, existing) -> {
                     List<ElementFingerprint> updated = new ArrayList<>();
@@ -451,22 +538,48 @@ public class BaselineStore {
         }
     }
 
+    // Single shared daemon writer (was: a NEW Thread per capture → hundreds of threads + O(N^2)
+    // re-serialization across a suite). Captures now schedule one debounced, coalesced write.
+    private static final java.util.concurrent.ScheduledExecutorService SAVE_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "baseline-store-save");
+                t.setDaemon(true);
+                return t;
+            });
+    private static final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private static final long SAVE_DEBOUNCE_MS = 1000;
+
+    /**
+     * Schedules a single coalesced disk write. Many capture() calls within the debounce window
+     * collapse into ONE serialization on a shared daemon thread (final state is always persisted by
+     * {@link #flush()} at suite end). Replaces the previous thread-per-capture full re-serialization.
+     */
     private static void saveToDiskAsync() {
-        Thread t = new Thread(() -> {
-            synchronized (LOCK) {
-                try {
-                    Path path = Paths.get(BASELINE_FILE);
-                    Files.createDirectories(path.getParent());
-                    // Serialize as ordered map for readability
-                    Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
-                    try (Writer writer = new FileWriter(path.toFile())) {
-                        GSON.toJson(out, writer);
-                    }
-                } catch (Exception ignored) {}
+        if (saveScheduled.compareAndSet(false, true)) {
+            try {
+                SAVE_EXECUTOR.schedule(() -> {
+                    saveScheduled.set(false);
+                    writeToDisk();
+                }, SAVE_DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {
+                saveScheduled.set(false);   // executor rejected (shutdown) — leave to flush()
             }
-        }, "baseline-store-save");
-        t.setDaemon(true);
-        t.start();
+        }
+    }
+
+    /** Serializes the baseline map to disk under LOCK. Shared by the debounced saver and flush(). */
+    private static void writeToDisk() {
+        synchronized (LOCK) {
+            try {
+                Path path = Paths.get(BASELINE_FILE);
+                Files.createDirectories(path.getParent());
+                Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
+                try (Writer writer = new FileWriter(path.toFile())) {
+                    GSON.toJson(out, writer);
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     public static void flush() {

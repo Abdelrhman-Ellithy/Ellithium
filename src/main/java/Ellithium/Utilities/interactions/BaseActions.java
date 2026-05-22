@@ -61,20 +61,21 @@ public class BaseActions<T extends WebDriver> {
             WebElement algorithmicMatch = BaselineStore.tryAlgorithmicHeal(driver, locator);
             algorithmicMatch = resolveInteractiveElement(algorithmicMatch, actionType, "TIER 1");
             if (algorithmicMatch != null) {
-                BaselineStore.capture(driver, locator, algorithmicMatch);
-                AISelfHealer.queueSourcePatch(locator, algorithmicMatch, stack);
-                return algorithmicMatch;
+                double t1Score = BaselineStore.getLastHealScore();
+                BaselineStore.capture(driver, locator, algorithmicMatch, t1Score, 1);
+                AISelfHealer.queueSourcePatch(locator, algorithmicMatch, stack, t1Score, 1);
+                return guardStaleHeal(algorithmicMatch);
             }
 
-            // TIER 2: Semantic Strategy Search (zero cost, uses method/field name context)
-            WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
-                    driver, callerMethod, fieldName, actionType, locatorValue, baseline);
-            semanticMatch = resolveInteractiveElement(semanticMatch, actionType, "TIER 2");
-            if (semanticMatch != null) {
-                BaselineStore.capture(driver, locator, semanticMatch);
-                AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
-                return semanticMatch;
-            }
+            // TIER 2: Semantic Strategy Search — TEMPORARILY DISABLED
+            // WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
+            //         driver, callerMethod, fieldName, actionType, locatorValue, baseline);
+            // semanticMatch = resolveInteractiveElement(semanticMatch, actionType, "TIER 2");
+            // if (semanticMatch != null) {
+            //     BaselineStore.capture(driver, locator, semanticMatch);
+            //     AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
+            //     return semanticMatch;
+            // }
 
             // TIER 3: Local ONNX Embedding (active when fine-tuned model is present)
             if (Ellithium.Utilities.ai.ONNXEmbeddingHealer.isAvailable()) {
@@ -83,18 +84,19 @@ public class BaseActions<T extends WebDriver> {
                 // Tier 3 already filters to interactive elements — resolve is a safety net
                 onnxMatch = resolveInteractiveElement(onnxMatch, actionType, "TIER 3");
                 if (onnxMatch != null) {
-                    BaselineStore.capture(driver, locator, onnxMatch);
-                    AISelfHealer.queueSourcePatch(locator, onnxMatch, stack);
-                    return onnxMatch;
+                    double t3Score = Ellithium.Utilities.ai.ONNXEmbeddingHealer.getLastHealScore();
+                    BaselineStore.capture(driver, locator, onnxMatch, t3Score, 3);
+                    AISelfHealer.queueSourcePatch(locator, onnxMatch, stack, t3Score, 3);
+                    return guardStaleHeal(onnxMatch);
                 }
             }
 
-            // TIER 4: LLM-based semantic healing (slow, costly, but handles drastic changes)
+            // TIER 4: LLM-based semantic healing (slow, costly, but handles drastic changes).
+            // attemptHeal performs its own gated capture + patch (it owns the LLM confidence).
             WebElement llmMatch = AISelfHealer.attemptHeal(driver, locator, stack);
             llmMatch = resolveInteractiveElement(llmMatch, actionType, "TIER 4");
             if (llmMatch != null) {
-                BaselineStore.capture(driver, locator, llmMatch);
-                return llmMatch;
+                return guardStaleHeal(llmMatch);
             }
 
             // All healing tiers failed — throw AssertionError so Allure marks as "failed" not "broken"
@@ -157,6 +159,34 @@ public class BaseActions<T extends WebDriver> {
         }
     }
 
+    /**
+     * Guards against a healed element going stale between heal and use. The healing cascade
+     * (especially the two-stage Tier 3 retrieve+rerank and Tier 4 LLM round-trips) widens the
+     * window in which an SPA can re-render and detach the returned element. We reconstruct a
+     * locator while the element is still fresh, probe for staleness, and re-resolve once if needed.
+     */
+    private WebElement guardStaleHeal(WebElement healed) {
+        if (healed == null) return null;
+        By reconstructed = ElementFingerprint.reconstructLocator(healed); // captured while fresh
+        try {
+            healed.isEnabled();   // cheap probe — throws if the element is detached/stale
+            return healed;
+        } catch (org.openqa.selenium.StaleElementReferenceException stale) {
+            if (reconstructed != null) {
+                try {
+                    WebElement refreshed = driver.findElement(reconstructed);
+                    Ellithium.core.reporting.Reporter.log(
+                            "Healed element went stale before use — re-resolved via "
+                            + reconstructed, Ellithium.core.logging.LogLevel.INFO_YELLOW);
+                    return refreshed;
+                } catch (Exception ignored) {}
+            }
+            return healed; // best effort — let the caller's own retry handle it
+        } catch (Exception other) {
+            return healed;
+        }
+    }
+
     private static final java.util.Set<String> INTERACTIVE_TAGS = new java.util.HashSet<>(
             java.util.Arrays.asList("button", "a", "input", "select", "textarea", "option"));
 
@@ -208,19 +238,50 @@ public class BaseActions<T extends WebDriver> {
                     .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
             return driver.findElements(locator);
         } catch (org.openqa.selenium.TimeoutException e) {
-            // List is missing entirely. Attempt to heal the locator.
-            By healedLocator = AISelfHealer.healLocator(driver, locator, Thread.currentThread().getStackTrace());
+            StackTraceElement[] stack   = Thread.currentThread().getStackTrace();
+            String actionType           = extractActionFromStack(stack);
+            String callerMethod         = extractCallerMethodName(stack);
+            String fieldName            = extractFieldNameFromStack(stack, locator);
+            String locatorValue         = extractLocatorValue(locator);
+            ElementFingerprint baseline = BaselineStore.getBaseline(locator.toString());
+
+            // TIER 1: Algorithmic baseline match
+            WebElement t1 = BaselineStore.tryAlgorithmicHeal(driver, locator);
+            t1 = resolveInteractiveElement(t1, actionType, "TIER 1");
+            if (t1 != null) {
+                double t1Score = BaselineStore.getLastHealScore();
+                BaselineStore.capture(driver, locator, t1, t1Score, 1);
+                AISelfHealer.queueSourcePatch(locator, t1, stack, t1Score, 1);
+                By healed = ElementFingerprint.reconstructLocator(t1);
+                return driver.findElements(healed != null ? healed : locator);
+            }
+
+            // TIER 3: Local ONNX embedding
+            if (Ellithium.Utilities.ai.ONNXEmbeddingHealer.isAvailable()) {
+                WebElement t3 = Ellithium.Utilities.ai.ONNXEmbeddingHealer.tryEmbeddingHeal(
+                        driver, locator, actionType, callerMethod, fieldName, locatorValue, baseline);
+                if (t3 != null) {
+                    By healed = ElementFingerprint.reconstructLocator(t3);
+                    if (healed != null) {
+                        double t3Score = Ellithium.Utilities.ai.ONNXEmbeddingHealer.getLastHealScore();
+                        BaselineStore.capture(driver, locator, t3, t3Score, 3);
+                        AISelfHealer.queueSourcePatch(locator, t3, stack, t3Score, 3);
+                        return driver.findElements(healed);
+                    }
+                }
+            }
+
+            // TIER 4: LLM — last resort
+            By healedLocator = AISelfHealer.healLocator(driver, locator, stack);
             if (healedLocator != null) {
-                // If the cache was hit or AI found it, log it
                 AISelfHealer.CachedLocator cached = AISelfHealer.getGlobalHealedCache().get(locator.toString());
                 if (cached != null) {
-                    Ellithium.core.reporting.Reporter.log("AI Self-Healing (cached list): reusing healed locator " 
-                            + cached.newLocator + " for field '" + cached.originalField 
+                    Ellithium.core.reporting.Reporter.log("AI Self-Healing (cached list): reusing healed locator "
+                            + cached.newLocator + " for field '" + cached.originalField
                             + "' (original: " + locator.toString() + ")", Ellithium.core.logging.LogLevel.INFO_YELLOW);
                 }
                 return driver.findElements(healedLocator);
             }
-            // If healing fails, return the empty list (standard Selenium behavior for findElements)
             return new ArrayList<>();
         }
     }

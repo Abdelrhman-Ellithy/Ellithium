@@ -97,16 +97,20 @@ public class SemanticLocatorResolver {
             cvThreshold = 0.25;
         }
 
-        // Extract semantic names from context
-        List<String> semanticNames = SemanticNameExtractor.extract(methodName, fieldName, locatorValue);
+        ElementCategory category = categorizeAction(actionType);
+        boolean isMobile = driver instanceof AppiumDriver;
+
+        // For READABLE (getText) actions, only the locator value is a reliable semantic signal.
+        // Using the method name risks false positives: e.g. "getLoginMessage" → "login" finds
+        // <form id="login"> instead of the actual flash message element.
+        // For all other categories, the method name is a strong contextual hint.
+        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
+        List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
 
         if (semanticNames.isEmpty()) {
             Reporter.log("Tier 2: No semantic names could be extracted — skipping", LogLevel.DEBUG);
             return null;
         }
-
-        ElementCategory category = categorizeAction(actionType);
-        boolean isMobile = driver instanceof AppiumDriver;
 
         Reporter.log("Tier 2: Semantic search — names=" + semanticNames
                 + " category=" + category + " mobile=" + isMobile + " cvThreshold=" + cvThreshold, LogLevel.DEBUG);
@@ -120,6 +124,11 @@ public class SemanticLocatorResolver {
             for (LocatorAttempt attempt : attempts) {
                 try {
                     WebElement found = driver.findElement(attempt.locator);
+
+                    // For READABLE, require the element is actually visible — we need to read its text
+                    if (category == ElementCategory.READABLE) {
+                        try { if (!found.isDisplayed()) continue; } catch (Exception ignored2) {}
+                    }
 
                     // T2-H: Cross-validate against baseline with adaptive threshold
                     if (baseline != null) {
@@ -380,11 +389,34 @@ public class SemanticLocatorResolver {
     // ──────────────────────── READABLE Strategies ────────────────────────
 
     private static void addReadableStrategies(List<LocatorAttempt> out, String name, String lower) {
-        out.add(attempt(By.xpath("//*[normalize-space(text())='" + name + "']"),              "element with exact text '" + name + "'"));
-        out.add(attempt(By.xpath("//*[contains(normalize-space(text()),'" + name + "')]"),    "element containing text '" + name + "'"));
-        out.add(attempt(By.xpath(multiCaseXpath("span", "id", name, "//")), "span[id~='" + name + "']"));
-        out.add(attempt(By.xpath(multiCaseXpath("div",  "id", name, "//")), "div[id~='"  + name + "']"));
-        out.add(attempt(By.xpath(multiCaseXpath("p",    "id", name, "//")), "p[id~='"    + name + "']"));
+        // id-based search across common text-bearing element types — all derived from the locator value
+        out.add(attempt(By.xpath(multiCaseXpath("span",    "id", name, "//")), "span[id~='"    + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("div",     "id", name, "//")), "div[id~='"     + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("p",       "id", name, "//")), "p[id~='"       + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("section", "id", name, "//")), "section[id~='" + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("article", "id", name, "//")), "article[id~='" + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("h1",      "id", name, "//")), "h1[id~='"      + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("h2",      "id", name, "//")), "h2[id~='"      + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("h3",      "id", name, "//")), "h3[id~='"      + name + "']"));
+
+        // Semantic attributes derived from the locator value
+        out.add(attempt(By.cssSelector("[aria-label='"  + name  + "']"), "aria-label='" + name  + "' exact"));
+        out.add(attempt(By.cssSelector("[aria-label='"  + lower + "']"), "aria-label='" + lower + "' exact"));
+        out.add(attempt(By.cssSelector("[aria-label*='" + lower + "']"), "aria-label*='" + lower + "'"));
+        out.add(attempt(By.cssSelector("[title*='"      + lower + "']"), "title*='" + lower + "'"));
+        // WAI-ARIA role: valid when locator name IS a role value (e.g. "alert" → role=alert, "status" → role=status)
+        out.add(attempt(By.cssSelector("[role='" + lower + "']"), "role='" + lower + "'"));
+
+        // Class attributes — all derived from the locator value, never hardcoded domain names
+        out.add(attempt(By.cssSelector("[class*='" + lower + "']"),                              "class*='" + lower + "'"));
+        out.add(attempt(By.xpath(multiCaseXpath("div",  "class", name, "//")), "div[class~='"  + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("span", "class", name, "//")), "span[class~='" + name + "']"));
+        out.add(attempt(By.xpath(multiCaseXpath("p",    "class", name, "//")), "p[class~='"    + name + "']"));
+
+        // Text content matching — broadest search, deferred last
+        out.add(attempt(By.xpath("//*[normalize-space(text())='" + name  + "']"),           "exact text='" + name  + "'"));
+        out.add(attempt(By.xpath("//*[contains(normalize-space(text()),'" + name  + "')]"), "text contains '" + name  + "'"));
+        out.add(attempt(By.xpath("//*[contains(normalize-space(text()),'" + lower + "')]"), "text contains '" + lower + "'"));
     }
 
     // ──────────────────────── BRONZE Universal Strategies ────────────────────────
