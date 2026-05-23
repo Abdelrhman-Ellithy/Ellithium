@@ -388,7 +388,14 @@ public class ONNXEmbeddingHealer {
         return (bestElement != null && bestScore >= threshold) ? bestElement : null;
     }
 
-    /** Appends parent tag + class tokens + nearby label text to the base element document. */
+    /**
+     * Appends parent tag + class tokens + nearby label text to the base element document.
+     * <p>CONTEXT-FORMAT PARITY: the token shape produced here (parentTag [parentId raw]
+     * [parentClass with -/_ → space] [parentLabel ≤40 chars]) is mirrored byte-for-byte by
+     * {@code _format_parent_ctx()} in {@code kaggle-finetune/01_data_generation.py}. Changing this
+     * JS requires the identical change there, or the model sees enriched docs at train vs serve time
+     * in different shapes (train/serve skew).
+     */
     private static String buildContextEnrichedDocument(WebDriver driver, WebElement element) {
         StringBuilder sb = new StringBuilder();
         sb.append(buildElementDocument(element));
