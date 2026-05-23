@@ -81,7 +81,7 @@ public class ONNXEmbeddingHealer {
      * Loads the ONNX model and tokenizer from JAR resources.
      * Called by GeneralHandler at suite startup. Safe to call multiple times.
      */
-    public static void initialize() {
+    public static synchronized void initialize() {
         if (initialized) return;
         initialized = true;
 
@@ -338,14 +338,18 @@ public class ONNXEmbeddingHealer {
         if (!borderline.isEmpty() && driver instanceof org.openqa.selenium.JavascriptExecutor) {
             Reporter.log("[TIER 3] First pass borderline — running context-enrichment pass on "
                     + Math.min(borderline.size(), 5) + " candidates", LogLevel.INFO_BLUE);
-            WebElement enrichedMatch = contextEnrichmentPass(driver, queryVector, borderline, threshold);
+            double[] enrichedScoreOut = new double[1];
+            WebElement enrichedMatch = contextEnrichmentPass(driver, queryVector, borderline, threshold, enrichedScoreOut);
             if (enrichedMatch != null) {
-                Reporter.log("[TIER 3] Embedding match via context-enrichment pass", LogLevel.INFO_GREEN);
+                double enrichedScore = enrichedScoreOut[0];
+                Reporter.log(String.format("[TIER 3] Embedding match via context-enrichment pass: score=%.4f",
+                        enrichedScore), LogLevel.INFO_GREEN);
                 HealingTelemetryStore.record(3, brokenLocator.toString(),
-                        buildElementDocument(enrichedMatch), threshold, true);
-                // Enrichment matches only just clear the use-threshold, so they read as the threshold
-                // value — comfortably below the store bar, i.e. used-this-time but not persisted.
-                LAST_HEAL_SCORE.set(threshold);
+                        buildElementDocument(enrichedMatch), enrichedScore, true);
+                // Record the REAL enrichment score for telemetry accuracy. The correctness gate
+                // (storeThreshold check in BaselineStore/AISelfHealer) prevents persistence of
+                // borderline heals — we don't need to fabricate a low score to achieve that.
+                LAST_HEAL_SCORE.set(enrichedScore);
                 return enrichedMatch;
             }
         }
@@ -367,7 +371,8 @@ public class ONNXEmbeddingHealer {
      * model the same structural context that the Tier 4 LLM gets from the accessibility tree.
      */
     private static WebElement contextEnrichmentPass(WebDriver driver, float[] queryVector,
-                                                     List<WebElement> borderline, double threshold) {
+                                                      List<WebElement> borderline, double threshold,
+                                                      double[] bestScoreOut) {
         double     bestScore   = -1.0;
         WebElement bestElement = null;
         int limit = Math.min(borderline.size(), 5);
@@ -385,6 +390,7 @@ public class ONNXEmbeddingHealer {
                 }
             } catch (Exception ignored) {}
         }
+        if (bestScoreOut != null && bestScoreOut.length > 0) bestScoreOut[0] = bestScore;
         return (bestElement != null && bestScore >= threshold) ? bestElement : null;
     }
 
@@ -481,6 +487,7 @@ public class ONNXEmbeddingHealer {
                             + " return {'id':a('id'),'name':a('name'),'class':a('class'),"
                             + "  'aria-label':a('aria-label'),'data-testid':a('data-testid'),'role':a('role'),"
                             + "  'placeholder':a('placeholder'),'resource-id':a('resource-id'),"
+                            + "  'accessibility-id':a('accessibility-id'),"
                             + "  'content-desc':a('content-desc'),'data-test':a('data-test'),"
                             + "  'title':a('title'),'label':a('label'),"
                             + "  'tag':el.tagName?el.tagName.toLowerCase():null};"
@@ -666,37 +673,29 @@ public class ONNXEmbeddingHealer {
     /**
      * Builds an element document from a stored {@link ElementFingerprint}, using the SAME canonical
      * field order as {@link #buildElementDocument(WebElement)} so calibration scores documents in the
-     * exact shape the model sees at train and inference time (no third doc format). Appium-only and
-     * non-captured fields are simply absent (null) for web baselines.
+     * exact shape the model sees at train and inference time (no third doc format).
+     *
+     * <p>Delegates to {@link #assembleDocument} with a lambda resolver from fingerprint getters —
+     * this guarantees automatic field-order parity with the live/batched paths even when new fields
+     * (e.g. Appium resource-id, accessibility-id) are added to ElementFingerprint. Null fields are
+     * silently skipped, matching the behaviour of the live builder when an attribute is absent.
      */
     public static String buildElementDocument(ElementFingerprint fp) {
         if (fp == null) return "";
-        StringBuilder sb = new StringBuilder();
-        appendVal(sb, fp.getId());
-        appendVal(sb, fp.getName());
-        // resource-id / accessibility-id: not captured in fingerprint (Appium runtime only)
-        appendVal(sb, fp.getAriaLabel());
-        // content-desc: Appium runtime only
-        appendVal(sb, fp.getRole());
-        appendVal(sb, fp.getPlaceholder());
-        appendVal(sb, fp.getDataTestId());
-        // data-test / title: not captured in fingerprint
-        appendVal(sb, fp.getType());
-        // label: Appium runtime only
-        String cls = fp.getClassName();
-        if (cls != null && !cls.isBlank()) {
-            String tokens = cls.replaceAll("[_-]", " ").replaceAll("\\s{2,}", " ").toLowerCase().trim();
-            if (tokens.length() > MAX_CLASS_CHARS) tokens = tokens.substring(0, MAX_CLASS_CHARS);
-            sb.append(" ").append(tokens);
-        }
-        if (fp.getTagName() != null && !fp.getTagName().isBlank()) sb.append(" ").append(fp.getTagName().trim());
-        String text = fp.getText();
-        if (text != null && !text.isBlank()) {
-            String t = text.trim();
-            if (t.length() > MAX_TEXT_CHARS) t = t.substring(0, MAX_TEXT_CHARS);
-            sb.append(" ").append(t);
-        }
-        return sb.toString().trim();
+        return assembleDocument(name -> switch (name) {
+            case "id"               -> fp.getId();
+            case "name"             -> fp.getName();
+            case "class"            -> fp.getClassName();
+            case "aria-label"       -> fp.getAriaLabel();
+            case "role"             -> fp.getRole();
+            case "placeholder"      -> fp.getPlaceholder();
+            case "data-testid"      -> fp.getDataTestId();
+            case "type"             -> fp.getType();
+            // resource-id, accessibility-id, content-desc, data-test, title, label:
+            // not captured in ElementFingerprint yet (Appium runtime only / uncommon web attrs).
+            // When getters are added, add cases here — assembleDocument handles the field ordering.
+            default                 -> null;
+        }, fp.getTagName(), fp.getText());
     }
 
     private static void appendVal(StringBuilder sb, String v) {

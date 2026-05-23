@@ -65,7 +65,7 @@ public class SemanticQueryBuilder {
         ACTION_EXPANSIONS.put("swipe",              "swipe scroll gesture");
         ACTION_EXPANSIONS.put("scroll",             "scroll swipe");
         ACTION_EXPANSIONS.put("movesliderto",       "slider range move");
-        ACTION_EXPANSIONS.put("moveSliderbyoffset", "slider range offset");
+        ACTION_EXPANSIONS.put("movesliderbyoffset", "slider range offset");
         ACTION_EXPANSIONS.put("javascriptclick",    "click javascript button");
         ACTION_EXPANSIONS.put("waitforvisibility",  "wait visible appear");
         ACTION_EXPANSIONS.put("waitforelement",     "wait element appear");

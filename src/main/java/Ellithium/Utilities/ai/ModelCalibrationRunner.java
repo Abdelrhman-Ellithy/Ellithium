@@ -79,11 +79,16 @@ public class ModelCalibrationRunner {
         Random rng = new Random(42);
 
         for (Item item : items) {
-            positives.add(ONNXEmbeddingHealer.cosineSimilarity(item.queryVec, item.docVec));
-            for (int s = 0; s < NEG_SAMPLES_PER_QUERY; s++) {
+            // Vectors are already L2-normalized by embed() — dot product == cosine similarity.
+            // Using dotProduct matches the runtime scoring path in ONNXEmbeddingHealer.scoreAndSelectCandidate().
+            positives.add((double) dotProduct(item.queryVec, item.docVec));
+            int collected = 0;
+            int maxAttempts = NEG_SAMPLES_PER_QUERY * 3;  // cap retries to avoid infinite loop on tiny sets
+            for (int attempt = 0; collected < NEG_SAMPLES_PER_QUERY && attempt < maxAttempts; attempt++) {
                 Item other = items.get(rng.nextInt(items.size()));
-                if (other == item) continue;
-                negatives.add(ONNXEmbeddingHealer.cosineSimilarity(item.queryVec, other.docVec));
+                if (other == item) continue;   // retry instead of silently skipping
+                negatives.add((double) dotProduct(item.queryVec, other.docVec));
+                collected++;
             }
         }
         Collections.sort(positives);
@@ -210,6 +215,15 @@ public class ModelCalibrationRunner {
             System.out.println("  WARNING: wrong elements score above the use threshold (neg-P95 >= use). "
                     + "The bi-encoder cannot separate these classes alone — add the cross-encoder reranker.");
         }
+    }
+
+    // ──────────────────────── Math ────────────────────────
+
+    /** Dot product on L2-normalised vectors (== cosine similarity). Matches ONNXEmbeddingHealer.dotProduct(). */
+    private static double dotProduct(float[] a, float[] b) {
+        double sum = 0.0;
+        for (int i = 0; i < a.length; i++) sum += (double) a[i] * b[i];
+        return sum;
     }
 
     // ──────────────────────── Data Models ────────────────────────
