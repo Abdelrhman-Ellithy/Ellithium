@@ -39,9 +39,6 @@ public class AIConfigLoader {
     private static boolean visionRcaEnabled = false;
     // Tier 3 ONNX embedding config (paid feature)
     private static String licenseKey = "";
-    // Pooling MUST match the embedded model's training/export. "cls" for BGE (default); "mean" for
-    // MiniLM-style models. Runtime-switchable so a model can be A/B-tested without recompiling.
-    private static String onnxPooling = "cls";
     private static double onnxSimilarityThreshold = 0.80;
     private static double onnxReadableThreshold   = 0.65;   // lower for READABLE — text-heavy elements score lower
     private static int onnxMaxCandidates         = 10;
@@ -135,17 +132,6 @@ public class AIConfigLoader {
 
             // Tier 3 ONNX config
             licenseKey = getPropertyOrDefault(configPath, "ai.license.key", "");
-
-            String poolingRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.pooling");
-            String pooling = poolingRaw != null ? resolveEnvironmentVariables(poolingRaw) : null;
-            if (pooling != null && !pooling.isBlank()) {
-                String p = pooling.trim().toLowerCase();
-                if (p.equals("cls") || p.equals("mean")) {
-                    onnxPooling = p;
-                } else {
-                    Logger.warn("Invalid ai.onnx.pooling: " + pooling + ". Use 'cls' or 'mean'. Using cls.");
-                }
-            }
 
             String onnxThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold");
             String onnxThreshold = onnxThresholdRaw != null ? resolveEnvironmentVariables(onnxThresholdRaw) : null;
@@ -254,8 +240,6 @@ public class AIConfigLoader {
 
     // ── Tier 3 ONNX getters ──
     public static String getLicenseKey()                  { return licenseKey; }
-    /** "cls" (BGE) or "mean" (MiniLM) — MUST match the embedded model's training/export pooling. */
-    public static String getOnnxPooling()                 { return onnxPooling; }
     public static double getOnnxSimilarityThreshold()     { return onnxSimilarityThreshold; }
     public static double getOnnxReadableThreshold()       { return onnxReadableThreshold; }
     public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }

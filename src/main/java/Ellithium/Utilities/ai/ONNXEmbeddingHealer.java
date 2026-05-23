@@ -54,8 +54,6 @@ public class ONNXEmbeddingHealer {
 
     private static volatile boolean initialized = false;
     private static volatile boolean available   = false;
-    // Pooling selected at init from ai.onnx.pooling — MUST match the embedded model's export.
-    private static volatile boolean useClsPooling = true;
 
     /**
      * Per-thread similarity score of the most recent Tier 3 heal. Set immediately before
@@ -104,11 +102,9 @@ public class ONNXEmbeddingHealer {
 
             initOrtSession(modelBytes);
             initTokenizer(tokenizerBytes);
-            useClsPooling = !"mean".equalsIgnoreCase(AIConfigLoader.getOnnxPooling());
             available = true;
             Reporter.log("[TIER 3] ONNX session active — " + modelBytes.length / 1024
-                    + " KB INT8 model loaded | pooling=" + (useClsPooling ? "cls" : "mean"),
-                    LogLevel.INFO_GREEN);
+                    + " KB INT8 model loaded | pooling=cls", LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
             Reporter.log("[TIER 3] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
@@ -220,12 +216,9 @@ public class ONNXEmbeddingHealer {
             Object onnxValue  = e.getValue();
             float[][][] tokenEmbeddings = (float[][][]) mOnnxGetValue.invoke(onnxValue);
 
-            // Step 6: pool token embeddings. MUST match the embedded model's training/export pooling
-            // (ai.onnx.pooling): CLS for BGE, mean for MiniLM-style. Runtime-switchable so a model
-            // can be A/B-tested without recompiling.
-            float[] pooled = useClsPooling
-                    ? clsPool(tokenEmbeddings[0])
-                    : meanPool(tokenEmbeddings[0], paddedMask);
+            // Step 6: CLS pooling — BGE uses the [CLS] token (index 0) as the sentence embedding
+            // (1_Pooling/config.json → pooling_mode_cls_token=true). Always CLS for this model family.
+            float[] pooled = clsPool(tokenEmbeddings[0]);
 
             // Step 7: L2 normalise
             return l2Normalize(pooled);
@@ -520,20 +513,6 @@ public class ONNXEmbeddingHealer {
         return tokenEmbeddings[0].clone();
     }
 
-    /** Mean pooling over non-padding tokens (for MiniLM-style models exported with mean pooling). */
-    private static float[] meanPool(float[][] tokenEmbeddings, long[] attentionMask) {
-        int hiddenSize = tokenEmbeddings[0].length;
-        float[] pooled = new float[hiddenSize];
-        int valid = 0;
-        for (int i = 0; i < tokenEmbeddings.length; i++) {
-            if (i < attentionMask.length && attentionMask[i] == 1L) {
-                for (int j = 0; j < hiddenSize; j++) pooled[j] += tokenEmbeddings[i][j];
-                valid++;
-            }
-        }
-        if (valid > 0) for (int j = 0; j < hiddenSize; j++) pooled[j] /= valid;
-        return pooled;
-    }
 
     private static float[] l2Normalize(float[] v) {
         double norm = 0.0;
