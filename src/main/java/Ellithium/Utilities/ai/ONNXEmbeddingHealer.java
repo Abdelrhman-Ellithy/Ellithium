@@ -178,6 +178,10 @@ public class ONNXEmbeddingHealer {
     static float[] embed(String text, boolean isQuery) {
         if (!available || ortSession == null || tokenizer == null) return null;
         String input = isQuery ? BGE_QUERY_PREFIX + text : text;
+        // Declared outside the try so they can be closed in finally — OnnxTensor and
+        // OrtSession.Result hold OFF-HEAP native memory; without explicit close, every embed()
+        // (one per candidate per heal) leaks until GC, which can balloon native memory in a long suite.
+        Object tIds = null, tMask = null, tType = null, result = null;
         try {
             // Step 1: Tokenize via DJL HuggingFaceTokenizer (cached reflection handles)
             Object encoding = mEncode.invoke(tokenizer, input);
@@ -197,9 +201,9 @@ public class ONNXEmbeddingHealer {
 
             // Step 3: Build ORT tensors (cached createTensor handle)
             long[] shape = {1L, (long) MAX_SEQ_LEN};
-            Object tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedIds),  shape);
-            Object tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedMask), shape);
-            Object tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedType), shape);
+            tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedIds),  shape);
+            tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedMask), shape);
+            tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedType), shape);
 
             // Step 4: Run ORT session (cached run handle)
             Map<String, Object> inputs = new LinkedHashMap<>();
@@ -207,10 +211,11 @@ public class ONNXEmbeddingHealer {
             inputs.put("attention_mask", tMask);
             inputs.put("token_type_ids", tType);
 
-            Object result = mSessionRun.invoke(ortSession, inputs);
+            result = mSessionRun.invoke(ortSession, inputs);
 
             // Step 5: Extract last_hidden_state (first output)
-            // OrtSession.Result implements Iterable<Map.Entry<String, OnnxValue>>
+            // OrtSession.Result implements Iterable<Map.Entry<String, OnnxValue>>.
+            // getValue() materializes a Java float[][][] copy, so the Result can be closed afterwards.
             Iterator<?> it    = ((Iterable<?>) result).iterator();
             Map.Entry<?, ?> e = (Map.Entry<?, ?>) it.next();
             Object onnxValue  = e.getValue();
@@ -226,6 +231,19 @@ public class ONNXEmbeddingHealer {
         } catch (Exception ex) {
             Reporter.log("[TIER 3] embed failed: " + ex.getMessage(), LogLevel.WARN);
             return null;
+        } finally {
+            // Close native resources (Result first — it may reference output tensors).
+            closeQuietly(result);
+            closeQuietly(tIds);
+            closeQuietly(tMask);
+            closeQuietly(tType);
+        }
+    }
+
+    /** Close an AutoCloseable (OnnxTensor / OrtSession.Result) without throwing — frees native memory. */
+    private static void closeQuietly(Object o) {
+        if (o instanceof AutoCloseable c) {
+            try { c.close(); } catch (Exception ignored) {}
         }
     }
 
