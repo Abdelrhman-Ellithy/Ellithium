@@ -737,9 +737,4 @@ public class ONNXEmbeddingHealer {
         while ((n = is.read(chunk)) != -1) buf.write(chunk, 0, n);
         return buf.toByteArray();
     }
-
-    private static void closeQuietly(Object obj) {
-        if (obj == null) return;
-        try { obj.getClass().getMethod("close").invoke(obj); } catch (Exception ignored) {}
-    }
 }

@@ -68,14 +68,14 @@ public class BaseActions<T extends WebDriver> {
             }
 
             // TIER 2: Semantic Strategy Search — TEMPORARILY DISABLED
-            // WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
-            //         driver, callerMethod, fieldName, actionType, locatorValue, baseline);
-            // semanticMatch = resolveInteractiveElement(semanticMatch, actionType, "TIER 2");
-            // if (semanticMatch != null) {
-            //     BaselineStore.capture(driver, locator, semanticMatch);
-            //     AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
-            //     return semanticMatch;
-            // }
+            WebElement semanticMatch = SemanticLocatorResolver.trySemanticHeal(
+                    driver, callerMethod, fieldName, actionType, locatorValue, baseline);
+            semanticMatch = resolveInteractiveElement(semanticMatch, actionType, "TIER 2");
+            if (semanticMatch != null) {
+                BaselineStore.capture(driver, locator, semanticMatch);
+                AISelfHealer.queueSourcePatch(locator, semanticMatch, stack);
+                return semanticMatch;
+            }
 
             // TIER 3: Local ONNX Embedding (active when fine-tuned model is present)
             if (Ellithium.Utilities.ai.ONNXEmbeddingHealer.isAvailable()) {
