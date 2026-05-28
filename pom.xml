@@ -70,7 +70,7 @@
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.14.0</gsonVersion>
         <log4jVersion>2.26.0</log4jVersion>
-        <AllureVersion>2.34.0</AllureVersion>
+        <AllureVersion>2.35.1</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.5.1</ApachePOI>
