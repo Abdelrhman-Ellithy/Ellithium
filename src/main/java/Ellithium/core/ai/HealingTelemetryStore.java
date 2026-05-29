@@ -33,20 +33,67 @@ public class HealingTelemetryStore {
     private static final ConcurrentLinkedQueue<TelemetryRecord> records =
             new ConcurrentLinkedQueue<>();
 
-    // ──────────────────────── Public API ────────────────────────
+    private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
+
+    /** Sets the test identifier for the current thread so subsequent heals are attributed to it. */
+    public static void setCurrentTest(String testId) {
+        if (testId == null) CURRENT_TEST.remove(); else CURRENT_TEST.set(testId);
+    }
+
+    /** Clears the current-thread test attribution (call at test end to avoid leaking across reuse). */
+    public static void clearCurrentTest() {
+        CURRENT_TEST.remove();
+    }
 
     /**
-     * Records a single heal attempt.
+     * Records a single heal attempt (legacy 5-arg form — no query/category context).
      *
-     * @param tier          1 = Algorithmic, 2 = Semantic, 3 = ONNX Embedding (future), 4 = LLM
+     * @param tier          1 = Algorithmic, 2 = Semantic, 3 = ONNX Embedding, 4 = LLM
      * @param brokenLocator The locator that failed (e.g., "By.id: loginBtn")
      * @param healedLocator The healed locator string, or null if healing failed
      * @param score         Similarity / confidence score (0.0–1.0), or 0.0 on failure
-     * @param success       Whether the heal attempt produced a usable element
+     * @param success       Whether the heal attempt produced a usable element (used) vs fell through
      */
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success) {
-        records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success));
+        record(tier, brokenLocator, healedLocator, score, success, null, null);
+    }
+
+    /**
+     * Records a single heal attempt with full Tier-3 context (B2 instrumentation).
+     *
+     * @param query    The semantic query string served to the model (debug + fallthrough analysis)
+     * @param category Element category for this action — READABLE / CLICKABLE / INPUT (per-class rates)
+     */
+    public static void record(int tier, String brokenLocator, String healedLocator,
+                               double score, boolean success, String query, String category) {
+        records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
+                query, category, CURRENT_TEST.get()));
+    }
+
+    /**
+     * False-heal detector (R9): a heal that was USED in a test that subsequently FAILED is a prime
+     * suspect for a confident-wrong heal. Flags every used heal attributed to {@code testId} and logs
+     * a warning. This is the only ground-truth precision signal available in production — offline
+     * metrics can't see a heal that was structurally plausible but semantically wrong.
+     *
+     * @return the number of used heals flagged as suspect for this test
+     */
+    public static int markTestFailed(String testId) {
+        if (testId == null) return 0;
+        int flagged = 0;
+        for (TelemetryRecord r : records) {
+            if (r.success && testId.equals(r.testId) && !r.suspectWrongHeal) {
+                r.suspectWrongHeal = true;
+                flagged++;
+            }
+        }
+        if (flagged > 0) {
+            Reporter.log(String.format(
+                    "[FALSE-HEAL?] %s failed after %d used heal(s) — see healing-telemetry.json",
+                    testId, flagged), LogLevel.WARN);
+        }
+        return flagged;
     }
 
     /**
@@ -102,24 +149,30 @@ public class HealingTelemetryStore {
         records.clear();
     }
 
-    // ──────────────────────── Data Model ────────────────────────
-
     public static class TelemetryRecord {
         public final int tier;
         public final String brokenLocator;
         public final String healedLocator;
         public final double score;
-        public final boolean success;
+        public final boolean success;        // true = heal USED; false = fell through to the next tier
+        public final String query;           // semantic query served to the model (Tier 3), may be null
+        public final String category;        // READABLE / CLICKABLE / INPUT, may be null
+        public final String testId;          // owning test (for the false-heal detector), may be null
+        public volatile boolean suspectWrongHeal; // set by markTestFailed when the owning test failed
         public final String threadName;
         public final String timestamp;
 
-        TelemetryRecord(int tier, String brokenLocator, String healedLocator,
-                        double score, boolean success) {
+        TelemetryRecord(int tier, String brokenLocator, String healedLocator, double score,
+                        boolean success, String query, String category, String testId) {
             this.tier = tier;
             this.brokenLocator = brokenLocator;
             this.healedLocator = healedLocator;
             this.score = score;
             this.success = success;
+            this.query = query;
+            this.category = category;
+            this.testId = testId;
+            this.suspectWrongHeal = false;
             this.threadName = Thread.currentThread().getName();
             this.timestamp = Instant.now().toString();
         }
@@ -131,6 +184,7 @@ public class HealingTelemetryStore {
         final int totalRecords;
         final long successCount;
         final long failureCount;
+        final long suspectWrongHeals;     // used heals whose owning test later failed (R9)
         final TierSummary tier1;
         final TierSummary tier2;
         final TierSummary tier3;
@@ -142,6 +196,7 @@ public class HealingTelemetryStore {
             this.totalRecords = records.size();
             this.successCount = records.stream().filter(r -> r.success).count();
             this.failureCount = records.stream().filter(r -> !r.success).count();
+            this.suspectWrongHeals = records.stream().filter(r -> r.suspectWrongHeal).count();
             this.tier1 = new TierSummary(1, records);
             this.tier2 = new TierSummary(2, records);
             this.tier3 = new TierSummary(3, records);
@@ -152,7 +207,10 @@ public class HealingTelemetryStore {
     private static class TierSummary {
         final int tier;
         final long attempts;
-        final long successes;
+        final long used;             // heals used (success=true)
+        final long fellThrough;      // attempts that fell through to the next tier (success=false)
+        final double fallthroughRate;// fellThrough / attempts — the B0.5/B4 decision signal
+        final long suspectWrongHeals;// used heals whose owning test later failed
         final double avgScore;
 
         TierSummary(int tier, List<TelemetryRecord> records) {
@@ -160,7 +218,10 @@ public class HealingTelemetryStore {
             List<TelemetryRecord> tierRecs = records.stream()
                     .filter(r -> r.tier == tier).collect(Collectors.toList());
             this.attempts = tierRecs.size();
-            this.successes = tierRecs.stream().filter(r -> r.success).count();
+            this.used = tierRecs.stream().filter(r -> r.success).count();
+            this.fellThrough = tierRecs.stream().filter(r -> !r.success).count();
+            this.fallthroughRate = tierRecs.isEmpty() ? 0.0 : (double) fellThrough / attempts;
+            this.suspectWrongHeals = tierRecs.stream().filter(r -> r.suspectWrongHeal).count();
             this.avgScore = tierRecs.isEmpty() ? 0.0
                     : tierRecs.stream().mapToDouble(r -> r.score).average().orElse(0.0);
         }

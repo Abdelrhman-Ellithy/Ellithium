@@ -249,8 +249,13 @@ public class AccessibilityTreeExtractor {
             return axTree;
 
         } catch (Exception e) {
-            Reporter.log("AccessibilityTreeExtractor: JS extraction failed: " + e.getMessage()
-                    + " — caller should fall back to DOMMinimizer", LogLevel.WARN);
+            String msg = e.getMessage();
+            if (msg != null) {
+                int nl = msg.indexOf('\n');
+                if (nl > 0) msg = msg.substring(0, nl);
+            }
+            Reporter.log("AccessibilityTreeExtractor: JS extraction failed: " + msg
+                    + " — falling back to DOMMinimizer", LogLevel.DEBUG);
             return null;
         }
     }

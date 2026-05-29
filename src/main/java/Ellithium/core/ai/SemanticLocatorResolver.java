@@ -34,8 +34,6 @@ import java.util.List;
  */
 public class SemanticLocatorResolver {
 
-    // ──────────────────────── Element Categories ────────────────────────
-
     /**
      * The type of UI element we're searching for, inferred from the Ellithium
      * action method (sendData, clickOnElement, etc.).
@@ -48,8 +46,6 @@ public class SemanticLocatorResolver {
         ANY         // fallback
     }
 
-    // ──────────────────────── Main Entry Point ────────────────────────
-
     /**
      * Attempts to find the broken element using semantic strategies.
      *
@@ -61,33 +57,47 @@ public class SemanticLocatorResolver {
      * @param baseline   The stored fingerprint for cross-validation, may be null
      * @return The matched WebElement, or null if no confident match was found
      */
+    /** Side-effect-free version used by the Tier 2⊕3 ensemble: same matching logic, but does NOT
+     *  queue an AIHealingReporter entry or record HealingTelemetryStore — those are the caller's
+     *  responsibility once the ENSEMBLE decides this element is the final winner. */
+    public static WebElement peekSemanticMatch(WebDriver driver,
+                                               String methodName, String fieldName,
+                                               String actionType, String locatorValue,
+                                               ElementFingerprint baseline) {
+        return trySemanticHeal(driver, methodName, fieldName, actionType, locatorValue, baseline, false);
+    }
+
     public static WebElement trySemanticHeal(WebDriver driver,
                                              String methodName, String fieldName,
                                              String actionType, String locatorValue,
                                              ElementFingerprint baseline) {
-        // ── T2-A: Mutation pre-pass (O(1), no DOM scan) ──────────────────────────────────
-        // Try cheap locator value mutations first — covers convention renames, attr swaps.
-        // If we find a match, we're done without building any semantic strategies.
+        return trySemanticHeal(driver, methodName, fieldName, actionType, locatorValue, baseline, true);
+    }
+
+    private static WebElement trySemanticHeal(WebDriver driver,
+                                              String methodName, String fieldName,
+                                              String actionType, String locatorValue,
+                                              ElementFingerprint baseline,
+                                              boolean recordSideEffects) {
         if (locatorValue != null && !locatorValue.isBlank()) {
             By brokenBy = rebuildLocator(locatorValue);
             if (brokenBy != null) {
                 WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenBy, driver, baseline);
                 if (mutationMatch != null) {
-                    By cleanLocator = ElementFingerprint.reconstructLocator(mutationMatch);
-                    String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : brokenBy.toString();
-                    Reporter.log("Tier 2 [Mutation]: MATCH via mutation pre-pass | locator=" + cleanLocatorStr, LogLevel.INFO_GREEN);
-                    AIHealingReporter.queueChange("semantic-mutation", cleanLocatorStr,
-                            new Ellithium.Utilities.ai.models.HealingResult(cleanLocatorStr, 0.90, "[TIER 2 - Mutation]"),
-                            null, methodName, actionType, 0);
-                    HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.90, true);
+                    if (recordSideEffects) {
+                        By cleanLocator = ElementFingerprint.reconstructLocator(mutationMatch);
+                        String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : brokenBy.toString();
+                        Reporter.log("Tier 2 [Mutation]: MATCH via mutation pre-pass | locator=" + cleanLocatorStr, LogLevel.INFO_GREEN);
+                        AIHealingReporter.queueChange("semantic-mutation", cleanLocatorStr,
+                                new Ellithium.Utilities.ai.models.HealingResult(cleanLocatorStr, 0.90, "[TIER 2 - Mutation]"),
+                                null, methodName, actionType, 0);
+                        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.90, true);
+                    }
                     return mutationMatch;
                 }
             }
         }
 
-        // ── T2-H: Adaptive cross-validation threshold ─────────────────────────────────────
-        // Stricter when we have strong baseline (avoids false positive with id match).
-        // Zero threshold when no baseline exists (accept any structural match).
         double cvThreshold;
         if (baseline == null) {
             cvThreshold = 0.0;
@@ -100,10 +110,6 @@ public class SemanticLocatorResolver {
         ElementCategory category = categorizeAction(actionType);
         boolean isMobile = driver instanceof AppiumDriver;
 
-        // For READABLE (getText) actions, only the locator value is a reliable semantic signal.
-        // Using the method name risks false positives: e.g. "getLoginMessage" → "login" finds
-        // <form id="login"> instead of the actual flash message element.
-        // For all other categories, the method name is a strong contextual hint.
         String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
         List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
 
@@ -115,22 +121,18 @@ public class SemanticLocatorResolver {
         Reporter.log("Tier 2: Semantic search — names=" + semanticNames
                 + " category=" + category + " mobile=" + isMobile + " cvThreshold=" + cvThreshold, LogLevel.DEBUG);
 
-        // Build all locator strategies, priority-sorted (T2-D) and deduplicated (T2-G)
         List<LocatorAttempt> attempts = buildStrategies(semanticNames, category, isMobile, driver, baseline);
 
-        // Suppress selenium listener to avoid logging every findElement attempt
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             for (LocatorAttempt attempt : attempts) {
                 try {
                     WebElement found = driver.findElement(attempt.locator);
 
-                    // For READABLE, require the element is actually visible — we need to read its text
                     if (category == ElementCategory.READABLE) {
                         try { if (!found.isDisplayed()) continue; } catch (Exception ignored2) {}
                     }
 
-                    // T2-H: Cross-validate against baseline with adaptive threshold
                     if (baseline != null) {
                         double similarity = baseline.scoreSimilarity(found);
                         if (similarity < cvThreshold) {
@@ -138,43 +140,40 @@ public class SemanticLocatorResolver {
                         }
                     }
 
-                    // Re-enable logging for the success message
-                    Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                    if (recordSideEffects) {
+                        Ellithium.core.execution.listener.seleniumListener.resumeLogging();
 
-                    // Reconstruct the simplest possible locator from the matched element
-                    By cleanLocator = ElementFingerprint.reconstructLocator(found);
-                    String cleanLocatorStr = (cleanLocator != null) ? cleanLocator.toString() : attempt.locator.toString();
+                        By cleanLocator = ElementFingerprint.reconstructLocator(found);
+                        String cleanLocatorStr = (cleanLocator != null) ? cleanLocator.toString() : attempt.locator.toString();
 
-                    Reporter.log("Tier 2: MATCH via " + attempt.description
-                            + " | locator=" + cleanLocatorStr, LogLevel.INFO_GREEN);
+                        Reporter.log("Tier 2: MATCH via " + attempt.description
+                                + " | locator=" + cleanLocatorStr, LogLevel.INFO_GREEN);
 
-                    // Queue for healing report (BaselineStore capture is done by caller in BaseActions)
-                    AIHealingReporter.queueChange(
-                            "semantic-strategy", cleanLocatorStr,
-                            new Ellithium.Utilities.ai.models.HealingResult(
-                                    cleanLocatorStr, 0.85,
-                                    "[TIER 2 - Semantic] " + attempt.description),
-                            null, methodName, actionType, 0);
+                        AIHealingReporter.queueChange(
+                                "semantic-strategy", cleanLocatorStr,
+                                new Ellithium.Utilities.ai.models.HealingResult(
+                                        cleanLocatorStr, 0.85,
+                                        "[TIER 2 - Semantic] " + attempt.description),
+                                null, methodName, actionType, 0);
 
-                    String brokenStr = (baseline != null) ? baseline.getLocatorKey() : attempt.locator.toString();
-                    HealingTelemetryStore.record(2, brokenStr, cleanLocatorStr, 0.85, true);
-
+                        String brokenStr = (baseline != null) ? baseline.getLocatorKey() : attempt.locator.toString();
+                        HealingTelemetryStore.record(2, brokenStr, cleanLocatorStr, 0.85, true);
+                    }
                     return found;
                 } catch (NoSuchElementException | InvalidSelectorException ignored) {
-                    // Strategy didn't match — try next
                 }
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
-        Reporter.log("Tier 2: No match found across " + attempts.size()
-                + " strategies — falling through to Tier 4 (LLM)", LogLevel.DEBUG);
-        HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
+        if (recordSideEffects) {
+            Reporter.log("Tier 2: No match found across " + attempts.size()
+                    + " strategies — falling through to Tier 4 (LLM)", LogLevel.DEBUG);
+            HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
+        }
         return null;
     }
-
-    // ──────────────────────── Strategy Building ────────────────────────
 
     /**
      * Generates all applicable locator strategies for the given semantic names
@@ -185,12 +184,10 @@ public class SemanticLocatorResolver {
                                                         boolean isMobile,
                                                         WebDriver driver,
                                                         ElementFingerprint baseline) {
-        // T2-F: derive parent scope prefix from baseline if available
         String scopePrefix = (baseline != null && baseline.getParentTag() != null)
                 ? "//" + baseline.getParentTag() + "/"
                 : "//";
 
-        // Build raw strategies grouped by priority bucket
         List<LocatorAttempt> gold   = new ArrayList<>();  // data-testid/cy/e2e/automation attrs
         List<LocatorAttempt> silver = new ArrayList<>();  // exact id/name/aria-label
         List<LocatorAttempt> bronze = new ArrayList<>();  // contains/semantic inference
@@ -200,13 +197,10 @@ public class SemanticLocatorResolver {
             if (name.isBlank()) continue;
             String lower = name.toLowerCase();
 
-            // Gold tier: test-specific attributes (never changes in prod code)
             addTestAttrStrategies(gold, lower);
 
-            // Silver tier: exact id/aria-label
             addSilverStrategies(silver, name, lower, scopePrefix);
 
-            // Category-specific strategies (Bronze)
             switch (category) {
                 case INPUT:
                     addInputStrategies(bronze, name, lower, scopePrefix, driver);
@@ -231,14 +225,12 @@ public class SemanticLocatorResolver {
             }
         }
 
-        // T2-D: Priority sort — Gold first, then Silver, Bronze, Iron
         List<LocatorAttempt> ordered = new ArrayList<>();
         ordered.addAll(gold);
         ordered.addAll(silver);
         ordered.addAll(bronze);
         ordered.addAll(iron);
 
-        // T2-G: Deduplicate by locator string (different name variants often produce identical XPath)
         java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
         List<LocatorAttempt> deduped = new ArrayList<>();
         for (LocatorAttempt a : ordered) {
@@ -248,17 +240,13 @@ public class SemanticLocatorResolver {
         return deduped;
     }
 
-    // ──────────────────────── GOLD Tier: Test-Specific Attributes (T2-D + T2-E) ────────────────────────
-
     private static void addTestAttrStrategies(List<LocatorAttempt> out, String lower) {
-        // Exact match first, then contains — specific before general (T2-C principle)
         out.add(attempt(By.cssSelector("[data-testid='"  + lower + "']"), "[data-testid='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-testid*='" + lower + "']"), "[data-testid*='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-test='"    + lower + "']"), "[data-test='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-test*='"   + lower + "']"), "[data-test*='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-qa='"      + lower + "']"), "[data-qa='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-qa*='"     + lower + "']"), "[data-qa*='" + lower + "']"));
-        // Cypress, E2E, and automation attributes (T2-E)
         out.add(attempt(By.cssSelector("[data-cy='"            + lower + "']"), "[data-cy='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-cy*='"           + lower + "']"), "[data-cy*='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-e2e='"           + lower + "']"), "[data-e2e='" + lower + "']"));
@@ -269,55 +257,42 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.cssSelector("[data-automation-id*='"+ lower + "']"), "[data-automation-id*='" + lower + "']"));
     }
 
-    // ──────────────────────── SILVER Tier: Developer-Assigned Identity ────────────────────────
-
     private static void addSilverStrategies(List<LocatorAttempt> out, String name, String lower, String scopePrefix) {
-        // Exact id match (T2-C: exact before contains)
         out.add(attempt(By.id(name),  "id='" + name + "' (exact)"));
         out.add(attempt(By.id(lower), "id='" + lower + "' (exact lower)"));
-        // Exact aria-label
         out.add(attempt(By.cssSelector("[aria-label='" + name  + "']"), "aria-label='" + name + "'"));
         out.add(attempt(By.cssSelector("[aria-label='" + lower + "']"), "aria-label='" + lower + "'"));
-        // Angular Reactive Forms (T2-E)
         out.add(attempt(By.cssSelector("[formcontrolname='" + lower + "']"), "formcontrolname='" + lower + "'"));
         out.add(attempt(By.cssSelector("[formcontrolname*='" + lower + "']"), "formcontrolname*='" + lower + "'"));
         out.add(attempt(By.cssSelector("[ng-model*='" + lower + "']"), "ng-model*='" + lower + "'"));
     }
 
-    // ──────────────────────── INPUT Strategies ────────────────────────
-
     private static void addInputStrategies(List<LocatorAttempt> out, String name, String lower,
                                             String scopePrefix, WebDriver driver) {
-        // T2-C: Exact match before contains
         out.add(attempt(By.xpath(scopePrefix + "input[@placeholder='" + name  + "']"), "input[placeholder='" + name  + "'] exact"));
         out.add(attempt(By.xpath(scopePrefix + "input[@placeholder='" + lower + "']"), "input[placeholder='" + lower + "'] exact"));
         out.add(attempt(By.xpath(scopePrefix + "input[@name='" + name  + "']"), "input[name='" + name  + "'] exact"));
         out.add(attempt(By.xpath(scopePrefix + "input[@name='" + lower + "']"), "input[name='" + lower + "'] exact"));
 
-        // Contains variants
         out.add(attempt(By.xpath(multiCaseXpath("input", "placeholder", name, scopePrefix)), "input[placeholder~='" + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("input", "aria-label",  name, scopePrefix)), "input[aria-label~='"  + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("input", "id",          name, scopePrefix)), "input[id~='"          + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("input", "name",        name, scopePrefix)), "input[name~='"        + name + "']"));
 
-        // Textarea variants
         out.add(attempt(By.xpath(multiCaseXpath("textarea", "placeholder", name, scopePrefix)), "textarea[placeholder~='" + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("textarea", "aria-label",  name, scopePrefix)), "textarea[aria-label~='"  + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("textarea", "id",          name, scopePrefix)), "textarea[id~='"          + name + "']"));
 
-        // T2-B: Label-for-input traversal (structurally precise, immune to class/id changes)
         out.add(attempt(
                 By.xpath("//label[contains(normalize-space(text()),'" + name + "')]/following::input[1]"),
                 "label[text~='" + name + "']/following::input"));
         out.add(attempt(
                 By.xpath("//label[contains(normalize-space(text()),'" + lower + "')]/following::input[1]"),
                 "label[text~='" + lower + "']/following::input"));
-        // Implicit label (wraps the input)
         out.add(attempt(
                 By.xpath("(//label[contains(normalize-space(text()),'" + name + "')]//input)[1]"),
                 "label[text~='" + name + "']//input"));
 
-        // Container and sibling traversal
         out.add(attempt(By.xpath(childOfTextContainer("input", name)),   "input inside container with text '" + name + "'"));
         out.add(attempt(By.xpath(followingSibling("input", name)),        "first input after text '" + name + "'"));
         out.add(attempt(By.xpath(precedingSibling("input", name)),        "first input before text '" + name + "'"));
@@ -332,11 +307,8 @@ public class SemanticLocatorResolver {
         } catch (Exception ignored) {}
     }
 
-    // ──────────────────────── CLICKABLE Strategies ────────────────────────
-
     private static void addClickableStrategies(List<LocatorAttempt> out, String name, String lower,
                                                 String scopePrefix) {
-        // T2-C: Exact text match first, then contains
         out.add(attempt(By.xpath(scopePrefix + "button[normalize-space(text())='" + name  + "']"), "button[text='" + name  + "'] exact"));
         out.add(attempt(By.xpath(scopePrefix + "button[normalize-space(text())='" + lower + "']"), "button[text='" + lower + "'] exact"));
         out.add(attempt(By.xpath(scopePrefix + "button[@id='" + name  + "']"),  "button[id='" + name  + "'] exact"));
@@ -349,7 +321,6 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath(multiCaseXpath("button", "title",      name, scopePrefix)), "button[title~='"     + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("button", "value",      name, scopePrefix)), "button[value~='"     + name + "']"));
 
-        // Exact link text
         out.add(attempt(By.xpath(scopePrefix + "a[normalize-space(text())='" + name  + "']"), "a[text='" + name  + "'] exact"));
         out.add(attempt(By.xpath(textContains("a", name, scopePrefix)), "link with text '" + name + "'"));
         out.add(attempt(By.xpath(multiCaseXpath("a", "id",         name, scopePrefix)), "a[id~='"        + name + "']"));
@@ -372,8 +343,6 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath(followingSibling("a",      name)), "first link after text '"   + name + "'"));
     }
 
-    // ──────────────────────── SELECT Strategies ────────────────────────
-
     private static void addSelectStrategies(List<LocatorAttempt> out, String name, String lower,
                                              String scopePrefix) {
         out.add(attempt(By.xpath(scopePrefix + "select[@id='"   + name  + "']"), "select[id='"   + name  + "'] exact"));
@@ -386,10 +355,7 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath(childOfTextContainer("select", name)), "select inside element with text '" + name + "'"));
     }
 
-    // ──────────────────────── READABLE Strategies ────────────────────────
-
     private static void addReadableStrategies(List<LocatorAttempt> out, String name, String lower) {
-        // id-based search across common text-bearing element types — all derived from the locator value
         out.add(attempt(By.xpath(multiCaseXpath("span",    "id", name, "//")), "span[id~='"    + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("div",     "id", name, "//")), "div[id~='"     + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("p",       "id", name, "//")), "p[id~='"       + name + "']"));
@@ -399,27 +365,21 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath(multiCaseXpath("h2",      "id", name, "//")), "h2[id~='"      + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("h3",      "id", name, "//")), "h3[id~='"      + name + "']"));
 
-        // Semantic attributes derived from the locator value
         out.add(attempt(By.cssSelector("[aria-label='"  + name  + "']"), "aria-label='" + name  + "' exact"));
         out.add(attempt(By.cssSelector("[aria-label='"  + lower + "']"), "aria-label='" + lower + "' exact"));
         out.add(attempt(By.cssSelector("[aria-label*='" + lower + "']"), "aria-label*='" + lower + "'"));
         out.add(attempt(By.cssSelector("[title*='"      + lower + "']"), "title*='" + lower + "'"));
-        // WAI-ARIA role: valid when locator name IS a role value (e.g. "alert" → role=alert, "status" → role=status)
         out.add(attempt(By.cssSelector("[role='" + lower + "']"), "role='" + lower + "'"));
 
-        // Class attributes — all derived from the locator value, never hardcoded domain names
         out.add(attempt(By.cssSelector("[class*='" + lower + "']"),                              "class*='" + lower + "'"));
         out.add(attempt(By.xpath(multiCaseXpath("div",  "class", name, "//")), "div[class~='"  + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("span", "class", name, "//")), "span[class~='" + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("p",    "class", name, "//")), "p[class~='"    + name + "']"));
 
-        // Text content matching — broadest search, deferred last
         out.add(attempt(By.xpath("//*[normalize-space(text())='" + name  + "']"),           "exact text='" + name  + "'"));
         out.add(attempt(By.xpath("//*[contains(normalize-space(text()),'" + name  + "')]"), "text contains '" + name  + "'"));
         out.add(attempt(By.xpath("//*[contains(normalize-space(text()),'" + lower + "')]"), "text contains '" + lower + "'"));
     }
-
-    // ──────────────────────── BRONZE Universal Strategies ────────────────────────
 
     private static void addBronzeUniversalStrategies(List<LocatorAttempt> out, String name, String lower,
                                                       String scopePrefix) {
@@ -428,8 +388,6 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath("//*[contains(@title,'"      + name  + "')]"), "*[title*='"      + name  + "']"));
         out.add(attempt(By.xpath("//*[contains(@title,'"      + lower + "')]"), "*[title*='"      + lower + "']"));
     }
-
-    // ──────────────────────── XPath Generators ────────────────────────
 
     /**
      * Generates an XPath that checks an attribute against multiple case variants.
@@ -525,8 +483,6 @@ public class SemanticLocatorResolver {
                 + " or contains(normalize-space(text()),'" + lower + "'))]";
     }
 
-    // ──────────────────────── Action Categorization ────────────────────────
-
     /**
      * Maps Ellithium action method names to element categories.
      * These are the REAL method names from Ellithium's interaction classes:
@@ -536,43 +492,33 @@ public class SemanticLocatorResolver {
         if (actionType == null || actionType.equals("unknown")) return ElementCategory.ANY;
 
         return switch (actionType) {
-            // ElementActions — text input
             case "sendData", "clearElement",
-                 // JavaScriptActions — value setting
                  "setElementValueUsingJS",
-                 // ElementActions — file upload (targets input[type=file])
                  "uploadFile", "uploadMultipleFiles", "uploadFileUsingJS"
                     -> ElementCategory.INPUT;
 
-            // ElementActions — clicking
             case "clickOnElement", "clickOnMultipleElements",
-                 // MouseActions — mouse interactions
                  "hoverOverElement", "hoverAndClick", "doubleClick", "rightClick",
                  "dragAndDrop", "dragAndDropByOffset",
-                 // JavaScriptActions — JS click
                  "javascriptClick",
-                 // MobileActions — touch interactions
                  "tap", "doubleTap", "longPress", "twoFingerTap"
                     -> ElementCategory.CLICKABLE;
 
-            // SelectActions — dropdown operations
             case "selectDropdownByText", "selectDropdownByValue", "selectDropdownByIndex",
                  "deselectAll", "deselectDropdownByText", "deselectDropdownByValue",
                  "deselectDropdownByIndex", "selectDropdownByTextForMultipleElements"
                     -> ElementCategory.SELECT;
 
-            // ElementActions — reading element state/text
-            case "getText", "getAttributeValue", "getPropertyValue",
+            case "getText", "getTextFromMultipleElements",
+                 "getAttributeValue", "getAttributeFromMultipleElements", "getPropertyValue",
+                 "getDropdownSelectedOptions",
                  "isTextContains", "isAttributeContains",
-                 // ElementActions — element state checks
                  "isElementPresent", "isElementDisplayed", "isElementEnabled",
                  "isElementSelected", "isElementClickable"
                     -> ElementCategory.READABLE;
 
-            // ElementActions & MouseActions — scrolling / navigation (element could be anything)
             case "scrollIntoView", "scrollToElement",
                  "moveSliderTo", "moveSliderByOffset",
-                 // MobileActions — gestures
                  "swipe", "scroll", "scrollToElementBySelector",
                  "drag", "pinch", "fling"
                     -> ElementCategory.ANY;
@@ -580,8 +526,6 @@ public class SemanticLocatorResolver {
             default -> ElementCategory.ANY;
         };
     }
-
-    // ──────────────────────── Internal Model ────────────────────────
 
     private static LocatorAttempt attempt(By locator, String description) {
         return new LocatorAttempt(locator, description);
