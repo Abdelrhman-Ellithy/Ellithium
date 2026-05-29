@@ -1,11 +1,9 @@
-package Ellithium.Utilities.ai.generators;
+package Ellithium.core.ai.generators;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;

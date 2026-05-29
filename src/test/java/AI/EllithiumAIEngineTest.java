@@ -1,10 +1,11 @@
-package AI;
+package ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
-import Ellithium.Utilities.ai.TraceabilityManager;
-import Ellithium.Utilities.ai.models.TraceabilityRecord;
-import Ellithium.Utilities.ai.provider.LLMProvider;
-import Ellithium.Utilities.ai.readers.TextTestCaseReader;
+import Ellithium.core.ai.TraceabilityManager;
+import Ellithium.core.ai.models.TraceabilityRecord;
+import Ellithium.core.ai.models.TestCaseSource;
+import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.core.ai.readers.TextTestCaseReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -71,8 +72,8 @@ public class EllithiumAIEngineTest {
         reqFile.deleteOnExit();
 
         // Let's manually mark it as generated via mockStatic
-        try (MockedStatic<Ellithium.Utilities.ai.TraceabilityManager> traceMock = Mockito.mockStatic(Ellithium.Utilities.ai.TraceabilityManager.class)) {
-            traceMock.when(() -> Ellithium.Utilities.ai.TraceabilityManager.isAlreadyGenerated(anyString(), anyString())).thenReturn(true);
+        try (MockedStatic<TraceabilityManager> traceMock = Mockito.mockStatic(TraceabilityManager.class)) {
+            traceMock.when(() -> TraceabilityManager.isAlreadyGenerated(anyString(), anyString())).thenReturn(true);
 
             EllithiumAIEngine engine = new EllithiumAIEngine(provider);
             engine.generateFrom(reqFile.getAbsolutePath());
@@ -126,7 +127,7 @@ public class EllithiumAIEngineTest {
         reqFile.deleteOnExit();
 
         TextTestCaseReader reader = new TextTestCaseReader();
-        List<Ellithium.Utilities.ai.models.TestCaseSource> cases = reader.read(reqFile.getAbsolutePath());
+        List<TestCaseSource> cases = reader.read(reqFile.getAbsolutePath());
 
         Assert.assertEquals(cases.size(), 1, "Reader should keep one testcase for one ID block");
         Assert.assertEquals(cases.get(0).getTestId(), "TC_checkSelected_AI");

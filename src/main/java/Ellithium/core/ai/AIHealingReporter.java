@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.models.HealingResult;
+import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
@@ -44,7 +44,9 @@ public class AIHealingReporter {
      * Call this in the test suite teardown.
      */
     public static void generateReport() {
+        HealingTelemetryStore.logConsoleSummary();   // CI-visible, runs even when nothing was patched
         if (queuedChanges.isEmpty()) {
+            HealingTelemetryStore.flush();
             return;
         }
 

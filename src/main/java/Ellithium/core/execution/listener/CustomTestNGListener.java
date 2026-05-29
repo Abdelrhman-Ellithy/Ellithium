@@ -1,4 +1,5 @@
 package Ellithium.core.execution.listener;
+import Ellithium.core.ai.EnsembleHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -7,7 +8,8 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
-import Ellithium.Utilities.ai.AIHealingReporter;
+import Ellithium.core.ai.AIHealingReporter;
+import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
@@ -49,6 +51,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestStart(ITestResult result) {
+        // Attribute every heal on this thread to this test, so the false-heal detector (R9) can flag a
+        // heal that was USED in a test that later FAILS. Safe for BDD + non-BDD (id needs no driver).
+        HealingTelemetryStore.setCurrentTest(getTestIdentifier(result));
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
@@ -88,20 +93,25 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestFailure(ITestResult result) {
+        // False-heal detector (R9): flag any heal USED in this now-failed test as a wrong-heal suspect.
+        HealingTelemetryStore.markTestFailed(getTestIdentifier(result));
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
-    
+
     @Override
     public void onTestSuccess(ITestResult result) {
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
         }
     }
-    
+
     @Override
     public void onTestSkipped(ITestResult result) {
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
         }
@@ -171,7 +181,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.logException(e);
         }
         finally {
-            Ellithium.Utilities.ai.ONNXEmbeddingHealer.shutdown();
+            EnsembleHealer.shutdown();
             AIHealingReporter.generateReport();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();

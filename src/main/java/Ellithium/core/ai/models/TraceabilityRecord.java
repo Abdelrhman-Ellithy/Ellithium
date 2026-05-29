@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.models;
+package Ellithium.core.ai.models;
 
 import java.util.Date;
 

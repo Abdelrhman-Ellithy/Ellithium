@@ -1,6 +1,6 @@
-package AI;
+package ai;
 
-import Ellithium.Utilities.ai.sanitizers.DataScrubber;
+import Ellithium.core.ai.sanitizers.DataScrubber;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

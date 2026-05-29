@@ -1,8 +1,8 @@
-package AI;
+package ai;
 
-import Ellithium.Utilities.ai.LocatorMutationEngine;
-import Ellithium.Utilities.ai.SemanticQueryBuilder;
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.LocatorMutationEngine;
+import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.models.ElementFingerprint;
 import com.google.gson.Gson;
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;
@@ -100,6 +100,41 @@ public class AlgorithmicCoreTest {
     }
 
     // ── LocatorMutationEngine.generateValueMutations ──
+
+    @Test
+    public void scoreSimilarity_typoDrift_earnsLevenshteinFallback() {
+        // token-Jaccard("usrname" vs "username") = 0 (different tokens); edit-ratio ~0.875 ≥ 0.82
+        // → fuzzy id match earns the partial 12/25 instead of 0.
+        ElementFingerprint fp = GSON.fromJson("{\"id\":\"username\"}", ElementFingerprint.class);
+        WebElement candidate = elem(null, "usrname", null, null, null, null);
+        double score = fp.scoreSimilarity(candidate);
+        Assert.assertEquals(score, 12.0 / 25.0, 1e-9,
+                "a 1-char typo must earn the Levenshtein fuzzy-id partial, not 0. Got " + score);
+    }
+
+    // ── LocatorMutationEngine cross-validation (the false-positive guard) ──
+
+    @Test
+    public void mutation_rejectsTagMismatchedWrongElement() {
+        // Baseline is a BUTTON; the mutation resolves a LINK sharing the id token → must be rejected
+        // (tag mismatch demands ≥0.75; a link with only a partial-id overlap can't clear it).
+        ElementFingerprint baseline = GSON.fromJson(
+                "{\"id\":\"loginBtn\",\"tagName\":\"button\"}", ElementFingerprint.class);
+        WebElement wrongLink = elem("a", "login", null, null, null, null);
+        double score = baseline.scoreSimilarity(wrongLink);
+        Assert.assertTrue(score < 0.75,
+                "a tag-mismatched same-token element must score below the mutation accept bar. Got " + score);
+    }
+
+    @Test
+    public void mutation_acceptsSameTagConventionRename() {
+        // Same tag (button) + id convention rename → clears the 0.55 bar.
+        ElementFingerprint baseline = GSON.fromJson(
+                "{\"id\":\"login-btn\",\"tagName\":\"button\"}", ElementFingerprint.class);
+        WebElement renamed = elem("button", "loginBtn", null, null, null, null);
+        Assert.assertTrue(baseline.scoreSimilarity(renamed) >= 0.55,
+                "a same-tag convention rename must clear the 0.55 mutation accept bar");
+    }
 
     @Test
     public void generateValueMutations_coversConventionRenames() {

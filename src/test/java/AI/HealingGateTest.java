@@ -1,10 +1,10 @@
-package AI;
+package ai;
 
-import Ellithium.Utilities.ai.AISelfHealer;
-import Ellithium.Utilities.ai.BaselineStore;
-import Ellithium.Utilities.ai.SemanticQueryBuilder;
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.AISelfHealer;
+import Ellithium.core.ai.BaselineStore;
+import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.models.ElementFingerprint;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.openqa.selenium.By;

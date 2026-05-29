@@ -1,6 +1,7 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.models.ElementFingerprint;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -22,7 +23,7 @@ import java.util.*;
  *   <li>Builds a query per baseline and scores it against the matching document (POSITIVE) and
  *       against a sample of OTHER baselines' documents (NEGATIVES) — a real cross-element negative
  *       distribution.</li>
- *   <li>Uses {@link ONNXEmbeddingHealer#buildElementDocument(ElementFingerprint)} — the SAME field
+ *   <li>Uses {@link EnsembleHealer#buildElementDocument(ElementFingerprint)} — the SAME field
  *       order the model sees at train/inference time.</li>
  *   <li>Sweeps a precision/recall curve and recommends two thresholds:
  *       <b>useThreshold</b> = max-F0.5 operating point (precision-weighted), and
@@ -31,7 +32,7 @@ import java.util.*;
  *
  * <h3>How to run</h3>
  * <pre>java -cp ellithium-*.jar Ellithium.Utilities.ai.ModelCalibrationRunner [licenseKey]</pre>
- * Pre-requisite: {@code ONNXEmbeddingHealer.isAvailable()} must be true (model embedded).
+ * Pre-requisite: {@code EnsembleHealer.isAvailable()} must be true (model embedded).
  */
 public class ModelCalibrationRunner {
 
@@ -50,10 +51,10 @@ public class ModelCalibrationRunner {
             System.setProperty("ellithium.license.key.override", args[0]);
         }
 
-        Ellithium.Utilities.ai.config.AIConfigLoader.initialize();
-        ONNXEmbeddingHealer.initialize();
+        AIConfigLoader.initialize();
+        EnsembleHealer.initialize();
 
-        if (!ONNXEmbeddingHealer.isAvailable()) {
+        if (!EnsembleHealer.isAvailable()) {
             System.err.println("[CALIBRATION] Tier 3 model is not available — embed the model and re-run.");
             return;
         }
@@ -80,7 +81,7 @@ public class ModelCalibrationRunner {
 
         for (Item item : items) {
             // Vectors are already L2-normalized by embed() — dot product == cosine similarity.
-            // Using dotProduct matches the runtime scoring path in ONNXEmbeddingHealer.scoreAndSelectCandidate().
+            // Using dotProduct matches the runtime scoring path in EnsembleHealer.scoreAndSelectCandidate().
             positives.add((double) dotProduct(item.queryVec, item.docVec));
             int collected = 0;
             int maxAttempts = NEG_SAMPLES_PER_QUERY * 3;  // cap retries to avoid infinite loop on tiny sets
@@ -98,7 +99,7 @@ public class ModelCalibrationRunner {
         writeOutput(result);
         printSummary(result);
 
-        ONNXEmbeddingHealer.shutdown();
+        EnsembleHealer.shutdown();
     }
 
     // ──────────────────────── Item construction ────────────────────────
@@ -112,11 +113,11 @@ public class ModelCalibrationRunner {
             ElementFingerprint fp = history.get(history.size() - 1);
 
             String query = SemanticQueryBuilder.buildFromContext(null, e.getKey(), null, fp);
-            String doc   = ONNXEmbeddingHealer.buildElementDocument(fp);   // shared, canonical format
+            String doc   = EnsembleHealer.buildElementDocument(fp);   // shared, canonical format
             if (query.isBlank() || doc.isBlank()) { skipped++; continue; }
 
-            float[] qv = ONNXEmbeddingHealer.embed(query, true);
-            float[] dv = ONNXEmbeddingHealer.embed(doc, false);
+            float[] qv = EnsembleHealer.embed(query, true);
+            float[] dv = EnsembleHealer.embed(doc, false);
             if (qv == null || dv == null) { skipped++; continue; }
 
             items.add(new Item(qv, dv));
@@ -219,7 +220,7 @@ public class ModelCalibrationRunner {
 
     // ──────────────────────── Math ────────────────────────
 
-    /** Dot product on L2-normalised vectors (== cosine similarity). Matches ONNXEmbeddingHealer.dotProduct(). */
+    /** Dot product on L2-normalised vectors (== cosine similarity). Matches EnsembleHealer.dotProduct(). */
     private static double dotProduct(float[] a, float[] b) {
         double sum = 0.0;
         for (int i = 0; i < a.length; i++) sum += (double) a[i] * b[i];

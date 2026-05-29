@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.models;
+package Ellithium.core.ai.models;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -39,6 +39,11 @@ public class ElementFingerprint {
     private String value;            // element.getAttribute("value")
     private String role;             // element.getAttribute("role")
     private String dataTestId;       // element.getAttribute("data-testid")
+
+    // ── Mobile primaries (Appium-only; null on web) ──
+    private String resourceId;       // Android resource-id (e.g. "com.app:id/loginBtn")
+    private String accessibilityId;  // Appium accessibility id (Android content-desc / iOS accessibility-id)
+    private String contentDesc;      // Android content-desc (also used as accessibility-id source)
 
     // ── Structural (JS-dependent, gracefully skipped for Appium) ──
     private String parentTag;        // parent element's tag name
@@ -96,6 +101,12 @@ public class ElementFingerprint {
         fp.value = safeGetAttribute(element, "value");
         fp.role = safeGetAttribute(element, "role");
         fp.dataTestId = safeGetAttribute(element, "data-testid");
+        fp.resourceId      = safeGetAttribute(element, "resource-id");
+        fp.accessibilityId = safeGetAttribute(element, "accessibility-id");
+        fp.contentDesc     = safeGetAttribute(element, "content-desc");
+        if (!isNonBlank(fp.accessibilityId) && isNonBlank(fp.contentDesc)) {
+            fp.accessibilityId = fp.contentDesc;
+        }
 
         // Reconstruct the healed locator from the element's actual attributes
         // so the baseline JSON shows what the element was healed TO
@@ -201,6 +212,31 @@ public class ElementFingerprint {
         int score = 0;
         int dynamicMax = 0;
 
+        // resource-id (Appium): 30 pts exact, 12 pts suffix-match (com.app:id/btn vs ":id/btn")
+        if (isNonBlank(this.resourceId)) {
+            dynamicMax += 30;
+            String crid = safeGetAttribute(candidate, "resource-id");
+            if (this.resourceId.equals(crid)) score += 30;
+            else if (isNonBlank(crid) && (crid.endsWith(suffixAfter(this.resourceId, '/'))
+                    || this.resourceId.endsWith(suffixAfter(crid, '/')))) score += 12;
+        }
+
+        // accessibility-id (Appium): 28 pts exact
+        if (isNonBlank(this.accessibilityId)) {
+            dynamicMax += 28;
+            String caid = safeGetAttribute(candidate, "accessibility-id");
+            if (caid == null || caid.isBlank()) caid = safeGetAttribute(candidate, "content-desc");
+            if (this.accessibilityId.equals(caid)) score += 28;
+        }
+
+        // content-desc (Android): 18 pts exact, 9 pts contains
+        if (isNonBlank(this.contentDesc)) {
+            dynamicMax += 18;
+            String ccd = safeGetAttribute(candidate, "content-desc");
+            if (this.contentDesc.equals(ccd)) score += 18;
+            else if (isNonBlank(ccd) && (ccd.contains(this.contentDesc) || this.contentDesc.contains(ccd))) score += 9;
+        }
+
         // data-testid: 30 pts (most stable test attribute)
         if (isNonBlank(this.dataTestId)) {
             dynamicMax += 30;
@@ -213,19 +249,19 @@ public class ElementFingerprint {
             String cid = safeGetAttribute(candidate, "id");
             if (this.id.equals(cid)) {
                 score += 25;
-            } else if (isNonBlank(cid)) {
-                if (jaccard(idTokens(), cid) >= 0.5) score += 12;
+            } else if (fuzzyIdMatch(idTokens(), this.id, cid)) {
+                score += 12;
             }
         }
 
-        // name: 20 pts exact, 10 pts token-Jaccard ≥ 0.5
+        // name: 20 pts exact, 10 pts fuzzy (token-Jaccard ≥ 0.5 OR edit-ratio ≥ 0.82)
         if (isNonBlank(this.name)) {
             dynamicMax += 20;
             String cname = safeGetAttribute(candidate, "name");
             if (this.name.equals(cname)) {
                 score += 20;
-            } else if (isNonBlank(cname)) {
-                if (jaccard(nameTokens(), cname) >= 0.5) score += 10;
+            } else if (fuzzyIdMatch(nameTokens(), this.name, cname)) {
+                score += 10;
             }
         }
 
@@ -319,6 +355,179 @@ public class ElementFingerprint {
 
         if (dynamicMax == 0) return 0.0;
         return Math.min(1.0, score / (double) dynamicMax);
+    }
+
+    /**
+     * Map-based similarity scoring — zero WebDriver round-trips. The {@code attrs} map is the
+     * pre-fetched, batched per-candidate projection produced once by EnsembleHealer's
+     * fetchCandidateAttributes JS. Uses the same field weights as {@link #scoreSimilarity(WebElement)};
+     * structural fields are omitted (no DOM walk available from a plain map).
+     */
+    public double scoreSimilarity(java.util.Map<String, Object> attrs) {
+        return scoreSimilarity(attrs, null);
+    }
+
+    public double scoreSimilarity(java.util.Map<String, Object> attrs, StructuralContext sc) {
+        if (attrs == null) return 0.0;
+        int score = 0;
+        int dynamicMax = 0;
+
+        if (isNonBlank(this.resourceId)) {
+            dynamicMax += 30;
+            String crid = asStr(attrs.get("resource-id"));
+            if (this.resourceId.equals(crid)) score += 30;
+            else if (isNonBlank(crid) && (crid.endsWith(suffixAfter(this.resourceId, '/'))
+                    || this.resourceId.endsWith(suffixAfter(crid, '/')))) score += 12;
+        }
+        if (isNonBlank(this.accessibilityId)) {
+            dynamicMax += 28;
+            String caid = asStr(attrs.get("accessibility-id"));
+            if (caid == null || caid.isBlank()) caid = asStr(attrs.get("content-desc"));
+            if (this.accessibilityId.equals(caid)) score += 28;
+        }
+        if (isNonBlank(this.contentDesc)) {
+            dynamicMax += 18;
+            String ccd = asStr(attrs.get("content-desc"));
+            if (this.contentDesc.equals(ccd)) score += 18;
+            else if (isNonBlank(ccd) && (ccd.contains(this.contentDesc) || this.contentDesc.contains(ccd))) score += 9;
+        }
+        if (isNonBlank(this.dataTestId)) {
+            dynamicMax += 30;
+            if (this.dataTestId.equals(asStr(attrs.get("data-testid")))) score += 30;
+        }
+        if (isNonBlank(this.id)) {
+            dynamicMax += 25;
+            String cid = asStr(attrs.get("id"));
+            if (this.id.equals(cid)) {
+                score += 25;
+            } else if (fuzzyIdMatch(idTokens(), this.id, cid)) {
+                score += 12;
+            }
+        }
+        if (isNonBlank(this.name)) {
+            dynamicMax += 20;
+            String cname = asStr(attrs.get("name"));
+            if (this.name.equals(cname)) {
+                score += 20;
+            } else if (fuzzyIdMatch(nameTokens(), this.name, cname)) {
+                score += 10;
+            }
+        }
+        if (isNonBlank(this.ariaLabel)) {
+            dynamicMax += 15;
+            String cal = asStr(attrs.get("aria-label"));
+            if (this.ariaLabel.equals(cal)) {
+                score += 15;
+            } else if (isNonBlank(cal) &&
+                    (cal.contains(this.ariaLabel) || this.ariaLabel.contains(cal))) {
+                score += 8;
+            }
+        }
+        if (isNonBlank(this.placeholder)) {
+            dynamicMax += 15;
+            String cph = asStr(attrs.get("placeholder"));
+            if (this.placeholder.equals(cph)) {
+                score += 15;
+            } else if (isNonBlank(cph) &&
+                    (cph.contains(this.placeholder) || this.placeholder.contains(cph))) {
+                score += 8;
+            }
+        }
+        if (isNonBlank(this.text)) {
+            dynamicMax += 12;
+            String ct = asStr(attrs.get("text"));
+            if (isNonBlank(ct)) {
+                if (this.text.equals(ct)) {
+                    score += 12;
+                } else if (ct.contains(this.text) || this.text.contains(ct)) {
+                    score += 7;
+                }
+            }
+        }
+        if (isNonBlank(this.type)) {
+            dynamicMax += 8;
+            if (this.type.equals(asStr(attrs.get("type")))) score += 8;
+        }
+        if (isNonBlank(this.role)) {
+            dynamicMax += 5;
+            if (this.role.equals(asStr(attrs.get("role")))) score += 5;
+        }
+        if (isNonBlank(this.tagName)) {
+            dynamicMax += 5;
+            String ctag = asStr(attrs.get("tag"));
+            if (ctag != null && this.tagName.equalsIgnoreCase(ctag)) score += 5;
+        }
+        if (isNonBlank(this.className)) {
+            dynamicMax += 5;
+            String ccls = asStr(attrs.get("class"));
+            if (isNonBlank(ccls) && classJaccard(this.className, ccls) >= 0.40) {
+                score += 5;
+            }
+        }
+
+        if (sc != null) {
+            if (isNonBlank(this.parentTag)) {
+                dynamicMax += 3;
+                if (this.parentTag.equalsIgnoreCase(sc.parentTag)) score += 3;
+            }
+            if (this.childIndex >= 0 && sc.childIndex >= 0) {
+                dynamicMax += 2;
+                if (this.childIndex == sc.childIndex) score += 2;
+            }
+            if (isNonBlank(this.prevSiblingTag)) {
+                dynamicMax += 2;
+                if (this.prevSiblingTag.equalsIgnoreCase(sc.prevSiblingTag)) score += 2;
+            }
+            if (isNonBlank(this.nextSiblingTag)) {
+                dynamicMax += 2;
+                if (this.nextSiblingTag.equalsIgnoreCase(sc.nextSiblingTag)) score += 2;
+            }
+        }
+
+        if (dynamicMax == 0) return 0.0;
+        return Math.min(1.0, score / (double) dynamicMax);
+    }
+
+    private static String asStr(Object o) { return o != null ? o.toString() : null; }
+
+    /**
+     * Fuzzy identifier match for id/name drift. True when EITHER token-Jaccard ≥ 0.5 (rename across
+     * naming conventions, e.g. {@code loginBtn}↔{@code login-btn}) OR normalized Levenshtein ratio
+     * ≥ 0.82 (typo/char drift, e.g. {@code usrname}↔{@code username}, which token-Jaccard scores 0).
+     */
+    private static boolean fuzzyIdMatch(java.util.Set<String> selfTokens, String self, String candidate) {
+        if (candidate == null || candidate.isBlank()) return false;
+        if (jaccard(selfTokens, candidate) >= 0.5) return true;
+        return levenshteinRatio(self.toLowerCase(), candidate.toLowerCase()) >= 0.82;
+    }
+
+    /** Similarity ratio in [0,1] = 1 - editDistance/maxLen. Bounded O(min·max); inputs are short ids. */
+    private static double levenshteinRatio(String a, String b) {
+        if (a == null || b == null) return 0.0;
+        int la = a.length(), lb = b.length();
+        if (la == 0 && lb == 0) return 1.0;
+        if (la == 0 || lb == 0) return 0.0;
+        int[] prev = new int[lb + 1];
+        int[] cur  = new int[lb + 1];
+        for (int j = 0; j <= lb; j++) prev[j] = j;
+        for (int i = 1; i <= la; i++) {
+            cur[0] = i;
+            for (int j = 1; j <= lb; j++) {
+                int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+                cur[j] = Math.min(Math.min(cur[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+            }
+            int[] tmp = prev; prev = cur; cur = tmp;
+        }
+        int dist = prev[lb];
+        return 1.0 - (double) dist / Math.max(la, lb);
+    }
+
+    /** Returns the substring after the last {@code sep}, or the input unchanged when absent.
+     *  Used for Android resource-id suffix-match (e.g. {@code com.app:id/btn} → {@code btn}). */
+    private static String suffixAfter(String s, char sep) {
+        if (s == null) return "";
+        int i = s.lastIndexOf(sep);
+        return (i < 0) ? s : s.substring(i + 1);
     }
 
     // Precompiled once (was recompiled on every String.split call inside the per-candidate hot loop).
@@ -418,30 +627,38 @@ public class ElementFingerprint {
      * @return A By locator that can reach this element
      */
     public static By reconstructLocator(WebElement element) {
-        String id = safeGetAttribute(element, "id");
-        if (isNonBlank(id)) return By.id(id);
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            String accId = safeGetAttribute(element, "accessibility-id");
+            if (accId == null || accId.isBlank()) accId = safeGetAttribute(element, "content-desc");
+            if (isNonBlank(accId)) return io.appium.java_client.AppiumBy.accessibilityId(accId);
 
-        String name = safeGetAttribute(element, "name");
-        if (isNonBlank(name)) return By.name(name);
+            String resId = safeGetAttribute(element, "resource-id");
+            if (isNonBlank(resId)) return io.appium.java_client.AppiumBy.id(resId);
 
-        String dataTestId = safeGetAttribute(element, "data-testid");
-        if (isNonBlank(dataTestId)) return By.cssSelector("[data-testid='" + dataTestId + "']");
+            String id = safeGetAttribute(element, "id");
+            if (isNonBlank(id)) return By.id(id);
 
-        String ariaLabel = safeGetAttribute(element, "aria-label");
-        if (isNonBlank(ariaLabel)) return By.cssSelector("[aria-label='" + ariaLabel + "']");
+            String name = safeGetAttribute(element, "name");
+            if (isNonBlank(name)) return By.name(name);
 
-        // Fallback: tag + class combination
-        String tag = safeGetTag(element);
-        String cls = safeGetAttribute(element, "class");
-        if (isNonBlank(tag) && isNonBlank(cls)) {
-            String firstClass = cls.split("\\s+")[0];
-            return By.cssSelector(tag + "." + firstClass);
+            String dataTestId = safeGetAttribute(element, "data-testid");
+            if (isNonBlank(dataTestId)) return By.cssSelector("[data-testid='" + dataTestId + "']");
+
+            String ariaLabel = safeGetAttribute(element, "aria-label");
+            if (isNonBlank(ariaLabel)) return By.cssSelector("[aria-label='" + ariaLabel + "']");
+
+            String tag = safeGetTag(element);
+            String cls = safeGetAttribute(element, "class");
+            if (isNonBlank(tag) && isNonBlank(cls)) {
+                String firstClass = cls.split("\\s+")[0];
+                return By.cssSelector(tag + "." + firstClass);
+            }
+            if (isNonBlank(tag)) return By.tagName(tag);
+            return null;
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
-
-        // Last resort: tag name only
-        if (isNonBlank(tag)) return By.tagName(tag);
-
-        return null;
     }
 
     // ──────────────────── Getters ────────────────────
@@ -460,6 +677,20 @@ public class ElementFingerprint {
     public String getValue() { return value; }
     public String getRole() { return role; }
     public String getDataTestId() { return dataTestId; }
+    public String getResourceId() { return resourceId; }
+    public String getAccessibilityId() { return accessibilityId; }
+    public String getContentDesc() { return contentDesc; }
+
+    /**
+     * True when the baseline carries at least one strong-identity anchor (id / name / data-testid /
+     * resource-id / accessibility-id). When false the fingerprint's only evidence is weak signals
+     * (tag/class/role/text), so a match score normalises over a tiny denominator and a 0.60 is far
+     * weaker proof than the same 0.60 backed by a stable id — callers should raise the accept bar.
+     */
+    public boolean hasStrongIdentity() {
+        return isNonBlank(id) || isNonBlank(name) || isNonBlank(dataTestId)
+                || isNonBlank(resourceId) || isNonBlank(accessibilityId);
+    }
     public String getParentTag() { return parentTag; }
     public int getChildIndex() { return childIndex; }
     public String getPrevSiblingTag() { return prevSiblingTag; }

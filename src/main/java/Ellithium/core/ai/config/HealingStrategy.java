@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.config;
+package Ellithium.core.ai.config;
 
 /**
  * Defines how the framework should handle self-healing when a locator fails.

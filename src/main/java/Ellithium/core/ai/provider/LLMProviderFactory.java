@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai.provider;
+package Ellithium.core.ai.provider;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
+import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
@@ -22,6 +22,12 @@ public class LLMProviderFactory {
             return null;
         }
 
+        String providerClass = AIConfigLoader.getLlmProviderClass();
+        if (providerClass != null && !providerClass.isEmpty()) {
+            LLMProvider custom = instantiate(providerClass, baseUrl, apiKey, model);
+            if (custom != null) return custom;
+        }
+
         switch (providerName) {
             case "gemini":
             case "google":
@@ -40,5 +46,20 @@ public class LLMProviderFactory {
                 // Universal fallback for all models that follow the standard OpenAI API structure
                 return new OpenAICompatibleProvider(baseUrl, apiKey, model);
         }
+    }
+
+    private static LLMProvider instantiate(String className, String baseUrl, String apiKey, String model) {
+        try {
+            Class<?> cls = Class.forName(className);
+            Object instance = cls.getConstructor(String.class, String.class, String.class)
+                    .newInstance(baseUrl, apiKey, model);
+            if (instance instanceof LLMProvider provider) return provider;
+            Reporter.log("ai.llm.providerClass " + className
+                    + " does not implement LLMProvider — falling back to built-in providers", LogLevel.WARN);
+        } catch (Exception e) {
+            Reporter.log("Failed to load custom ai.llm.providerClass " + className
+                    + ": " + e.getMessage() + " — falling back to built-in providers", LogLevel.WARN);
+        }
+        return null;
     }
 }

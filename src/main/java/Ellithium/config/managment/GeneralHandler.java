@@ -4,14 +4,16 @@ import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.API.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
+import Ellithium.core.ai.BaselineStore;
+import Ellithium.core.ai.EnsembleHealer;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
-import Ellithium.Utilities.ai.AIVisionRCA;
-import Ellithium.Utilities.ai.AISelfHealer;
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.provider.LLMProvider;
-import Ellithium.Utilities.ai.provider.LLMProviderFactory;
+import Ellithium.core.ai.AIVisionRCA;
+import Ellithium.core.ai.AISelfHealer;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.core.ai.provider.LLMProviderFactory;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
@@ -77,11 +79,13 @@ public class GeneralHandler {
         WaitManager.initializeTimeoutAndPolling();
         RetryAnalyzer.initRetryCount();
         AIConfigLoader.initialize();
+        AISelfHealer.resetForSuite();
         LLMProvider aiProvider = LLMProviderFactory.createProvider();
         if (aiProvider != null) {
             AISelfHealer.initialize(aiProvider, AIConfigLoader.getHealingStrategy(), AIConfigLoader.getConfidenceThreshold());
         }
-        Ellithium.Utilities.ai.ONNXEmbeddingHealer.initialize();
+        EnsembleHealer.initializeAsync();
+        BaselineStore.preWarmAsync();
     }
     
     public static List<Parameter> getParameters(){

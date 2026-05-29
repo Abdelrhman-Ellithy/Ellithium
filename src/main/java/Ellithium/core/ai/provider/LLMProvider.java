@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.provider;
+package Ellithium.core.ai.provider;
 
 /**
  * A generic interface for interacting with any Language Model (LLM).

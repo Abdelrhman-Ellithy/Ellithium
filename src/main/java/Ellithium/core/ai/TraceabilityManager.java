@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.models.TraceabilityRecord;
+import Ellithium.core.ai.models.TraceabilityRecord;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.Gson;

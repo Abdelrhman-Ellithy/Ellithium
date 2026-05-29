@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.config;
+package Ellithium.core.ai.config;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
@@ -31,16 +31,23 @@ public class AIConfigLoader {
     private static String llmApiKey = "";
     private static String llmModel = "";
     private static String llmBaseUrl = "";
+    private static String llmProviderClass = "";
     private static ExecutionMode executionMode = ExecutionMode.LOCAL;
     private static boolean visionRcaEnabled = false;
     private static String licenseKey = "";
     private static double onnxSimilarityThreshold = 0.80;
     private static double onnxReadableThreshold   = 0.65;   // lower for READABLE — text-heavy elements score lower
     private static int onnxMaxCandidates         = 10;
-    private static int onnxReadableMaxCandidates  = 50;     // wider net for text-bearing element search
-    private static boolean tier2HintEnabled = true;
-    private static int     tier2HintTimeoutMs = 1500;
+    private static int onnxReadableMaxCandidates  = 25;     // wider net for text-bearing element search
     private static int     onnxHardCandidateLimit = 300;
+    private static int     baselineTtlDays = 30;
+    private static boolean strategyRescueEnabled = false;
+    private static double  gateFingerprintFloor = 0.50;
+    private static boolean visionAllowMobile = false;
+    private static int     llmHealMaxWaitMs = 15_000;
+    private static int     llmRetryInitialBackoffMs = 500;
+    private static int     llmRetryMaxBackoffMs = 4_000;
+    private static int     telemetryMaxRecords = 100_000;
 
     private static boolean initialized = false;
 
@@ -61,126 +68,40 @@ public class AIConfigLoader {
     public static void initialize() {
         if (initialized) return;
         try {
-            String configPath = ConfigContext.getAiFilePath();
+            String p = ConfigContext.getAiFilePath();
 
-            String strategyRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.strategy");
-            String strategy = strategyRaw != null ? resolveEnvironmentVariables(strategyRaw) : null;
-            if (strategy != null && !strategy.isEmpty()) {
-                try {
-                    healingStrategy = HealingStrategy.valueOf(strategy.trim().toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    Logger.warn("Invalid ai.healing.strategy: " + strategy + ". Using DISABLED.");
-                }
-            }
+            healingStrategy       = parseEnum(p, "ai.healing.strategy", HealingStrategy.class, healingStrategy);
+            confidenceThreshold   = parseDouble(p, "ai.healing.confidenceThreshold", confidenceThreshold);
+            healingStoreThreshold = parseDouble(p, "ai.healing.storeThreshold", healingStoreThreshold);
 
-            String thresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.confidenceThreshold");
-            String threshold = thresholdRaw != null ? resolveEnvironmentVariables(thresholdRaw) : null;
-            if (threshold != null && !threshold.isEmpty()) {
-                try {
-                    confidenceThreshold = Double.parseDouble(threshold.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.healing.confidenceThreshold: " + threshold + ". Using 0.70.");
-                }
-            }
+            int mc = parseInt(p, "ai.healing.maxCandidates", maxCandidates);
+            if (mc >= 1 && mc <= 10) maxCandidates = mc;
+            else Logger.warn("ai.healing.maxCandidates must be between 1-10. Using " + maxCandidates + ".");
 
-            String storeThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.storeThreshold");
-            String storeThreshold = storeThresholdRaw != null ? resolveEnvironmentVariables(storeThresholdRaw) : null;
-            if (storeThreshold != null && !storeThreshold.isEmpty()) {
-                try {
-                    healingStoreThreshold = Double.parseDouble(storeThreshold.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.healing.storeThreshold: " + storeThreshold + ". Using 0.85.");
-                }
-            }
+            llmProviderName  = getPropertyOrDefault(p, "ai.llm.provider", "");
+            llmApiKey        = getPropertyOrDefault(p, "ai.llm.apiKey", "");
+            llmModel         = getPropertyOrDefault(p, "ai.llm.model", "");
+            llmBaseUrl       = getPropertyOrDefault(p, "ai.llm.baseUrl", "");
+            llmProviderClass = getPropertyOrDefault(p, "ai.llm.providerClass", "");
 
-            String maxCandidatesRaw = PropertyHelper.getDataFromProperties(configPath, "ai.healing.maxCandidates");
-            String maxCandidatesStr = maxCandidatesRaw != null ? resolveEnvironmentVariables(maxCandidatesRaw) : null;
-            if (maxCandidatesStr != null && !maxCandidatesStr.isEmpty()) {
-                try {
-                    int parsed = Integer.parseInt(maxCandidatesStr.trim());
-                    if (parsed >= 1 && parsed <= 10) {
-                        maxCandidates = parsed;
-                    } else {
-                        Logger.warn("ai.healing.maxCandidates must be between 1-10. Using default: 3.");
-                    }
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.healing.maxCandidates: " + maxCandidatesStr + ". Using 3.");
-                }
-            }
+            executionMode    = parseEnum(p, "ai.execution.mode", ExecutionMode.class, executionMode);
+            visionRcaEnabled = parseBool(p, "ai.vision.rca.enabled", visionRcaEnabled);
+            licenseKey       = getPropertyOrDefault(p, "ai.license.key", "");
 
-            llmProviderName = getPropertyOrDefault(configPath, "ai.llm.provider", "");
-            llmApiKey = getPropertyOrDefault(configPath, "ai.llm.apiKey", "");
-            llmModel = getPropertyOrDefault(configPath, "ai.llm.model", "");
-            llmBaseUrl = getPropertyOrDefault(configPath, "ai.llm.baseUrl", "");
+            onnxSimilarityThreshold   = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
+            onnxMaxCandidates         = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
+            onnxReadableThreshold     = parseDouble(p, "ai.onnx.similarityThreshold.readable", onnxReadableThreshold);
+            onnxReadableMaxCandidates = parseInt(p, "ai.onnx.maxCandidates.readable", onnxReadableMaxCandidates);
+            onnxHardCandidateLimit    = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
 
-            String modeRaw = PropertyHelper.getDataFromProperties(configPath, "ai.execution.mode");
-            String mode = modeRaw != null ? resolveEnvironmentVariables(modeRaw) : null;
-            if (mode != null && !mode.isEmpty()) {
-                try {
-                    executionMode = ExecutionMode.valueOf(mode.trim().toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    Logger.warn("Invalid ai.execution.mode: " + mode + ". Using LOCAL.");
-                }
-            }
-
-            String rcaRaw = PropertyHelper.getDataFromProperties(configPath, "ai.vision.rca.enabled");
-            String rca = rcaRaw != null ? resolveEnvironmentVariables(rcaRaw) : null;
-            if (rca != null && !rca.isEmpty()) {
-                visionRcaEnabled = Boolean.parseBoolean(rca.trim());
-            }
-
-            licenseKey = getPropertyOrDefault(configPath, "ai.license.key", "");
-
-            String onnxThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold");
-            String onnxThreshold = onnxThresholdRaw != null ? resolveEnvironmentVariables(onnxThresholdRaw) : null;
-            if (onnxThreshold != null && !onnxThreshold.isEmpty()) {
-                try {
-                    onnxSimilarityThreshold = Double.parseDouble(onnxThreshold.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.onnx.similarityThreshold: " + onnxThreshold + ". Using 0.82.");
-                }
-            }
-
-            String onnxMaxRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.maxCandidates");
-            String onnxMax = onnxMaxRaw != null ? resolveEnvironmentVariables(onnxMaxRaw) : null;
-            if (onnxMax != null && !onnxMax.isEmpty()) {
-                try {
-                    onnxMaxCandidates = Integer.parseInt(onnxMax.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.onnx.maxCandidates: " + onnxMax + ". Using 10.");
-                }
-            }
-
-            String readableThresholdRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.similarityThreshold.readable");
-            String readableThreshold = readableThresholdRaw != null ? resolveEnvironmentVariables(readableThresholdRaw) : null;
-            if (readableThreshold != null && !readableThreshold.isEmpty()) {
-                try {
-                    onnxReadableThreshold = Double.parseDouble(readableThreshold.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.onnx.similarityThreshold.readable: " + readableThreshold + ". Using 0.65.");
-                }
-            }
-
-            String readableMaxRaw = PropertyHelper.getDataFromProperties(configPath, "ai.onnx.maxCandidates.readable");
-            String readableMax = readableMaxRaw != null ? resolveEnvironmentVariables(readableMaxRaw) : null;
-            if (readableMax != null && !readableMax.isEmpty()) {
-                try {
-                    onnxReadableMaxCandidates = Integer.parseInt(readableMax.trim());
-                } catch (NumberFormatException e) {
-                    Logger.warn("Invalid ai.onnx.maxCandidates.readable: " + readableMax + ". Using 50.");
-                }
-            }
-
-            String tier2HintRaw = getPropertyOrDefault(configPath, "ai.tier3.ensemble.tier2Hint", "");
-            if (!tier2HintRaw.isEmpty()) tier2HintEnabled = Boolean.parseBoolean(tier2HintRaw.trim());
-            String tier2TimeoutRaw = getPropertyOrDefault(configPath, "ai.tier3.ensemble.tier2HintTimeoutMs", "");
-            if (!tier2TimeoutRaw.isEmpty()) {
-                try { tier2HintTimeoutMs = Integer.parseInt(tier2TimeoutRaw.trim()); } catch (NumberFormatException ignored) {}
-            }
-            String hardLimRaw = getPropertyOrDefault(configPath, "ai.onnx.hardCandidateLimit", "");
-            if (!hardLimRaw.isEmpty()) {
-                try { onnxHardCandidateLimit = Integer.parseInt(hardLimRaw.trim()); } catch (NumberFormatException ignored) {}
-            }
+            visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
+            baselineTtlDays          = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
+            strategyRescueEnabled    = parseBool(p, "ai.ensemble.gate.strategyRescue", strategyRescueEnabled);
+            gateFingerprintFloor     = parseDouble(p, "ai.ensemble.gate.fingerprintFloor", gateFingerprintFloor);
+            llmHealMaxWaitMs         = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
+            llmRetryInitialBackoffMs = parseInt(p, "ai.llm.retryInitialBackoffMs", llmRetryInitialBackoffMs);
+            llmRetryMaxBackoffMs     = parseInt(p, "ai.llm.retryMaxBackoffMs", llmRetryMaxBackoffMs);
+            telemetryMaxRecords      = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -194,11 +115,39 @@ public class AIConfigLoader {
     }
 
     private static String getPropertyOrDefault(String configPath, String key, String defaultValue) {
+        String value = raw(configPath, key);
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
+    private static String raw(String configPath, String key) {
         String value = PropertyHelper.getDataFromProperties(configPath, key);
-        if (value != null && !value.isEmpty()) {
-            return resolveEnvironmentVariables(value.trim());
-        }
-        return defaultValue;
+        return (value != null) ? resolveEnvironmentVariables(value).trim() : null;
+    }
+
+    private static double parseDouble(String configPath, String key, double def) {
+        String v = raw(configPath, key);
+        if (v == null || v.isEmpty()) return def;
+        try { return Double.parseDouble(v); }
+        catch (NumberFormatException e) { Logger.warn("Invalid " + key + ": " + v + ". Using " + def + "."); return def; }
+    }
+
+    private static int parseInt(String configPath, String key, int def) {
+        String v = raw(configPath, key);
+        if (v == null || v.isEmpty()) return def;
+        try { return Integer.parseInt(v); }
+        catch (NumberFormatException e) { Logger.warn("Invalid " + key + ": " + v + ". Using " + def + "."); return def; }
+    }
+
+    private static boolean parseBool(String configPath, String key, boolean def) {
+        String v = raw(configPath, key);
+        return (v == null || v.isEmpty()) ? def : Boolean.parseBoolean(v);
+    }
+
+    private static <E extends Enum<E>> E parseEnum(String configPath, String key, Class<E> type, E def) {
+        String v = raw(configPath, key);
+        if (v == null || v.isEmpty()) return def;
+        try { return Enum.valueOf(type, v.toUpperCase()); }
+        catch (IllegalArgumentException e) { Logger.warn("Invalid " + key + ": " + v + ". Using " + def + "."); return def; }
     }
 
     /**
@@ -242,6 +191,7 @@ public class AIConfigLoader {
     public static String getLlmApiKey() { return llmApiKey; }
     public static String getLlmModel() { return llmModel; }
     public static String getLlmBaseUrl() { return llmBaseUrl; }
+    public static String getLlmProviderClass() { return llmProviderClass; }
     public static ExecutionMode getExecutionMode() { return executionMode; }
     public static boolean isCI() { return executionMode == ExecutionMode.CI; }
     public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
@@ -252,17 +202,13 @@ public class AIConfigLoader {
     public static double getOnnxReadableThreshold()       { return onnxReadableThreshold; }
     public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }
     public static int    getOnnxReadableMaxCandidates()   { return onnxReadableMaxCandidates; }
-    public static boolean isTier2HintEnabled()            { return tier2HintEnabled; }
-    public static int    getTier2HintTimeoutMs()          { return tier2HintTimeoutMs; }
     public static int    getOnnxHardCandidateLimit()      { return onnxHardCandidateLimit; }
-
-    /**
-     * Returns true when Tier 3 local embedding is active.
-     * Enabled automatically when the fine-tuned model is present in the JAR resources.
-     * No license key required while the model is in development/testing mode.
-     */
-    public static boolean isOnnxEnabled() {
-        return AIConfigLoader.class.getResourceAsStream(
-                "/Ellithium-ai-model/model_quantized.onnx") != null;
-    }
+    public static boolean isVisionAllowedOnMobile()       { return visionAllowMobile; }
+    public static int    getBaselineTtlDays()             { return baselineTtlDays; }
+    public static boolean isStrategyRescueEnabled()       { return strategyRescueEnabled; }
+    public static double getGateFingerprintFloor()        { return gateFingerprintFloor; }
+    public static int    getLlmHealMaxWaitMs()            { return llmHealMaxWaitMs; }
+    public static int    getLlmRetryInitialBackoffMs()    { return llmRetryInitialBackoffMs; }
+    public static int    getLlmRetryMaxBackoffMs()        { return llmRetryMaxBackoffMs; }
+    public static int    getTelemetryMaxRecords()         { return telemetryMaxRecords; }
 }

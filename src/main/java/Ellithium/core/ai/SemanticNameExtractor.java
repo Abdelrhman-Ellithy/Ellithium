@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

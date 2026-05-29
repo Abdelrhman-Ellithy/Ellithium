@@ -1,7 +1,9 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.models.ElementFingerprint;
+import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.Gson;
@@ -48,6 +50,8 @@ public class BaselineStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
     static final int MAX_HISTORY = 3;
+    private static final double T1_ACCEPT_STRONG = 0.60;   // baseline has a strong-identity anchor
+    private static final double T1_ACCEPT_WEAK   = 0.75;   // thin evidence (tag/class only)
 
     /**
      * In-memory store: locatorKey → immutable ordered list of up to MAX_HISTORY fingerprints.
@@ -57,16 +61,6 @@ public class BaselineStore {
     private static final ConcurrentHashMap<String, List<ElementFingerprint>> baselines =
             new ConcurrentHashMap<>();
     private static volatile boolean loaded = false;
-
-    /**
-     * Per-thread score of the most recent Tier 1 heal. Set immediately before
-     * {@link #tryAlgorithmicHeal} returns a non-null element and read by the caller
-     * to attach heal provenance (confidence) to the gated capture / source patch.
-     */
-    private static final ThreadLocal<Double> LAST_HEAL_SCORE = ThreadLocal.withInitial(() -> 0.0);
-
-    /** Score (0.0–1.0) of the most recent Tier 1 heal on this thread. */
-    public static double getLastHealScore() { return LAST_HEAL_SCORE.get(); }
 
     // ──────────────────────── Capture ────────────────────────
 
@@ -148,8 +142,7 @@ public class BaselineStore {
      *   <li>Tag-narrowed, visibility-filtered full DOM scan</li>
      * </ol>
      */
-    public static WebElement tryAlgorithmicHeal(WebDriver driver, By brokenLocator) {
-        LAST_HEAL_SCORE.set(0.0);   // reset per attempt — never leak a prior heal's score to the gate
+    public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator) {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
         ElementFingerprint baseline = (history != null && !history.isEmpty())
@@ -166,26 +159,21 @@ public class BaselineStore {
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
-            // ── Step A: Mutation pre-pass (O(1), no DOM scan) ──
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
             if (mutationMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null);
-                LAST_HEAL_SCORE.set(0.92);
-                return mutationMatch;
+                return HealOutcome.of(mutationMatch, 0.92, 1);
             }
 
-            // ── Step B: Attribute pre-search (direct targeted lookups) ──
             WebElement attrMatch = tryAttributePreSearch(driver, baseline, history);
             if (attrMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 double score = scoreBestHistory(attrMatch, history);
                 acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null);
-                LAST_HEAL_SCORE.set(score);
-                return attrMatch;
+                return HealOutcome.of(attrMatch, score, 1);
             }
 
-            // ── Step C: Tag-narrowed DOM scan with visibility filter ──
             ScoredCandidate best = findBestMatch(driver, baseline, history);
 
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
@@ -196,17 +184,17 @@ public class BaselineStore {
                 return null;
             }
 
-            if (best.score >= 0.60) {
+            double acceptBar = baseline.hasStrongIdentity() ? T1_ACCEPT_STRONG : T1_ACCEPT_WEAK;
+            if (best.score >= acceptBar) {
                 Reporter.log("BaselineStore: Tier 1 MATCH — score=" + String.format("%.2f", best.score)
                         + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
                         LogLevel.INFO_GREEN);
                 acceptHeal(driver, brokenLocator, best.element, best.score,
                         "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator);
-                LAST_HEAL_SCORE.set(best.score);
-                return best.element;
+                return HealOutcome.of(best.element, best.reconstructedLocator, best.score, 1);
             } else {
                 Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
-                        + " (below 0.60) — falling through to Tier 2", LogLevel.DEBUG);
+                        + " (below " + String.format("%.2f", acceptBar) + ") — falling through", LogLevel.DEBUG);
                 HealingTelemetryStore.record(1, brokenLocator.toString(), null, best.score, false);
                 return null;
             }
@@ -285,8 +273,8 @@ public class BaselineStore {
         List<WebElement> candidates = collectCandidates(driver, baseline);
         if (candidates.isEmpty()) return null;
 
-        // Batch-fetch structural context (parent/sibling/position) for ALL candidates in ONE JS
-        // round-trip, so structural scoring is cheap and layout-stable matches get boosted.
+        List<Map<String, Object>> attrsBatch =
+                Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidates);
         List<ElementFingerprint.StructuralContext> structural = fetchStructuralContexts(driver, candidates);
 
         ScoredCandidate best = null;
@@ -294,28 +282,43 @@ public class BaselineStore {
         for (int i = 0; i < candidates.size(); i++) {
             WebElement candidate = candidates.get(i);
             try {
-                // Visibility filter — non-visible elements are almost never the right candidate
-                if (!candidate.isDisplayed()) continue;
+                Map<String, Object> attrs = (attrsBatch != null && i < attrsBatch.size()) ? attrsBatch.get(i) : null;
+                if (attrs != null) {
+                    if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
+                } else {
+                    if (!candidate.isDisplayed()) continue;
+                }
 
-                // Score against ALL history fingerprints, take max (T1-E), with structural context
-                double score = scoreBestHistory(candidate, structural.get(i), history);
+                double score = (attrs != null)
+                        ? scoreBestHistory(attrs, structural.get(i), history)
+                        : scoreBestHistory(candidate, structural.get(i), history);
 
                 if (best == null || score > best.score) {
                     By locator = ElementFingerprint.reconstructLocator(candidate);
                     if (locator != null) {
                         String reasoning = buildMatchReasoning(baseline, candidate);
                         best = new ScoredCandidate(candidate, locator, score, reasoning);
-
-                        // Early termination — no point scanning further
                         if (score >= 0.90) break;
                     }
                 }
             } catch (Exception ignored) {
-                // Skip stale/detached elements
             }
         }
 
         return best;
+    }
+
+    private static double scoreBestHistory(Map<String, Object> attrs,
+                                           ElementFingerprint.StructuralContext sc,
+                                           List<ElementFingerprint> history) {
+        double max = 0.0;
+        for (ElementFingerprint fp : history) {
+            try {
+                double s = fp.scoreSimilarity(attrs);
+                if (s > max) max = s;
+            } catch (Exception ignored) {}
+        }
+        return max;
     }
 
     // Backward-compatible overload for callers that only have a single baseline
@@ -327,31 +330,39 @@ public class BaselineStore {
      * Collects candidate WebElements. Prefers tag-narrowed collection when tagName is known,
      * falling back to the broad interactive-elements selector.
      */
+    private static final int T1_HARD_CANDIDATE_LIMIT = 500;
+
     private static List<WebElement> collectCandidates(WebDriver driver, ElementFingerprint baseline) {
-        // Tag-narrowed first (T1-D): 10-30x fewer candidates on complex pages
+        List<WebElement> raw = null;
         if (isNonBlank(baseline.getTagName())) {
             try {
                 List<WebElement> tagCandidates = driver.findElements(By.tagName(baseline.getTagName()));
-                if (!tagCandidates.isEmpty()) return tagCandidates;
+                if (!tagCandidates.isEmpty()) raw = tagCandidates;
             } catch (Exception ignored) {}
         }
-
-        // Broad interactive-element fallback
-        try {
-            return driver.findElements(By.cssSelector(
-                    "input, button, select, textarea, a, form, label, "
-                    + "[role='button'], [role='link'], [role='textbox'], [role='checkbox'], "
-                    + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"));
-        } catch (Exception e) {
+        if (raw == null) {
             try {
-                return driver.findElements(By.xpath(
-                        "//*[self::input or self::button or self::select or self::textarea "
-                        + "or self::a or self::form or self::label]"));
-            } catch (Exception ex) {
-                Reporter.log("BaselineStore: Failed to query DOM: " + ex.getMessage(), LogLevel.WARN);
-                return List.of();
+                raw = driver.findElements(By.cssSelector(
+                        "input, button, select, textarea, a, form, label, "
+                        + "[role='button'], [role='link'], [role='textbox'], [role='checkbox'], "
+                        + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"));
+            } catch (Exception e) {
+                try {
+                    raw = driver.findElements(By.xpath(
+                            "//*[self::input or self::button or self::select or self::textarea "
+                            + "or self::a or self::form or self::label]"));
+                } catch (Exception ex) {
+                    Reporter.log("BaselineStore: Failed to query DOM: " + ex.getMessage(), LogLevel.WARN);
+                    return List.of();
+                }
             }
         }
+        if (raw.size() > T1_HARD_CANDIDATE_LIMIT) {
+            Reporter.log("BaselineStore: capped " + raw.size() + " candidates to "
+                    + T1_HARD_CANDIDATE_LIMIT + " (heavy DOM)", LogLevel.DEBUG);
+            return raw.subList(0, T1_HARD_CANDIDATE_LIMIT);
+        }
+        return raw;
     }
 
     /** Scores a candidate against ALL history fingerprints (no structural context). */
@@ -442,7 +453,7 @@ public class BaselineStore {
 
         AIHealingReporter.queueChange(
                 "algorithmic-baseline", brokenLocator.toString(),
-                new Ellithium.Utilities.ai.models.HealingResult(locatorStr, score, tierLabel),
+                new HealingResult(locatorStr, score, tierLabel),
                 null, null, null, 0);
 
         HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true);
@@ -498,6 +509,24 @@ public class BaselineStore {
         }
     }
 
+    public static void preWarmAsync() {
+        if (loaded) return;
+        Thread t = new Thread(BaselineStore::ensureLoaded, "ellithium-baseline-prewarm");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private static List<ElementFingerprint> pruneStale(List<ElementFingerprint> fps) {
+        int ttlDays = AIConfigLoader.getBaselineTtlDays();
+        if (ttlDays <= 0) return fps;   // 0/negative disables expiry
+        long cutoff = System.currentTimeMillis() - ttlDays * 86_400_000L;
+        List<ElementFingerprint> fresh = new ArrayList<>(fps.size());
+        for (ElementFingerprint fp : fps) {
+            if (fp.getLastSeenEpoch() <= 0 || fp.getLastSeenEpoch() >= cutoff) fresh.add(fp);
+        }
+        return fresh;
+    }
+
     private static void loadFromDisk() {
         Path path = Paths.get(BASELINE_FILE);
         if (!Files.exists(path)) return;
@@ -522,15 +551,18 @@ public class BaselineStore {
                 Type mapType = new TypeToken<Map<String, List<ElementFingerprint>>>() {}.getType();
                 Map<String, List<ElementFingerprint>> map = GSON.fromJson(root, mapType);
                 if (map != null) {
-                    int total = 0;
+                    int total = 0, evicted = 0;
                     for (Map.Entry<String, List<ElementFingerprint>> entry : map.entrySet()) {
-                        if (entry.getKey() != null && entry.getValue() != null) {
-                            baselines.put(entry.getKey(), List.copyOf(entry.getValue()));
-                            total += entry.getValue().size();
-                        }
+                        if (entry.getKey() == null || entry.getValue() == null) continue;
+                        List<ElementFingerprint> fresh = pruneStale(entry.getValue());
+                        evicted += entry.getValue().size() - fresh.size();
+                        if (fresh.isEmpty()) continue;   // all fingerprints expired — drop the locator
+                        baselines.put(entry.getKey(), List.copyOf(fresh));
+                        total += fresh.size();
                     }
                     Reporter.log("BaselineStore: Loaded " + baselines.size()
-                            + " locators (" + total + " fingerprints) from disk", LogLevel.INFO_BLUE);
+                            + " locators (" + total + " fingerprints, " + evicted + " expired) from disk",
+                            LogLevel.INFO_BLUE);
                 }
             }
         } catch (Exception e) {
@@ -572,25 +604,34 @@ public class BaselineStore {
     private static void writeToDisk() {
         synchronized (LOCK) {
             try {
-                Path path = Paths.get(BASELINE_FILE);
-                Files.createDirectories(path.getParent());
-                Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
-                try (Writer writer = new FileWriter(path.toFile())) {
-                    GSON.toJson(out, writer);
-                }
+                persist(new LinkedHashMap<>(baselines));
             } catch (Exception ignored) {}
+        }
+    }
+
+    private static void persist(Map<String, List<ElementFingerprint>> out) throws IOException {
+        Path path = Paths.get(BASELINE_FILE);
+        Files.createDirectories(path.getParent());
+        Path tmp = Files.createTempFile(path.getParent(), "healing-baselines", ".tmp");
+        try {
+            try (Writer writer = new FileWriter(tmp.toFile())) {
+                GSON.toJson(out, writer);
+            }
+            try {
+                Files.move(tmp, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(tmp, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(tmp);
         }
     }
 
     public static void flush() {
         synchronized (LOCK) {
             try {
-                Path path = Paths.get(BASELINE_FILE);
-                Files.createDirectories(path.getParent());
-                Map<String, List<ElementFingerprint>> out = new LinkedHashMap<>(baselines);
-                try (Writer writer = new FileWriter(path.toFile())) {
-                    GSON.toJson(out, writer);
-                }
+                persist(new LinkedHashMap<>(baselines));
                 int total = baselines.values().stream().mapToInt(List::size).sum();
                 Reporter.log("BaselineStore: Flushed " + baselines.size()
                         + " locators (" + total + " fingerprints) to disk", LogLevel.INFO_GREEN);

@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.models.ElementFingerprint;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -18,9 +18,7 @@ public class SemanticQueryBuilder {
 
     static {
         ACTION_EXPANSIONS.put("senddata",          "type input enter text");
-        ACTION_EXPANSIONS.put("settext",            "type input enter text");
         ACTION_EXPANSIONS.put("clickonelement",     "click press button");
-        ACTION_EXPANSIONS.put("click",              "click press button");
         ACTION_EXPANSIONS.put("tap",                "tap click press");
         ACTION_EXPANSIONS.put("doubletap",          "double tap click");
         ACTION_EXPANSIONS.put("doubleclick",        "double click press");
@@ -75,19 +73,38 @@ public class SemanticQueryBuilder {
         String lastPlaceholder = fingerprint != null ? fingerprint.getPlaceholder() : null;
         String lastDataTestId  = fingerprint != null ? fingerprint.getDataTestId()  : null;
         String lastTagName     = fingerprint != null ? fingerprint.getTagName()     : null;
+        String lastResId       = fingerprint != null ? fingerprint.getResourceId()       : null;
+        String lastAccId       = fingerprint != null ? fingerprint.getAccessibilityId()  : null;
+        String lastContentDesc = fingerprint != null ? fingerprint.getContentDesc()      : null;
 
         boolean isReadable = SemanticLocatorResolver.ElementCategory.READABLE
                 == SemanticLocatorResolver.categorizeAction(actionType);
-        if (isReadable) lastText = null;
+        if (isReadable) {
+            lastText = null;
+            lastContentDesc = null;
+        }
 
         return build(actionType, locatorValue, methodName, null,
-                lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName);
+                lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName,
+                lastResId, lastAccId, lastContentDesc);
+    }
+
+    /** Web-only overload — preserves byte-identical output for the existing parity fixtures
+     *  (the mobile slots are passed as null and contribute no tokens). */
+    public static String build(String actionType, String locatorValue, String methodName,
+                               String hint,
+                               String lastText, String lastId, String lastAriaLabel,
+                               String lastPlaceholder, String lastDataTestId, String lastTagName) {
+        return build(actionType, locatorValue, methodName, hint,
+                lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName,
+                null, null, null);
     }
 
     public static String build(String actionType, String locatorValue, String methodName,
                                 String hint,
                                 String lastText, String lastId, String lastAriaLabel,
-                                String lastPlaceholder, String lastDataTestId, String lastTagName) {
+                                String lastPlaceholder, String lastDataTestId, String lastTagName,
+                                String lastResourceId, String lastAccessibilityId, String lastContentDesc) {
         List<String> tokens = new ArrayList<>();
 
         if (isPresent(actionType)) {
@@ -131,6 +148,20 @@ public class SemanticQueryBuilder {
 
         if (isPresent(lastTagName)) {
             tokens.add(lastTagName.toLowerCase());
+        }
+
+        if (isPresent(lastResourceId)) {
+            int slash = lastResourceId.lastIndexOf('/');
+            String resTail = slash >= 0 ? lastResourceId.substring(slash + 1) : lastResourceId;
+            tokens.add(deCamelCase(resTail));
+        }
+
+        if (isPresent(lastAccessibilityId)) {
+            tokens.add(deCamelCase(lastAccessibilityId));
+        }
+
+        if (isPresent(lastContentDesc)) {
+            tokens.add(lastContentDesc.toLowerCase());
         }
 
         String joined = tokens.stream()

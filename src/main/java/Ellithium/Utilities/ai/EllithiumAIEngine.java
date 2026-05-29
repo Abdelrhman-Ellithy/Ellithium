@@ -1,17 +1,20 @@
 package Ellithium.Utilities.ai;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.generators.FeatureFileModifier;
-import Ellithium.Utilities.ai.generators.PomClassGenerator;
-import Ellithium.Utilities.ai.models.GeneratedAssets;
-import Ellithium.Utilities.ai.models.TestCaseSource;
-import Ellithium.Utilities.ai.models.TraceabilityRecord;
-import Ellithium.Utilities.ai.provider.LLMProvider;
-import Ellithium.Utilities.ai.readers.JsonTestCaseReader;
-import Ellithium.Utilities.ai.readers.TestCaseReader;
-import Ellithium.Utilities.ai.readers.TextTestCaseReader;
-import Ellithium.Utilities.ai.sanitizers.DataScrubber;
-import Ellithium.Utilities.ai.sanitizers.DOMMinimizer;
+import Ellithium.core.ai.TraceabilityManager;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.generators.FeatureFileModifier;
+import Ellithium.core.ai.generators.PomClassGenerator;
+import Ellithium.core.ai.models.GeneratedAssets;
+import Ellithium.core.ai.models.TestCaseSource;
+import Ellithium.core.ai.models.TraceabilityRecord;
+import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.core.ai.readers.JsonTestCaseReader;
+import Ellithium.core.ai.readers.TestCaseReader;
+import Ellithium.core.ai.readers.TextTestCaseReader;
+import Ellithium.core.ai.sanitizers.DataScrubber;
+import Ellithium.core.ai.sanitizers.DOMMinimizer;
+import Ellithium.core.execution.listener.seleniumListener;
+import Ellithium.core.ai.generators.LiveContextGenerator;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
 import Ellithium.core.driver.LocalDriverType;
@@ -73,7 +76,7 @@ public class EllithiumAIEngine {
      * @param naturalLanguageSteps The steps to generate, in plain English
      */
     public static void continueFrom(WebDriver driver, LLMProvider llmProvider, String naturalLanguageSteps) {
-        Ellithium.Utilities.ai.generators.LiveContextGenerator.continueFrom(driver, llmProvider, naturalLanguageSteps);
+        LiveContextGenerator.continueFrom(driver, llmProvider, naturalLanguageSteps);
     }
 
     /**
@@ -93,7 +96,7 @@ public class EllithiumAIEngine {
      * @param filePath    Path to the steps file
      */
     public static void continueFromFile(WebDriver driver, LLMProvider llmProvider, String filePath) {
-        Ellithium.Utilities.ai.generators.LiveContextGenerator.continueFromFile(driver, llmProvider, filePath);
+        LiveContextGenerator.continueFromFile(driver, llmProvider, filePath);
     }
 
     /**
@@ -118,8 +121,16 @@ public class EllithiumAIEngine {
      * @param driver The WebDriver to record interactions on
      * @return The recorder instance
      */
-    public static Ellithium.Utilities.ai.generators.InteractionRecorder startRecording(WebDriver driver) {
-        return Ellithium.Utilities.ai.generators.InteractionRecorder.start(driver);
+    public static void startRecording(WebDriver driver) {
+        seleniumListener.startRecording(driver);
+    }
+
+    public static void stopRecording() {
+        seleniumListener.stopRecording();
+    }
+
+    public static void generateCodeFromRecording(Object llmProvider) {
+        seleniumListener.generateCode((Ellithium.core.ai.provider.LLMProvider) llmProvider);
     }
 
     // ──────────────────────── System Prompt ────────────────────────
@@ -345,7 +356,7 @@ public class EllithiumAIEngine {
             Thread.sleep(2000);
 
             // Use AX tree (universal, works on all browsers) with HTML fallback
-            String optimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer
+            String optimizedDom = DOMMinimizer
                     .getOptimalDOMRepresentation(headlessDriver);
             String scrubbed = DataScrubber.scrub(optimizedDom);
 

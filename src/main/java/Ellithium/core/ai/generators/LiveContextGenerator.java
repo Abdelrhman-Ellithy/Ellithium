@@ -1,11 +1,9 @@
-package Ellithium.Utilities.ai.generators;
+package Ellithium.core.ai.generators;
 
-import Ellithium.Utilities.ai.models.GeneratedAssets;
-import Ellithium.Utilities.ai.models.RecordedInteraction;
-import Ellithium.Utilities.ai.provider.LLMProvider;
-import Ellithium.Utilities.ai.sanitizers.AccessibilityTreeExtractor;
-import Ellithium.Utilities.ai.sanitizers.DataScrubber;
-import Ellithium.Utilities.ai.sanitizers.DOMMinimizer;
+import Ellithium.core.ai.models.RecordedInteraction;
+import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.core.ai.sanitizers.DataScrubber;
+import Ellithium.core.ai.sanitizers.DOMMinimizer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.JsonArray;
@@ -16,7 +14,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;

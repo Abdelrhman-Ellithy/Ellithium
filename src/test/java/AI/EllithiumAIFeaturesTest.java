@@ -1,9 +1,9 @@
-package AI;
+package ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.provider.GeminiProvider;
-import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.provider.GeminiProvider;
+import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
 import Ellithium.core.driver.LocalDriverType;

@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.models;
+package Ellithium.core.ai.models;
 
 /**
  * Represents the result of an AI healing attempt.

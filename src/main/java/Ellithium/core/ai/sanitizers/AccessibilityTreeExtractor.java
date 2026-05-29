@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.sanitizers;
+package Ellithium.core.ai.sanitizers;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;

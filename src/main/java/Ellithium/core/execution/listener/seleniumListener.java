@@ -1,4 +1,7 @@
 package Ellithium.core.execution.listener;
+import Ellithium.core.ai.generators.LiveContextGenerator;
+import Ellithium.core.ai.models.RecordedInteraction;
+import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
@@ -11,26 +14,166 @@ import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.events.WebDriverListener;
 public class seleniumListener implements WebDriverListener {
 
+    private static volatile boolean RECORDING = false;
+    private static volatile WebDriver RECORDING_DRIVER = null;
+    private static final List<RecordedInteraction> RECORDED =
+            Collections.synchronizedList(new ArrayList<>());
+
+    private static final String TOOLBAR_INJECT_SCRIPT =
+            "(function() {"
+            + "  if (document.getElementById('ellithium-recorder-toolbar')) return;"
+            + "  var bar = document.createElement('div');"
+            + "  bar.id = 'ellithium-recorder-toolbar';"
+            + "  bar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:2147483647;'"
+            + "    + 'background:rgba(20,20,20,0.92);color:#fff;padding:8px 16px;border-radius:8px;'"
+            + "    + 'font-family:system-ui,sans-serif;font-size:13px;display:flex;align-items:center;'"
+            + "    + 'gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.4);backdrop-filter:blur(8px);';"
+            + "  bar.innerHTML = '<span style=\"width:10px;height:10px;background:#ff3b30;border-radius:50%;'"
+            + "    + 'display:inline-block;animation:pulse 1.2s infinite\"></span>'"
+            + "    + '<span>Ellithium Recording</span>'"
+            + "    + '<span id=\"ellithium-rec-count\" style=\"background:#333;padding:2px 8px;'"
+            + "    + 'border-radius:4px;font-weight:bold;\">0</span>';"
+            + "  var style = document.createElement('style');"
+            + "  style.textContent = '@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}';"
+            + "  document.head.appendChild(style);"
+            + "  document.body.appendChild(bar);"
+            + "})();";
+
+    private static final String TOOLBAR_UPDATE_SCRIPT =
+            "var c=document.getElementById('ellithium-rec-count');if(c)c.textContent=arguments[0];";
+
+    private static final String TOOLBAR_REMOVE_SCRIPT =
+            "var b=document.getElementById('ellithium-recorder-toolbar');if(b)b.remove();";
+
+    /**
+     * Starts capturing user-driven WebDriver interactions for Playwright-style codegen.
+     * Toggles a process-wide flag that the existing after-callbacks check; no decorator wrap.
+     */
+    public static void startRecording(WebDriver driver) {
+        RECORDED.clear();
+        RECORDING_DRIVER = driver;
+        RECORDING = true;
+        injectRecordingToolbar(driver);
+        Reporter.log("seleniumListener: Recording started", LogLevel.INFO_YELLOW);
+    }
+
+    /** Stops capturing, removes the toolbar, returns the captured interactions. */
+    public static List<RecordedInteraction> stopRecording() {
+        RECORDING = false;
+        removeRecordingToolbar();
+        List<RecordedInteraction> snapshot = new ArrayList<>(RECORDED);
+        RECORDING_DRIVER = null;
+        Reporter.log("seleniumListener: Recording stopped — " + snapshot.size() + " interactions captured",
+                LogLevel.INFO_GREEN);
+        return snapshot;
+    }
+
+    /** Hands the recorded interactions to the codegen pipeline. */
+    public static void generateCode(LLMProvider llmProvider) {
+        if (RECORDED.isEmpty()) {
+            Reporter.log("seleniumListener: No interactions recorded — nothing to generate", LogLevel.WARN);
+            return;
+        }
+        WebDriver driver = RECORDING_DRIVER;
+        if (driver == null) {
+            Reporter.log("seleniumListener: generateCode called with no active driver", LogLevel.WARN);
+            return;
+        }
+        LiveContextGenerator.generateFromRecording(driver, llmProvider, new ArrayList<>(RECORDED));
+    }
+
+    public static List<RecordedInteraction> getInteractions() { return new ArrayList<>(RECORDED); }
+    public static boolean isRecording() { return RECORDING; }
+
+    private static void injectRecordingToolbar(WebDriver driver) {
+        try {
+            if (driver instanceof JavascriptExecutor js) js.executeScript(TOOLBAR_INJECT_SCRIPT);
+        } catch (Exception e) {
+            Reporter.log("seleniumListener: Toolbar inject failed (non-fatal): " + e.getMessage(), LogLevel.DEBUG);
+        }
+    }
+
+    private static void updateRecordingToolbar() {
+        try {
+            WebDriver d = RECORDING_DRIVER;
+            if (d instanceof JavascriptExecutor js) {
+                js.executeScript(TOOLBAR_UPDATE_SCRIPT, String.valueOf(RECORDED.size()));
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static void removeRecordingToolbar() {
+        try {
+            WebDriver d = RECORDING_DRIVER;
+            if (d instanceof JavascriptExecutor js) js.executeScript(TOOLBAR_REMOVE_SCRIPT);
+        } catch (Exception ignored) {}
+    }
+
+    private static String reconstructLocatorExpression(WebElement element) {
+        try {
+            String id = element.getAttribute("id");
+            if (id != null && !id.isBlank()) return "By.id(\"" + id + "\")";
+            String name = element.getAttribute("name");
+            if (name != null && !name.isBlank()) return "By.name(\"" + name + "\")";
+            String testId = element.getAttribute("data-testid");
+            if (testId != null && !testId.isBlank()) return "By.cssSelector(\"[data-testid='" + testId + "']\")";
+            String cssClass = element.getAttribute("class");
+            String tag = element.getTagName();
+            if (cssClass != null && !cssClass.isBlank() && tag != null) {
+                String firstClass = cssClass.trim().split("\\s+")[0];
+                return "By.cssSelector(\"" + tag + "." + firstClass + "\")";
+            }
+            return "By.tagName(\"" + (tag != null ? tag : "unknown") + "\")";
+        } catch (Exception e) {
+            return "By.tagName(\"unknown\")";
+        }
+    }
+
+    private static String recordedElementName(WebElement element) {
+        try {
+            String ariaLabel = element.getAttribute("aria-label");
+            if (ariaLabel != null && !ariaLabel.isBlank()) return ariaLabel.trim();
+            String placeholder = element.getAttribute("placeholder");
+            if (placeholder != null && !placeholder.isBlank()) return placeholder.trim();
+            String text = element.getText();
+            if (text != null && !text.isBlank() && text.length() <= 50) return text.trim();
+            String title = element.getAttribute("title");
+            if (title != null && !title.isBlank()) return title.trim();
+            return element.getAttribute("id");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String recordedTag(WebElement element) {
+        try { return element.getTagName(); } catch (Exception e) { return "unknown"; }
+    }
+
     /**
      * Thread-local flag to suppress logging during internal AI operations
      * (e.g., ElementFingerprint capture reads 13+ attributes per element).
      * Set to true via {@link #suppressLogging()} and reset via {@link #resumeLogging()}.
      */
-    private static final ThreadLocal<Boolean> SUPPRESS_LOGGING = ThreadLocal.withInitial(() -> false);
+    private static final ThreadLocal<Integer> SUPPRESS_DEPTH = ThreadLocal.withInitial(() -> 0);
 
-    /** Suppress all listener logging on the current thread. */
-    public static void suppressLogging() { SUPPRESS_LOGGING.set(true); }
+    /** Suppress listener logging on the current thread (reentrant — pair every call with resumeLogging()). */
+    public static void suppressLogging() { SUPPRESS_DEPTH.set(SUPPRESS_DEPTH.get() + 1); }
 
-    /** Resume listener logging on the current thread. */
-    public static void resumeLogging() { SUPPRESS_LOGGING.set(false); }
+    /** Resume listener logging on the current thread (decrements the suppression depth). */
+    public static void resumeLogging() { SUPPRESS_DEPTH.set(Math.max(0, SUPPRESS_DEPTH.get() - 1)); }
 
     /** Returns true if logging is currently suppressed. */
-    private static boolean isSuppressed() { return SUPPRESS_LOGGING.get(); }
+    private static boolean isSuppressed() { return SUPPRESS_DEPTH.get() > 0; }
 
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         String sentData = buildSentDataString(keysToSend);
         Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
+        if (RECORDING) {
+            RECORDED.add(new RecordedInteraction("sendData", reconstructLocatorExpression(element),
+                    sentData, recordedElementName(element), recordedTag(element)));
+            updateRecordingToolbar();
+        }
     }
     
     private String buildSentDataString(CharSequence... keysToSend) {
@@ -87,19 +230,32 @@ public class seleniumListener implements WebDriverListener {
    @Override
     public void afterExecuteScript(WebDriver driver, String script, Object[] args, Object result) {
         if (isSuppressed()) return;
-        Reporter.log("Executed script: " + script + ", Result: " + result, LogLevel.DEBUG);
+        Reporter.log("Executed script (" + scriptLen(script) + " chars)", LogLevel.DEBUG);
     }
    @Override
    public void afterExecuteAsyncScript(WebDriver driver, String script, Object[] args, Object result) {
-       Reporter.log("Executed async script: " + script + ", Result: " + result, LogLevel.DEBUG);
+       if (isSuppressed()) return;
+       Reporter.log("Executed async script (" + scriptLen(script) + " chars)", LogLevel.DEBUG);
    }
+
+   private static int scriptLen(String script) { return script != null ? script.length() : 0; }
    @Override
    public void afterClick(WebElement element) {
        Reporter.log("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE);
+       if (RECORDING) {
+           RECORDED.add(new RecordedInteraction("click", reconstructLocatorExpression(element),
+                   null, recordedElementName(element), recordedTag(element)));
+           updateRecordingToolbar();
+       }
    }
    @Override
    public void afterSubmit(WebElement element) {
        Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE);
+       if (RECORDING) {
+           RECORDED.add(new RecordedInteraction("submit", reconstructLocatorExpression(element),
+                   null, recordedElementName(element), recordedTag(element)));
+           updateRecordingToolbar();
+       }
    }
     @Override
     public void afterGetTagName(WebElement element, String result) {
@@ -109,7 +265,7 @@ public class seleniumListener implements WebDriverListener {
    @Override
    public void afterGetAttribute(WebElement element, String name, String result) {
        if (isSuppressed()) return;
-       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + element.getAttribute(name), LogLevel.DEBUG);
+       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.DEBUG);
    }
    @Override
    public void afterIsSelected(WebElement element, boolean result) {
@@ -139,6 +295,10 @@ public class seleniumListener implements WebDriverListener {
    @Override
    public void afterTo(WebDriver.Navigation navigation, String url) {
        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
+       if (RECORDING) {
+           RECORDED.add(new RecordedInteraction("navigate", null, url, null, null));
+           updateRecordingToolbar();
+       }
    }
 
    @Override

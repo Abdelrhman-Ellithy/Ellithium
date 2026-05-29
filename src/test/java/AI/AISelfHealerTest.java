@@ -1,9 +1,9 @@
-package AI;
+package ai;
 
-import Ellithium.Utilities.ai.AISelfHealer;
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.config.HealingStrategy;
-import Ellithium.Utilities.ai.provider.LLMProvider;
+import Ellithium.core.ai.AISelfHealer;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.config.HealingStrategy;
+import Ellithium.core.ai.provider.LLMProvider;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.openqa.selenium.By;
@@ -19,14 +19,15 @@ public class AISelfHealerTest {
 
     @Test
     public void testAttemptHeal_WithDisabledStrategy_ReturnsNull() {
-        try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
-            configMock.when(AIConfigLoader::getHealingStrategy).thenReturn(HealingStrategy.DISABLED);
-
+        AISelfHealer.initializeForThread(null, HealingStrategy.DISABLED);
+        try {
             WebDriver driver = mock(WebDriver.class);
             WebElement element = AISelfHealer.attemptHeal(driver, By.id("broken"), new StackTraceElement[0]);
-            
+
             Assert.assertNull(element);
             verify(driver, never()).getPageSource();
+        } finally {
+            AISelfHealer.initializeForThread(null, null);
         }
     }
 

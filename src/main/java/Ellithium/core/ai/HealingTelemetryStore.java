@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -67,6 +67,10 @@ public class HealingTelemetryStore {
      */
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
+        int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
+        if (max > 0 && records.size() >= max) {
+            records.poll();
+        }
         records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
                 query, category, CURRENT_TEST.get()));
     }
@@ -142,6 +146,32 @@ public class HealingTelemetryStore {
             Reporter.log("HealingTelemetryStore: Failed to flush telemetry (non-fatal): "
                     + e.getMessage(), LogLevel.WARN);
         }
+    }
+
+    /**
+     * Emits a one-block CI-visible summary (stdout via Reporter) so a team notices silent healing
+     * without opening the JSON. Per-tier used/fell-through + suspect wrong-heals (B3).
+     */
+    public static void logConsoleSummary() {
+        if (records.isEmpty()) return;
+        List<TelemetryRecord> snap = new ArrayList<>(records);
+        long used = snap.stream().filter(r -> r.success).count();
+        long suspect = snap.stream().filter(r -> r.suspectWrongHeal).count();
+        StringBuilder sb = new StringBuilder("\n──────── Ellithium AI Healing Summary ────────\n");
+        sb.append(String.format("  attempts=%d  used=%d  fell-through=%d%n",
+                snap.size(), used, snap.size() - used));
+        for (int tier : new int[]{1, 2, 3, 4}) {
+            TierSummary t = new TierSummary(tier, snap);
+            if (t.attempts == 0) continue;
+            sb.append(String.format("  Tier %d: used=%d  fell-through=%d  fallthrough=%.2f  avgScore=%.3f%n",
+                    tier, t.used, t.fellThrough, t.fallthroughRate, t.avgScore));
+        }
+        if (suspect > 0) {
+            sb.append(String.format("  ⚠ %d SUSPECT wrong-heal(s) — a used heal's test later FAILED. "
+                    + "Review healing-telemetry.json.%n", suspect));
+        }
+        sb.append("──────────────────────────────────────────────");
+        Reporter.log(sb.toString(), suspect > 0 ? LogLevel.WARN : LogLevel.INFO_GREEN);
     }
 
     /** Clears all in-memory records (for testing/reset). */

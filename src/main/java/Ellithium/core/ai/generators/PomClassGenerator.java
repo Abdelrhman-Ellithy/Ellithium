@@ -1,6 +1,5 @@
-package Ellithium.Utilities.ai.generators;
+package Ellithium.core.ai.generators;
 
-import Ellithium.Utilities.ai.JavaSourceModifier;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.github.javaparser.StaticJavaParser;

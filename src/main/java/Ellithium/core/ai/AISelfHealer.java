@@ -1,11 +1,12 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.config.HealingStrategy;
-import Ellithium.Utilities.ai.models.ElementFingerprint;
-import Ellithium.Utilities.ai.models.HealingResult;
-import Ellithium.Utilities.ai.provider.LLMProvider;
-import Ellithium.Utilities.interactions.BaseActions;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.config.HealingStrategy;
+import Ellithium.core.ai.models.ElementFingerprint;
+import Ellithium.core.ai.models.HealingResult;
+import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.core.ai.sanitizers.DOMMinimizer;
+import Ellithium.core.ai.sanitizers.DataScrubber;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumBy;
@@ -52,6 +53,39 @@ public class AISelfHealer {
     }
     private static final ConcurrentHashMap<String, CachedLocator> globalHealedCache = new ConcurrentHashMap<>();
 
+    private static final ConcurrentHashMap<String, java.util.concurrent.CompletableFuture<By>> inFlight =
+            new ConcurrentHashMap<>();
+
+    private static String cacheKey(WebDriver driver, By brokenLocator) {
+        return pageContext(driver) + "##" + brokenLocator.toString();
+    }
+
+    private static String pageContext(WebDriver driver) {
+        try {
+            if (driver instanceof AppiumDriver) {
+                Object pkg = ((AppiumDriver) driver).getCapabilities().getCapability("appPackage");
+                return pkg != null ? pkg.toString() : "mobile";
+            }
+            String url = driver.getCurrentUrl();
+            if (url == null) return "";
+            int q = url.indexOf('?');
+            return q >= 0 ? url.substring(0, q) : url;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public static By getCachedHealedLocator(WebDriver driver, By brokenLocator) {
+        CachedLocator cached = globalHealedCache.get(cacheKey(driver, brokenLocator));
+        return cached != null ? cached.newLocator : null;
+    }
+
+    public static void resetForSuite() {
+        globalHealedCache.clear();
+        inFlight.clear();
+        pendingPatches.clear();
+    }
+
     // Deferred source patches — queued during test, applied at suite end
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();
 
@@ -90,7 +124,7 @@ public class AISelfHealer {
 
     /**
      * Queues a source patch from Tier 1 or Tier 1.5 healing.
-     * Called by {@link BaseActions} after a successful heal so the POM source file
+     * Called by {@code BaseActions} after a successful heal so the POM source file
      * gets corrected at suite end (if strategy is HEAL_AND_NOTIFY).
      *
      * @param brokenLocator  The original broken By locator
@@ -125,7 +159,7 @@ public class AISelfHealer {
             if (tempCtx.byMethod == null) return;
 
             // Reconstruct cleanest locator from healed element and convert to Java source
-            By healedBy = Ellithium.Utilities.ai.models.ElementFingerprint.reconstructLocator(healedElement);
+            By healedBy = ElementFingerprint.reconstructLocator(healedElement);
             if (healedBy == null) return;
             String javaExpression = byToJavaExpression(healedBy);
             if (javaExpression == null) return;
@@ -148,11 +182,20 @@ public class AISelfHealer {
      */
     public static String byToJavaExpression(By locator) {
         String str = locator.toString();
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("By\\.([a-zA-Z]+):\\s*(.*)").matcher(str);
+        boolean appium = locator instanceof AppiumBy || str.startsWith("AppiumBy.");
+        java.util.regex.Pattern p = appium
+                ? java.util.regex.Pattern.compile("AppiumBy\\.([a-zA-Z]+):\\s*(.*)")
+                : java.util.regex.Pattern.compile("^By\\.([a-zA-Z]+):\\s*(.*)");
+        java.util.regex.Matcher m = p.matcher(str);
         if (!m.find()) return null;
         String method = m.group(1);
-        String value = m.group(2).trim();
-        return "By." + method + "(\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\")";
+        String value = escapeJava(m.group(2).trim());
+        return (appium ? "AppiumBy." : "By.") + method + "(\"" + value + "\")";
+    }
+
+    private static String escapeJava(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
 
     // ──────────────────────── Initialization ────────────────────────
@@ -245,19 +288,18 @@ public class AISelfHealer {
         By newLocator = healLocator(driver, brokenLocator, stackTrace);
 
         if (newLocator != null) {
-            CachedLocator cached = globalHealedCache.get(brokenLocator.toString());
+            CachedLocator cached = globalHealedCache.get(cacheKey(driver, brokenLocator));
             if (cached != null) {
                 Reporter.log("AI Self-Healing (cached): reusing healed locator " + cached.newLocator
                         + " for field '" + cached.originalField + "' (original: " + brokenLocator + ")", LogLevel.INFO_YELLOW);
             }
             try {
                 WebElement found = driver.findElement(newLocator);
-                // Capture the healed element as new baseline (gated by LLM confidence)
                 BaselineStore.capture(driver, brokenLocator, found, getLastHealConfidence(), 4);
                 return found;
             } catch (Exception e) {
                 Reporter.log("AI Self-Healing: Healed locator also failed: " + e.getMessage(), LogLevel.ERROR);
-                globalHealedCache.remove(brokenLocator.toString());
+                globalHealedCache.remove(cacheKey(driver, brokenLocator));
             }
         }
         return null;
@@ -272,9 +314,36 @@ public class AISelfHealer {
         LLMProvider provider = getEffectiveProvider();
         if (strategy == HealingStrategy.DISABLED || provider == null) return null;
 
-        // Fast path: global cache hit
-        CachedLocator cached = globalHealedCache.get(brokenLocator.toString());
+        String cacheKey = cacheKey(driver, brokenLocator);
+        CachedLocator cached = globalHealedCache.get(cacheKey);
         if (cached != null) return cached.newLocator;
+
+        java.util.concurrent.CompletableFuture<By> mine = new java.util.concurrent.CompletableFuture<>();
+        java.util.concurrent.CompletableFuture<By> existing = inFlight.putIfAbsent(cacheKey, mine);
+        if (existing != null) {
+            try {
+                return existing.get(AIConfigLoader.getLlmHealMaxWaitMs(),
+                        java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        try {
+            By result = healLocatorInternal(driver, brokenLocator, stackTrace, strategy, provider);
+            mine.complete(result);
+            return result;
+        } catch (RuntimeException re) {
+            mine.complete(null);
+            Reporter.log("AI Self-Healing: Tier 4 heal aborted by unexpected error — falling through: "
+                    + re.getMessage(), LogLevel.WARN);
+            return null;
+        } finally {
+            inFlight.remove(cacheKey, mine);
+        }
+    }
+
+    private static By healLocatorInternal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace,
+                                           HealingStrategy strategy, LLMProvider provider) {
 
         // ── Step 1-2: Collect rich context ──
         HealingContext ctx = buildHealingContext(driver, brokenLocator, stackTrace);
@@ -383,15 +452,12 @@ public class AISelfHealer {
 
         Reporter.log("AI Healing Accepted: " + acceptedResult.toString(), LogLevel.INFO_GREEN);
 
-        // Record Tier 4 confidence for the caller's gated capture provenance.
         LAST_HEAL_CONFIDENCE.set(acceptedResult.getConfidence());
 
-        // ── Step 7: Cache + Deferred Source Patch + Report ──
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
-        globalHealedCache.put(brokenLocator.toString(),
+        globalHealedCache.put(cacheKey(driver, brokenLocator),
                 new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown"));
 
-        // ALWAYS queue for report
         AIHealingReporter.queueChange(
                 ctx.filePath != null ? ctx.filePath : "unknown",
                 brokenLocator.toString(),
@@ -435,12 +501,19 @@ public class AISelfHealer {
                     Reporter.log("AI Self-Healing: LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
                     return null;
                 }
-                long waitMs = (long) Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+                long waitMs = backoffMs(attempt);
                 Reporter.log("AI Self-Healing: LLM attempt " + attempt + " failed, retrying in " + waitMs + "ms...", LogLevel.WARN);
                 try { Thread.sleep(waitMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
             }
         }
         return null;
+    }
+
+    private static long backoffMs(int attempt) {
+        long base = AIConfigLoader.getLlmRetryInitialBackoffMs();
+        long max  = AIConfigLoader.getLlmRetryMaxBackoffMs();
+        long mult = 1L << Math.min(attempt - 1, 16);
+        return Math.min(max, base * mult);
     }
 
     /**
@@ -461,7 +534,7 @@ public class AISelfHealer {
                     Reporter.log("AI Self-Healing: Vision LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
                     return null;
                 }
-                long waitMs = (long) Math.pow(2, attempt) * 500;
+                long waitMs = backoffMs(attempt);
                 Reporter.log("AI Self-Healing: Vision LLM attempt " + attempt + " failed, retrying in " + waitMs + "ms...", LogLevel.WARN);
                 try { Thread.sleep(waitMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
             }
@@ -493,7 +566,11 @@ public class AISelfHealer {
      * Only applies in LOCAL mode — CI mode leaves source files untouched.
      */
     public static void applyDeferredPatches() {
-        if (AIConfigLoader.isCI() || pendingPatches.isEmpty()) return;
+        if (pendingPatches.isEmpty()) return;
+        if (AIConfigLoader.isCI()) {
+            pendingPatches.clear();
+            return;
+        }
 
         java.util.Map<String, SourcePatch> uniquePatches = resolvePatchConflicts(pendingPatches);
         pendingPatches.clear();
@@ -553,25 +630,58 @@ public class AISelfHealer {
         ctx.semanticQuery = SemanticQueryBuilder.buildFromContext(
                 ctx.actionType, ctx.brokenLocatorStr, ctx.methodName, ctx.baseline);
 
-        // Capture DOM using best available method (AX tree → HTML fallback)
-        String optimizedDom = Ellithium.Utilities.ai.sanitizers.DOMMinimizer.getOptimalDOMRepresentation(driver);
-        ctx.minimizedDom = Ellithium.Utilities.ai.sanitizers.DataScrubber.scrub(optimizedDom);
-
-        // Capture screenshot for vision-capable LLMs (GPT-4o, Gemini Pro Vision, etc.)
         LLMProvider provider = getEffectiveProvider();
-        if (provider != null && provider.supportsVision()) {
-            try {
-                if (driver instanceof org.openqa.selenium.TakesScreenshot screenshotDriver) {
-                    ctx.screenshot = screenshotDriver.getScreenshotAs(org.openqa.selenium.OutputType.BYTES);
-                    Reporter.log("Screenshot captured for visual healing (" + ctx.screenshot.length + " bytes)", LogLevel.INFO_BLUE);
-                }
-            } catch (Exception e) {
-                Reporter.log("Failed to capture screenshot for visual healing: " + e.getMessage(), LogLevel.WARN);
-            }
+        // Mobile screens often render PII (account numbers, OTPs); a mobile screenshot to a cloud LLM
+        // is opt-in (ai.vision.allowMobile, default false). Web vision stays enabled.
+        boolean visionAllowedHere = !ctx.isMobile || AIConfigLoader.isVisionAllowedOnMobile();
+        boolean wantScreenshot = provider != null
+                && provider.supportsVision()
+                && getEffectiveStrategy() != HealingStrategy.SUGGEST_ONLY
+                && visionAllowedHere
+                && driver instanceof org.openqa.selenium.TakesScreenshot;
+        if (ctx.isMobile && provider != null && provider.supportsVision() && !AIConfigLoader.isVisionAllowedOnMobile()) {
+            Reporter.log("AI Self-Healing: mobile screenshot withheld from LLM (ai.vision.allowMobile=false) "
+                    + "— set it true to enable visual healing on mobile (PII consideration)", LogLevel.DEBUG);
         }
+
+        java.util.concurrent.CompletableFuture<String> domF =
+                java.util.concurrent.CompletableFuture.supplyAsync(
+                        () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER4_PREP_POOL);
+        java.util.concurrent.CompletableFuture<byte[]> shotF = wantScreenshot
+                ? java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return ((org.openqa.selenium.TakesScreenshot) driver)
+                                    .getScreenshotAs(org.openqa.selenium.OutputType.BYTES);
+                        } catch (Exception e) {
+                            Reporter.log("Failed to capture screenshot for visual healing: "
+                                    + e.getMessage(), LogLevel.WARN);
+                            return null;
+                        }
+                    }, TIER4_PREP_POOL)
+                : java.util.concurrent.CompletableFuture.completedFuture(null);
+
+        try {
+            ctx.minimizedDom = DataScrubber.scrub(domF.get());
+        } catch (Exception e) {
+            ctx.minimizedDom = "";
+        }
+        try {
+            ctx.screenshot = shotF.get();
+            if (ctx.screenshot != null) {
+                Reporter.log("Screenshot captured for visual healing ("
+                        + ctx.screenshot.length + " bytes)", LogLevel.INFO_BLUE);
+            }
+        } catch (Exception ignored) {}
 
         return ctx;
     }
+
+    private static final java.util.concurrent.ExecutorService TIER4_PREP_POOL =
+            java.util.concurrent.Executors.newFixedThreadPool(2, r -> {
+                Thread t = new Thread(r, "ellithium-tier4-prep");
+                t.setDaemon(true);
+                return t;
+            });
 
     /**
      * Parses "By.id: test" into byMethod="id", byValue="test"

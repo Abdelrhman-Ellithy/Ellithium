@@ -16,15 +16,15 @@ public class LoginPage {
     }
 
     public void setUserName(String username) {
-        driverActions.elements().sendData(By.id("username"), username);
+        driverActions.elements().sendData(By.id("email"), username);
     }
 
     public void setPassword(String password) {
-        driverActions.elements().sendData(By.id("password"), password);
+        driverActions.elements().sendData(By.id("pass"), password);
     }
 
     public SecureAreaPage clickLoginBtn() {
-        driverActions.elements().clickOnElement(By.cssSelector("button.radius"));
+        driverActions.elements().clickOnElement(By.id("button"));
         return new SecureAreaPage(driver);
     }
 }

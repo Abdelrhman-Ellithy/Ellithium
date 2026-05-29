@@ -1,7 +1,8 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.config.AIConfigLoader;
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.models.ElementFingerprint;
+import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -18,7 +19,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /** Tier 3 local embedding healer. See ai-context for architecture notes. */
-public class ONNXEmbeddingHealer {
+public class EnsembleHealer {
 
     private static final String MODEL_RESOURCE     = "/Ellithium-ai-model/model_quantized.onnx";
     private static final String TOKENIZER_RESOURCE = "/Ellithium-ai-model/tokenizer.json";
@@ -27,18 +28,34 @@ public class ONNXEmbeddingHealer {
     private static final int MAX_SEQ_LEN     = 256;
     private static final int MAX_TEXT_CHARS  = 240;
     private static final int MAX_CLASS_CHARS = 200;
-    private static final double SCORE_TIE_EPSILON = 0.02;
 
     private static volatile boolean initialized = false;
     private static volatile boolean available   = false;
 
-    private static final ThreadLocal<Double> LAST_HEAL_SCORE = ThreadLocal.withInitial(() -> 0.0);
-
-    public static double getLastHealScore() { return LAST_HEAL_SCORE.get(); }
-
     private static Object ortEnvironment = null;
     private static Object ortSession     = null;
     private static Object tokenizer      = null;
+
+    private static volatile java.util.concurrent.CompletableFuture<Void> INIT_FUTURE;
+
+    public static synchronized void initializeAsync() {
+        if (INIT_FUTURE != null || initialized) return;
+        java.util.concurrent.CompletableFuture<Void> f = new java.util.concurrent.CompletableFuture<>();
+        INIT_FUTURE = f;
+        Thread t = new Thread(() -> {
+            try { initialize(); } finally { f.complete(null); }
+        }, "ellithium-onnx-init");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    static void awaitInit() {
+        java.util.concurrent.CompletableFuture<Void> f = INIT_FUTURE;
+        if (f != null && !f.isDone()) {
+            try { f.get(30, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}
+        }
+        if (!initialized) initialize();
+    }
 
     private static Method mEncode, mGetIds, mGetMask, mGetTypes, mCreateTensor, mSessionRun, mOnnxGetValue;
 
@@ -50,9 +67,9 @@ public class ONNXEmbeddingHealer {
         if (initialized) return;
         initialized = true;
 
-        InputStream modelIs = ONNXEmbeddingHealer.class.getResourceAsStream(MODEL_RESOURCE);
+        InputStream modelIs = EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE);
         if (modelIs == null) {
-            Reporter.log("[TIER 3] Model not found at " + MODEL_RESOURCE + " — Tier 3 unavailable",
+            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE + " — Tier 3 unavailable",
                     LogLevel.WARN);
             return;
         }
@@ -61,24 +78,24 @@ public class ONNXEmbeddingHealer {
             byte[] modelBytes     = readAllBytes(modelIs);
             byte[] tokenizerBytes = loadResource(TOKENIZER_RESOURCE);
             if (tokenizerBytes == null) {
-                Reporter.log("[TIER 3] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 3 unavailable", LogLevel.WARN);
+                Reporter.log("[ENSEMBLE] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 3 unavailable", LogLevel.WARN);
                 return;
             }
 
             initOrtSession(modelBytes);
             initTokenizer(tokenizerBytes);
             available = true;
-            Reporter.log("[TIER 3] ONNX session active — " + modelBytes.length / 1024
+            Reporter.log("[ENSEMBLE] ONNX session active — " + modelBytes.length / 1024
                     + " KB INT8 model loaded | pooling=cls", LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
-            Reporter.log("[TIER 3] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
+            Reporter.log("[ENSEMBLE] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
                     + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
         } catch (Exception e) {
-            Reporter.log("[TIER 3] Init failed: " + e.getClass().getSimpleName()
+            Reporter.log("[ENSEMBLE] Init failed: " + e.getClass().getSimpleName()
                     + ": " + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
         } catch (Throwable t) {
-            Reporter.log("[TIER 3] Init failed (native/JVM error): " + t.getClass().getSimpleName()
+            Reporter.log("[ENSEMBLE] Init failed (native/JVM error): " + t.getClass().getSimpleName()
                     + ": " + t.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
         }
     }
@@ -95,31 +112,45 @@ public class ONNXEmbeddingHealer {
         ortEnvironment = null;
         tokenizer      = null;
         initialized    = false;
-        Reporter.log("[TIER 3] ONNX session closed", LogLevel.DEBUG);
+        INIT_FUTURE    = null;
+        ElementVectorCache.getInstance().invalidate();
+        Reporter.log("[ENSEMBLE] ONNX session closed", LogLevel.DEBUG);
     }
 
     /** True when the bi-encoder ORT session is loaded and ready for inference. */
     public static boolean isAvailable() { return available; }
 
+    public static boolean isModelPresent() {
+        return EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE) != null;
+    }
+
     /**
      * Attempts to heal a broken locator using local ONNX embedding similarity search.
      * Returns null immediately when unavailable (silent no-op in the cascade).
      */
-    public static WebElement tryEmbeddingHeal(WebDriver driver, By locator,
+    public static HealOutcome tryEnsembleHeal(WebDriver driver, By locator,
                                                String actionType, String callerMethod,
                                                String fieldName, String locatorValue,
                                                ElementFingerprint baseline) {
+        long t0 = System.nanoTime();
+        awaitInit();
+        long tInit = System.nanoTime();
         if (!available) return null;
-        LAST_HEAL_SCORE.set(0.0);   // reset per attempt — never leak a prior heal's score to the gate
 
         String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
         if (query.isBlank()) return null;
 
         float[] queryVector = embed(query, true);
+        long tQuery = System.nanoTime();
         if (queryVector == null) return null;
 
-        return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
+        HealOutcome out = scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
                 callerMethod, fieldName, locatorValue);
+        long tEnd = System.nanoTime();
+        Reporter.log(String.format("[PERF] tryEnsembleHeal: awaitInit=%dms queryEmbed=%dms scoreAndSelect=%dms TOTAL=%dms",
+                (tInit - t0) / 1_000_000, (tQuery - tInit) / 1_000_000,
+                (tEnd - tQuery) / 1_000_000, (tEnd - t0) / 1_000_000), LogLevel.INFO_BLUE);
+        return out;
     }
 
     /**
@@ -140,18 +171,18 @@ public class ONNXEmbeddingHealer {
             long[] mask    = (long[]) mGetMask.invoke(encoding);
             long[] typeIds = (long[]) mGetTypes.invoke(encoding);
 
-            int seqLen        = Math.min(ids.length, MAX_SEQ_LEN);
-            long[] paddedIds  = new long[MAX_SEQ_LEN];
-            long[] paddedMask = new long[MAX_SEQ_LEN];
-            long[] paddedType = new long[MAX_SEQ_LEN];
-            System.arraycopy(ids,     0, paddedIds,  0, seqLen);
-            System.arraycopy(mask,    0, paddedMask, 0, seqLen);
-            System.arraycopy(typeIds, 0, paddedType, 0, seqLen);
+            // Run at the ACTUAL token length (model exported with dynamic seq axis), not padded to 256.
+            // Element docs are ~10-40 tokens, so this is ~6-12x less compute per embed. CLS pooling
+            // reads row 0 only and masked pad tokens never affect it, so the vector is identical.
+            int seqLen = Math.min(ids.length, MAX_SEQ_LEN);
+            long[] idsT  = (seqLen == ids.length)     ? ids     : java.util.Arrays.copyOf(ids, seqLen);
+            long[] maskT = (seqLen == mask.length)    ? mask    : java.util.Arrays.copyOf(mask, seqLen);
+            long[] typeT = (seqLen == typeIds.length) ? typeIds : java.util.Arrays.copyOf(typeIds, seqLen);
 
-            long[] shape = {1L, (long) MAX_SEQ_LEN};
-            tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedIds),  shape);
-            tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedMask), shape);
-            tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(paddedType), shape);
+            long[] shape = {1L, (long) seqLen};
+            tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(idsT),  shape);
+            tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(maskT), shape);
+            tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(typeT), shape);
 
             Map<String, Object> inputs = new LinkedHashMap<>();
             inputs.put("input_ids",      tIds);
@@ -170,7 +201,7 @@ public class ONNXEmbeddingHealer {
             return l2Normalize(pooled);
 
         } catch (Exception ex) {
-            Reporter.log("[TIER 3] embed failed: " + ex.getMessage(), LogLevel.WARN);
+            Reporter.log("[ENSEMBLE] embed failed: " + ex.getMessage(), LogLevel.WARN);
             return null;
         } finally {
             closeQuietly(result);
@@ -197,7 +228,7 @@ public class ONNXEmbeddingHealer {
         "p, li, td, th, dt, dd, article, section, aside, span, div",
     };
 
-    private static WebElement scoreAndSelectCandidate(WebDriver driver, float[] queryVector,
+    private static HealOutcome scoreAndSelectCandidate(WebDriver driver, float[] queryVector,
                                                        ElementFingerprint baseline,
                                                        By brokenLocator, String actionType,
                                                        String query,
@@ -214,39 +245,34 @@ public class ONNXEmbeddingHealer {
                 ? AIConfigLoader.getOnnxReadableMaxCandidates()
                 : AIConfigLoader.getOnnxMaxCandidates();
 
-        java.util.concurrent.CompletableFuture<WebElement> t2Future = null;
-        if (AIConfigLoader.isTier2HintEnabled()) {
-            t2Future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
-                try {
-                    return SemanticLocatorResolver.peekSemanticMatch(
-                            driver, callerMethod, fieldName, actionType, locatorValue, baseline);
-                } catch (Exception e) { return null; }
-            });
-        }
+        // f2 (Tier-2 strategy signal) is derived IN MEMORY from the same batched candidate attributes
+        // collected below — no live findElements fan-out. The old fan-out re-queried the DOM with
+        // dozens of XPaths to find the very elements we already extract here; strategyWeightForAttrs
+        // computes the identical graded weight (gold/silver/bronze) from each candidate's attrs in one
+        // cheap pass. This is the single-extraction-shared-across-the-tier design.
+        String semanticMethodName = isReadable ? null : callerMethod;
+        List<String> semanticNames =
+                SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         List<WebElement> candidates;
         List<Map<String, Object>> batch;
+        long pStart = System.nanoTime();
+        long pCollect, pFetch;
         try {
             candidates = collectCandidates(driver, baseline, actionType);
+            pCollect = System.nanoTime();
             batch = fetchCandidateAttributes(driver, candidates);
+            pFetch = System.nanoTime();
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-        }
-
-        WebElement t2Pick = null;
-        if (t2Future != null) {
-            try {
-                t2Pick = t2Future.get(AIConfigLoader.getTier2HintTimeoutMs(),
-                        java.util.concurrent.TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                t2Future.cancel(true);
-            }
         }
 
         List<SignalFusion.Candidate>  fusionCands  = new ArrayList<>();
         java.util.IdentityHashMap<WebElement, String> docByElem = new java.util.IdentityHashMap<>();
         int scored = 0;
+        int embedCount = 0;
+        long embedNanos = 0;
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
@@ -254,10 +280,14 @@ public class ONNXEmbeddingHealer {
                 if (scored >= maxCandidates) break;
                 WebElement candidate = candidates.get(i);
                 try {
-                    if (!candidate.isDisplayed()) continue;
-                    scored++;
-
                     Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
+                    if (attrs != null) {
+                        Object v = attrs.get("visible");
+                        if (Boolean.FALSE.equals(v)) continue;
+                    } else {
+                        if (!candidate.isDisplayed()) continue;
+                    }
+                    scored++;
                     String  cacheKey  = (attrs != null) ? buildCacheKey(attrs) : buildCacheKey(candidate);
                     float[] docVector = ElementVectorCache.getInstance().get(cacheKey);
                     String  doc       = null;
@@ -265,7 +295,10 @@ public class ONNXEmbeddingHealer {
                         doc = (attrs != null) ? buildElementDocument(attrs, candidate)
                                               : buildElementDocument(candidate);
                         if (doc.isBlank()) continue;
+                        long e0 = System.nanoTime();
                         docVector = embed(doc, false);
+                        embedNanos += System.nanoTime() - e0;
+                        embedCount++;
                         if (docVector != null && !cacheKey.isEmpty()) {
                             ElementVectorCache.getInstance().put(cacheKey, docVector);
                         }
@@ -273,8 +306,11 @@ public class ONNXEmbeddingHealer {
                     if (docVector == null) continue;
 
                     double cosine = dotProduct(queryVector, docVector);
-                    double f1     = baselineProximity(baseline, candidate);
-                    double f2     = (t2Pick != null && candidate.equals(t2Pick)) ? 1.0 : Double.NaN;
+                    double f1     = (attrs != null) ? baselineProximity(baseline, attrs)
+                                                    : baselineProximity(baseline, candidate);
+                    double f2     = (attrs != null)
+                            ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
+                            : Double.NaN;
 
                     Map<String, Double> sig = new LinkedHashMap<>();
                     sig.put(SignalFusion.F1_FINGERPRINT, f1);
@@ -284,27 +320,16 @@ public class ONNXEmbeddingHealer {
                     if (doc != null) docByElem.put(candidate, doc);
                 } catch (Exception ignored) {}
             }
-
-            if (t2Pick != null && !docByElem.containsKey(t2Pick)) {
-                try {
-                    String doc = buildElementDocument(t2Pick);
-                    if (!doc.isBlank()) {
-                        float[] docVec = embed(doc, false);
-                        if (docVec != null) {
-                            double cosine = dotProduct(queryVector, docVec);
-                            Map<String, Double> sig = new LinkedHashMap<>();
-                            sig.put(SignalFusion.F1_FINGERPRINT, baselineProximity(baseline, t2Pick));
-                            sig.put(SignalFusion.F2_STRATEGY,    1.0);
-                            sig.put(SignalFusion.F3_BIENCODER,   cosine);
-                            fusionCands.add(new SignalFusion.Candidate(t2Pick, sig));
-                            docByElem.put(t2Pick, doc);
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
+        long pLoop = System.nanoTime();
+        Reporter.log(String.format("[PERF] scoreAndSelect: collectCandidates=%dms (%d candidates) "
+                + "fetchAttrs=%dms scoringLoop=%dms (embeds=%d, embedTotal=%dms, avgEmbed=%.1fms)",
+                (pCollect - pStart) / 1_000_000, candidates.size(),
+                (pFetch - pCollect) / 1_000_000, (pLoop - pFetch) / 1_000_000,
+                embedCount, embedNanos / 1_000_000,
+                embedCount > 0 ? (embedNanos / 1_000_000.0) / embedCount : 0.0), LogLevel.INFO_BLUE);
 
         if (fusionCands.isEmpty()) return null;
 
@@ -316,14 +341,46 @@ public class ONNXEmbeddingHealer {
         double     bestCosine  = winner.anchorScore;
         String     bestDoc     = docByElem.getOrDefault(bestElement, buildElementDocument(bestElement));
 
-        if (bestCosine >= threshold) {
-            Reporter.log(String.format("[TIER 3] match score=%.3f", bestCosine), LogLevel.DEBUG);
-            HealingTelemetryStore.record(3, brokenLocator.toString(), bestDoc, bestCosine, true, query, category);
-            LAST_HEAL_SCORE.set(bestCosine);
-            return bestElement;
+        double f2 = winner.candidate.signals.getOrDefault(SignalFusion.F2_STRATEGY, Double.NaN);
+        double f1 = winner.candidate.signals.getOrDefault(SignalFusion.F1_FINGERPRINT, Double.NaN);
+
+        GateResult gate = decideGate(bestCosine, threshold, f1, f2,
+                AIConfigLoader.isStrategyRescueEnabled(), AIConfigLoader.getGateFingerprintFloor());
+        if (gate.accept) {
+            Reporter.log(String.format("[ENSEMBLE] heal via %s score=%.3f (f1=%.2f f2=%.2f f3=%.3f agree=%d)",
+                    gate.via, gate.score, f1, f2, bestCosine, winner.agreement), LogLevel.INFO_GREEN);
+            HealingTelemetryStore.record(3, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
+            return HealOutcome.of(bestElement, gate.score, 3);
         }
+        Reporter.log(String.format("[ENSEMBLE] no heal — best anchor=%.3f < threshold=%.3f (fused=%.3f agree=%d)",
+                bestCosine, threshold, winner.fused, winner.agreement), LogLevel.DEBUG);
         HealingTelemetryStore.record(3, brokenLocator.toString(), bestDoc, bestCosine, false, query, category);
         return null;
+    }
+
+    static final class GateResult {
+        final boolean accept; final double score; final String via;
+        GateResult(boolean accept, double score, String via) {
+            this.accept = accept; this.score = score; this.via = via;
+        }
+    }
+
+    private static final double GATE_STRATEGY_MIN = 0.95;
+
+    /**
+     * Accept decision (pure, unit-testable). Path A: the calibrated anchor cosine clears the
+     * threshold. Path B (strategy-rescue): a gold-tier Tier-2 match (f2 ≥ 0.95: exact data-testid /
+     * AppiumBy / cross-validated mutation) corroborated by the baseline fingerprint (f1 ≥ floor) —
+     * two independent high-precision signals, so the heal is trusted even when the bi-encoder cosine
+     * is weak. Path-B confidence = mean(f1, f2). Cold start (f1 NaN) never rescues.
+     */
+    static GateResult decideGate(double cosine, double threshold, double f1, double f2,
+                                 boolean rescueEnabled, double fingerprintFloor) {
+        if (cosine >= threshold) return new GateResult(true, cosine, "cosine");
+        if (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f1 >= fingerprintFloor) {
+            return new GateResult(true, (f1 + f2) / 2.0, "strategy-rescue");
+        }
+        return new GateResult(false, cosine, "none");
     }
 
     /**
@@ -332,9 +389,23 @@ public class ONNXEmbeddingHealer {
      * to filter out elements, so an element that changed tag/structure is still reachable. Dedup by
      * element preserves priority order; the per-attempt cap (in the scoring loop) bounds the cost.
      */
+    private static final int MOBILE_NATIVE_HARD_LIMIT = 50;
+
+    private static final String[] APPIUM_NATIVE_SELECTORS = {
+            "//*[@clickable='true']",
+            "//*[@focusable='true' or @focused='true']",
+            "//*[@text and string-length(@text) > 0]",
+            "//*[@content-desc and string-length(@content-desc) > 0]",
+            "//*[@resource-id and string-length(@resource-id) > 0]"
+    };
+
     private static List<WebElement> collectCandidates(WebDriver driver,
                                                        ElementFingerprint baseline,
                                                        String actionType) {
+        DriverProfile profile = DriverProfile.detect(driver);
+        if (profile == DriverProfile.MOBILE_NATIVE) {
+            return collectAppiumNativeCandidates(driver);
+        }
         int hardLimit = AIConfigLoader.getOnnxHardCandidateLimit();
         java.util.LinkedHashMap<String, WebElement> seen = new java.util.LinkedHashMap<>();
         outer:
@@ -344,6 +415,54 @@ public class ONNXEmbeddingHealer {
                     String key = buildCacheKey(el);
                     seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
                     if (seen.size() >= hardLimit) break outer;
+                }
+            } catch (Exception ignored) {}
+        }
+        if (seen.size() < hardLimit) {
+            for (WebElement el : collectShadowDomCandidates(driver, hardLimit - seen.size())) {
+                String key = buildCacheKey(el);
+                seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
+            }
+        }
+        return new ArrayList<>(seen.values());
+    }
+
+    private static List<WebElement> collectShadowDomCandidates(WebDriver driver, int limit) {
+        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor) || limit <= 0) return List.of();
+        try {
+            Object res = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "var sel=arguments[0], lim=arguments[1], out=[];"
+                    + "function walk(root){"
+                    + " if(out.length>=lim) return;"
+                    + " var els=root.querySelectorAll(sel);"
+                    + " for(var i=0;i<els.length && out.length<lim;i++) out.push(els[i]);"
+                    + " var all=root.querySelectorAll('*');"
+                    + " for(var j=0;j<all.length && out.length<lim;j++) if(all[j].shadowRoot) walk(all[j].shadowRoot);"
+                    + "}"
+                    + "walk(document); return out;",
+                    SHADOW_INTERACTIVE_SELECTOR, limit);
+            if (res instanceof List<?> rows) {
+                List<WebElement> out = new ArrayList<>(rows.size());
+                for (Object o : rows) if (o instanceof WebElement w) out.add(w);
+                return out;
+            }
+        } catch (Exception ignored) {}
+        return List.of();
+    }
+
+    private static final String SHADOW_INTERACTIVE_SELECTOR =
+            "input,button,select,textarea,a,form,label,[role='button'],[role='link'],"
+            + "[role='textbox'],[role='checkbox'],[role='radio'],[role='tab'],[role='menuitem'],[data-testid]";
+
+    private static List<WebElement> collectAppiumNativeCandidates(WebDriver driver) {
+        java.util.LinkedHashMap<String, WebElement> seen = new java.util.LinkedHashMap<>();
+        outer:
+        for (String xp : APPIUM_NATIVE_SELECTORS) {
+            try {
+                for (WebElement el : driver.findElements(By.xpath(xp))) {
+                    String key = buildCacheKey(el);
+                    seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
+                    if (seen.size() >= MOBILE_NATIVE_HARD_LIMIT) break outer;
                 }
             } catch (Exception ignored) {}
         }
@@ -357,23 +476,37 @@ public class ONNXEmbeddingHealer {
      */
     private static String buildCacheKey(WebElement el) {
         try {
+            // Fallback path (no batched attrs): no text-hash — reading getText() here would
+            // re-introduce a per-element round-trip the batch exists to avoid.
             return cacheKey(el.getTagName(), el.getAttribute("id"),
-                    el.getAttribute("name"), el.getAttribute("data-testid"));
+                    el.getAttribute("name"), el.getAttribute("data-testid"),
+                    el.getAttribute("resource-id"), el.getAttribute("accessibility-id"),
+                    el.getAttribute("content-desc"), null);
         } catch (Exception e) { return ""; }
     }
 
     /** Cache key from pre-fetched (batched) attributes — identical format to the WebElement version. */
     private static String buildCacheKey(Map<String, Object> attrs) {
         return cacheKey(strOf(attrs.get("tag")), strOf(attrs.get("id")),
-                strOf(attrs.get("name")), strOf(attrs.get("data-testid")));
+                strOf(attrs.get("name")), strOf(attrs.get("data-testid")),
+                strOf(attrs.get("resource-id")), strOf(attrs.get("accessibility-id")),
+                strOf(attrs.get("content-desc")), strOf(attrs.get("text")));
     }
 
-    private static String cacheKey(String tag, String id, String name, String testid) {
+    private static String cacheKey(String tag, String id, String name, String testid,
+                                   String resId, String accId, String contentDesc, String text) {
         boolean hasIdentity = (id != null && !id.isBlank())
                 || (name != null && !name.isBlank())
-                || (testid != null && !testid.isBlank());
+                || (testid != null && !testid.isBlank())
+                || (resId != null && !resId.isBlank())
+                || (accId != null && !accId.isBlank())
+                || (contentDesc != null && !contentDesc.isBlank());
         if (!hasIdentity) return "";   // no stable key → never cache (avoid collisions)
-        return nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid);
+        // text-hash: a re-rendered element that keeps its id but changes its text yields a new key,
+        // so an SPA mutation is a natural cache miss (re-embed) rather than a stale-vector hit.
+        String textHash = (text == null || text.isBlank()) ? "" : Integer.toHexString(text.hashCode());
+        return nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid)
+                + "|" + nz(resId) + "|" + nz(accId) + "|" + nz(contentDesc) + "|" + textHash;
     }
 
     /**
@@ -382,30 +515,9 @@ public class ONNXEmbeddingHealer {
      * the driver has no JS (Appium native) or the call fails → caller falls back to per-element reads.
      * Excludes {@code type} (Selenium default-value semantics) and text/visibility (read natively).
      */
-    @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> fetchCandidateAttributes(WebDriver driver,
-                                                                      List<WebElement> candidates) {
-        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor) || candidates.isEmpty()) return null;
-        try {
-            Object res = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-                    "return arguments[0].map(function(el){"
-                            + " if(!el) return null;"
-                            + " function a(n){ return el.getAttribute(n); }"
-                            + " return {'id':a('id'),'name':a('name'),'class':a('class'),"
-                            + "  'aria-label':a('aria-label'),'data-testid':a('data-testid'),'role':a('role'),"
-                            + "  'placeholder':a('placeholder'),'resource-id':a('resource-id'),"
-                            + "  'accessibility-id':a('accessibility-id'),"
-                            + "  'content-desc':a('content-desc'),'data-test':a('data-test'),"
-                            + "  'title':a('title'),'label':a('label'),"
-                            + "  'tag':el.tagName?el.tagName.toLowerCase():null};"
-                            + "});", candidates);
-            if (res instanceof List<?> rows) {
-                List<Map<String, Object>> out = new ArrayList<>(rows.size());
-                for (Object row : rows) out.add(row instanceof Map<?, ?> ? (Map<String, Object>) row : null);
-                return out;
-            }
-        } catch (Exception ignored) {}
-        return null;
+    static List<Map<String, Object>> fetchCandidateAttributes(WebDriver driver,
+                                                              List<WebElement> candidates) {
+        return Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidates);
     }
 
     private static String nz(String s) { return s != null ? s : ""; }
@@ -421,6 +533,24 @@ public class ONNXEmbeddingHealer {
         } catch (Exception e) {
             return -1.0;
         }
+    }
+
+    private static double baselineProximity(ElementFingerprint baseline, Map<String, Object> attrs) {
+        if (baseline == null) return -1.0;
+        try {
+            return baseline.scoreSimilarity(attrs, structuralFrom(attrs));
+        } catch (Exception e) {
+            return -1.0;
+        }
+    }
+
+    private static ElementFingerprint.StructuralContext structuralFrom(Map<String, Object> attrs) {
+        Object pt = attrs.get("parent-tag");
+        if (pt == null && attrs.get("child-index") == null) return null;
+        int ci = attrs.get("child-index") instanceof Number n ? n.intValue() : -1;
+        return new ElementFingerprint.StructuralContext(
+                pt != null ? pt.toString() : null, ci,
+                strOf(attrs.get("prev-sib")), strOf(attrs.get("next-sib")));
     }
 
     /**
@@ -468,6 +598,7 @@ public class ONNXEmbeddingHealer {
 
         Class<?> optClass = Class.forName("ai.onnxruntime.OrtSession$SessionOptions");
         Object   opts     = optClass.getDeclaredConstructor().newInstance();
+        capOrtThreads(optClass, opts);
 
         ortSession = ortEnvironment.getClass()
                 .getMethod("createSession", byte[].class, optClass)
@@ -477,6 +608,19 @@ public class ONNXEmbeddingHealer {
         mCreateTensor = tensorClass.getMethod("createTensor", envClass, LongBuffer.class, long[].class);
         mSessionRun   = ortSession.getClass().getMethod("run", Map.class);
         mOnnxGetValue = Class.forName("ai.onnxruntime.OnnxValue").getMethod("getValue");
+    }
+
+    /**
+     * Bounds the ORT intra-op pool so it does not grab every core on a large machine, WITHOUT
+     * disabling spin-wait — back-to-back per-candidate embeds need the spinning thread pool to stay
+     * fast (parking + re-waking a single thread per run made a heal take ~100s). A small cap
+     * (≤4 threads) keeps inference parallel and quick while leaving cores for the browser. Best-effort:
+     * a missing method on an older onnxruntime is ignored.
+     */
+    private static void capOrtThreads(Class<?> optClass, Object opts) {
+        int intra = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
+        try { optClass.getMethod("setIntraOpNumThreads", int.class).invoke(opts, intra); } catch (Throwable ignored) {}
+        try { optClass.getMethod("setInterOpNumThreads", int.class).invoke(opts, 1); } catch (Throwable ignored) {}
     }
 
     private static void initTokenizer(byte[] tokenizerBytes) throws Exception {
@@ -536,7 +680,12 @@ public class ONNXEmbeddingHealer {
      */
     public static String buildElementDocument(WebElement element) {
         if (element == null) return "";
-        return assembleDocument(name -> safeAttr(element, name), safeTag(element), safeText(element));
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            return assembleDocument(name -> safeAttr(element, name), safeTag(element), safeText(element));
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+        }
     }
 
     /**
@@ -549,10 +698,8 @@ public class ONNXEmbeddingHealer {
     private static String buildElementDocument(Map<String, Object> attrs, WebElement element) {
         if (attrs == null) return buildElementDocument(element);
         String tag = strOf(attrs.get("tag"));
-        return assembleDocument(
-                name -> "type".equals(name) ? safeAttr(element, "type") : strOf(attrs.get(name)),
-                tag,
-                safeText(element));   // native — getText() semantics
+        String text = strOf(attrs.get("text"));
+        return assembleDocument(name -> strOf(attrs.get(name)), tag, text);
     }
 
     private static String safeAttr(WebElement el, String name) {
@@ -581,6 +728,9 @@ public class ONNXEmbeddingHealer {
         return assembleDocument(name -> switch (name) {
             case "id"               -> fp.getId();
             case "name"             -> fp.getName();
+            case "resource-id"      -> fp.getResourceId();
+            case "accessibility-id" -> fp.getAccessibilityId();
+            case "content-desc"     -> fp.getContentDesc();
             case "class"            -> fp.getClassName();
             case "aria-label"       -> fp.getAriaLabel();
             case "role"             -> fp.getRole();
@@ -609,7 +759,7 @@ public class ONNXEmbeddingHealer {
     }
 
     private static byte[] loadResource(String path) {
-        try (InputStream is = ONNXEmbeddingHealer.class.getResourceAsStream(path)) {
+        try (InputStream is = EnsembleHealer.class.getResourceAsStream(path)) {
             if (is == null) return null;
             return readAllBytes(is);
         } catch (Exception e) { return null; }

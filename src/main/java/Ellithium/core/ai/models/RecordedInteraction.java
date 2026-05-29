@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai.models;
+package Ellithium.core.ai.models;
 
 /**
  * Represents a single user interaction captured by the {@code InteractionRecorder}.

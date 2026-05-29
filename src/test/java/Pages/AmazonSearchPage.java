@@ -16,9 +16,9 @@ public class AmazonSearchPage {
 
     private final By searchBtn = By.id("nav-search-submit-button");
 
-    private final By searchItemName = By.xpath("//h2//span");
+    private final By searchItemName = By.cssSelector("h2");
 
-    private final By searchItemPrice = By.cssSelector(".a-price-whole");
+    private final By searchItemPrice = By.cssSelector("item price");
 
     public AmazonSearchPage(WebDriver driver) {
         this.driver = driver;

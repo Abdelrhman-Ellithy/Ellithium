@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai.readers;
+package Ellithium.core.ai.readers;
 
-import Ellithium.Utilities.ai.models.TestCaseSource;
+import Ellithium.core.ai.models.TestCaseSource;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 

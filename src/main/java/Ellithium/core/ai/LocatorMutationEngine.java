@@ -1,6 +1,6 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
-import Ellithium.Utilities.ai.models.ElementFingerprint;
+import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -55,11 +55,12 @@ public class LocatorMutationEngine {
             for (By mutation : mutations) {
                 try {
                     WebElement found = driver.findElement(mutation);
-                    // Cross-validate against baseline if available
-                    if (baseline != null) {
-                        double score = baseline.scoreSimilarity(found);
-                        if (score < 0.30) continue;
-                    }
+                    // Cross-validate against baseline. A mutation accepted without a baseline (cold
+                    // start) is a pure guess — only allow it when there is NO baseline to check against;
+                    // when a baseline exists, demand real proof so a same-convention but DIFFERENT
+                    // element (e.g. "loginBtn"→By.id("login") matching the login LINK, not the button)
+                    // is rejected. Floor raised 0.30→0.55; a tag mismatch (button↔link) demands ≥0.75.
+                    if (baseline != null && !mutationCrossValidates(baseline, found)) continue;
                     Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                     Reporter.log("[MUTATION] Healed via locator mutation: "
                             + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
@@ -75,33 +76,72 @@ public class LocatorMutationEngine {
     }
 
     /**
+     * A mutation match is trusted only with real baseline agreement: similarity ≥ 0.55, and when the
+     * stored tag is known and the candidate's tag differs (button↔a, input↔div), a stronger ≥ 0.75 so a
+     * same-named element of a different KIND is not accepted on a weak partial-id overlap.
+     */
+    private static final double MUTATION_ACCEPT_MIN = 0.55;
+    private static final double MUTATION_ACCEPT_TAG_MISMATCH = 0.75;
+
+    private static boolean mutationCrossValidates(ElementFingerprint baseline, WebElement found) {
+        double score = baseline.scoreSimilarity(found);
+        String baseTag = baseline.getTagName();
+        if (baseTag != null && !baseTag.isBlank()) {
+            String foundTag;
+            try { foundTag = found.getTagName(); } catch (Exception e) { foundTag = null; }
+            if (foundTag != null && !baseTag.equalsIgnoreCase(foundTag)) {
+                return score >= MUTATION_ACCEPT_TAG_MISMATCH;
+            }
+        }
+        return score >= MUTATION_ACCEPT_MIN;
+    }
+
+    /**
      * Generates all By mutations for a broken locator without touching the DOM.
      *
      * @param brokenLocator The failed locator
      * @return Ordered list of By mutations to try (most specific first)
      */
-    public static List<By> generateMutations(By brokenLocator) {
-        Matcher m = BY_PARSE.matcher(brokenLocator.toString());
-        if (!m.find()) return List.of();
+    private static final int MUTATION_CACHE_MAX = 500;
+    private static final java.util.Map<String, List<By>> MUTATION_CACHE =
+            java.util.Collections.synchronizedMap(
+                    new java.util.LinkedHashMap<>(MUTATION_CACHE_MAX, 0.75f, true) {
+                        @Override
+                        protected boolean removeEldestEntry(java.util.Map.Entry<String, List<By>> e) {
+                            return size() > MUTATION_CACHE_MAX;
+                        }
+                    });
 
-        String method = m.group(1);       // "id", "cssSelector", "name", "xpath", etc.
+    public static List<By> generateMutations(By brokenLocator) {
+        String key = brokenLocator.toString();
+        List<By> cached = MUTATION_CACHE.get(key);
+        if (cached != null) return cached;
+
+        Matcher m = BY_PARSE.matcher(key);
+        if (!m.find()) {
+            MUTATION_CACHE.put(key, List.of());
+            return List.of();
+        }
+
+        String method = m.group(1);
         String value  = m.group(2).trim();
-        if (value.isBlank()) return List.of();
+        if (value.isBlank()) {
+            MUTATION_CACHE.put(key, List.of());
+            return List.of();
+        }
 
         List<By> mutations = new ArrayList<>();
-
         switch (method) {
             case "id"    -> addIdMutations(mutations, value);
             case "name"  -> addNameMutations(mutations, value);
             case "cssSelector" -> addCssMutations(mutations, value);
             case "xpath" -> addXpathMutations(mutations, value);
             case "className" -> addClassMutations(mutations, value);
-            default -> {
-                // Generic: try value as id, name, data-testid
-                addGenericMutations(mutations, value);
-            }
+            default -> addGenericMutations(mutations, value);
         }
-        return mutations;
+        List<By> immut = List.copyOf(mutations);
+        MUTATION_CACHE.put(key, immut);
+        return immut;
     }
 
     /**

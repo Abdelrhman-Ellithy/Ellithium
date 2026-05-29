@@ -235,6 +235,12 @@ public class CucumberListener extends AllureCucumber7Jvm {
             Logger.warn(YELLOW+"Failed to cleanup video recording resources: " + e.getMessage()+RESET);
             Logger.logException(e);
         }
+        try {
+            Ellithium.core.ai.EnsembleHealer.shutdown();
+            Ellithium.core.ai.AIHealingReporter.generateReport();
+        } catch (Exception e) {
+            Logger.warn(YELLOW+"Failed to finalize AI healing (shutdown/report): " + e.getMessage()+RESET);
+        }
     }
 
     /**

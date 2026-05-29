@@ -1,4 +1,4 @@
-package Ellithium.Utilities.ai;
+package Ellithium.core.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -175,6 +175,10 @@ public class JavaSourceModifier {
             if (targetCall != null) {
                 Expression newExpression = StaticJavaParser.parseExpression(newByString);
                 targetCall.replace(newExpression);
+
+                if (newByString.startsWith("AppiumBy.")) {
+                    cu.addImport("io.appium.java_client.AppiumBy");
+                }
 
                 Files.writeString(Paths.get(filePath), cu.toString());
                 Reporter.log("Successfully healed inline locator By." + oldByMethod + "(\"" + oldByValue
