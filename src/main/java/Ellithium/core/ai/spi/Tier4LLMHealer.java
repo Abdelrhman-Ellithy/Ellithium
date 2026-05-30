@@ -11,7 +11,7 @@ public final class Tier4LLMHealer implements HealingTier {
 
     @Override
     public int order() {
-        return 4;
+        return 3;
     }
 
     @Override
@@ -31,6 +31,6 @@ public final class Tier4LLMHealer implements HealingTier {
         if (element == null) return null;
         By healed = AISelfHealer.getCachedHealedLocator(request.driver(), request.brokenLocator());
         if (healed == null) healed = ElementFingerprint.reconstructLocator(element);
-        return HealOutcome.of(element, healed, AISelfHealer.getLastHealConfidence(), 4);
+        return HealOutcome.of(element, healed, AISelfHealer.getLastHealConfidence(), 3);
     }
 }

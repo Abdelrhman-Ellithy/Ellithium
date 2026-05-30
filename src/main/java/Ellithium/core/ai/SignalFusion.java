@@ -28,8 +28,8 @@ public final class SignalFusion {
             Map<String, Double> w = new LinkedHashMap<>();
             w.put(F1_FINGERPRINT, 0.8);
             w.put(F2_STRATEGY,    0.7);
-            w.put(F3_BIENCODER,   1.0);
-            return new Weights(w, 0.5, 60, F3_BIENCODER);
+            w.put(F3_BIENCODER,   1.5);
+            return new Weights(w, 0.65, 60, F3_BIENCODER);
         }
 
         double weightOf(String signal) {

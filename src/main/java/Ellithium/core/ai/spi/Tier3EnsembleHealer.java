@@ -8,7 +8,7 @@ public final class Tier3EnsembleHealer implements HealingTier {
 
     @Override
     public int order() {
-        return 3;
+        return 2;
     }
 
     @Override

@@ -79,18 +79,18 @@ public class ModelDecryptor {
 
     private static byte[] decryptResource(String resourcePath, String licenseKey, String resourceName) {
         if (licenseKey == null || licenseKey.isBlank()) {
-            Reporter.log("[TIER 3] ModelDecryptor: no license key — cannot decrypt " + resourceName, LogLevel.DEBUG);
+            Reporter.log("[TIER 2] ModelDecryptor: no license key — cannot decrypt " + resourceName, LogLevel.DEBUG);
             return null;
         }
 
         byte[] encrypted = loadResource(resourcePath);
         if (encrypted == null) {
-            Reporter.log("[TIER 3] ModelDecryptor: resource not found in JAR: " + resourcePath, LogLevel.DEBUG);
+            Reporter.log("[TIER 2] ModelDecryptor: resource not found in JAR: " + resourcePath, LogLevel.DEBUG);
             return null;
         }
 
         if (encrypted.length <= GCM_IV_LENGTH_BYTES) {
-            Reporter.log("[TIER 3] ModelDecryptor: resource too short to be valid: " + resourcePath, LogLevel.WARN);
+            Reporter.log("[TIER 2] ModelDecryptor: resource too short to be valid: " + resourcePath, LogLevel.WARN);
             return null;
         }
 
@@ -108,16 +108,16 @@ public class ModelDecryptor {
                     new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
 
             byte[] plaintext = cipher.doFinal(ciphertext);
-            Reporter.log("[TIER 3] ModelDecryptor: " + resourceName + " decrypted ("
+            Reporter.log("[TIER 2] ModelDecryptor: " + resourceName + " decrypted ("
                     + plaintext.length + " bytes)", LogLevel.INFO_GREEN);
             return plaintext;
 
         } catch (javax.crypto.AEADBadTagException e) {
-            Reporter.log("[TIER 3] ModelDecryptor: GCM authentication failed for " + resourceName
+            Reporter.log("[TIER 2] ModelDecryptor: GCM authentication failed for " + resourceName
                     + " — wrong license key or tampered file", LogLevel.ERROR);
             return null;
         } catch (Exception e) {
-            Reporter.log("[TIER 3] ModelDecryptor: decryption error for " + resourceName
+            Reporter.log("[TIER 2] ModelDecryptor: decryption error for " + resourceName
                     + ": " + e.getMessage(), LogLevel.ERROR);
             return null;
         }
@@ -146,7 +146,7 @@ public class ModelDecryptor {
             while ((read = is.read(chunk)) != -1) buffer.write(chunk, 0, read);
             return buffer.toByteArray();
         } catch (IOException e) {
-            Reporter.log("[TIER 3] ModelDecryptor: failed to load resource " + path
+            Reporter.log("[TIER 2] ModelDecryptor: failed to load resource " + path
                     + ": " + e.getMessage(), LogLevel.WARN);
             return null;
         }

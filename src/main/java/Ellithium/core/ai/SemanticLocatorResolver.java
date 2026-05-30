@@ -93,11 +93,6 @@ public class SemanticLocatorResolver {
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             java.util.IdentityHashMap<WebElement, Double> best = new java.util.IdentityHashMap<>();
-            // Priority-ordered SHORT-CIRCUIT. Gold strategies are exact, indexed lookups
-            // (data-testid / id / aria-label) that almost always match; only descend to the slower
-            // bronze/iron full-DOM XPath scans (//*[contains(...)]) when nothing stronger was found.
-            // Scanning all four tiers unconditionally was the regression that made a heal take tens of
-            // seconds on a large DOM.
             collectHits(driver, tiered.gold, F2_GOLD, best);
             if (best.isEmpty()) collectHits(driver, tiered.silver, F2_SILVER, best);
             if (best.isEmpty()) collectHits(driver, tiered.bronze, F2_BRONZE, best);
@@ -125,31 +120,23 @@ public class SemanticLocatorResolver {
         }
     }
 
-    /**
-     * In-memory graded strategy weight (f2) for a candidate from its ALREADY-EXTRACTED attributes —
-     * the zero-round-trip replacement for the live per-strategy findElements fan-out. Gold (1.00): a
-     * stable test/identity attribute exactly equals a semantic name. Silver (0.75): an identity
-     * attribute contains it. Bronze (0.50): placeholder/title/text contains it. NaN when nothing
-     * matches. Same graded scale the fan-out produced, derived from the batched attrs map.
-     */
     public static double strategyWeightForAttrs(java.util.Map<String, Object> attrs, List<String> names) {
         if (attrs == null || names == null || names.isEmpty()) return Double.NaN;
-        String id = lc(attrs.get("id")), testid = lc(attrs.get("data-testid")), dataTest = lc(attrs.get("data-test"));
-        String aria = lc(attrs.get("aria-label")), nm = lc(attrs.get("name"));
-        String resId = lc(attrs.get("resource-id")), accId = lc(attrs.get("accessibility-id")), cdesc = lc(attrs.get("content-desc"));
-        String placeholder = lc(attrs.get("placeholder")), title = lc(attrs.get("title")), text = lc(attrs.get("text"));
+        String id   = lc(attrs.get("id")),   nm    = lc(attrs.get("name")),  testid = lc(attrs.get("data-testid"));
+        String aria = lc(attrs.get("aria-label")), accId = lc(attrs.get("accessibility-id"));
+        String cdesc = lc(attrs.get("content-desc")), resId = lc(attrs.get("resource-id"));
+        String allattrs = lc(attrs.get("allattrs")), text = lc(attrs.get("text"));
+
         double best = Double.NaN;
         for (String raw : names) {
             if (raw == null || raw.isBlank()) continue;
             String n = raw.toLowerCase();
-            if (eq(testid, n) || eq(dataTest, n) || eq(accId, n) || eq(cdesc, n)
-                    || eq(id, n) || eq(nm, n) || eq(aria, n) || suffixEq(resId, n)) {
+            if (eq(id, n) || eq(nm, n) || eq(testid, n) || eq(aria, n)
+                    || eq(accId, n) || eq(cdesc, n) || suffixEq(resId, n) || has(text, n)) {
                 return F2_GOLD;
             }
-            if (has(id, n) || has(nm, n) || has(aria, n) || has(testid, n) || has(accId, n) || has(resId, n)) {
+            if (has(allattrs, n)) {
                 best = nanMax(best, F2_SILVER);
-            } else if (has(placeholder, n) || has(title, n) || has(text, n)) {
-                best = nanMax(best, F2_BRONZE);
             }
         }
         return best;

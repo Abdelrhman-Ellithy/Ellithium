@@ -37,7 +37,6 @@ public final class HealingOrchestrator {
             if (!tier.isAvailable()) continue;
 
             HealOutcome raw;
-            long tierStart = System.nanoTime();
             try {
                 raw = tier.heal(request);
             } catch (Exception e) {
@@ -45,9 +44,6 @@ public final class HealingOrchestrator {
                         + " — falling through", LogLevel.WARN);
                 continue;
             }
-            Reporter.log("[PERF] TIER " + tier.order() + " heal() = "
-                    + (System.nanoTime() - tierStart) / 1_000_000 + "ms"
-                    + (raw != null && raw.element() != null ? " (hit)" : " (miss)"), LogLevel.INFO_BLUE);
             if (raw == null || raw.element() == null) continue;
 
             WebElement resolved = resolveInteractiveElement(

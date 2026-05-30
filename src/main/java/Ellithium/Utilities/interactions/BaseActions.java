@@ -55,7 +55,7 @@ public class BaseActions<T extends WebDriver> {
             }
             throw new AssertionError("Element not found and could not be healed: " + locator
                     + " | All healing tiers exhausted (Tier 1: Algorithmic baseline, "
-                    + "Tier 3: ONNX ensemble with Tier 2 semantic strategies fused in, Tier 4: LLM)", e);
+                    + "Tier 2: Local embedding ensemble, Tier 3: LLM)", e);
         }
     }
 
@@ -75,7 +75,6 @@ public class BaseActions<T extends WebDriver> {
      * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
     protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
-        long w0 = System.nanoTime();
         try {
             // W1 fix: use the WebElement returned directly by the condition — avoids a
             // second findElement() call that races with page changes after the wait resolves.
@@ -83,13 +82,7 @@ public class BaseActions<T extends WebDriver> {
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
             return element;
         } catch (org.openqa.selenium.TimeoutException | org.openqa.selenium.InvalidSelectorException e) {
-            long wWait = System.nanoTime();
-            WebElement healedEl = findWebElement(locator);
-            Ellithium.core.reporting.Reporter.log(String.format(
-                    "[PERF] waitForVisibilityAndFindElement(%s): preHealWait=%dms heal=%dms",
-                    locator, (wWait - w0) / 1_000_000, (System.nanoTime() - wWait) / 1_000_000),
-                    Ellithium.core.logging.LogLevel.INFO_BLUE);
-            return healedEl;
+            return findWebElement(locator);
         }
     }
 

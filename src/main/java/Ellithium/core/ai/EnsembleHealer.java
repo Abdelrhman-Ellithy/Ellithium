@@ -28,6 +28,7 @@ public class EnsembleHealer {
     private static final int MAX_SEQ_LEN     = 256;
     private static final int MAX_TEXT_CHARS  = 240;
     private static final int MAX_CLASS_CHARS = 200;
+    private static final double EARLY_EXIT_COSINE = 0.95;
 
     private static volatile boolean initialized = false;
     private static volatile boolean available   = false;
@@ -69,7 +70,7 @@ public class EnsembleHealer {
 
         InputStream modelIs = EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE);
         if (modelIs == null) {
-            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE + " — Tier 3 unavailable",
+            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE + " — Tier 2 unavailable",
                     LogLevel.WARN);
             return;
         }
@@ -78,7 +79,7 @@ public class EnsembleHealer {
             byte[] modelBytes     = readAllBytes(modelIs);
             byte[] tokenizerBytes = loadResource(TOKENIZER_RESOURCE);
             if (tokenizerBytes == null) {
-                Reporter.log("[ENSEMBLE] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 3 unavailable", LogLevel.WARN);
+                Reporter.log("[ENSEMBLE] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 2 unavailable", LogLevel.WARN);
                 return;
             }
 
@@ -132,25 +133,17 @@ public class EnsembleHealer {
                                                String actionType, String callerMethod,
                                                String fieldName, String locatorValue,
                                                ElementFingerprint baseline) {
-        long t0 = System.nanoTime();
         awaitInit();
-        long tInit = System.nanoTime();
         if (!available) return null;
 
         String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
         if (query.isBlank()) return null;
 
         float[] queryVector = embed(query, true);
-        long tQuery = System.nanoTime();
         if (queryVector == null) return null;
 
-        HealOutcome out = scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
+        return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
                 callerMethod, fieldName, locatorValue);
-        long tEnd = System.nanoTime();
-        Reporter.log(String.format("[PERF] tryEnsembleHeal: awaitInit=%dms queryEmbed=%dms scoreAndSelect=%dms TOTAL=%dms",
-                (tInit - t0) / 1_000_000, (tQuery - tInit) / 1_000_000,
-                (tEnd - tQuery) / 1_000_000, (tEnd - t0) / 1_000_000), LogLevel.INFO_BLUE);
-        return out;
     }
 
     /**
@@ -171,9 +164,6 @@ public class EnsembleHealer {
             long[] mask    = (long[]) mGetMask.invoke(encoding);
             long[] typeIds = (long[]) mGetTypes.invoke(encoding);
 
-            // Run at the ACTUAL token length (model exported with dynamic seq axis), not padded to 256.
-            // Element docs are ~10-40 tokens, so this is ~6-12x less compute per embed. CLS pooling
-            // reads row 0 only and masked pad tokens never affect it, so the vector is identical.
             int seqLen = Math.min(ids.length, MAX_SEQ_LEN);
             long[] idsT  = (seqLen == ids.length)     ? ids     : java.util.Arrays.copyOf(ids, seqLen);
             long[] maskT = (seqLen == mask.length)    ? mask    : java.util.Arrays.copyOf(mask, seqLen);
@@ -245,11 +235,6 @@ public class EnsembleHealer {
                 ? AIConfigLoader.getOnnxReadableMaxCandidates()
                 : AIConfigLoader.getOnnxMaxCandidates();
 
-        // f2 (Tier-2 strategy signal) is derived IN MEMORY from the same batched candidate attributes
-        // collected below — no live findElements fan-out. The old fan-out re-queried the DOM with
-        // dozens of XPaths to find the very elements we already extract here; strategyWeightForAttrs
-        // computes the identical graded weight (gold/silver/bronze) from each candidate's attrs in one
-        // cheap pass. This is the single-extraction-shared-across-the-tier design.
         String semanticMethodName = isReadable ? null : callerMethod;
         List<String> semanticNames =
                 SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
@@ -257,13 +242,9 @@ public class EnsembleHealer {
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         List<WebElement> candidates;
         List<Map<String, Object>> batch;
-        long pStart = System.nanoTime();
-        long pCollect, pFetch;
         try {
             candidates = collectCandidates(driver, baseline, actionType);
-            pCollect = System.nanoTime();
             batch = fetchCandidateAttributes(driver, candidates);
-            pFetch = System.nanoTime();
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
@@ -271,8 +252,6 @@ public class EnsembleHealer {
         List<SignalFusion.Candidate>  fusionCands  = new ArrayList<>();
         java.util.IdentityHashMap<WebElement, String> docByElem = new java.util.IdentityHashMap<>();
         int scored = 0;
-        int embedCount = 0;
-        long embedNanos = 0;
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
@@ -295,10 +274,7 @@ public class EnsembleHealer {
                         doc = (attrs != null) ? buildElementDocument(attrs, candidate)
                                               : buildElementDocument(candidate);
                         if (doc.isBlank()) continue;
-                        long e0 = System.nanoTime();
                         docVector = embed(doc, false);
-                        embedNanos += System.nanoTime() - e0;
-                        embedCount++;
                         if (docVector != null && !cacheKey.isEmpty()) {
                             ElementVectorCache.getInstance().put(cacheKey, docVector);
                         }
@@ -318,18 +294,13 @@ public class EnsembleHealer {
                     sig.put(SignalFusion.F3_BIENCODER,   cosine);
                     fusionCands.add(new SignalFusion.Candidate(candidate, sig));
                     if (doc != null) docByElem.put(candidate, doc);
+
+                    if (cosine >= EARLY_EXIT_COSINE) break;
                 } catch (Exception ignored) {}
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
-        long pLoop = System.nanoTime();
-        Reporter.log(String.format("[PERF] scoreAndSelect: collectCandidates=%dms (%d candidates) "
-                + "fetchAttrs=%dms scoringLoop=%dms (embeds=%d, embedTotal=%dms, avgEmbed=%.1fms)",
-                (pCollect - pStart) / 1_000_000, candidates.size(),
-                (pFetch - pCollect) / 1_000_000, (pLoop - pFetch) / 1_000_000,
-                embedCount, embedNanos / 1_000_000,
-                embedCount > 0 ? (embedNanos / 1_000_000.0) / embedCount : 0.0), LogLevel.INFO_BLUE);
 
         if (fusionCands.isEmpty()) return null;
 
@@ -349,12 +320,12 @@ public class EnsembleHealer {
         if (gate.accept) {
             Reporter.log(String.format("[ENSEMBLE] heal via %s score=%.3f (f1=%.2f f2=%.2f f3=%.3f agree=%d)",
                     gate.via, gate.score, f1, f2, bestCosine, winner.agreement), LogLevel.INFO_GREEN);
-            HealingTelemetryStore.record(3, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
-            return HealOutcome.of(bestElement, gate.score, 3);
+            HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
+            return HealOutcome.of(bestElement, gate.score, 2);
         }
         Reporter.log(String.format("[ENSEMBLE] no heal — best anchor=%.3f < threshold=%.3f (fused=%.3f agree=%d)",
                 bestCosine, threshold, winner.fused, winner.agreement), LogLevel.DEBUG);
-        HealingTelemetryStore.record(3, brokenLocator.toString(), bestDoc, bestCosine, false, query, category);
+        HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, false, query, category);
         return null;
     }
 
@@ -407,24 +378,20 @@ public class EnsembleHealer {
             return collectAppiumNativeCandidates(driver);
         }
         int hardLimit = AIConfigLoader.getOnnxHardCandidateLimit();
-        java.util.LinkedHashMap<String, WebElement> seen = new java.util.LinkedHashMap<>();
+        java.util.LinkedHashSet<WebElement> seen = new java.util.LinkedHashSet<>();
         outer:
         for (String selector : CANDIDATE_SELECTORS) {
             try {
                 for (WebElement el : driver.findElements(By.cssSelector(selector))) {
-                    String key = buildCacheKey(el);
-                    seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
+                    seen.add(el);
                     if (seen.size() >= hardLimit) break outer;
                 }
             } catch (Exception ignored) {}
         }
         if (seen.size() < hardLimit) {
-            for (WebElement el : collectShadowDomCandidates(driver, hardLimit - seen.size())) {
-                String key = buildCacheKey(el);
-                seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
-            }
+            seen.addAll(collectShadowDomCandidates(driver, hardLimit - seen.size()));
         }
-        return new ArrayList<>(seen.values());
+        return new ArrayList<>(seen);
     }
 
     private static List<WebElement> collectShadowDomCandidates(WebDriver driver, int limit) {
@@ -455,18 +422,17 @@ public class EnsembleHealer {
             + "[role='textbox'],[role='checkbox'],[role='radio'],[role='tab'],[role='menuitem'],[data-testid]";
 
     private static List<WebElement> collectAppiumNativeCandidates(WebDriver driver) {
-        java.util.LinkedHashMap<String, WebElement> seen = new java.util.LinkedHashMap<>();
+        java.util.LinkedHashSet<WebElement> seen = new java.util.LinkedHashSet<>();
         outer:
         for (String xp : APPIUM_NATIVE_SELECTORS) {
             try {
                 for (WebElement el : driver.findElements(By.xpath(xp))) {
-                    String key = buildCacheKey(el);
-                    seen.putIfAbsent(key.isEmpty() ? el.toString() : key, el);
+                    seen.add(el);
                     if (seen.size() >= MOBILE_NATIVE_HARD_LIMIT) break outer;
                 }
             } catch (Exception ignored) {}
         }
-        return new ArrayList<>(seen.values());
+        return new ArrayList<>(seen);
     }
 
     /**
@@ -527,20 +493,20 @@ public class EnsembleHealer {
      * baseline fingerprint (0.0–1.0). Returns -1 when there is no baseline, so DOM order is kept.
      */
     private static double baselineProximity(ElementFingerprint baseline, WebElement candidate) {
-        if (baseline == null) return -1.0;
+        if (baseline == null) return 0.0;
         try {
             return baseline.scoreSimilarity(candidate);
         } catch (Exception e) {
-            return -1.0;
+            return 0.0;
         }
     }
 
     private static double baselineProximity(ElementFingerprint baseline, Map<String, Object> attrs) {
-        if (baseline == null) return -1.0;
+        if (baseline == null) return 0.0;
         try {
             return baseline.scoreSimilarity(attrs, structuralFrom(attrs));
         } catch (Exception e) {
-            return -1.0;
+            return 0.0;
         }
     }
 

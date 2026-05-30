@@ -283,7 +283,7 @@ public class AISelfHealer {
         }
         LAST_HEAL_CONFIDENCE.set(0.0);   // reset per attempt — never leak a prior heal's confidence to the gate
 
-        Reporter.log("[TIER 4] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
+        Reporter.log("[TIER 3] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
 
         By newLocator = healLocator(driver, brokenLocator, stackTrace);
 
@@ -295,7 +295,7 @@ public class AISelfHealer {
             }
             try {
                 WebElement found = driver.findElement(newLocator);
-                BaselineStore.capture(driver, brokenLocator, found, getLastHealConfidence(), 4);
+                BaselineStore.capture(driver, brokenLocator, found, getLastHealConfidence(), 3);
                 return found;
             } catch (Exception e) {
                 Reporter.log("AI Self-Healing: Healed locator also failed: " + e.getMessage(), LogLevel.ERROR);
@@ -412,7 +412,7 @@ public class AISelfHealer {
                     // wrong prior healing (e.g. Tier 2 incorrectly stored a container element).
                     // If LLM is highly confident, trust it over the stale/wrong baseline.
                     if (matchScore == 0.0 && candidate.getConfidence() >= 0.85) {
-                        Reporter.log("[TIER 4] Stale baseline detected (score=0.0); trusting high-confidence LLM "
+                        Reporter.log("[TIER 3] Stale baseline detected (score=0.0); trusting high-confidence LLM "
                                 + "(confidence=" + String.format("%.2f", candidate.getConfidence()) + "): "
                                 + candidate.getNewLocatorExpression(), LogLevel.WARN);
                         // Fall through — candidate is accepted, skip tag-type check too
@@ -474,7 +474,7 @@ public class AISelfHealer {
                 && acceptedResult.getConfidence() >= AIConfigLoader.getHealingStoreThreshold()) {
             pendingPatches.add(new SourcePatch(
                     ctx.filePath, ctx.fieldName, ctx.byMethod, ctx.byValue,
-                    acceptedResult.getNewLocatorExpression(), acceptedResult.getConfidence(), 4));
+                    acceptedResult.getNewLocatorExpression(), acceptedResult.getConfidence(), 3));
         }
 
         if (strategy == HealingStrategy.HEAL_AND_NOTIFY) {
