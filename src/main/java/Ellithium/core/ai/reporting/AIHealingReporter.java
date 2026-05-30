@@ -1,5 +1,7 @@
 package Ellithium.core.ai;
 
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.healing.BaselineStore;
 import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;

@@ -1,6 +1,7 @@
 package Ellithium.core.ai;
 
 import Ellithium.core.ai.models.ElementFingerprint;
+import Ellithium.core.ai.scoring.SemanticLocatorResolver;
 
 import java.util.*;
 import java.util.regex.Pattern;

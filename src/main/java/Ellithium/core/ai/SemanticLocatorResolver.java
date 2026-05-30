@@ -1,7 +1,11 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
+import Ellithium.core.ai.AIHealingReporter;
+import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.ai.SemanticNameExtractor;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealingResult;
+import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumDriver;
