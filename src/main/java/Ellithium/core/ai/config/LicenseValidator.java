@@ -158,6 +158,11 @@ public class LicenseValidator {
 
         int responseCode = conn.getResponseCode();
 
+        if (responseCode == 408 || responseCode == 429) {
+            throw new IOException("Licensing server transient HTTP " + responseCode
+                    + " — treating as unreachable (offline grace fallback)");
+        }
+
         if (responseCode >= 400 && responseCode < 500) {
             String body = readStream(conn.getErrorStream());
             throw new LicenseRejectedException("HTTP " + responseCode + ": " + body);

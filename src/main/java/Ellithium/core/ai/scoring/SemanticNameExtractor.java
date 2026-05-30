@@ -1,10 +1,9 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -158,7 +157,7 @@ public class SemanticNameExtractor {
         StringBuilder sb = new StringBuilder();
         for (String word : input.split("\\s+")) {
             if (!word.isEmpty()) {
-                if (sb.length() > 0) sb.append(" ");
+                if (!sb.isEmpty()) sb.append(" ");
                 sb.append(Character.toUpperCase(word.charAt(0)));
                 if (word.length() > 1) sb.append(word.substring(1));
             }

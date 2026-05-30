@@ -1,6 +1,6 @@
 package Ellithium.Utilities.interactions;
 
-import Ellithium.core.ai.ElementVectorCache;
+import Ellithium.core.ai.scoring.ElementVectorCache;
 import org.openqa.selenium.WebDriver;
 
 public class NavigationActions<T extends WebDriver> extends BaseActions<T> {

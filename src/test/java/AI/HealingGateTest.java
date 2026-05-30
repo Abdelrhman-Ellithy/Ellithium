@@ -1,8 +1,8 @@
 package ai;
 
-import Ellithium.core.ai.AISelfHealer;
-import Ellithium.core.ai.BaselineStore;
-import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.healing.BaselineStore;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import org.mockito.MockedStatic;

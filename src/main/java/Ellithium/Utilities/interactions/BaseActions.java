@@ -1,9 +1,9 @@
 package Ellithium.Utilities.interactions;
 
-import Ellithium.core.ai.AISelfHealer;
-import Ellithium.core.ai.BaselineStore;
-import Ellithium.core.ai.HealingOrchestrator;
-import Ellithium.core.ai.HealingRequest;
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.healing.BaselineStore;
+import Ellithium.core.ai.healing.HealingOrchestrator;
+import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import org.openqa.selenium.By;

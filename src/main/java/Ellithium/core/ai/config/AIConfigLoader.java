@@ -41,8 +41,8 @@ public class AIConfigLoader {
     private static int onnxReadableMaxCandidates  = 25;     // wider net for text-bearing element search
     private static int     onnxHardCandidateLimit = 300;
     private static int     baselineTtlDays = 30;
-    private static boolean strategyRescueEnabled = false;
-    private static double  gateFingerprintFloor = 0.50;
+    private static final boolean strategyRescueEnabled = true;
+    private static final double  gateFingerprintFloor = 0.70;
     private static boolean visionAllowMobile = false;
     private static int     llmHealMaxWaitMs = 15_000;
     private static int     llmRetryInitialBackoffMs = 500;
@@ -96,8 +96,6 @@ public class AIConfigLoader {
 
             visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
             baselineTtlDays          = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
-            strategyRescueEnabled    = parseBool(p, "ai.ensemble.gate.strategyRescue", strategyRescueEnabled);
-            gateFingerprintFloor     = parseDouble(p, "ai.ensemble.gate.fingerprintFloor", gateFingerprintFloor);
             llmHealMaxWaitMs         = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
             llmRetryInitialBackoffMs = parseInt(p, "ai.llm.retryInitialBackoffMs", llmRetryInitialBackoffMs);
             llmRetryMaxBackoffMs     = parseInt(p, "ai.llm.retryMaxBackoffMs", llmRetryMaxBackoffMs);

@@ -1,7 +1,7 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
+import Ellithium.core.ai.SemanticLocatorResolver;
 import Ellithium.core.ai.models.ElementFingerprint;
-import Ellithium.core.ai.scoring.SemanticLocatorResolver;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -198,7 +198,7 @@ public class SemanticQueryBuilder {
                 .collect(Collectors.joining(" "));
     }
 
-    public static String expandAction(String actionType) {
+    static String expandAction(String actionType) {
         if (actionType == null || actionType.isBlank()) return "";
         switch (SemanticLocatorResolver.categorizeAction(actionType)) {
             case READABLE:  return "read text label value";
@@ -219,7 +219,7 @@ public class SemanticQueryBuilder {
         return deCamelCase(actionType);
     }
 
-    public static String extractLocatorValue(String locatorOrValue) {
+    static String extractLocatorValue(String locatorOrValue) {
         if (locatorOrValue == null) return "";
         java.util.regex.Matcher m = BY_VALUE.matcher(locatorOrValue.trim());
         return m.find() ? m.group(1).trim() : locatorOrValue.trim();

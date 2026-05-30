@@ -1,7 +1,7 @@
 package ai;
 
-import Ellithium.core.ai.LocatorMutationEngine;
-import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.scoring.LocatorMutationEngine;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import Ellithium.core.ai.models.ElementFingerprint;
 import com.google.gson.Gson;
 import org.openqa.selenium.WebElement;

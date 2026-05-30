@@ -1,4 +1,4 @@
-package Ellithium.core.ai.healing;
+package Ellithium.core.ai.models;
 
 import Ellithium.core.ai.models.ElementFingerprint;
 import org.openqa.selenium.By;

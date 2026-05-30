@@ -1,15 +1,15 @@
 package ai;
 
-import Ellithium.core.ai.SignalFusion;
-import Ellithium.core.ai.SignalFusion.Candidate;
-import Ellithium.core.ai.SignalFusion.Result;
-import Ellithium.core.ai.SignalFusion.Weights;
+import Ellithium.core.ai.scoring.SignalFusion;
+import Ellithium.core.ai.scoring.SignalFusion.Candidate;
+import Ellithium.core.ai.scoring.SignalFusion.Result;
+import Ellithium.core.ai.scoring.SignalFusion.Weights;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.*;
 
-import static Ellithium.core.ai.SignalFusion.*;
+import static Ellithium.core.ai.scoring.SignalFusion.*;
 
 /**
  * Behaviour spec for the deterministic ensemble fusion (Phase C core). Proves the hybrid:

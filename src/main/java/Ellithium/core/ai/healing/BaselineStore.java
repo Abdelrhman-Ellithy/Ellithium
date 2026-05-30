@@ -1,5 +1,8 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
+import Ellithium.core.ai.reporting.AIHealingReporter;
+import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
@@ -275,9 +278,9 @@ public class BaselineStore {
 
         List<Map<String, Object>> attrsBatch =
                 Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidates);
-        List<ElementFingerprint.StructuralContext> structural = fetchStructuralContexts(driver, candidates);
 
-        ScoredCandidate best = null;
+        WebElement bestEl = null;
+        double bestScore = -1.0;
 
         for (int i = 0; i < candidates.size(); i++) {
             WebElement candidate = candidates.get(i);
@@ -290,23 +293,35 @@ public class BaselineStore {
                 }
 
                 double score = (attrs != null)
-                        ? scoreBestHistory(attrs, structural.get(i), history)
-                        : scoreBestHistory(candidate, structural.get(i), history);
+                        ? scoreBestHistory(attrs, structuralFrom(attrs), history)
+                        : scoreBestHistory(candidate, null, history);
 
-                if (best == null || score > best.score) {
-                    By locator = ElementFingerprint.reconstructLocator(candidate);
-                    if (locator != null) {
-                        String reasoning = buildMatchReasoning(baseline, candidate);
-                        best = new ScoredCandidate(candidate, locator, score, reasoning);
-                        if (score >= 0.90) break;
-                    }
+                if (bestEl == null || score > bestScore) {
+                    bestEl = candidate;
+                    bestScore = score;
+                    if (score >= 0.90) break;
                 }
             } catch (Exception ignored) {
             }
         }
 
-        return best;
+        if (bestEl == null) return null;
+        By locator = ElementFingerprint.reconstructLocator(bestEl);
+        if (locator == null) return null;
+        return new ScoredCandidate(bestEl, locator, bestScore, buildMatchReasoning(baseline, bestEl));
     }
+
+    private static ElementFingerprint.StructuralContext structuralFrom(Map<String, Object> attrs) {
+        if (attrs == null) return null;
+        Object pt = attrs.get("parent-tag");
+        if (pt == null && attrs.get("child-index") == null) return null;
+        int ci = attrs.get("child-index") instanceof Number n ? n.intValue() : -1;
+        return new ElementFingerprint.StructuralContext(
+                pt != null ? pt.toString() : null, ci,
+                asStr(attrs.get("prev-sib")), asStr(attrs.get("next-sib")));
+    }
+
+    private static String asStr(Object o) { return o != null ? o.toString() : null; }
 
     private static double scoreBestHistory(Map<String, Object> attrs,
                                            ElementFingerprint.StructuralContext sc,
@@ -385,43 +400,6 @@ public class BaselineStore {
             } catch (Exception ignored) {}
         }
         return max;
-    }
-
-    /**
-     * Fetches parent tag, child index, and previous/next sibling tags for every candidate in a
-     * SINGLE {@code executeScript} round-trip (one network call regardless of candidate count).
-     * Returns a list aligned by index with {@code candidates}; entries are {@code null} when the
-     * driver has no JS (e.g. Appium native) or the call fails — structural scoring is then skipped.
-     */
-    private static List<ElementFingerprint.StructuralContext> fetchStructuralContexts(
-            WebDriver driver, List<WebElement> candidates) {
-        List<ElementFingerprint.StructuralContext> out = new ArrayList<>();
-        for (int i = 0; i < candidates.size(); i++) out.add(null);
-        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor) || candidates.isEmpty()) return out;
-        try {
-            Object res = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-                    "return arguments[0].map(function(el){"
-                            + " if(!el) return null;"
-                            + " var p=el.parentElement,"
-                            + "     prev=el.previousElementSibling, next=el.nextElementSibling;"
-                            + " return [p?p.tagName.toLowerCase():null,"
-                            + "  p?Array.prototype.indexOf.call(p.children,el):-1,"
-                            + "  prev?prev.tagName.toLowerCase():null,"
-                            + "  next?next.tagName.toLowerCase():null];"
-                            + "});", candidates);
-            if (res instanceof List<?> rows) {
-                for (int i = 0; i < rows.size() && i < out.size(); i++) {
-                    if (rows.get(i) instanceof List<?> r && r.size() == 4) {
-                        String pt = r.get(0) != null ? r.get(0).toString() : null;
-                        int    ci = r.get(1) instanceof Number n ? n.intValue() : -1;
-                        String ps = r.get(2) != null ? r.get(2).toString() : null;
-                        String ns = r.get(3) != null ? r.get(3).toString() : null;
-                        out.set(i, new ElementFingerprint.StructuralContext(pt, ci, ps, ns));
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-        return out;
     }
 
     // ──────────────────────── Accept Heal Helper ────────────────────────
@@ -657,3 +635,4 @@ public class BaselineStore {
         return value.replace("'", "\\'");
     }
 }
+  

@@ -1,7 +1,7 @@
 package Ellithium.core.ai.spi;
 
-import Ellithium.core.ai.BaselineStore;
-import Ellithium.core.ai.HealingRequest;
+import Ellithium.core.ai.healing.BaselineStore;
+import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.HealOutcome;
 
 public final class Tier1AlgorithmicHealer implements HealingTier {

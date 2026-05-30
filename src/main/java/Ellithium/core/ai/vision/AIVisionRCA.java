@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.vision;
 
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.provider.LLMProvider;

@@ -1,5 +1,6 @@
 package Ellithium.core.ai;
 
+import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.Gson;

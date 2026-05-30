@@ -18,10 +18,10 @@ public class GateDecisionTest {
     private static final double FLOOR = 0.50;
 
     @Test
-    public void cosinePath_acceptsWhenAnchorClearsThreshold() {
+    public void combinedPath_acceptsWhenScoreClearsThreshold() {
         GateResult g = decideGate(0.55, THRESHOLD, 0.20, Double.NaN, true, FLOOR);
         Assert.assertTrue(g.accept);
-        Assert.assertEquals(g.via, "cosine");
+        Assert.assertEquals(g.via, "ensemble");
         Assert.assertEquals(g.score, 0.55, 1e-9);
     }
 

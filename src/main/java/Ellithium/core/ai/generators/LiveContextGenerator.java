@@ -21,7 +21,6 @@ import java.util.List;
 /**
  * In-context code generator that uses the <b>tester's currently running browser</b>
  * to generate POM and test code — no new browser, no shared credentials.
- *
  * <h3>Why this exists</h3>
  * <p>The standard {@code EllithiumAIEngine.generateFrom()} opens a fresh headless browser
  * and navigates to a URL. This fails for:</p>
@@ -125,7 +124,7 @@ public class LiveContextGenerator {
         }
 
         // Parse and execute
-        parseAndExecute(driver, response, llmProvider);
+        parseAndExecute(driver, response);
     }
 
     /**
@@ -220,7 +219,7 @@ public class LiveContextGenerator {
      * Parses the LLM response and executes the steps on the live driver,
      * then saves POM code to disk.
      */
-    private static void parseAndExecute(WebDriver driver, String llmResponse, LLMProvider llmProvider) {
+    private static void parseAndExecute(WebDriver driver, String llmResponse) {
         try {
             // Strip markdown fences if present
             String cleaned = llmResponse.trim();

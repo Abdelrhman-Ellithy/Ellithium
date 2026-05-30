@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.logging.LogLevel;
@@ -112,7 +112,7 @@ public class LocatorMutationEngine {
                         }
                     });
 
-    public static List<By> generateMutations(By brokenLocator) {
+    static List<By> generateMutations(By brokenLocator) {
         String key = brokenLocator.toString();
         List<By> cached = MUTATION_CACHE.get(key);
         if (cached != null) return cached;

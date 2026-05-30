@@ -8,7 +8,7 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
-import Ellithium.core.ai.AIHealingReporter;
+import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;

@@ -1,8 +1,7 @@
-package Ellithium.core.ai.scoring;
+package Ellithium.core.ai;
 
-import Ellithium.core.ai.AIHealingReporter;
-import Ellithium.core.ai.HealingTelemetryStore;
-import Ellithium.core.ai.SemanticNameExtractor;
+import Ellithium.core.ai.reporting.AIHealingReporter;
+import Ellithium.core.ai.scoring.SemanticNameExtractor;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.ai.scoring.LocatorMutationEngine;
@@ -110,6 +109,43 @@ public class SemanticLocatorResolver {
         return hits;
     }
 
+    public static List<Ellithium.core.ai.models.SemanticHit> findExactHits(WebDriver driver,
+                                                                           String methodName, String fieldName,
+                                                                           String actionType, String locatorValue,
+                                                                           ElementFingerprint baseline) {
+        List<Ellithium.core.ai.models.SemanticHit> hits = new ArrayList<>();
+
+        if (locatorValue != null && !locatorValue.isBlank()) {
+            By brokenBy = rebuildLocator(locatorValue);
+            if (brokenBy != null) {
+                WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenBy, driver, baseline);
+                if (mutationMatch != null) {
+                    hits.add(new Ellithium.core.ai.models.SemanticHit(mutationMatch, 0.95, "mutation"));
+                }
+            }
+        }
+
+        ElementCategory category = categorizeAction(actionType);
+        boolean isMobile = driver instanceof AppiumDriver;
+        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
+        List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
+        if (semanticNames.isEmpty()) return hits;
+
+        TieredAttempts tiered = buildTieredStrategies(semanticNames, category, isMobile, driver, baseline);
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            java.util.IdentityHashMap<WebElement, Double> best = new java.util.IdentityHashMap<>();
+            collectHits(driver, tiered.gold, F2_GOLD, best);
+            if (best.isEmpty()) collectHits(driver, tiered.silver, F2_SILVER, best);
+            for (java.util.Map.Entry<WebElement, Double> e : best.entrySet()) {
+                hits.add(new Ellithium.core.ai.models.SemanticHit(e.getKey(), e.getValue(), "exact"));
+            }
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+        }
+        return hits;
+    }
+
     private static void collectHits(WebDriver driver, List<LocatorAttempt> attempts, double weight,
                                     java.util.IdentityHashMap<WebElement, Double> best) {
         for (LocatorAttempt attempt : attempts) {
@@ -136,10 +172,10 @@ public class SemanticLocatorResolver {
             if (raw == null || raw.isBlank()) continue;
             String n = raw.toLowerCase();
             if (eq(id, n) || eq(nm, n) || eq(testid, n) || eq(aria, n)
-                    || eq(accId, n) || eq(cdesc, n) || suffixEq(resId, n) || has(text, n)) {
+                    || eq(accId, n) || eq(cdesc, n) || suffixEq(resId, n) || eq(text, n)) {
                 return F2_GOLD;
             }
-            if (has(allattrs, n)) {
+            if (has(text, n) || has(allattrs, n)) {
                 best = nanMax(best, F2_SILVER);
             }
         }
@@ -605,7 +641,7 @@ public class SemanticLocatorResolver {
      * These are the REAL method names from Ellithium's interaction classes:
      * ElementActions, SelectActions, MouseActions, JavaScriptActions, MobileActions.
      */
-    static ElementCategory categorizeAction(String actionType) {
+    public static ElementCategory categorizeAction(String actionType) {
         if (actionType == null || actionType.equals("unknown")) return ElementCategory.ANY;
 
         return switch (actionType) {

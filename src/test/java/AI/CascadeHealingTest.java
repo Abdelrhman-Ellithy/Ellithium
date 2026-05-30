@@ -1,8 +1,8 @@
 package ai;
 
 import Ellithium.Utilities.interactions.BaseActions;
-import Ellithium.core.ai.AISelfHealer;
-import Ellithium.core.ai.BaselineStore;
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.healing.BaselineStore;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;

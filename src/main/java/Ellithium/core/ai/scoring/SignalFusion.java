@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
 import java.util.*;
 

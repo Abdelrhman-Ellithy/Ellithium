@@ -3,6 +3,9 @@ package Ellithium.core.ai;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.scoring.ElementVectorCache;
+import Ellithium.core.ai.scoring.SemanticNameExtractor;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -239,18 +242,27 @@ public class EnsembleHealer {
         List<String> semanticNames =
                 SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
 
+        java.util.IdentityHashMap<WebElement, Double> resolverWeights = new java.util.IdentityHashMap<>();
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         List<WebElement> candidates;
         List<Map<String, Object>> batch;
         try {
-            candidates = collectCandidates(driver, baseline, actionType);
+            List<WebElement> resolverEls = new ArrayList<>();
+            for (Ellithium.core.ai.models.SemanticHit hit : SemanticLocatorResolver.findExactHits(
+                    driver, callerMethod, fieldName, actionType, locatorValue, baseline)) {
+                resolverEls.add(hit.element);
+                Double prev = resolverWeights.get(hit.element);
+                if (prev == null || prev < hit.tierWeight) resolverWeights.put(hit.element, hit.tierWeight);
+            }
+            candidates = mergeCandidates(resolverEls, collectCandidates(driver, baseline, actionType));
             batch = fetchCandidateAttributes(driver, candidates);
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
-        List<SignalFusion.Candidate>  fusionCands  = new ArrayList<>();
-        java.util.IdentityHashMap<WebElement, String> docByElem = new java.util.IdentityHashMap<>();
+        WebElement bestElement = null;
+        String     bestDoc     = null;
+        double bestCombined = -1.0, bestCosine = 0.0, bestF1 = Double.NaN, bestF2 = Double.NaN;
         int scored = 0;
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
@@ -261,10 +273,9 @@ public class EnsembleHealer {
                 try {
                     Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
                     if (attrs != null) {
-                        Object v = attrs.get("visible");
-                        if (Boolean.FALSE.equals(v)) continue;
-                    } else {
-                        if (!candidate.isDisplayed()) continue;
+                        if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
+                    } else if (!candidate.isDisplayed()) {
+                        continue;
                     }
                     scored++;
                     String  cacheKey  = (attrs != null) ? buildCacheKey(attrs) : buildCacheKey(candidate);
@@ -281,52 +292,57 @@ public class EnsembleHealer {
                     }
                     if (docVector == null) continue;
 
-                    double cosine = dotProduct(queryVector, docVector);
+                    double cosine = dotProduct(queryVector, docVector);                 // f3: bi-encoder
                     double f1     = (attrs != null) ? baselineProximity(baseline, attrs)
                                                     : baselineProximity(baseline, candidate);
-                    double f2     = (attrs != null)
+                    double attrW  = (attrs != null)
                             ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
                             : Double.NaN;
+                    Double hitW   = resolverWeights.get(candidate);
+                    double f2     = maxScore(attrW, hitW == null ? Double.NaN : hitW);   // resolver retriever
+                    double combined = Double.isNaN(f2) ? cosine : (f2 + cosine) / 2.0;
 
-                    Map<String, Double> sig = new LinkedHashMap<>();
-                    sig.put(SignalFusion.F1_FINGERPRINT, f1);
-                    sig.put(SignalFusion.F2_STRATEGY,    f2);
-                    sig.put(SignalFusion.F3_BIENCODER,   cosine);
-                    fusionCands.add(new SignalFusion.Candidate(candidate, sig));
-                    if (doc != null) docByElem.put(candidate, doc);
+                    if (bestElement == null || combined > bestCombined
+                            || (combined == bestCombined && f1 > bestF1)) {
+                        bestElement = candidate; bestCombined = combined; bestCosine = cosine;
+                        bestF1 = f1; bestF2 = f2; bestDoc = doc;
+                    }
 
-                    if (cosine >= EARLY_EXIT_COSINE) break;
+                    if (combined >= EARLY_EXIT_COSINE) break;
                 } catch (Exception ignored) {}
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
-        if (fusionCands.isEmpty()) return null;
+        if (bestElement == null) return null;
+        if (bestDoc == null) bestDoc = buildElementDocument(bestElement);
 
-        SignalFusion.Result r       = SignalFusion.fuse(fusionCands, SignalFusion.Weights.defaults());
-        SignalFusion.Scored winner  = r.winner();
-        if (winner == null) return null;
-
-        WebElement bestElement = (WebElement) winner.candidate.ref;
-        double     bestCosine  = winner.anchorScore;
-        String     bestDoc     = docByElem.getOrDefault(bestElement, buildElementDocument(bestElement));
-
-        double f2 = winner.candidate.signals.getOrDefault(SignalFusion.F2_STRATEGY, Double.NaN);
-        double f1 = winner.candidate.signals.getOrDefault(SignalFusion.F1_FINGERPRINT, Double.NaN);
-
-        GateResult gate = decideGate(bestCosine, threshold, f1, f2,
+        GateResult gate = decideGate(bestCombined, threshold, bestF1, bestF2,
                 AIConfigLoader.isStrategyRescueEnabled(), AIConfigLoader.getGateFingerprintFloor());
         if (gate.accept) {
-            Reporter.log(String.format("[ENSEMBLE] heal via %s score=%.3f (f1=%.2f f2=%.2f f3=%.3f agree=%d)",
-                    gate.via, gate.score, f1, f2, bestCosine, winner.agreement), LogLevel.INFO_GREEN);
+            Reporter.log(String.format("[ENSEMBLE] heal via %s combined=%.3f (f1=%.2f f2=%.2f f3=%.3f)",
+                    gate.via, gate.score, bestF1, bestF2, bestCosine), LogLevel.INFO_GREEN);
             HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
             return HealOutcome.of(bestElement, gate.score, 2);
         }
-        Reporter.log(String.format("[ENSEMBLE] no heal — best anchor=%.3f < threshold=%.3f (fused=%.3f agree=%d)",
-                bestCosine, threshold, winner.fused, winner.agreement), LogLevel.DEBUG);
-        HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, false, query, category);
+        Reporter.log(String.format("[ENSEMBLE] no heal — combined=%.3f < threshold=%.3f (f1=%.2f f2=%.2f f3=%.3f)",
+                bestCombined, threshold, bestF1, bestF2, bestCosine), LogLevel.DEBUG);
+        HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category);
         return null;
+    }
+
+    private static double maxScore(double a, double b) {
+        if (Double.isNaN(a)) return b;
+        if (Double.isNaN(b)) return a;
+        return Math.max(a, b);
+    }
+
+    static List<WebElement> mergeCandidates(List<WebElement> resolverElements, List<WebElement> poolElements) {
+        java.util.LinkedHashSet<WebElement> ordered = new java.util.LinkedHashSet<>();
+        if (resolverElements != null) ordered.addAll(resolverElements);
+        if (poolElements != null) ordered.addAll(poolElements);
+        return new ArrayList<>(ordered);
     }
 
     static final class GateResult {
@@ -345,13 +361,13 @@ public class EnsembleHealer {
      * two independent high-precision signals, so the heal is trusted even when the bi-encoder cosine
      * is weak. Path-B confidence = mean(f1, f2). Cold start (f1 NaN) never rescues.
      */
-    static GateResult decideGate(double cosine, double threshold, double f1, double f2,
+    static GateResult decideGate(double combined, double threshold, double f1, double f2,
                                  boolean rescueEnabled, double fingerprintFloor) {
-        if (cosine >= threshold) return new GateResult(true, cosine, "cosine");
+        if (combined >= threshold) return new GateResult(true, combined, "ensemble");
         if (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f1 >= fingerprintFloor) {
             return new GateResult(true, (f1 + f2) / 2.0, "strategy-rescue");
         }
-        return new GateResult(false, cosine, "none");
+        return new GateResult(false, combined, "none");
     }
 
     /**

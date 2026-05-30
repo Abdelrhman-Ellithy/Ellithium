@@ -1,6 +1,7 @@
 package Ellithium.core.execution.listener;
 
 import Ellithium.config.managment.GeneralHandler;
+import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -237,7 +238,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         }
         try {
             Ellithium.core.ai.EnsembleHealer.shutdown();
-            Ellithium.core.ai.AIHealingReporter.generateReport();
+            AIHealingReporter.generateReport();
         } catch (Exception e) {
             Logger.warn(YELLOW+"Failed to finalize AI healing (shutdown/report): " + e.getMessage()+RESET);
         }

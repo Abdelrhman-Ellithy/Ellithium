@@ -1,6 +1,6 @@
 package ai;
 
-import Ellithium.core.ai.AISelfHealer;
+import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.config.HealingStrategy;
 import Ellithium.core.ai.provider.LLMProvider;

@@ -1,13 +1,13 @@
 package Ellithium.core.ai.spi;
 
-import Ellithium.core.ai.AISelfHealer;
-import Ellithium.core.ai.HealingRequest;
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-public final class Tier4LLMHealer implements HealingTier {
+public final class Tier3LLMHealer implements HealingTier {
 
     @Override
     public int order() {

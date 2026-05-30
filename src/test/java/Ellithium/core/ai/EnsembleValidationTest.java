@@ -2,6 +2,8 @@ package Ellithium.core.ai;
 
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
+import Ellithium.core.ai.scoring.SignalFusion;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.testng.SkipException;

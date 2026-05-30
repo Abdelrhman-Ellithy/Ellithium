@@ -1,11 +1,12 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.spi.HealingTier;
 import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
-import Ellithium.core.ai.spi.Tier3EnsembleHealer;
-import Ellithium.core.ai.spi.Tier4LLMHealer;
+import Ellithium.core.ai.spi.Tier2EnsembleHealer;
+import Ellithium.core.ai.spi.Tier3LLMHealer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -20,7 +21,7 @@ import java.util.Set;
 public final class HealingOrchestrator {
 
     private static final HealingOrchestrator INSTANCE = new HealingOrchestrator(List.of(
-            new Tier1AlgorithmicHealer(), new Tier3EnsembleHealer(), new Tier4LLMHealer()));
+            new Tier1AlgorithmicHealer(), new Tier2EnsembleHealer(), new Tier3LLMHealer()));
 
     private final List<HealingTier> tiers;
 

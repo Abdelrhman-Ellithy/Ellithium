@@ -1,5 +1,6 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.reporting;
 
+import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.healing.BaselineStore;
 import Ellithium.core.ai.models.HealingResult;

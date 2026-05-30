@@ -1,5 +1,8 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
+import Ellithium.core.ai.reporting.AIHealingReporter;
+import Ellithium.core.ai.JavaSourceModifier;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.config.HealingStrategy;
 import Ellithium.core.ai.models.ElementFingerprint;

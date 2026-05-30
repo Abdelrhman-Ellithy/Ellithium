@@ -19,10 +19,27 @@ public class DataScrubber {
     private static final Pattern EMAIL = Pattern.compile(
             "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
 
-    // Password input values: value="..." inside type="password" inputs
+    // Password input values: value="..." inside type="password" inputs (type before value)
     private static final Pattern PASSWORD_VALUE = Pattern.compile(
             "(<input[^>]*type\\s*=\\s*\"password\"[^>]*value\\s*=\\s*\")([^\"]*)(\")",
             Pattern.CASE_INSENSITIVE);
+
+    // Password input values where value precedes the type="password" attribute (reversed order)
+    private static final Pattern PASSWORD_VALUE_REV = Pattern.compile(
+            "(<input[^>]*value\\s*=\\s*\")([^\"]*)(\"[^>]*type\\s*=\\s*\"password\")",
+            Pattern.CASE_INSENSITIVE);
+
+    // Credit-card numbers (13–16 digits, optional space/dash grouping)
+    private static final Pattern CREDIT_CARD = Pattern.compile(
+            "\\b(?:\\d[ -]?){13,16}\\b");
+
+    // US Social Security numbers
+    private static final Pattern SSN = Pattern.compile(
+            "\\b\\d{3}-\\d{2}-\\d{4}\\b");
+
+    // Phone numbers (US-style, optional country code / separators)
+    private static final Pattern PHONE = Pattern.compile(
+            "\\b(?:\\+?1[ .-]?)?\\(?\\d{3}\\)?[ .-]?\\d{3}[ .-]?\\d{4}\\b");
 
     // Bearer tokens and API keys in attributes
     private static final Pattern BEARER_TOKEN = Pattern.compile(
@@ -68,9 +85,13 @@ public class DataScrubber {
             maskedCount++;
         }
 
-        // Mask password input values
+        // Mask password input values (type before value, and value before type)
         if (PASSWORD_VALUE.matcher(result).find()) {
             result = PASSWORD_VALUE.matcher(result).replaceAll("$1[MASKED]$3");
+            maskedCount++;
+        }
+        if (PASSWORD_VALUE_REV.matcher(result).find()) {
+            result = PASSWORD_VALUE_REV.matcher(result).replaceAll("$1[MASKED]$3");
             maskedCount++;
         }
 
@@ -101,6 +122,24 @@ public class DataScrubber {
         // Mask cookie/session values
         if (COOKIE_VALUE.matcher(result).find()) {
             result = COOKIE_VALUE.matcher(result).replaceAll("$1[MASKED]");
+            maskedCount++;
+        }
+
+        // Mask credit-card numbers
+        if (CREDIT_CARD.matcher(result).find()) {
+            result = CREDIT_CARD.matcher(result).replaceAll("[MASKED_CC]");
+            maskedCount++;
+        }
+
+        // Mask SSNs
+        if (SSN.matcher(result).find()) {
+            result = SSN.matcher(result).replaceAll("[MASKED_SSN]");
+            maskedCount++;
+        }
+
+        // Mask phone numbers
+        if (PHONE.matcher(result).find()) {
+            result = PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
             maskedCount++;
         }
 

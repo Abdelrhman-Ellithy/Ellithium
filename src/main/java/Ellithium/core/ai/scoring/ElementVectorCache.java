@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.scoring;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,16 +59,16 @@ public class ElementVectorCache {
     }
 
     /** Returns {@code true} when the DOM has been mutated since the last embed pass. */
-    public boolean isDomMutated() { return domMutated.get(); }
+    boolean isDomMutated() { return domMutated.get(); }
 
     /**
      * Signals that the DOM has changed (called by the MutationObserver JS hook).
      * The next heal attempt will re-embed changed elements rather than using stale vectors.
      */
-    public void markDomMutated() { domMutated.set(true); }
+    void markDomMutated() { domMutated.set(true); }
 
     /** Clears the mutation flag after delta re-embedding is complete. */
-    public void clearMutationFlag() { domMutated.set(false); }
+    void clearMutationFlag() { domMutated.set(false); }
 
     /**
      * Fully invalidates the cache. Call on every navigation event
@@ -81,8 +81,8 @@ public class ElementVectorCache {
     }
 
     /** Returns the number of cached element vectors. */
-    public int size() { return vectors.size(); }
+    int size() { return vectors.size(); }
 
     /** Returns {@code true} when the cache is empty. */
-    public boolean isEmpty() { return vectors.isEmpty(); }
+    boolean isEmpty() { return vectors.isEmpty(); }
 }

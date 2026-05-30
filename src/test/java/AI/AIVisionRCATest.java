@@ -1,6 +1,6 @@
 package ai;
 
-import Ellithium.core.ai.AIVisionRCA;
+import Ellithium.core.ai.vision.AIVisionRCA;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.provider.LLMProvider;
 import org.mockito.MockedStatic;

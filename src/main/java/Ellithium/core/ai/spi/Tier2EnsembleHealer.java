@@ -1,10 +1,10 @@
 package Ellithium.core.ai.spi;
 
 import Ellithium.core.ai.EnsembleHealer;
-import Ellithium.core.ai.HealingRequest;
+import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.HealOutcome;
 
-public final class Tier3EnsembleHealer implements HealingTier {
+public final class Tier2EnsembleHealer implements HealingTier {
 
     @Override
     public int order() {

@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.crypto;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -12,7 +12,6 @@ import java.security.MessageDigest;
 
 /**
  * Decrypts the Tier 3 ONNX model from an AES-256-GCM encrypted resource in the JAR.
- *
  * <h3>Encryption scheme</h3>
  * <ul>
  *   <li>Algorithm: AES-256-GCM (authenticated encryption — detects tampering)</li>

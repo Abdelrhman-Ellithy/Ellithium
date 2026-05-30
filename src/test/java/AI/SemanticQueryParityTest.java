@@ -1,6 +1,6 @@
 package ai;
 
-import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

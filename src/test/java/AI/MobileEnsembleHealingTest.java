@@ -1,7 +1,7 @@
 package ai;
 
-import Ellithium.core.ai.AISelfHealer;
-import Ellithium.core.ai.SemanticQueryBuilder;
+import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import Ellithium.core.ai.models.ElementFingerprint;
 import io.appium.java_client.AppiumBy;
 import org.openqa.selenium.By;
