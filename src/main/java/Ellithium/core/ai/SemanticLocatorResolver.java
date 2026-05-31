@@ -622,7 +622,7 @@ public class SemanticLocatorResolver {
      * baseline or i18n placeholder containing {@code '} could break out of the predicate and select an
      * attacker-chosen node) and the everyday correctness bug of unescaped apostrophes.
      */
-    static String xpathLiteral(String s) {
+    public static String xpathLiteral(String s) {
         if (s == null) return "''";
         if (!s.contains("'")) return "'" + s + "'";
         if (!s.contains("\"")) return "\"" + s + "\"";

@@ -13,7 +13,10 @@ import Ellithium.core.ai.readers.TestCaseReader;
 import Ellithium.core.ai.readers.TextTestCaseReader;
 import Ellithium.core.ai.sanitizers.DataScrubber;
 import Ellithium.core.ai.sanitizers.DOMMinimizer;
-import Ellithium.core.execution.listener.seleniumListener;
+import Ellithium.core.ai.codegen.InteractionRecorder;
+import Ellithium.core.ai.codegen.PomCodeEmitter;
+import Ellithium.core.ai.codegen.RecordedStep;
+import Ellithium.core.ai.codegen.RecorderOptions;
 import Ellithium.core.ai.generators.LiveContextGenerator;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -121,16 +124,37 @@ public class EllithiumAIEngine {
      * @param driver The WebDriver to record interactions on
      * @return The recorder instance
      */
+    private static volatile List<RecordedStep> lastRecording = List.of();
+
     public static void startRecording(WebDriver driver) {
-        seleniumListener.startRecording(driver);
+        InteractionRecorder.start(driver, RecorderOptions.defaults());
+    }
+
+    public static void startRecording(WebDriver driver, RecorderOptions options) {
+        InteractionRecorder.start(driver, options);
     }
 
     public static void stopRecording() {
-        seleniumListener.stopRecording();
+        lastRecording = InteractionRecorder.stop();
     }
 
     public static void generateCodeFromRecording(Object llmProvider) {
-        seleniumListener.generateCode((Ellithium.core.ai.provider.LLMProvider) llmProvider);
+        List<RecordedStep> steps = InteractionRecorder.isRecording()
+                ? InteractionRecorder.stop()
+                : lastRecording;
+        if (steps == null || steps.isEmpty()) {
+            Reporter.log("EllithiumAIEngine: no recorded steps to generate from", LogLevel.WARN);
+            return;
+        }
+        if (llmProvider != null) {
+            Reporter.log("EllithiumAIEngine: deterministic emission (LLM polish not applied)", LogLevel.DEBUG);
+        }
+        RecorderOptions opts = InteractionRecorder.getOptions();
+        if (opts.isTest()) {
+            PomCodeEmitter.emitTest(steps, null, opts, InteractionRecorder.getStartUrl());
+        } else {
+            PomCodeEmitter.emit(steps, null, opts);
+        }
     }
 
     // ──────────────────────── System Prompt ────────────────────────

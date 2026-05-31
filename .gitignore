@@ -33,7 +33,7 @@ Test-Output/UpdateChecker/*
 # Allure Reports
 Test-Output/Reports/Allure/*
 !Test-Output/Reports/Allure/.gitkeep
-
+codegen.md
 # Cucumber Reports
 Test-Output/Reports/Cucumber/*
 !Test-Output/Reports/Cucumber/.gitkeep
