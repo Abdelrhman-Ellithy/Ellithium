@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 public class WaitManager <T extends WebDriver>{
-    private  static int defaultTimeout;
-    private  static int defaultPollingTime;
+    private  static volatile int defaultTimeout;
+    private  static volatile int defaultPollingTime;
 
     public static int getDefaultTimeout() {
         return defaultTimeout;
@@ -26,8 +26,8 @@ public class WaitManager <T extends WebDriver>{
     public static int getDefaultPollingTime() {
         return defaultPollingTime;
     }
-    private  static boolean defaultTimeoutGotFlag=false;
-    private  static boolean defaultPollingTimeGotFlag=false;
+    private  static volatile boolean defaultTimeoutGotFlag=false;
+    private  static volatile boolean defaultPollingTimeGotFlag=false;
     public static void initializeTimeoutAndPolling() {
         try {
             if (!defaultTimeoutGotFlag) {
@@ -83,7 +83,6 @@ public class WaitManager <T extends WebDriver>{
         expectedExceptions.add(org.openqa.selenium.ElementNotInteractableException.class);
         expectedExceptions.add(org.openqa.selenium.InvalidElementStateException.class);
         expectedExceptions.add(org.openqa.selenium.interactions.MoveTargetOutOfBoundsException.class);
-        expectedExceptions.add(org.openqa.selenium.WebDriverException.class);
         expectedExceptions.add(ExecutionException.class);
         expectedExceptions.add(InterruptedException.class);
         expectedExceptions.add(NoAlertPresentException.class);

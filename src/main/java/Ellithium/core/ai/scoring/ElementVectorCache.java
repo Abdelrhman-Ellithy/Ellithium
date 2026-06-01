@@ -1,6 +1,8 @@
 package Ellithium.core.ai.scoring;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -27,7 +29,15 @@ public class ElementVectorCache {
 
     private static final ElementVectorCache INSTANCE = new ElementVectorCache();
 
-    private final ConcurrentHashMap<String, float[]> vectors = new ConcurrentHashMap<>();
+    private static final int MAX_ENTRIES = 5_000;
+
+    private final Map<String, float[]> vectors = Collections.synchronizedMap(
+            new LinkedHashMap<>(1024, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, float[]> eldest) {
+                    return size() > MAX_ENTRIES;
+                }
+            });
     private final AtomicBoolean domMutated = new AtomicBoolean(false);
 
     private ElementVectorCache() {}

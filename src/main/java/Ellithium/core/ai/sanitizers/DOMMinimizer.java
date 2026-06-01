@@ -77,7 +77,7 @@ public class DOMMinimizer {
      * Interactive element regex — matches input, button, select, textarea, a, label, form.
      */
     private static final Pattern INTERACTIVE_ELEMENT = Pattern.compile(
-            "<(input|button|select|textarea|a|form|label)(\\s[^>]*)?>(?:[\\s\\S]*?</\\1>)?",
+            "<(input|button|select|textarea|a|label)(\\s[^>]*)?>(?:[\\s\\S]*?</\\1>)?",
             Pattern.CASE_INSENSITIVE);
 
     /**

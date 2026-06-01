@@ -76,6 +76,10 @@ public class JavaSourceModifier {
             // Find the specific field declaration
             Optional<VariableDeclarator> fieldOpt = cu.findAll(VariableDeclarator.class).stream()
                     .filter(v -> v.getNameAsString().equals(fieldName))
+                    .filter(v -> {
+                        String t = v.getType().asString();
+                        return t.equals("By") || t.equals("AppiumBy");
+                    })
                     .findFirst();
 
             if (fieldOpt.isPresent()) {
@@ -86,6 +90,10 @@ public class JavaSourceModifier {
 
                 // Replace the old initialization expression with the new one
                 field.setInitializer(newExpression);
+
+                if (newByString.startsWith("AppiumBy.")) {
+                    cu.addImport("io.appium.java_client.AppiumBy");
+                }
 
                 // Write the updated AST back to the file
                 Files.writeString(Paths.get(filePath), cu.toString());
@@ -142,7 +150,7 @@ public class JavaSourceModifier {
             // and the method name + argument value match the broken locator
             List<MethodCallExpr> allByCalls = cu.findAll(MethodCallExpr.class);
 
-            MethodCallExpr targetCall = null;
+            List<MethodCallExpr> targets = new java.util.ArrayList<>();
             for (MethodCallExpr call : allByCalls) {
                 if (!call.getScope().isPresent()) continue;
 
@@ -154,10 +162,8 @@ public class JavaSourceModifier {
 
                 // Check the argument value matches
                 if (call.getArguments().isEmpty()) {
-                    // If the call has no arguments and old value is empty, it's a match
                     if (oldByValue == null || oldByValue.isEmpty()) {
-                        targetCall = call;
-                        break;
+                        targets.add(call);
                     }
                     continue;
                 }
@@ -166,23 +172,23 @@ public class JavaSourceModifier {
                 if (arg instanceof StringLiteralExpr) {
                     String argValue = ((StringLiteralExpr) arg).getValue();
                     if (argValue.equals(oldByValue)) {
-                        targetCall = call;
-                        break;
+                        targets.add(call);
                     }
                 }
             }
 
-            if (targetCall != null) {
-                Expression newExpression = StaticJavaParser.parseExpression(newByString);
-                targetCall.replace(newExpression);
+            if (!targets.isEmpty()) {
+                for (MethodCallExpr targetCall : targets) {
+                    targetCall.replace(StaticJavaParser.parseExpression(newByString));
+                }
 
                 if (newByString.startsWith("AppiumBy.")) {
                     cu.addImport("io.appium.java_client.AppiumBy");
                 }
 
                 Files.writeString(Paths.get(filePath), cu.toString());
-                Reporter.log("Successfully healed inline locator By." + oldByMethod + "(\"" + oldByValue
-                        + "\") → " + newByString + " in file: " + filePath, LogLevel.INFO_GREEN);
+                Reporter.log("Successfully healed " + targets.size() + " inline locator(s) By." + oldByMethod
+                        + "(\"" + oldByValue + "\") → " + newByString + " in file: " + filePath, LogLevel.INFO_GREEN);
                 return true;
             } else {
                 // AST search failed (can happen after JavaParser reformats the file).

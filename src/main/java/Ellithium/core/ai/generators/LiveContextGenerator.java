@@ -11,7 +11,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -292,34 +291,33 @@ public class LiveContextGenerator {
 
         try {
             By locator = locatorExpr != null ? parseLocator(locatorExpr) : null;
+            var driverActions = new Ellithium.Utilities.interactions.DriverActions<>(driver);
 
             switch (action.toLowerCase()) {
                 case "senddata", "type", "input", "enter" -> {
                     if (locator != null && data != null) {
-                        WebElement el = driver.findElement(locator);
-                        el.clear();
-                        el.sendKeys(data);
+                        driverActions.elements().clearElement(locator);
+                        driverActions.elements().sendData(locator, data);
                     }
                 }
                 case "click", "press", "tap" -> {
                     if (locator != null) {
-                        driver.findElement(locator).click();
+                        driverActions.elements().clickOnElement(locator);
                     }
                 }
                 case "selectbytext", "select" -> {
                     if (locator != null && data != null) {
-                        new org.openqa.selenium.support.ui.Select(driver.findElement(locator))
-                                .selectByVisibleText(data);
+                        driverActions.select().selectDropdownByText(locator, data);
                     }
                 }
                 case "navigate", "goto", "open" -> {
                     if (data != null) {
-                        driver.get(data);
+                        driverActions.navigation().navigateToUrl(data);
                     }
                 }
                 case "gettext", "read", "verify" -> {
                     if (locator != null) {
-                        String text = driver.findElement(locator).getText();
+                        String text = driverActions.elements().getText(locator);
                         Reporter.log("LiveContextGenerator: getText result = \"" + text + "\"", LogLevel.INFO_GREEN);
                     }
                 }

@@ -31,7 +31,7 @@ public final class UniqueLocatorGenerator {
     private static final double W_TESTID = 1.00, W_ID = 0.90, W_NAME = 0.85, W_ARIA = 0.80,
             W_TEXT = 0.78, W_DATA = 0.70, W_CSS = 0.60, W_XPATH = 0.40;
     private static final double NON_UNIQUE_FACTOR = 0.35;
-    private static final double DYNAMIC_FACTOR = 0.55;
+    private static final double DYNAMIC_FACTOR = 0.70;
 
     private static final Set<String> SKIP_GENERIC = Set.of(
             "id", "name", "class", "style", "data-testid", "data-test", "data-cy", "data-qa",
@@ -149,13 +149,20 @@ public final class UniqueLocatorGenerator {
             case "data-testid", "data-test", "data-cy", "data-qa" -> W_TESTID;
             case "id" -> W_ID;
             case "name" -> W_NAME;
-            case "aria-label" -> W_ARIA;
+            case "aria-label", "aria-labelledby" -> W_ARIA;
+            case "href-css" -> 0.76;
+            case "attr-css" -> 0.75;
             case "link-text" -> W_ARIA;
-            case "role-text", "text" -> W_TEXT;
-            case "partial-link-text" -> 0.55;
-            case "class-name" -> 0.55;
-            case "css-path" -> W_CSS - 0.05;
-            case "tag-name" -> 0.25;
+            case "role-text", "text", "text-class", "text-attr" -> W_TEXT;
+            case "tag-attr-css" -> 0.72;
+            case "text-contains" -> 0.71;
+            case "combo-css", "tag-class-css" -> 0.68;
+            case "ancestor-css" -> 0.65;
+            case "xpath-indexed", "text-contains-indexed" -> 0.62;
+            case "class-css" -> 0.58;
+            case "partial-link-text", "class-name" -> 0.45;
+            case "css-path" -> 0.10;
+            case "tag-name" -> 0.10;
             default -> tier.startsWith("data-") ? W_DATA : (tier.startsWith("xpath") ? W_XPATH : W_CSS);
         };
     }
@@ -189,11 +196,11 @@ public final class UniqueLocatorGenerator {
 
         String id = str(attrs.get("id"));
         if (isPresent(id)) {
-            out.add(new Draft(By.id(id), "By.id(\"" + id + "\")", "id", W_ID, looksDynamic(id)));
+            out.add(new Draft(By.id(id), "By.id(\"" + esc(id) + "\")", "id", W_ID, looksDynamic(id)));
         }
         String name = str(attrs.get("name"));
         if (isPresent(name)) {
-            out.add(new Draft(By.name(name), "By.name(\"" + name + "\")", "name", W_NAME, looksDynamic(name)));
+            out.add(new Draft(By.name(name), "By.name(\"" + esc(name) + "\")", "name", W_NAME, looksDynamic(name)));
         }
         addAttrEquals(out, attrs, "aria-label", "aria-label", W_ARIA);
 
@@ -225,7 +232,7 @@ public final class UniqueLocatorGenerator {
                                       String attr, String tier, double weight) {
         String v = str(attrs.get(attr));
         if (!isPresent(v)) return;
-        String css = "[" + attr + "='" + v + "']";
+        String css = "[" + attr + "='" + v.replace("'", "\\'") + "']";
         out.add(new Draft(By.cssSelector(css), "By.cssSelector(\"" + esc(css) + "\")", tier, weight, looksDynamic(v)));
     }
 
@@ -278,7 +285,7 @@ public final class UniqueLocatorGenerator {
             if (n == null || v == null || v.isBlank() || SKIP_GENERIC.contains(n)) continue;
             boolean eligible = n.startsWith("data-") || n.equals("placeholder") || n.equals("title") || n.equals("type");
             if (!eligible) continue;
-            String css = "[" + n + "='" + v + "']";
+            String css = "[" + n + "='" + v.replace("'", "\\'") + "']";
             out.add(new Draft(By.cssSelector(css), "By.cssSelector(\"" + esc(css) + "\")",
                     n, W_DATA, looksDynamic(v)));
         }

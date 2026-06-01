@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +34,7 @@ public class HealingTelemetryStore {
 
     private static final ConcurrentLinkedQueue<TelemetryRecord> records =
             new ConcurrentLinkedQueue<>();
+    private static final AtomicInteger recordCount = new AtomicInteger(0);
 
     private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
 
@@ -69,11 +71,15 @@ public class HealingTelemetryStore {
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
         int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
-        if (max > 0 && records.size() >= max) {
-            records.poll();
-        }
         records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
                 query, category, CURRENT_TEST.get()));
+        int n = recordCount.incrementAndGet();
+        if (max > 0) {
+            while (n > max) {
+                if (records.poll() != null) n = recordCount.decrementAndGet();
+                else break;
+            }
+        }
     }
 
     /**
@@ -122,7 +128,7 @@ public class HealingTelemetryStore {
      * Returns the total number of recorded attempts.
      */
     public static int size() {
-        return records.size();
+        return recordCount.get();
     }
 
     /**
@@ -134,12 +140,25 @@ public class HealingTelemetryStore {
         if (records.isEmpty()) return;
 
         List<TelemetryRecord> snapshot = new ArrayList<>(records);
-        File outputFile = new File(OUTPUT_FILE);
+        java.nio.file.Path target = java.nio.file.Paths.get(OUTPUT_FILE);
 
         try {
-            outputFile.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(outputFile)) {
-                GSON.toJson(new TelemetryOutput(snapshot), writer);
+            java.nio.file.Files.createDirectories(target.getParent());
+            java.nio.file.Path tmp = java.nio.file.Files.createTempFile(target.getParent(), "healing-telemetry", ".tmp");
+            try {
+                try (FileWriter writer = new FileWriter(tmp.toFile())) {
+                    GSON.toJson(new TelemetryOutput(snapshot), writer);
+                }
+                try {
+                    java.nio.file.Files.move(tmp, target,
+                            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                    java.nio.file.Files.move(tmp, target,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                java.nio.file.Files.deleteIfExists(tmp);
             }
             Reporter.log("HealingTelemetryStore: Flushed " + snapshot.size()
                     + " telemetry records to " + OUTPUT_FILE, LogLevel.INFO_GREEN);
@@ -178,6 +197,7 @@ public class HealingTelemetryStore {
     /** Clears all in-memory records (for testing/reset). */
     public static void clear() {
         records.clear();
+        recordCount.set(0);
     }
 
     public static class TelemetryRecord {

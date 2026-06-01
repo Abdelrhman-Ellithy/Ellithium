@@ -4,6 +4,9 @@ import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import Ellithium.core.ai.codegen.LocatorCandidate;
+import Ellithium.core.ai.codegen.UniqueLocatorGenerator;
+
 import java.util.List;
 
 import static org.mockito.Mockito.mock;

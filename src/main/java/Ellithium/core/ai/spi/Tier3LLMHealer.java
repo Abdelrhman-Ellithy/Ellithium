@@ -16,7 +16,8 @@ public final class Tier3LLMHealer implements HealingTier {
 
     @Override
     public boolean isAvailable() {
-        return true;
+        String key = Ellithium.core.ai.config.AIConfigLoader.getLlmApiKey();
+        return key != null && !key.isBlank();
     }
 
     @Override

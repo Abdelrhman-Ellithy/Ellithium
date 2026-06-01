@@ -18,23 +18,45 @@ public final class PomCodeEmitter {
     private static final Pattern BY_EXPR = Pattern.compile("^By\\.(\\w+)\\(\"(.*)\"\\)$");
 
     public record EmitResult(String className, List<String> locatorFields,
-                             List<String> methods, List<String> statements) {}
+                             List<String> methods, List<String> statements, boolean hasAssertions) {}
+
+    static final String ASSERT_HARD = "Ellithium.Utilities.assertion.AssertionExecutor.hard";
+    static final String SOFT_TYPE = "Ellithium.Utilities.assertion.AssertionExecutor.soft";
+    static final String SOFT_VAR = "softAssert";
 
     public static EmitResult build(List<RecordedStep> steps, String className) {
-        return build(steps, className, true);
+        return build(steps, className, true, true);
     }
 
     public static EmitResult build(List<RecordedStep> steps, String className, boolean parameterize) {
+        return build(steps, className, parameterize, true);
+    }
+
+    public static EmitResult build(List<RecordedStep> steps, String className,
+                                   boolean parameterize, boolean soft) {
         Set<String> usedFieldNames = new LinkedHashSet<>();
         java.util.Map<String, String> exprToField = new java.util.HashMap<>();
         List<String> locatorFields = new ArrayList<>();
         List<String> statements = new ArrayList<>();
         List<String> params = new ArrayList<>();
+        String assertRef = soft ? SOFT_VAR : ASSERT_HARD;
+        boolean hasAssertions = false;
 
         for (RecordedStep step : steps) {
             String action = step.getActionType();
             if ("navigate".equals(action)) {
                 statements.add("driverActions.navigation().navigateToUrl(\"" + esc(step.getData()) + "\");");
+                continue;
+            }
+            if ("navigateBack".equals(action)) {
+                statements.add("driverActions.navigation().navigateBack();");
+                continue;
+            }
+            if ("navigateForward".equals(action)) {
+                statements.add("driverActions.navigation().navigateForward();");
+                continue;
+            }
+            if ("assertText".equals(action) && (step.getData() == null || step.getData().isBlank())) {
                 continue;
             }
             LocatorCandidate chosen = step.chosen();
@@ -54,12 +76,13 @@ public final class PomCodeEmitter {
                 byRef = fieldFor(step, chosen, usedFieldNames, locatorFields, exprToField);
             }
 
-            String stmt = statementFor(action, byRef, step.getData());
+            String stmt = statementFor(action, byRef, step.getData(), assertRef);
             if (stmt == null) {
                 Reporter.log("PomCodeEmitter: no API mapping for action '" + action + "' — step skipped",
                         LogLevel.WARN);
                 continue;
             }
+            if (action.startsWith("assert")) hasAssertions = true;
             List<Integer> frames = step.getFrameChain();
             for (Integer idx : frames) {
                 statements.add("driverActions.frames().switchToFrameByIndex(" + idx + ");");
@@ -68,17 +91,25 @@ public final class PomCodeEmitter {
             if (!frames.isEmpty()) statements.add("driverActions.frames().switchToDefaultContent();");
         }
 
+        boolean softAll = soft && hasAssertions;
         String name = (className != null && !className.isBlank()) ? className : "RecordedPage";
         String signature = "public " + name + " perform(" + paramList(params) + ")";
         StringBuilder body = new StringBuilder(signature).append(" {\n");
+        if (softAll) body.append("        ").append(SOFT_TYPE).append(" ").append(SOFT_VAR)
+                .append(" = new ").append(SOFT_TYPE).append("();\n");
         for (String s : statements) body.append("        ").append(s).append("\n");
+        if (softAll) body.append("        ").append(SOFT_VAR).append(".assertAll();\n");
         body.append("        return this;\n    }");
 
-        return new EmitResult(name, locatorFields, List.of(body.toString()), statements);
+        return new EmitResult(name, locatorFields, List.of(body.toString()), statements, hasAssertions);
     }
 
     public static String previewSource(List<RecordedStep> steps, String className, String pkg) {
-        EmitResult r = build(steps, className);
+        return previewSource(steps, className, pkg, true);
+    }
+
+    public static String previewSource(List<RecordedStep> steps, String className, String pkg, boolean soft) {
+        EmitResult r = build(steps, className, true, soft);
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(pkg).append(";\n\n");
         sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
@@ -96,7 +127,13 @@ public final class PomCodeEmitter {
 
     public static String previewTestSource(List<RecordedStep> steps, String className, String pkg,
                                            String startUrl, String browser) {
-        EmitResult r = build(steps, className, false);
+        return previewTestSource(steps, className, pkg, startUrl, browser, true);
+    }
+
+    public static String previewTestSource(List<RecordedStep> steps, String className, String pkg,
+                                           String startUrl, String browser, boolean soft) {
+        EmitResult r = build(steps, className, false, soft);
+        boolean softAll = soft && r.hasAssertions();
         String cls = r.className().endsWith("Test") ? r.className() : r.className() + "Test";
         String br = (browser == null || browser.isBlank()) ? "Chrome" : browser;
         StringBuilder sb = new StringBuilder();
@@ -130,7 +167,10 @@ public final class PomCodeEmitter {
         }
         sb.append("    }\n\n");
         sb.append("    @Test\n    public void perform() {\n");
+        if (softAll) sb.append("        ").append(SOFT_TYPE).append(" ").append(SOFT_VAR)
+                .append(" = new ").append(SOFT_TYPE).append("();\n");
         for (String s : r.statements()) sb.append("        ").append(s).append("\n");
+        if (softAll) sb.append("        ").append(SOFT_VAR).append(".assertAll();\n");
         sb.append("    }\n\n");
         sb.append("    @AfterClass\n    public void tearDown() {\n        DriverFactory.quitDriver();\n    }\n");
         sb.append("}\n");
@@ -139,7 +179,7 @@ public final class PomCodeEmitter {
 
     public static String emitTest(List<RecordedStep> steps, String className, RecorderOptions opts, String startUrl) {
         RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
-        String src = previewTestSource(steps, className, o.packageName(), startUrl, o.browser());
+        String src = previewTestSource(steps, className, o.packageName(), startUrl, o.browser(), o.isSoftAssert());
         String cls = (className == null || className.isBlank() ? "RecordedPage" : className);
         if (!cls.endsWith("Test")) cls = cls + "Test";
         String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/') + "/" + cls + ".java";
@@ -157,7 +197,7 @@ public final class PomCodeEmitter {
 
     public static String emit(List<RecordedStep> steps, String className, RecorderOptions opts) {
         RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
-        EmitResult result = build(steps, className);
+        EmitResult result = build(steps, className, true, o.isSoftAssert());
         String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/')
                 + "/" + result.className() + ".java";
         boolean ok = PomClassGenerator.createPomClass(path, o.packageName(), result.className(),
@@ -166,22 +206,27 @@ public final class PomCodeEmitter {
         return ok ? path : null;
     }
 
-    private static final String ASSERT = "Ellithium.Utilities.assertion.AssertionExecutor.hard";
+    private static final String SECRET = "__ELL_SECRET__";
 
-    private static String statementFor(String action, String byRef, String data) {
+    private static String statementFor(String action, String byRef, String data, String assertRef) {
         return switch (action) {
             case "click" -> "driverActions.elements().clickOnElement(" + byRef + ");";
-            case "input", "sendData" -> "driverActions.elements().sendData(" + byRef + ", \"" + esc(data) + "\");";
+            case "input", "sendData" -> SECRET.equals(data)
+                    ? "driverActions.elements().sendData(" + byRef + ", System.getenv(\"ELLITHIUM_SECRET\"));"
+                    : "driverActions.elements().sendData(" + byRef + ", \"" + esc(data) + "\");";
+            case "pressEnter" -> "driverActions.elements().sendData(" + byRef + ", org.openqa.selenium.Keys.ENTER);";
             case "clear" -> "driverActions.elements().clearElement(" + byRef + ");";
             case "getText" -> "driverActions.elements().getText(" + byRef + ");";
             case "select", "selectByText" -> "driverActions.select().selectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
             case "hover" -> "driverActions.mouse().hoverOverElement(" + byRef + ");";
             case "doubleClick" -> "driverActions.mouse().doubleClick(" + byRef + ");";
-            case "assertVisible" -> ASSERT + ".assertTrue(driverActions.elements().isElementDisplayed("
+            case "rightClick" -> "driverActions.mouse().rightClick(" + byRef + ");";
+            case "uploadFile" -> "driverActions.elements().uploadFile(" + byRef + ", \"" + esc(data) + "\");";
+            case "assertVisible" -> assertRef + ".assertTrue(driverActions.elements().isElementDisplayed("
                     + byRef + "), \"element should be visible\");";
-            case "assertText" -> ASSERT + ".assertContains(driverActions.elements().getText("
+            case "assertText" -> assertRef + ".assertContains(driverActions.elements().getText("
                     + byRef + "), \"" + esc(data) + "\");";
-            case "assertValue" -> ASSERT + ".assertEquals(driverActions.elements().getAttributeValue("
+            case "assertValue" -> assertRef + ".assertEquals(driverActions.elements().getAttributeValue("
                     + byRef + ", \"value\"), \"" + esc(data) + "\");";
             default -> null;
         };
@@ -239,8 +284,19 @@ public final class PomCodeEmitter {
         String id = sb.toString();
         if (id.isEmpty()) id = "element";
         if (Character.isDigit(id.charAt(0))) id = "el" + id;
+        if (RESERVED_NAMES.contains(id)) id = id + "Field";
         return id;
     }
+
+    private static final Set<String> RESERVED_NAMES = Set.of(
+            "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class",
+            "const", "continue", "default", "do", "double", "else", "enum", "extends", "final",
+            "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int",
+            "interface", "long", "native", "new", "package", "private", "protected", "public",
+            "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
+            "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false",
+            "null", "var", "yield", "record",
+            "driver", "driverActions", "driverConfig");
 
     private static String esc(String s) {
         if (s == null) return "";

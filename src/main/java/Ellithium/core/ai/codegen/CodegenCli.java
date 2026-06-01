@@ -22,7 +22,8 @@ public final class CodegenCli {
         String url = parse(args, flags);
         if (url == null && flags.isEmpty()) {
             System.out.println("Usage: codegen [url] [--browser chrome|edge|firefox|safari] "
-                    + "[--target test|pom] [--output <dir>] [--package <pkg>] [--headless] [--llm-polish]");
+                    + "[--target test|pom] [--assert soft|hard] [--output <dir>] [--package <pkg>] "
+                    + "[--save-storage <file>] [--load-storage <file>] [--headless] [--llm-polish]");
             System.out.println("(url is optional — omit it and type a URL in the browser after recording starts)");
             return;
         }
@@ -36,6 +37,7 @@ public final class CodegenCli {
                 flags.getOrDefault("package", "Pages"),
                 browser.name(),
                 flags.getOrDefault("target", "test"),
+                flags.getOrDefault("assert", "soft"),
                 flags.containsKey("llm-polish"),
                 false);
 
@@ -43,9 +45,13 @@ public final class CodegenCli {
                 + " in " + browser.getName() + " ===");
         System.out.println("Interact with the page; click 'Stop' in the overlay to generate code.");
 
-        WebDriver driver = DriverFactory.getNewLocalDriver(browser, headless);
+        WebDriver driver = null;
         try {
+            driver = DriverFactory.getNewLocalDriver(browser, headless);
             driver.get(url != null ? url : "about:blank");
+            if (flags.containsKey("load-storage")) {
+                StorageManager.load(driver, flags.get("load-storage"));
+            }
             InteractionRecorder.start(driver, opts, url);
 
             long deadline = System.currentTimeMillis() + SESSION_CAP_MS;
@@ -55,22 +61,31 @@ public final class CodegenCli {
             }
 
             List<RecordedStep> steps = InteractionRecorder.stop();
+            if (flags.containsKey("save-storage")) {
+                StorageManager.save(driver, flags.get("save-storage"));
+            }
             String startUrl = InteractionRecorder.getStartUrl();
             if (steps.isEmpty()) {
                 System.out.println("No interactions recorded — nothing to generate.");
                 return;
             }
+            RecorderOptions effective = InteractionRecorder.getOptions();
             String className = deriveClassName(url != null ? url : startUrl);
-            String path = opts.isTest()
-                    ? PomCodeEmitter.emitTest(steps, className, opts, startUrl)
-                    : PomCodeEmitter.emit(steps, className, opts);
+            String path = effective.isTest()
+                    ? PomCodeEmitter.emitTest(steps, className, effective, startUrl)
+                    : PomCodeEmitter.emit(steps, className, effective);
             System.out.println(path != null
-                    ? "Generated " + (opts.isTest() ? "test" : "POM") + ": " + path + " (" + steps.size() + " steps)"
+                    ? "Generated " + (effective.isTest() ? "test" : "POM") + " (" + effective.assertMode()
+                    + " asserts): " + path + " (" + steps.size() + " steps)"
                     : "Code generation failed — see logs.");
+        } catch (Exception e) {
+            System.out.println("Codegen session failed: " + e.getMessage());
         } finally {
             try { DriverFactory.quitDriver(); } catch (Exception ignored) {}
         }
     }
+
+    private static final java.util.Set<String> BOOLEAN_FLAGS = java.util.Set.of("headless", "llm-polish");
 
     private static String parse(String[] args, Map<String, String> flags) {
         String url = null;
@@ -79,7 +94,7 @@ public final class CodegenCli {
             if (a.equals("codegen")) continue;
             if (a.startsWith("--")) {
                 String key = a.substring(2);
-                if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                if (!BOOLEAN_FLAGS.contains(key) && i + 1 < args.length && !args[i + 1].startsWith("--")) {
                     flags.put(key, args[++i]);
                 } else {
                     flags.put(key, "true");

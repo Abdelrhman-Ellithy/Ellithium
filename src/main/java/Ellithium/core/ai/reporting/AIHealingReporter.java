@@ -49,13 +49,19 @@ public class AIHealingReporter {
     public static void generateReport() {
         HealingTelemetryStore.logConsoleSummary();   // CI-visible, runs even when nothing was patched
         if (queuedChanges.isEmpty()) {
+            // No heals this run, but baselines are captured on every successful find (debounced writes
+            // may still be pending) and telemetry may hold fall-through records — always persist both.
             HealingTelemetryStore.flush();
+            BaselineStore.flush();
             return;
         }
 
         File reportDir = new File("Test-Output", "Reports");
         if (!reportDir.exists() && !reportDir.mkdirs()) {
             Reporter.log("Failed to create Reports directory for AI Healing Report", LogLevel.ERROR);
+            // Still persist learned state even if the report dir can't be created.
+            HealingTelemetryStore.flush();
+            BaselineStore.flush();
             return;
         }
 

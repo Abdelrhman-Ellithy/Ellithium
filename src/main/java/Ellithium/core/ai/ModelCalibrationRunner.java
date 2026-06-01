@@ -221,11 +221,9 @@ public class ModelCalibrationRunner {
 
     // ──────────────────────── Math ────────────────────────
 
-    /** Dot product on L2-normalised vectors (== cosine similarity). Matches EnsembleHealer.dotProduct(). */
+    /** Dot product on L2-normalised vectors (== cosine similarity). Delegates to EnsembleHealer. */
     private static double dotProduct(float[] a, float[] b) {
-        double sum = 0.0;
-        for (int i = 0; i < a.length; i++) sum += (double) a[i] * b[i];
-        return sum;
+        return EnsembleHealer.dotProduct(a, b);
     }
 
     // ──────────────────────── Data Models ────────────────────────

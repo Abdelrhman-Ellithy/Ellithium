@@ -211,6 +211,17 @@ public class SQLDatabaseProvider implements AutoCloseable {
      * @throws SQLException if transaction cannot be started
      */
     public Connection beginTransaction() throws SQLException {
+        Connection stale = transactionConnection.get();
+        if (stale != null) {
+            try (stale) {
+                if (!stale.getAutoCommit()) stale.rollback();
+                Reporter.log("Rolled back and closed a leaked prior transaction before starting a new one.",
+                        LogLevel.WARN);
+            } catch (SQLException ignored) {
+            } finally {
+                transactionConnection.remove();
+            }
+        }
         Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
         transactionConnection.set(conn);
@@ -677,11 +688,20 @@ public class SQLDatabaseProvider implements AutoCloseable {
                         Reporter.log("Executed update successfully: " + sql, LogLevel.INFO_BLUE);
                         return result > 0;
                     } catch (SQLException e) {
-                        if (e.getMessage().contains("database is locked") && (--retries) > 0) {
-                            Thread.sleep(1000);
+                        String msg = e.getMessage();
+                        boolean locked = msg != null && msg.contains("database is locked");
+                        if (!locked) {
+                            handleSQLException("Failed to execute update: " + sql, e);
+                            return false;
                         }
+                        if (--retries <= 0) {
+                            handleSQLException("Failed to execute update (database locked after retries): " + sql, e);
+                            return false;
+                        }
+                        Thread.sleep(1000);
                     }
                 }
+                return false;
             }
             try (Statement statement = connection.createStatement()) {
                 int result = statement.executeUpdate(sql);

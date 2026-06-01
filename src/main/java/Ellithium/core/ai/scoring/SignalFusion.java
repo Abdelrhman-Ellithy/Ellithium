@@ -2,7 +2,21 @@ package Ellithium.core.ai.scoring;
 
 import java.util.*;
 
-/** Deterministic multi-signal fusion. See ai-context for design notes. */
+/**
+ * Deterministic multi-signal fusion using Reciprocal Rank Fusion (RRF) + anchor blending.
+ *
+ * <p><b>IMPORTANT — NOT CURRENTLY WIRED:</b> This class is fully implemented and tested
+ * but is NOT called by {@code EnsembleHealer}, which uses an inline scoring formula
+ * ({@code combined = (f2 + f3) / 2.0} + {@code decideGate()}) instead. The inline scorer
+ * is simpler, tested via {@code GateDecisionTest}, and sufficient for the current 3-signal
+ * ensemble (fingerprint / strategy / bi-encoder).</p>
+ *
+ * <p>Wire this in when a 4th signal (e.g. cross-encoder reranker) is added, or delete it
+ * if the inline scorer proves permanently sufficient. Do not leave both paths existing
+ * without this notice — it causes confusion during reviews.</p>
+ *
+ * @see Ellithium.core.ai.EnsembleHealer#scoreAndSelectCandidate
+ */
 public final class SignalFusion {
 
     private SignalFusion() {}

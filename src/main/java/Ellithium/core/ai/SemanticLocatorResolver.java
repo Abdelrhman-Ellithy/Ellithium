@@ -74,16 +74,7 @@ public class SemanticLocatorResolver {
                                                                                String actionType, String locatorValue,
                                                                                ElementFingerprint baseline) {
         List<Ellithium.core.ai.models.SemanticHit> hits = new ArrayList<>();
-
-        if (locatorValue != null && !locatorValue.isBlank()) {
-            By brokenBy = rebuildLocator(locatorValue);
-            if (brokenBy != null) {
-                WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenBy, driver, baseline);
-                if (mutationMatch != null) {
-                    hits.add(new Ellithium.core.ai.models.SemanticHit(mutationMatch, 0.95, "mutation"));
-                }
-            }
-        }
+        collectMutationHits(hits, locatorValue, driver, baseline);
 
         ElementCategory category = categorizeAction(actionType);
         boolean isMobile = driver instanceof AppiumDriver;
@@ -114,16 +105,7 @@ public class SemanticLocatorResolver {
                                                                            String actionType, String locatorValue,
                                                                            ElementFingerprint baseline) {
         List<Ellithium.core.ai.models.SemanticHit> hits = new ArrayList<>();
-
-        if (locatorValue != null && !locatorValue.isBlank()) {
-            By brokenBy = rebuildLocator(locatorValue);
-            if (brokenBy != null) {
-                WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenBy, driver, baseline);
-                if (mutationMatch != null) {
-                    hits.add(new Ellithium.core.ai.models.SemanticHit(mutationMatch, 0.95, "mutation"));
-                }
-            }
-        }
+        collectMutationHits(hits, locatorValue, driver, baseline);
 
         ElementCategory category = categorizeAction(actionType);
         boolean isMobile = driver instanceof AppiumDriver;
@@ -144,6 +126,26 @@ public class SemanticLocatorResolver {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
         return hits;
+    }
+
+    /** Mutation pre-pass shared by findSemanticHits and findExactHits. */
+    private static void collectMutationHits(List<Ellithium.core.ai.models.SemanticHit> hits,
+                                            String locatorValue, WebDriver driver,
+                                            ElementFingerprint baseline) {
+        if (locatorValue != null && !locatorValue.isBlank()) {
+            By brokenBy = rebuildLocator(locatorValue);
+            if (brokenBy != null) {
+                WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenBy, driver, baseline);
+                if (mutationMatch != null) {
+                    hits.add(new Ellithium.core.ai.models.SemanticHit(mutationMatch, 0.95, "mutation"));
+                }
+            }
+        }
+    }
+
+    /** Clears the strategy cache. Call between suites to avoid stale strategies from a different app. */
+    public static void resetCache() {
+        STRATEGY_CACHE.clear();
     }
 
     private static void collectHits(WebDriver driver, List<LocatorAttempt> attempts, double weight,
@@ -526,6 +528,7 @@ public class SemanticLocatorResolver {
      * scopePrefix: "//" for global, "//form/" for parent-scoped (T2-F).
      */
     private static String multiCaseXpath(String tag, String attr, String name, String scopePrefix) {
+        if (name == null || name.isEmpty()) return "//" + tag + "[@" + attr + "]";
         String lower = name.toLowerCase();
         String upper = name.toUpperCase();
         String capitalized = Character.toUpperCase(name.charAt(0))

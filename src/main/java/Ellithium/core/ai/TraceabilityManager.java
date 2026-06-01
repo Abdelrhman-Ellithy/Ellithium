@@ -44,8 +44,8 @@ public class TraceabilityManager {
                 Type listType = new TypeToken<ArrayList<TraceabilityRecord>>() {}.getType();
                 List<TraceabilityRecord> records = gson.fromJson(reader, listType);
                 return records != null ? records : new ArrayList<>();
-            } catch (IOException e) {
-                Reporter.log("Failed to read traceability mappings: " + e.getMessage(), LogLevel.ERROR);
+            } catch (Exception e) {
+                Reporter.log("Failed to read traceability mappings (treating as empty): " + e.getMessage(), LogLevel.ERROR);
                 return new ArrayList<>();
             }
         }
@@ -62,13 +62,30 @@ public class TraceabilityManager {
             List<TraceabilityRecord> records = loadAllRecordsInternal();
 
             // Check if record exists, if so replace it
-            records.removeIf(r -> r.getSource().getTestId().equals(record.getSource().getTestId())
-                    && r.getSource().getSourceFile().equals(record.getSource().getSourceFile()));
+            records.removeIf(r -> sameKey(r, record.getSource().getTestId(), record.getSource().getSourceFile()));
 
             records.add(record);
 
-            try (FileWriter writer = new FileWriter(MAPPING_FILE_PATH)) {
-                gson.toJson(records, writer);
+            java.nio.file.Path target = java.nio.file.Paths.get(MAPPING_FILE_PATH);
+            try {
+                java.nio.file.Path tmp = java.nio.file.Files.createTempFile(
+                        target.getParent() != null ? target.getParent() : java.nio.file.Paths.get("."),
+                        "ellithium-ai-mappings", ".tmp");
+                try {
+                    try (FileWriter writer = new FileWriter(tmp.toFile())) {
+                        gson.toJson(records, writer);
+                    }
+                    try {
+                        java.nio.file.Files.move(tmp, target,
+                                java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                        java.nio.file.Files.move(tmp, target,
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } finally {
+                    java.nio.file.Files.deleteIfExists(tmp);
+                }
                 Reporter.log("Traceability record saved for Test ID: " + record.getSource().getTestId(), LogLevel.INFO_GREEN);
             } catch (IOException e) {
                 Reporter.log("Failed to save traceability mapping: " + e.getMessage(), LogLevel.ERROR);
@@ -85,10 +102,14 @@ public class TraceabilityManager {
      */
     public static boolean isAlreadyGenerated(String testId, String sourceFile) {
         synchronized (LOCK) {
-            return loadAllRecordsInternal().stream()
-                    .anyMatch(r -> r.getSource().getTestId().equals(testId)
-                            && r.getSource().getSourceFile().equals(sourceFile));
+            return loadAllRecordsInternal().stream().anyMatch(r -> sameKey(r, testId, sourceFile));
         }
+    }
+
+    private static boolean sameKey(TraceabilityRecord r, String testId, String sourceFile) {
+        if (r == null || r.getSource() == null) return false;
+        return java.util.Objects.equals(r.getSource().getTestId(), testId)
+                && java.util.Objects.equals(r.getSource().getSourceFile(), sourceFile);
     }
 
     /**
@@ -104,8 +125,8 @@ public class TraceabilityManager {
             Type listType = new TypeToken<ArrayList<TraceabilityRecord>>() {}.getType();
             List<TraceabilityRecord> records = gson.fromJson(reader, listType);
             return records != null ? records : new ArrayList<>();
-        } catch (IOException e) {
-            Reporter.log("Failed to read traceability mappings: " + e.getMessage(), LogLevel.ERROR);
+        } catch (Exception e) {
+            Reporter.log("Failed to read traceability mappings (treating as empty): " + e.getMessage(), LogLevel.ERROR);
             return new ArrayList<>();
         }
     }

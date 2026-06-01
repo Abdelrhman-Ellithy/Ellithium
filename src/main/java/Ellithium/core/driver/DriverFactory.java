@@ -620,23 +620,26 @@ public class DriverFactory {
         if (config == null) return;
         var driverType = config.getDriverType();
         if (driverType!=null){
-            if (driverType==MobileDriverType.Android) {
-                AndroidDriver localDriver = AndroidDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
+            try {
+                if (driverType==MobileDriverType.Android) {
+                    AndroidDriver localDriver = AndroidDriverThread.get();
+                    if (localDriver != null) {
+                        localDriver.quit();
+                    }
+                } else if (driverType==IOS) {
+                    IOSDriver localDriver = IOSDriverThread.get();
+                    if (localDriver != null) {
+                        localDriver.quit();
+                    }
+                } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
+                    var localDriver = WebDriverThread.get();
+                    if (localDriver != null) {
+                        localDriver.quit();
+                    }
                 }
-            } else if (driverType==IOS) {
-                IOSDriver localDriver = IOSDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
-                }
-            } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                var localDriver = WebDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
-                }
+            } finally {
+                removeDriver();
             }
-            removeDriver();
         }
     }
 

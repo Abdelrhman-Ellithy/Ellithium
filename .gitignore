@@ -34,6 +34,11 @@ Test-Output/UpdateChecker/*
 Test-Output/Reports/Allure/*
 !Test-Output/Reports/Allure/.gitkeep
 codegen.md
+
+src/test/java/Pages/WebLoginPageTest.java
+src/test/java/ignore/*
+unified-principal-review.md
+
 # Cucumber Reports
 Test-Output/Reports/Cucumber/*
 !Test-Output/Reports/Cucumber/.gitkeep

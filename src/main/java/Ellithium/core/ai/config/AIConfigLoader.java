@@ -41,8 +41,8 @@ public class AIConfigLoader {
     private static int onnxReadableMaxCandidates  = 25;     // wider net for text-bearing element search
     private static int     onnxHardCandidateLimit = 300;
     private static int     baselineTtlDays = 30;
-    private static final boolean strategyRescueEnabled = true;
-    private static final double  gateFingerprintFloor = 0.70;
+    private static boolean strategyRescueEnabled = true;
+    private static double  gateFingerprintFloor = 0.70;
     private static boolean visionAllowMobile = false;
     private static int     llmHealMaxWaitMs = 15_000;
     private static int     llmRetryInitialBackoffMs = 500;
@@ -100,6 +100,8 @@ public class AIConfigLoader {
             llmRetryInitialBackoffMs = parseInt(p, "ai.llm.retryInitialBackoffMs", llmRetryInitialBackoffMs);
             llmRetryMaxBackoffMs     = parseInt(p, "ai.llm.retryMaxBackoffMs", llmRetryMaxBackoffMs);
             telemetryMaxRecords      = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
+            strategyRescueEnabled    = parseBool(p, "ai.healing.strategyRescueEnabled", strategyRescueEnabled);
+            gateFingerprintFloor     = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy

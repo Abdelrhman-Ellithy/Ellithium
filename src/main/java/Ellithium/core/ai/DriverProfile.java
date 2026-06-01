@@ -47,7 +47,7 @@ public enum DriverProfile {
             try {
                 Object probe = ((JavascriptExecutor) driver)
                         .executeScript("return document && document.readyState ? 1 : 0;");
-                if (probe != null) return MOBILE_WEBVIEW;
+                if (probe instanceof Number n && n.intValue() > 0) return MOBILE_WEBVIEW;
             } catch (Exception ignored) {}
         }
         return MOBILE_NATIVE;

@@ -31,7 +31,11 @@ public final class InteractionRecorder {
     private static volatile String lastUrl = null;
     private static volatile String startUrl = null;
     private static volatile long navHintEpoch = 0L;
-    private static volatile int knownHandleCount = 0;
+    private static final java.util.Set<String> knownHandles =
+            java.util.Collections.synchronizedSet(new java.util.LinkedHashSet<>());
+    private static final java.util.List<String> urlHistory =
+            java.util.Collections.synchronizedList(new ArrayList<>());
+    private static volatile int urlIndex = -1;
     private static final long NAV_HINT_TTL = 10_000L;
 
     private static final List<RecordedStep> STEPS = Collections.synchronizedList(new ArrayList<>());
@@ -53,7 +57,10 @@ public final class InteractionRecorder {
         lastUrl = currentUrl();
         startUrl = (explicitStartUrl != null && !explicitStartUrl.isBlank()) ? explicitStartUrl : currentUrl();
         navHintEpoch = 0L;
-        try { knownHandleCount = d.getWindowHandles().size(); } catch (Exception e) { knownHandleCount = 1; }
+        knownHandles.clear();
+        try { knownHandles.addAll(d.getWindowHandles()); } catch (Exception ignored) {}
+        urlHistory.clear();
+        if (!isBlankUrl(startUrl)) { urlHistory.add(startUrl); urlIndex = 0; } else { urlIndex = -1; }
         if (Ellithium.core.ai.DriverProfile.detect(d).isNativeMobile()) {
             Reporter.log("InteractionRecorder: native mobile has no DOM — manual capture/overlay unavailable; "
                     + "use UniqueLocatorGenerator on a resolved element instead", LogLevel.WARN);
@@ -77,7 +84,6 @@ public final class InteractionRecorder {
         try { drainOnce(); } catch (Exception ignored) {}
         removeOverlay();
         List<RecordedStep> snapshot = new ArrayList<>(STEPS);
-        seedBaselines(snapshot);
         Reporter.log("InteractionRecorder: recording stopped — " + snapshot.size() + " steps", LogLevel.INFO_GREEN);
         driver = null;
         return snapshot;
@@ -94,6 +100,7 @@ public final class InteractionRecorder {
     private static void drainLoop() {
         while (recording) {
             try {
+                if (!driverAlive()) { recording = false; break; }
                 ensureInjected();
                 boolean changed = drainOnce();
                 reinjectOnNavigation();
@@ -102,6 +109,15 @@ public final class InteractionRecorder {
                 if (changed) render();
             } catch (Exception ignored) {}
             sleep(POLL_MS);
+        }
+    }
+
+    private static boolean driverAlive() {
+        try {
+            WebDriver d = driver;
+            return d != null && !d.getWindowHandles().isEmpty();
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -139,10 +155,22 @@ public final class InteractionRecorder {
             STEPS.clear(); BY_ID.clear(); lastPicked = List.of();
             return true;
         }
+        if ("assertModeToggle".equals(type)) {
+            options = options.withAssertMode(options.isSoftAssert() ? "hard" : "soft");
+            return true;
+        }
         if ("delete".equals(type)) {
-            String id = str(ev.get("id"));
-            RecordedStep removed = BY_ID.remove(id);
-            if (removed != null) { STEPS.remove(removed); return true; }
+            String delId = str(ev.get("id"));
+            if (delId == null) return false;
+            BY_ID.remove(delId);
+            synchronized (STEPS) {
+                for (int i = STEPS.size() - 1; i >= 0; i--) {
+                    if (delId.equals(STEPS.get(i).getId())) {
+                        STEPS.remove(i);
+                        return true;
+                    }
+                }
+            }
             return false;
         }
         String id = str(ev.get("id"));
@@ -152,16 +180,38 @@ public final class InteractionRecorder {
             lastPicked = candidates;
             return true;
         }
+        if ("doubleClick".equals(type)) {
+            dropTrailingClicks(candidates.isEmpty() ? null : candidates.get(0).javaExpression());
+        }
         List<Integer> frame = frameChainOf(ev.get("frame"));
         RecordedStep step = new RecordedStep(id, type, str(ev.get("value")),
                 str(ev.get("tag")), str(ev.get("name")), candidates, frame);
         if (frame.isEmpty()) seedOne(candidates);
         STEPS.add(step);
         BY_ID.put(id, step);
-        if ("click".equals(type) || "select".equals(type) || "input".equals(type)) {
+        if ("click".equals(type) || "select".equals(type) || "input".equals(type)
+                || "pressEnter".equals(type) || "doubleClick".equals(type)) {
             navHintEpoch = System.currentTimeMillis();
         }
         return true;
+    }
+
+    private static void dropTrailingClicks(String expr) {
+        if (expr == null) return;
+        synchronized (STEPS) {
+            int removed = 0;
+            for (int i = STEPS.size() - 1; i >= 0 && removed < 2; i--) {
+                RecordedStep s = STEPS.get(i);
+                if ("click".equals(s.getActionType()) && s.chosen() != null
+                        && expr.equals(s.chosen().javaExpression())) {
+                    STEPS.remove(i);
+                    BY_ID.remove(s.getId());
+                    removed++;
+                } else {
+                    break;
+                }
+            }
+        }
     }
 
     private static List<LocatorCandidate> buildCandidates(Object raw) {
@@ -186,28 +236,36 @@ public final class InteractionRecorder {
         } catch (Exception ignored) {}
     }
 
-    private static void seedBaselines(List<RecordedStep> steps) {
-        for (RecordedStep step : steps) {
-            if (!step.getFrameChain().isEmpty()) continue;
-            LocatorCandidate c = step.chosen();
-            if (c == null) continue;
-            try {
-                List<WebElement> els = driver.findElements(c.by());
-                if (els.size() == 1) BaselineStore.capture(driver, c.by(), els.get(0));
-            } catch (Exception ignored) {}
-        }
-    }
-
     private static void reinjectOnNavigation() {
         String url = currentUrl();
         if (url == null || url.equals(lastUrl)) return;
         boolean firstReal = isBlankUrl(startUrl) && !isBlankUrl(url);
         boolean actionInduced = (System.currentTimeMillis() - navHintEpoch) <= NAV_HINT_TTL;
+        long ts = System.currentTimeMillis();
         lastUrl = url;
         if (firstReal) {
             startUrl = url;
-        } else if (!actionInduced) {
-            STEPS.add(new RecordedStep("nav-" + System.currentTimeMillis(), "navigate", url, null, null, List.of()));
+            urlHistory.clear();
+            urlHistory.add(url);
+            urlIndex = 0;
+        } else {
+            synchronized (urlHistory) {
+                if (urlIndex > 0 && url.equals(urlHistory.get(urlIndex - 1))) {
+                    urlIndex--;
+                    STEPS.add(new RecordedStep("back-" + ts, "navigateBack", null, null, null, List.of()));
+                } else if (urlIndex >= 0 && urlIndex < urlHistory.size() - 1
+                        && url.equals(urlHistory.get(urlIndex + 1))) {
+                    urlIndex++;
+                    STEPS.add(new RecordedStep("fwd-" + ts, "navigateForward", null, null, null, List.of()));
+                } else {
+                    while (urlHistory.size() > urlIndex + 1) urlHistory.remove(urlHistory.size() - 1);
+                    urlHistory.add(url);
+                    urlIndex = urlHistory.size() - 1;
+                    if (!actionInduced) {
+                        STEPS.add(new RecordedStep("nav-" + ts, "navigate", url, null, null, List.of()));
+                    }
+                }
+            }
         }
         navHintEpoch = 0L;
         ensureInjected();
@@ -222,21 +280,35 @@ public final class InteractionRecorder {
         if (driver == null) return;
         try {
             java.util.Set<String> handles = driver.getWindowHandles();
-            if (handles.size() > knownHandleCount) {
-                knownHandleCount = handles.size();
-                String newest = null;
-                for (String h : handles) newest = h;
-                if (newest != null) {
-                    driver.switchTo().window(newest);
-                    lastUrl = currentUrl();
-                    navHintEpoch = 0L;
-                    STEPS.add(new RecordedStep("tab-" + System.currentTimeMillis(), "navigate",
-                            lastUrl, null, null, List.of()));
-                    ensureInjected();
-                    render();
+            String genuinelyNew = null;
+            for (String h : handles) {
+                if (!knownHandles.contains(h)) { genuinelyNew = h; break; }
+            }
+            if (genuinelyNew != null) {
+                knownHandles.clear();
+                knownHandles.addAll(handles);
+                driver.switchTo().window(genuinelyNew);
+                lastUrl = currentUrl();
+                navHintEpoch = 0L;
+                STEPS.add(new RecordedStep("tab-" + System.currentTimeMillis(), "navigate",
+                        lastUrl, null, null, List.of()));
+                ensureInjected();
+                render();
+            } else if (handles.size() < knownHandles.size()) {
+                knownHandles.clear();
+                knownHandles.addAll(handles);
+                try {
+                    driver.getCurrentUrl();
+                } catch (Exception currentWindowClosed) {
+                    String survivor = handles.isEmpty() ? null : handles.iterator().next();
+                    if (survivor != null) {
+                        driver.switchTo().window(survivor);
+                        lastUrl = currentUrl();
+                        navHintEpoch = 0L;
+                        ensureInjected();
+                        render();
+                    }
                 }
-            } else if (handles.size() < knownHandleCount) {
-                knownHandleCount = handles.size();
             }
         } catch (Exception ignored) {}
     }
@@ -260,7 +332,7 @@ public final class InteractionRecorder {
 
     private static void clearLog() {
         if (!(driver instanceof JavascriptExecutor js)) return;
-        try { js.executeScript("localStorage.setItem('__ellRecLog','[]');"); } catch (Exception ignored) {}
+        try { js.executeScript("localStorage.setItem('__ellRecLog','[]'); localStorage.setItem('__ellPaused','0');"); } catch (Exception ignored) {}
     }
 
     private static void render() {
@@ -299,12 +371,14 @@ public final class InteractionRecorder {
             p.add("candidates", candidatesJson(picked));
             root.add("picked", p);
         }
+        root.addProperty("assertMode", options.assertMode());
         try {
             List<RecordedStep> snap = new ArrayList<>(STEPS);
+            boolean soft = options.isSoftAssert();
             String code = options.isTest()
                     ? PomCodeEmitter.previewTestSource(snap, CodegenCli.deriveClassName(startUrl),
-                        options.packageName(), startUrl, options.browser())
-                    : PomCodeEmitter.previewSource(snap, "RecordedPage", options.packageName());
+                        options.packageName(), startUrl, options.browser(), soft)
+                    : PomCodeEmitter.previewSource(snap, "RecordedPage", options.packageName(), soft);
             root.addProperty("code", code);
         } catch (Exception ignored) {}
         return GSON.toJson(root);
@@ -350,7 +424,8 @@ public final class InteractionRecorder {
             "(function(pick){"
             + " var W=window;"
             + " if(!W.__ellRecInit){ W.__ellRecInit=true; W.__ellMode=pick?'pick':'record'; W.__ellStop=false;"
-            + "   W.__ellPaused=false; W.__ellLastVal=new WeakMap(); }"
+            + "   W.__ellPaused=(function(){try{return localStorage.getItem('__ellPaused')==='1';}catch(e){return false;}})();"
+            + "   W.__ellLastVal=new WeakMap(); }"
             + " function LOG(){ try{return JSON.parse(localStorage.getItem('__ellRecLog')||'[]');}catch(e){return [];} }"
             + " function SAVE(a){ try{localStorage.setItem('__ellRecLog',JSON.stringify(a));}catch(e){} }"
             + " function emit(r){ var a=LOG(); a.push(r); SAVE(a); }"
@@ -366,21 +441,92 @@ public final class InteractionRecorder {
             + "   if(same.length>1) t+=':nth-of-type('+(Array.prototype.indexOf.call(same,c)+1)+')'; p.unshift(t); c=par; if(p.length>6)break; } return p.join(' > '); }"
             + " function uCls(d,c){ try{return d.getElementsByClassName(c).length===1;}catch(e){return false;} }"
             + " function meaningful(el){ var c=el,n=0; while(c&&n<5){ var t=(c.tagName||'').toLowerCase();"
-            + "   if(c.id || (c.getAttribute&&(c.getAttribute('data-testid')||c.getAttribute('name')||c.getAttribute('aria-label')||c.getAttribute('role'))) || ['a','button','input','select','textarea','summary','label'].indexOf(t)>=0) return c;"
+            + "   var r=c.getAttribute&&c.getAttribute('role');"
+            + "   if(c.id||(c.getAttribute&&(c.getAttribute('data-testid')||c.getAttribute('name')||c.getAttribute('aria-label')))||(r&&r!=='presentation'&&r!=='none'&&r!=='generic')||['a','button','input','select','textarea','summary','label'].indexOf(t)>=0) return c;"
+            + "   var mcl=c.getAttribute&&c.getAttribute('class'); if(mcl){ var msc=mcl.trim().split(/\\s+/).filter(function(x){return x&&!dyn(x)&&x.length>2;}); if(msc.length>=2) return c; }"
             + "   c=c.parentElement; n++; } return el; }"
-            + " function cands(el){ var d=el.ownerDocument, o=[]; function add(type,sel,value,tier,uniq,param){ o.push({type:type,sel:sel,value:value,tier:tier,unique:uniq,param:param}); }"
-            + "   ['data-testid','data-test','data-cy','data-qa'].forEach(function(a){ var v=el.getAttribute&&el.getAttribute(a); if(v){var s=asel(a,v); add('css',s,v,a,uCss(d,s),dyn(v));} });"
-            + "   if(el.id){ var s=asel('id',el.id); add('id',s,el.id,'id',uCss(d,s),dyn(el.id)); }"
-            + "   var nm=el.getAttribute&&el.getAttribute('name'); if(nm){ var s2=asel('name',nm); add('name',s2,nm,'name',uCss(d,s2),dyn(nm)); }"
-            + "   var al=el.getAttribute&&el.getAttribute('aria-label'); if(al){ var s3=asel('aria-label',al); add('css',s3,al,'aria-label',uCss(d,s3),false); }"
-            + "   var role=el.getAttribute&&el.getAttribute('role'); var tx=(el.textContent||'').trim();"
-            + "   if(tx&&tx.length<=80){ if(role){ var xr=\"//*[@role='\"+role+\"' and normalize-space(.)=\"+lit(tx)+\"]\"; add('xpath',xr,tx,'role-text',uXp(d,xr),false); }"
-            + "     var tg=el.tagName.toLowerCase(); if(['a','button','label','summary'].indexOf(tg)>=0){ var xt='//'+tg+'[normalize-space(.)='+lit(tx)+']'; add('xpath',xt,tx,'text',uXp(d,xt),false); } }"
-            + "   if(el.attributes){ for(var i=0;i<el.attributes.length;i++){ var at=el.attributes[i];"
-            + "     if(at.name.indexOf('data-')===0 && ['data-testid','data-test','data-cy','data-qa'].indexOf(at.name)<0 && at.value){ var s4=asel(at.name,at.value); add('css',s4,at.value,at.name,uCss(d,s4),dyn(at.value)); } } }"
-            + "   var tgn=el.tagName?el.tagName.toLowerCase():'';"
-            + "   if(tgn==='a'){ var ltx=(el.textContent||'').trim(); if(ltx&&ltx.length<=80){ add('linkText',null,ltx,'link-text',uXp(d,'//a[normalize-space(.)='+lit(ltx)+']'),false); add('partialLinkText',null,ltx,'partial-link-text',false,false); } }"
-            + "   var cl=el.getAttribute&&el.getAttribute('class'); if(cl){ var toks=cl.trim().split(/\\s+/); var fc=null; for(var ci=0;ci<toks.length;ci++){ if(toks[ci]&&!dyn(toks[ci])){fc=toks[ci];break;} } if(fc) add('className',null,fc,'class-name',uCls(d,fc),false); }"
+            + " function stableClassOf(el){ var c=el.getAttribute&&el.getAttribute('class'); if(!c)return null; var t=c.trim().split(/\\s+/); for(var i=0;i<t.length;i++){ if(t[i]&&!dyn(t[i])) return t[i]; } return null; }"
+            + " function xpIndexOf(d,xp,el){ try{ var r=d.evaluate(xp,d,null,XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,null); for(var i=0;i<r.snapshotLength;i++){ if(r.snapshotItem(i)===el) return i+1; } }catch(e){} return 0; }"
+            + " function attrW(nm){"
+            + "   var TD=['data-testid','data-test','data-cy','data-qa']; if(TD.indexOf(nm)>=0) return 1.0;"
+            + "   if(nm==='id') return 0.9; if(nm==='name') return 0.85;"
+            + "   if(nm==='aria-label'||nm==='aria-labelledby') return 0.80;"
+            + "   if(nm==='role') return 0.78;"
+            + "   if(nm.indexOf('data-')===0) return 0.70;"
+            + "   if(nm==='href'||nm==='src'||nm==='alt') return 0.68;"
+            + "   if(nm==='type'||nm==='value'||nm==='placeholder'||nm==='title') return 0.62;"
+            + "   return 0.50; }"
+            + " function cands(el){"
+            + "   var d=el.ownerDocument,o=[],tgn=(el.tagName||'').toLowerCase(),tx=(el.textContent||'').trim();"
+            + "   function add(t,s,v,tier,u,p){ o.push({type:t,sel:s,value:v,tier:tier,unique:u,param:p}); }"
+            + "   var SKIP=['style','class','data-ellithium-pick','onclick','onmousedown','onmouseover','onfocus','onblur','tabindex','colspan','rowspan'];"
+            + "   var TOP_DATA=['data-testid','data-test','data-cy','data-qa'];"
+            + "   var attrs=[];"
+            + "   if(el.attributes){ for(var ai=0;ai<el.attributes.length;ai++){"
+            + "     var an=el.attributes[ai].name,av=el.attributes[ai].value;"
+            + "     if(!av||SKIP.indexOf(an)>=0||an.indexOf('on')===0) continue;"
+            + "     if(av.length>150||av.indexOf('data:')===0||av.indexOf('blob:')===0) continue;"
+            + "     if(an==='role'&&(av==='presentation'||av==='none'||av==='generic'||av==='group')) continue;"
+            + "     attrs.push({name:an,value:av,w:attrW(an),dyn:dyn(av)});"
+            + "   } attrs.sort(function(a,b){return b.w-a.w;}); }"
+            + "   for(var ai=0;ai<attrs.length;ai++){"
+            + "     var an=attrs[ai].name,av=attrs[ai].value,isDyn=attrs[ai].dyn;"
+            + "     if(an==='id'&&av){ var uid=uCss(d,'#'+av); add('id','#'+av,av,'id',uid,isDyn); if(uid) continue; }"
+            + "     var s1=asel(an,av);"
+            + "     var u1=uCss(d,s1); if(u1){ add('css',s1,av,TOP_DATA.indexOf(an)>=0?an:'attr-css',true,isDyn); continue; }"
+            + "     if(tgn){ var s1t=tgn+s1; if(uCss(d,s1t)){ add('css',s1t,av,'tag-attr-css',true,isDyn); continue; } }"
+            + "     for(var aj=ai+1;aj<Math.min(ai+4,attrs.length);aj++){"
+            + "       var bn=attrs[aj].name,bv=attrs[aj].value,bd=attrs[aj].dyn;"
+            + "       var s2=s1+asel(bn,bv); if(uCss(d,s2)){ add('css',s2,av,'combo-css',true,isDyn||bd); break; }"
+            + "       if(tgn){ var s2t=tgn+s2; if(uCss(d,s2t)){ add('css',s2t,av,'combo-css',true,isDyn||bd); break; } }"
+            + "     }"
+            + "   }"
+            + "   var stClasses=[]; var elCl=el.getAttribute&&el.getAttribute('class');"
+            + "   if(elCl){ elCl.trim().split(/\\s+/).forEach(function(c){ if(c&&!dyn(c)&&c.length>1) stClasses.push(c); }); }"
+            + "   if(stClasses.length>0){ var mcc='',mcFound=false; for(var mci=0;mci<stClasses.length&&!mcFound;mci++){"
+            + "     mcc+='.'+stClasses[mci];"
+            + "     if(uCss(d,mcc)){ add('css',mcc,mcc,'class-css',true,false); mcFound=true; }"
+            + "     else if(tgn&&uCss(d,tgn+mcc)){ add('css',tgn+mcc,tgn+mcc,'tag-class-css',true,false); mcFound=true; } } }"
+            + "   if(tx&&tx.length>=2&&tx.length<=80){"
+            + "     var role=el.getAttribute&&el.getAttribute('role');"
+            + "     if(role){ var xr=\"//*[@role='\"+role+\"' and normalize-space(.)=\"+lit(tx)+\"]\"; if(uXp(d,xr)) add('xpath',xr,tx,'role-text',true,false); }"
+            + "     var TT=['a','button','label','summary','span','div','li','td','th','p','h1','h2','h3','h4','option','dt','dd'];"
+            + "     if(TT.indexOf(tgn)>=0){"
+            + "       var xt='//'+tgn+'[normalize-space(.)='+lit(tx)+']';"
+            + "       if(uXp(d,xt)){ add('xpath',xt,tx,'text',true,false); }"
+            + "       else{"
+            + "         var sc=stableClassOf(el); if(sc){ var xc=xt+'[contains(concat(\" \",normalize-space(@class),\" \"),concat(\" \",'+lit(sc)+',\" \"))]'; if(uXp(d,xc)) add('xpath',xc,tx,'text-class',true,false); }"
+            + "         var taFound=false; for(var ak=0;ak<Math.min(5,attrs.length);ak++){"
+            + "           var an4=attrs[ak].name,av4=attrs[ak].value;"
+            + "           if(an4==='class'||an4==='style'||an4==='id') continue;"
+            + "           var xta=xt+'[@'+an4+'='+lit(av4)+']';"
+            + "           if(uXp(d,xta)){ add('xpath',xta,tx,'text-attr',true,false); taFound=true; break; } }"
+            + "         var ix=xpIndexOf(d,xt,el); if(ix>0){ var xi='('+xt+')['+ix+']'; add('xpath',xi,tx,'xpath-indexed',uXp(d,xi),false); }"
+            + "         var xct='//'+tgn+'[contains(.,'+lit(tx)+')]';"
+            + "         if(!taFound){"
+            + "           if(uXp(d,xct)){ add('xpath',xct,tx,'text-contains',true,false); }"
+            + "           else{ var ix2=xpIndexOf(d,xct,el); if(ix2>0){ var xi2='('+xct+')['+ix2+']'; add('xpath',xi2,tx,'text-contains-indexed',uXp(d,xi2),false); } }"
+            + "         }"
+            + "       }"
+            + "     }"
+            + "     if(tgn==='a') add('linkText',null,tx,'link-text',uXp(d,'//a[normalize-space(.)='+lit(tx)+']'),false);"
+            + "   }"
+            + "   if(tgn==='a'){ var hr=el.getAttribute&&el.getAttribute('href');"
+            + "     if(hr&&hr.length>0&&hr.length<120&&hr!=='#'&&hr.indexOf('javascript')<0&&!dyn(hr)){"
+            + "       var hs='a'+asel('href',hr); add('css',hs,hr,'href-css',uCss(d,hs),false); } }"
+            + "   (function(){ var anc=el.parentElement,n=0; while(anc&&n<6){"
+            + "     var aid=anc.id,atd=anc.getAttribute&&(anc.getAttribute('data-testid')||anc.getAttribute('data-test'));"
+            + "     var anchor=null; if(aid&&!dyn(aid)) anchor='#'+aid; else if(atd&&!dyn(atd)) anchor=asel('data-testid',atd);"
+            + "     if(!anchor){ var acl=anc.getAttribute&&anc.getAttribute('class'); if(acl){"
+            + "       var ascs=acl.trim().split(/\\s+/).filter(function(c){ return c&&!dyn(c)&&c.length>1; });"
+            + "       var ancCls=''; for(var aci=0;aci<Math.min(ascs.length,3);aci++){ ancCls+='.'+ascs[aci]; if(uCss(d,ancCls)){ anchor=ancCls; break; } } } }"
+            + "     if(anchor&&tgn){ var as1=anchor+' '+tgn; if(uCss(d,as1)){ add('css',as1,as1,'ancestor-css',true,false); return; }"
+            + "       for(var k=0;k<Math.min(3,attrs.length);k++){ var an3=attrs[k].name,av3=attrs[k].value;"
+            + "         if(an3==='class'||an3==='style') continue; var as2=anchor+' '+tgn+asel(an3,av3);"
+            + "         if(uCss(d,as2)){ add('css',as2,as2,'ancestor-css',true,false); return; } }"
+            + "     } anc=anc.parentElement; n++; }"
+            + "   })();"
+            + "   var cl=el.getAttribute&&el.getAttribute('class'); if(cl){ var toks=cl.trim().split(/\\s+/),fc=null; for(var ci=0;ci<toks.length;ci++){ if(toks[ci]&&!dyn(toks[ci])){fc=toks[ci];break;} } if(fc) add('className',null,fc,'class-name',uCls(d,fc),false); }"
             + "   if(tgn) add('tagName',null,tgn,'tag-name',uCss(d,tgn),false);"
             + "   var cp=cpath(el); if(cp) add('css',cp,cp,'css-path',uCss(d,cp),false); return o; }"
             + " function inBar(el){ return el&&(el.id==='ellithium-recorder-toolbar'||(el.closest&&el.closest('#ellithium-recorder-toolbar'))); }"
@@ -388,19 +534,26 @@ public final class InteractionRecorder {
             + " function emitEl(type,el,value,frame){ if(inBar(el))return; var nm=(el.getAttribute&&(el.getAttribute('aria-label')||el.getAttribute('name')||el.getAttribute('placeholder')))||(el.textContent||'').trim().slice(0,40);"
             + "   emit({id:nid(),type:type,tag:(el.tagName||'').toLowerCase(),name:nm,value:(value==null?null:value),frame:frame,candidates:cands(el)}); }"
             + " function disarm(){ W.__ellMode='record'; var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed'); }"
-            + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v); emitEl('input',el,v,frame); }"
+            + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v);"
+            + "   var pw=((el.getAttribute('type')||'').toLowerCase()==='password'); emitEl('input',el, pw?'__ELL_SECRET__':v, frame); }"
             + " function attach(doc,frame){ if(!doc||doc.__ellAttached)return; doc.__ellAttached=true;"
             + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw))return; var m=W.__ellMode||'record';"
             + "     if(m==='inspect'){e.preventDefault();e.stopPropagation();emitEl('inspect',raw,null,frame);return;}"
             + "     if(m==='assertVisible'){e.preventDefault();e.stopPropagation();emitEl('assertVisible',raw,null,frame);disarm();return;}"
-            + "     if(m==='assertText'){e.preventDefault();e.stopPropagation();emitEl('assertText',raw,(raw.textContent||'').replace(/\\s+/g,' ').trim().slice(0,80),frame);disarm();return;}"
+            + "     if(m==='assertText'){e.preventDefault();e.stopPropagation();emitEl('assertText',raw,((raw.innerText||raw.textContent||'').trim()).slice(0,80),frame);disarm();return;}"
             + "     if(m==='assertValue'){e.preventDefault();e.stopPropagation();emitEl('assertValue',raw,(raw.value!=null?raw.value:''),frame);disarm();return;}"
+            + "     if(m==='hover'){e.preventDefault();e.stopPropagation();emitEl('hover',meaningful(raw),null,frame);disarm();return;}"
             + "     if(W.__ellPaused)return; emitEl('click',meaningful(raw),null,frame); },true);"
+            + "   doc.addEventListener('dblclick',function(e){ var el=tgt(e); if(inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return; emitEl('doubleClick', meaningful(el), null, frame); },true);"
             + "   doc.addEventListener('change',function(e){ var el=tgt(e); if(!el||inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
             + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='select'){ var t=el.options[el.selectedIndex]?el.options[el.selectedIndex].text:el.value; emitEl('select',el,t,frame); }"
-            + "     else if(tag==='input'||tag==='textarea'){ inp(el,frame); } },true);"
+            + "     else if(tag==='input'||tag==='textarea'){ var ty=(el.getAttribute('type')||'').toLowerCase();"
+            + "       if(ty==='file'){ emitEl('uploadFile', el, (el.value||'').split('\\\\').pop(), frame); return; }"
+            + "       if(ty==='checkbox'||ty==='radio'||ty==='submit'||ty==='button'||ty==='image') return;"
+            + "       inp(el,frame); } },true);"
             + "   doc.addEventListener('keydown',function(e){ if(e.key!=='Enter')return; var el=tgt(e); if(!el||inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
-            + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea') inp(el,frame); },true);"
+            + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea'){ inp(el,frame); emitEl('pressEnter',el,null,frame); } },true);"
+            + "   doc.addEventListener('contextmenu',function(e){ var el=tgt(e); if(inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return; emitEl('rightClick', meaningful(el), null, frame); },true);"
             + "   doc.addEventListener('mousemove',function(e){ var m=W.__ellMode||'record'; if(m==='record'){ if(W.__ellHi){try{W.__ellHi.style.outline=W.__ellHiPrev||''}catch(x){} W.__ellHi=null;} return; }"
             + "     var el=tgt(e); if(inBar(el))return; if(W.__ellHi&&W.__ellHi!==el){try{W.__ellHi.style.outline=W.__ellHiPrev||''}catch(x){}}"
             + "     if(el&&el!==W.__ellHi){ W.__ellHi=el; W.__ellHiPrev=el.style.outline; try{el.style.outline='2px solid #0a84ff'}catch(x){} } },true); }"
@@ -411,7 +564,7 @@ public final class InteractionRecorder {
 
     private static final String OVERLAY_SCRIPT =
             "(function(){"
-            + " if (document.getElementById('ellithium-recorder-toolbar')) return;"
+            + " var __ex=document.querySelectorAll('#ellithium-recorder-toolbar'); for(var __i=1;__i<__ex.length;__i++)__ex[__i].remove(); if(__ex.length>=1) return;"
             + " var bar=document.createElement('div'); bar.id='ellithium-recorder-toolbar';"
             + " bar.style.cssText='position:fixed;top:10px;right:10px;z-index:2147483647;width:360px;max-height:80vh;"
             + "overflow:auto;background:rgba(20,20,20,0.95);color:#fff;padding:10px;border-radius:10px;"
@@ -421,8 +574,9 @@ public final class InteractionRecorder {
             + "  +'<span id=\"ell-dot\" style=\"width:10px;height:10px;background:#ff3b30;border-radius:50%;display:inline-block\"></span>'"
             + "  +'<b style=\"margin-right:auto\">Ellithium</b>'"
             + "  +btn('ell-rec','Pause','Pause/Resume recording')+btn('ell-pick','Inspect','Inspect / pick locator (toggle)')"
+            + "  +btn('ell-hover','Hover','Record a hover on the next click')"
             + "  +btn('ell-av','Eye','Assert visible')+btn('ell-at','Aa','Assert text')+btn('ell-aval','Val','Assert value')"
-            + "  +btn('ell-clear','Clear','Clear all steps')+btn('ell-stop','Stop','Stop and generate')+'</div>'"
+            + "  +btn('ell-assert','Assert: soft','Toggle hard/soft asserts')+btn('ell-clear','Clear','Clear all steps')+btn('ell-stop','Stop','Stop and generate')+'</div>'"
             + "  +'<input id=\"ell-eval\" placeholder=\"Evaluate CSS or XPath...\" style=\"width:100%;box-sizing:border-box;background:#111;color:#fff;border:1px solid #333;border-radius:4px;padding:4px;margin-bottom:4px\">'"
             + "  +'<div id=\"ell-eval-count\" style=\"color:#888;margin-bottom:6px\">&nbsp;</div>'"
             + "  +'<div id=\"ell-picked\"></div><div id=\"ell-steps\"></div>'"
@@ -435,11 +589,15 @@ public final class InteractionRecorder {
             + " function arm(id,mode){ document.getElementById(id).addEventListener('click', function(){ var on=window.__ellMode===mode;"
             + "   var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed');"
             + "   window.__ellMode=on?'record':mode; if(!on) this.classList.add('ell-armed'); }); }"
-            + " arm('ell-pick','inspect'); arm('ell-av','assertVisible'); arm('ell-at','assertText'); arm('ell-aval','assertValue');"
+            + " arm('ell-pick','inspect'); arm('ell-hover','hover'); arm('ell-av','assertVisible'); arm('ell-at','assertText'); arm('ell-aval','assertValue');"
             + " function logPush(o){ try{ var a=JSON.parse(localStorage.getItem('__ellRecLog')||'[]'); a.push(o); localStorage.setItem('__ellRecLog',JSON.stringify(a)); }catch(e){} }"
+            + " (function(){ var rb=document.getElementById('ell-rec'); if(window.__ellPaused){ rb.textContent='Resume';"
+            + "   document.getElementById('ell-dot').style.background='#888'; } })();"
             + " document.getElementById('ell-rec').addEventListener('click', function(){ window.__ellPaused=!window.__ellPaused;"
+            + "   try{localStorage.setItem('__ellPaused', window.__ellPaused?'1':'0');}catch(e){}"
             + "   this.textContent=window.__ellPaused?'Resume':'Pause'; document.getElementById('ell-dot').style.background=window.__ellPaused?'#888':'#ff3b30'; });"
             + " document.getElementById('ell-clear').addEventListener('click', function(){ logPush({type:'clearAll'}); });"
+            + " document.getElementById('ell-assert').addEventListener('click', function(){ logPush({type:'assertModeToggle'}); });"
             + " document.getElementById('ell-copy').addEventListener('click', function(){ var t=document.getElementById('ell-code').textContent;"
             + "   try{ navigator.clipboard.writeText(t); this.textContent='Copied'; var b=this; setTimeout(function(){b.textContent='Copy';},1200); }catch(e){} });"
             + " document.getElementById('ell-stop').addEventListener('click', function(){ window.__ellStop=true; });"
@@ -451,6 +609,7 @@ public final class InteractionRecorder {
             + "   catch(x){ cnt.textContent='invalid selector'; return; } window.__ellEvalHi=els;"
             + "   for(var j=0;j<els.length;j++){ try{els[j].style.outline='2px solid #30d158'}catch(x){} }"
             + "   cnt.textContent=els.length+' match'+(els.length===1?'':'es')+(els.length>1?' - not unique':''); });"
+            + " ['keydown','keyup','keypress','input','paste'].forEach(function(ev){ document.getElementById('ell-eval').addEventListener(ev, function(e){ e.stopPropagation(); }, true); });"
             + " var head=document.getElementById('ell-head'); var drag=false, ox=0, oy=0;"
             + " head.addEventListener('mousedown', function(e){ if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return;"
             + "   drag=true; var r=bar.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; bar.style.right='auto'; e.preventDefault(); });"
@@ -462,6 +621,7 @@ public final class InteractionRecorder {
             "(function(json){"
             + " var data=JSON.parse(json); var steps=data.steps||[]; var picked=data.picked;"
             + " var ce=document.getElementById('ell-code'); if(ce) ce.textContent=data.code||'';"
+            + " var ab=document.getElementById('ell-assert'); if(ab&&data.assertMode) ab.textContent='Assert: '+data.assertMode;"
             + " function row(c){ return '<div style=\"padding:1px 0\"><span style=\"color:'+(c.unique?'#30d158':'#ff9f0a')+'\">'"
             + "   +(c.unique?'\\u2713':'\\u26a0')+'</span> <code>'+c.expr.replace(/</g,'&lt;')+'</code> <span style=\"color:#888\">'+c.tier+(c.param?' param':'')+'</span></div>'; }"
             + " var pf=document.getElementById('ell-picked');"

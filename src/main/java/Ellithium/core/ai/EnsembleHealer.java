@@ -26,6 +26,8 @@ public class EnsembleHealer {
 
     private static final String MODEL_RESOURCE     = "/Ellithium-ai-model/model_quantized.onnx";
     private static final String TOKENIZER_RESOURCE = "/Ellithium-ai-model/tokenizer.json";
+    private static final String EXTERNAL_MODEL_DIR = System.getProperty("ellithium.ai.modelDir",
+            System.getProperty("user.home") + "/.ellithium/ai-model");
     private static final String BGE_QUERY_PREFIX   =
             "Represent this sentence for searching relevant passages: ";
     private static final int MAX_SEQ_LEN     = 256;
@@ -71,15 +73,14 @@ public class EnsembleHealer {
         if (initialized) return;
         initialized = true;
 
-        InputStream modelIs = EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE);
-        if (modelIs == null) {
-            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE + " — Tier 2 unavailable",
-                    LogLevel.WARN);
+        byte[] modelBytes = loadResource(MODEL_RESOURCE);
+        if (modelBytes == null) {
+            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE
+                    + " or " + EXTERNAL_MODEL_DIR + " — Tier 2 unavailable", LogLevel.WARN);
             return;
         }
 
         try {
-            byte[] modelBytes     = readAllBytes(modelIs);
             byte[] tokenizerBytes = loadResource(TOKENIZER_RESOURCE);
             if (tokenizerBytes == null) {
                 Reporter.log("[ENSEMBLE] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 2 unavailable", LogLevel.WARN);
@@ -108,7 +109,7 @@ public class EnsembleHealer {
      * Closes the ORT session and releases native memory.
      * Called by GeneralHandler / CustomTestNGListener at suite teardown.
      */
-    public static void shutdown() {
+    public static synchronized void shutdown() {
         available = false;
         closeQuietly(ortSession);
         closeQuietly(ortEnvironment);
@@ -125,7 +126,11 @@ public class EnsembleHealer {
     public static boolean isAvailable() { return available; }
 
     public static boolean isModelPresent() {
-        return EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE) != null;
+        try (InputStream is = EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE)) {
+            if (is != null) return true;
+        } catch (Exception ignored) {}
+        String fileName = MODEL_RESOURCE.substring(MODEL_RESOURCE.lastIndexOf('/') + 1);
+        return java.nio.file.Files.exists(java.nio.file.Paths.get(EXTERNAL_MODEL_DIR, fileName));
     }
 
     /**
@@ -138,6 +143,8 @@ public class EnsembleHealer {
                                                ElementFingerprint baseline) {
         awaitInit();
         if (!available) return null;
+
+        invalidateCacheOnDomMutation(driver);
 
         String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
         if (query.isBlank()) return null;
@@ -157,32 +164,33 @@ public class EnsembleHealer {
      * @return L2-normalised float[384], or null on any failure
      */
     static float[] embed(String text, boolean isQuery) {
-        if (!available || ortSession == null || tokenizer == null) return null;
+        Object session = ortSession, env = ortEnvironment, tok = tokenizer;
+        if (!available || session == null || env == null || tok == null) return null;
         String input = isQuery ? BGE_QUERY_PREFIX + text : text;
         Object tIds = null, tMask = null, tType = null, result = null;
         try {
-            Object encoding = mEncode.invoke(tokenizer, input);
+            Object encoding = mEncode.invoke(tok, input);
 
             long[] ids     = (long[]) mGetIds.invoke(encoding);
             long[] mask    = (long[]) mGetMask.invoke(encoding);
             long[] typeIds = (long[]) mGetTypes.invoke(encoding);
 
-            int seqLen = Math.min(ids.length, MAX_SEQ_LEN);
+            int seqLen = Math.min(Math.min(Math.min(ids.length, mask.length), typeIds.length), MAX_SEQ_LEN);
             long[] idsT  = (seqLen == ids.length)     ? ids     : java.util.Arrays.copyOf(ids, seqLen);
             long[] maskT = (seqLen == mask.length)    ? mask    : java.util.Arrays.copyOf(mask, seqLen);
             long[] typeT = (seqLen == typeIds.length) ? typeIds : java.util.Arrays.copyOf(typeIds, seqLen);
 
             long[] shape = {1L, (long) seqLen};
-            tIds  = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(idsT),  shape);
-            tMask = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(maskT), shape);
-            tType = mCreateTensor.invoke(null, ortEnvironment, LongBuffer.wrap(typeT), shape);
+            tIds  = mCreateTensor.invoke(null, env, LongBuffer.wrap(idsT),  shape);
+            tMask = mCreateTensor.invoke(null, env, LongBuffer.wrap(maskT), shape);
+            tType = mCreateTensor.invoke(null, env, LongBuffer.wrap(typeT), shape);
 
             Map<String, Object> inputs = new LinkedHashMap<>();
             inputs.put("input_ids",      tIds);
             inputs.put("attention_mask", tMask);
             inputs.put("token_type_ids", tType);
 
-            result = mSessionRun.invoke(ortSession, inputs);
+            result = mSessionRun.invoke(session, inputs);
 
             Iterator<?> it    = ((Iterable<?>) result).iterator();
             Map.Entry<?, ?> e = (Map.Entry<?, ?>) it.next();
@@ -303,7 +311,7 @@ public class EnsembleHealer {
                     double combined = Double.isNaN(f2) ? cosine : (f2 + cosine) / 2.0;
 
                     if (bestElement == null || combined > bestCombined
-                            || (combined == bestCombined && f1 > bestF1)) {
+                            || (Math.abs(combined - bestCombined) < 1e-6 && f1 > bestF1)) {
                         bestElement = candidate; bestCombined = combined; bestCosine = cosine;
                         bestF1 = f1; bestF2 = f2; bestDoc = doc;
                     }
@@ -330,6 +338,23 @@ public class EnsembleHealer {
                 bestCombined, threshold, bestF1, bestF2, bestCosine), LogLevel.DEBUG);
         HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category);
         return null;
+    }
+
+    private static final String MUTATION_PROBE_SCRIPT =
+            "if(!window.__ellHealMO){ window.__ellHealMutated=false;"
+            + " try{ window.__ellHealMO=new MutationObserver(function(){window.__ellHealMutated=true;});"
+            + "   window.__ellHealMO.observe(document.documentElement,{childList:true,subtree:true,attributes:true}); }catch(e){}"
+            + " return false; }"
+            + " var m=window.__ellHealMutated===true; window.__ellHealMutated=false; return m;";
+
+    private static void invalidateCacheOnDomMutation(WebDriver driver) {
+        if (!(driver instanceof org.openqa.selenium.JavascriptExecutor js)) return;
+        try {
+            Object changed = js.executeScript(MUTATION_PROBE_SCRIPT);
+            if (Boolean.TRUE.equals(changed)) {
+                ElementVectorCache.getInstance().invalidate();
+            }
+        } catch (Exception ignored) {}
     }
 
     private static double maxScore(double a, double b) {
@@ -552,7 +577,7 @@ public class EnsembleHealer {
         return v;
     }
 
-    private static double dotProduct(float[] a, float[] b) {
+    static double dotProduct(float[] a, float[] b) {
         double sum = 0.0;
         for (int i = 0; i < a.length; i++) sum += (double) a[i] * b[i];
         return sum;
@@ -742,7 +767,11 @@ public class EnsembleHealer {
 
     private static byte[] loadResource(String path) {
         try (InputStream is = EnsembleHealer.class.getResourceAsStream(path)) {
-            if (is == null) return null;
+            if (is != null) return readAllBytes(is);
+        } catch (Exception ignored) {}
+        String fileName = path.substring(path.lastIndexOf('/') + 1);
+        java.nio.file.Path ext = java.nio.file.Paths.get(EXTERNAL_MODEL_DIR, fileName);
+        try (InputStream is = new java.io.FileInputStream(ext.toFile())) {
             return readAllBytes(is);
         } catch (Exception e) { return null; }
     }

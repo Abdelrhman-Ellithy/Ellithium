@@ -508,7 +508,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.4.0</version> <!-- You can check for the latest version -->
+                <version>3.4.0</version>
+                <configuration>
+                    <excludeResources>true</excludeResources>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -619,17 +622,10 @@
                 </includes>
             </resource>
             <resource>
-                <directory>src/main/resources/properties</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>**/*</include> <!-- Include all properties files -->
-                </includes>
-            </resource>
-            <resource>
                 <directory>.allure</directory>
                 <filtering>false</filtering>
                 <includes>
-                    <include>**/*</include> <!-- Include all properties files -->
+                    <include>**/*</include>
                 </includes>
             </resource>
         </resources>

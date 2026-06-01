@@ -250,7 +250,7 @@ public class LocatorMutationEngine {
         }
 
         // Attribute selector mutations: [data-testid='loginBtn'] → variants
-        Pattern attrPat = Pattern.compile("\\[([\\w-]+)[*^$~]?=\\'([^\\']+)\\'\\]");
+        Pattern attrPat = Pattern.compile("\\[([\\w-]+)[*^$~]?=['\"]([^'\"]+)['\"]\\]");
         Matcher am = attrPat.matcher(value);
         if (am.find()) {
             String attr = am.group(1);

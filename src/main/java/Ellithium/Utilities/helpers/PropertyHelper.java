@@ -22,6 +22,23 @@ public class PropertyHelper {
 
     private static final Object LOCK = new Object();
 
+    private record CachedProps(long mtime, long size, Properties props) {}
+    private static final ConcurrentHashMap<String, CachedProps> READ_CACHE = new ConcurrentHashMap<>();
+
+    private static Properties loadPropertiesCached(String filePath) throws IOException {
+        ensureFileExists(filePath);
+        File f = new File(filePath);
+        long mtime = f.lastModified();
+        long size = f.length();
+        CachedProps c = READ_CACHE.get(filePath);
+        if (c != null && c.mtime() == mtime && c.size() == size) {
+            return c.props();
+        }
+        Properties prop = loadProperties(filePath);
+        READ_CACHE.put(filePath, new CachedProps(mtime, size, prop));
+        return prop;
+    }
+
     private static class LinkedProperties extends Properties {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -110,6 +127,7 @@ public class PropertyHelper {
             try (FileOutputStream fos = new FileOutputStream(filePath)) {
                 prop.store(fos, null);
             }
+            READ_CACHE.remove(filePath);
         }
     }
 
@@ -121,7 +139,7 @@ public class PropertyHelper {
      */
     public static String getDataFromProperties(String filePath, String key) {
         try {
-            Properties prop = loadProperties(filePath);
+            Properties prop = loadPropertiesCached(filePath);
             return prop.getProperty(key);
         } catch (IOException e) {
             log("Error accessing properties file: ", LogLevel.ERROR, e.getMessage());
