@@ -86,6 +86,59 @@ public class MobileEnsembleHealingTest {
     }
 
     @Test
+    public void reconstructLocatorNativeWidgetClassOnly_emitsXpathByClass() {
+        // Android native element with NO accessibility-id / resource-id / id — only a widget class.
+        // Must NOT produce an invalid CSS selector; must emit an Appium-valid xpath-by-class.
+        WebElement el = mobileElement(null, null, null, "android.widget.Button", "Login");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.xpath("//android.widget.Button"), by.toString());
+        Assert.assertFalse(by.toString().toLowerCase().contains("cssselector"),
+                "must never emit a CSS selector for a native widget class: " + by);
+    }
+
+    @Test
+    public void reconstructLocatorIosTypeOnly_emitsXpathByClass() {
+        WebElement el = mobileElement(null, null, null, "XCUIElementTypeButton", "Login");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.xpath("//XCUIElementTypeButton"), by.toString());
+    }
+
+    @Test
+    public void reconstructLocatorWebClassWithCssSpecialChars_avoidsInvalidCss() {
+        // Tailwind-style class with ':' and '/' is NOT a valid CSS identifier — must fall back to
+        // By.tagName rather than emit By.cssSelector("div.md:flex") which throws at findElement time.
+        WebElement el = mock(WebElement.class);
+        lenient().when(el.getAttribute("resource-id")).thenReturn(null);
+        lenient().when(el.getAttribute("accessibility-id")).thenReturn(null);
+        lenient().when(el.getAttribute("content-desc")).thenReturn(null);
+        lenient().when(el.getAttribute("id")).thenReturn(null);
+        lenient().when(el.getAttribute("name")).thenReturn(null);
+        lenient().when(el.getAttribute("data-testid")).thenReturn(null);
+        lenient().when(el.getAttribute("aria-label")).thenReturn(null);
+        lenient().when(el.getTagName()).thenReturn("div");
+        lenient().when(el.getAttribute("class")).thenReturn("md:flex w-1/2");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.tagName("div"),
+                "CSS-unsafe class must be skipped, falling back to tagName: " + by);
+    }
+
+    @Test
+    public void reconstructLocatorWebCssSafeClass_emitsCssSelector() {
+        WebElement el = mock(WebElement.class);
+        lenient().when(el.getAttribute("resource-id")).thenReturn(null);
+        lenient().when(el.getAttribute("accessibility-id")).thenReturn(null);
+        lenient().when(el.getAttribute("content-desc")).thenReturn(null);
+        lenient().when(el.getAttribute("id")).thenReturn(null);
+        lenient().when(el.getAttribute("name")).thenReturn(null);
+        lenient().when(el.getAttribute("data-testid")).thenReturn(null);
+        lenient().when(el.getAttribute("aria-label")).thenReturn(null);
+        lenient().when(el.getTagName()).thenReturn("button");
+        lenient().when(el.getAttribute("class")).thenReturn("btn-primary extra");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("button.btn-primary"), by.toString());
+    }
+
+    @Test
     public void byToJavaExpressionEmitsCompilableAppiumBy() {
         Assert.assertEquals(
                 AISelfHealer.byToJavaExpression(AppiumBy.accessibilityId("login_button")),

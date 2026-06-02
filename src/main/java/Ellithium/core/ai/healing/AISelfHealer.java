@@ -72,7 +72,9 @@ public class AISelfHealer {
             String url = driver.getCurrentUrl();
             if (url == null) return "";
             int q = url.indexOf('?');
-            return q >= 0 ? url.substring(0, q) : url;
+            if (q < 0) return url;
+            int hash = url.indexOf('#', q);
+            return hash >= 0 ? url.substring(0, q) + url.substring(hash) : url.substring(0, q);
         } catch (Exception e) {
             return "";
         }
@@ -100,7 +102,7 @@ public class AISelfHealer {
         public final String byValue;
         public final String newLocatorExpression;
         public final double confidence;   // heal confidence 0.0–1.0
-        public final int    tier;         // 1 = algorithmic, 3 = ONNX, 4 = LLM
+        public final int    tier;         // 1 = algorithmic, 2 = ONNX ensemble, 3 = LLM
         public SourcePatch(String filePath, String fieldName, String byMethod, String byValue,
                            String newLocatorExpression, double confidence, int tier) {
             this.filePath = filePath;
@@ -134,7 +136,7 @@ public class AISelfHealer {
      * @param healedElement  The element that was found by healing
      * @param stackTrace     The call stack for source location resolution
      * @param confidence     Heal confidence 0.0–1.0 (gates persistence + resolves conflicts)
-     * @param tier           Originating tier (1 = algorithmic, 3 = ONNX, 4 = LLM)
+     * @param tier           Originating tier (1 = algorithmic, 2 = ONNX ensemble, 3 = LLM)
      */
     public static void queueSourcePatch(By brokenLocator, WebElement healedElement,
                                         StackTraceElement[] stackTrace, double confidence, int tier) {
@@ -411,14 +413,14 @@ public class AISelfHealer {
             if (baseline != null) {
                 double matchScore = baseline.scoreSimilarity(foundEl);
                 if (matchScore < 0.40) {
-                    // score == 0.0 means COMPLETE mismatch — baseline was likely captured from a
-                    // wrong prior healing (e.g. Tier 2 incorrectly stored a container element).
-                    // If LLM is highly confident, trust it over the stale/wrong baseline.
-                    if (matchScore == 0.0 && candidate.getConfidence() >= 0.85) {
-                        Reporter.log("[TIER 3] Stale baseline detected (score=0.0); trusting high-confidence LLM "
+                    // score == 0.0 → baseline likely stale (captured from a prior wrong heal). Accept
+                    // the LLM only with a SECOND independent signal: a stable locator strategy
+                    // (id/name/data-testid/accessibilityId) — not self-reported confidence alone.
+                    if (matchScore == 0.0 && candidate.getConfidence() >= 0.90
+                            && isStableLocatorStrategy(candidateLocator)) {
+                        Reporter.log("[TIER 3] Stale baseline (score=0.0); accepting stable-strategy LLM heal "
                                 + "(confidence=" + String.format("%.2f", candidate.getConfidence()) + "): "
                                 + candidate.getNewLocatorExpression(), LogLevel.WARN);
-                        // Fall through — candidate is accepted, skip tag-type check too
                     } else {
                         Reporter.log("AI Candidate rejected (baseline mismatch, score=" + String.format("%.2f", matchScore)
                                 + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
@@ -634,17 +636,18 @@ public class AISelfHealer {
                 ctx.actionType, ctx.brokenLocatorStr, ctx.methodName, ctx.baseline);
 
         LLMProvider provider = getEffectiveProvider();
-        // Mobile screens often render PII (account numbers, OTPs); a mobile screenshot to a cloud LLM
-        // is opt-in (ai.vision.allowMobile, default false). Web vision stays enabled.
-        boolean visionAllowedHere = !ctx.isMobile || AIConfigLoader.isVisionAllowedOnMobile();
+        boolean visionAllowedHere = ctx.isMobile
+                ? AIConfigLoader.isVisionAllowedOnMobile()
+                : AIConfigLoader.isVisionAllowedOnWeb();
         boolean wantScreenshot = provider != null
                 && provider.supportsVision()
                 && getEffectiveStrategy() != HealingStrategy.SUGGEST_ONLY
                 && visionAllowedHere
                 && driver instanceof org.openqa.selenium.TakesScreenshot;
-        if (ctx.isMobile && provider != null && provider.supportsVision() && !AIConfigLoader.isVisionAllowedOnMobile()) {
-            Reporter.log("AI Self-Healing: mobile screenshot withheld from LLM (ai.vision.allowMobile=false) "
-                    + "— set it true to enable visual healing on mobile (PII consideration)", LogLevel.DEBUG);
+        if (provider != null && provider.supportsVision() && !visionAllowedHere) {
+            String flag = ctx.isMobile ? "ai.vision.allowMobile" : "ai.vision.allowWeb";
+            Reporter.log("AI Self-Healing: screenshot withheld from LLM (" + flag + "=false) "
+                    + "— set it true to enable visual healing (PII consideration)", LogLevel.DEBUG);
         }
 
         java.util.concurrent.CompletableFuture<String> domF =
@@ -805,17 +808,17 @@ public class AISelfHealer {
             sb.append("- Source code at call site:\n").append(ctx.callSiteSource).append("\n");
         }
 
-        // W2 fix: last-known element state from BaselineStore fingerprint
+        // Free-text baseline fields can carry runtime PII — scrub before sending to the LLM.
         if (ctx.baseline != null) {
             sb.append("\nLAST KNOWN ELEMENT STATE:\n");
             if (ctx.baseline.getTagName() != null)     sb.append("- Tag: ").append(ctx.baseline.getTagName()).append("\n");
             if (ctx.baseline.getId() != null)           sb.append("- id: ").append(ctx.baseline.getId()).append("\n");
             if (ctx.baseline.getName() != null)         sb.append("- name: ").append(ctx.baseline.getName()).append("\n");
-            if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(ctx.baseline.getAriaLabel()).append("\n");
-            if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(ctx.baseline.getPlaceholder()).append("\n");
+            if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(DataScrubber.scrub(ctx.baseline.getAriaLabel())).append("\n");
+            if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(DataScrubber.scrub(ctx.baseline.getPlaceholder())).append("\n");
             if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(ctx.baseline.getDataTestId()).append("\n");
             if (ctx.baseline.getText() != null && !ctx.baseline.getText().isBlank())
-                sb.append("- text: ").append(ctx.baseline.getText()).append("\n");
+                sb.append("- text: ").append(DataScrubber.scrub(ctx.baseline.getText())).append("\n");
             if (ctx.baseline.getRole() != null)         sb.append("- role: ").append(ctx.baseline.getRole()).append("\n");
             if (ctx.baseline.getType() != null)         sb.append("- type: ").append(ctx.baseline.getType()).append("\n");
         }
@@ -1028,6 +1031,19 @@ public class AISelfHealer {
         int start = expression.indexOf('"') + 1;
         int end = expression.lastIndexOf('"');
         return expression.substring(start, end);
+    }
+
+    /** A locator anchored on a stable, discriminating attribute (independent of LLM confidence). */
+    private static boolean isStableLocatorStrategy(By locator) {
+        if (locator == null) return false;
+        String s = locator.toString();
+        if (s.startsWith("By.id:") || s.startsWith("By.name:")
+                || s.startsWith("AppiumBy.accessibilityId:")) return true;
+        if (s.startsWith("By.cssSelector:")) {
+            return s.contains("[data-testid") || s.contains("[data-test") || s.contains("[aria-label")
+                    || s.contains("#") || s.contains("[name=");
+        }
+        return false;
     }
 
     // ──────────────────────── Cleanup ────────────────────────

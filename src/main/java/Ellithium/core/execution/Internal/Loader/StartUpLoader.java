@@ -84,26 +84,11 @@ public class StartUpLoader {
                 break;
             case "ai-config":
                 if (!checkFileExists(aiPath)) {
-                    try {
-                        File aiConfigFile = new File(aiPath);
-                        aiConfigFile.getParentFile().mkdirs();
-                        aiConfigFile.createNewFile();
-                        String defaultAiConfig = "# Ellithium AI Engine Configuration\n" +
-                                "# Strategy options: DISABLED, HEAL_AND_CONTINUE, HEAL_AND_NOTIFY\n" +
-                                "ai.healing.strategy=DISABLED\n" +
-                                "ai.healing.confidenceThreshold=0.85\n" +
-                                "ai.llm.provider=OpenAI\n" +
-                                "ai.llm.apiKey=YOUR_API_KEY_HERE\n" +
-                                "ai.llm.model=gpt-4o\n" +
-                                "ai.llm.baseUrl=\n" +
-                                "# Execution mode: LOCAL or CI\n" +
-                                "ai.execution.mode=LOCAL\n" +
-                                "# Vision RCA for failed test screenshots\n" +
-                                "ai.vision.rca.enabled=true\n";
-                        Files.write(aiConfigFile.toPath(), defaultAiConfig.getBytes());
-                        System.out.println("Created default ai-config.properties");
-                    } catch (IOException e) {
-                        System.err.println("Failed to create ai-config.properties: " + e.getMessage());
+                    File jarFile = findJarFile();
+                    if (jarFile != null) {
+                        extractFileFromJar(jarFile, "properties/ai-config.properties", new File(aiPath));
+                    } else {
+                        System.err.println("JAR file not found.");
                     }
                 }
                 break;

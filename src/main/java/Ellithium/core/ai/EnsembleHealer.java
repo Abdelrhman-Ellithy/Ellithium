@@ -21,7 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-/** Tier 3 local embedding healer. See ai-context for architecture notes. */
+/** Tier 2 local embedding healer. See ai-context for architecture notes. */
 public class EnsembleHealer {
 
     private static final String EXTERNAL_MODEL_DIR = System.getProperty("ellithium.ai.modelDir",
@@ -100,13 +100,13 @@ public class EnsembleHealer {
 
         } catch (ClassNotFoundException e) {
             Reporter.log("[ENSEMBLE] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
-                    + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
+                    + e.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         } catch (Exception e) {
             Reporter.log("[ENSEMBLE] Init failed: " + e.getClass().getSimpleName()
-                    + ": " + e.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
+                    + ": " + e.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         } catch (Throwable t) {
             Reporter.log("[ENSEMBLE] Init failed (native/JVM error): " + t.getClass().getSimpleName()
-                    + ": " + t.getMessage() + " — Tier 3 unavailable", LogLevel.WARN);
+                    + ": " + t.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         }
     }
 
@@ -127,8 +127,10 @@ public class EnsembleHealer {
         Reporter.log("[ENSEMBLE] ONNX session closed", LogLevel.DEBUG);
     }
 
-    /** True when the bi-encoder ORT session is loaded and ready for inference. */
-    public static boolean isAvailable() { return available; }
+    public static boolean isAvailable() {
+        awaitInit();
+        return available;
+    }
 
     public static boolean isModelPresent() {
         if (Ellithium.core.ai.crypto.ModelDecryptor.isModelResourcePresent()) return true;

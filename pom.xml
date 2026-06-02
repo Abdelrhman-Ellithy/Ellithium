@@ -96,7 +96,6 @@
         <couchBaseVersion>3.11.2</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
-        <jjwtVersion>0.12.6</jjwtVersion>
         <onnxRuntimeVersion>1.20.0</onnxRuntimeVersion>
         <djlTokenizersVersion>0.31.0</djlTokenizersVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
@@ -448,40 +447,17 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- AI Paid Tier: JWT license validation -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwtVersion}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwtVersion}</version>
-            <optional>true</optional>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwtVersion}</version>
-            <optional>true</optional>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- AI Paid Tier: ONNX Runtime for local embedding inference -->
+        <!-- ONNX Runtime for local embedding inference (Tier 2 healing) -->
         <dependency>
             <groupId>com.microsoft.onnxruntime</groupId>
             <artifactId>onnxruntime</artifactId>
             <version>${onnxRuntimeVersion}</version>
-            <optional>true</optional>
         </dependency>
-        <!-- AI Paid Tier: HuggingFace tokenizers (reads tokenizer.json alongside ONNX model) -->
+        <!-- HuggingFace tokenizers (reads tokenizer.json alongside the ONNX model) -->
         <dependency>
             <groupId>ai.djl.huggingface</groupId>
             <artifactId>tokenizers</artifactId>
             <version>${djlTokenizersVersion}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
     <build>

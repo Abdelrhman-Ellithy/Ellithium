@@ -42,7 +42,8 @@ public class AIConfigLoader {
     private static int     baselineTtlDays = 30;
     private static boolean strategyRescueEnabled = true;
     private static double  gateFingerprintFloor = 0.70;
-    private static boolean visionAllowMobile = false;
+    private static boolean visionAllowMobile = true;
+    private static boolean visionAllowWeb = true;
     private static int     llmHealMaxWaitMs = 15_000;
     private static int     llmRetryInitialBackoffMs = 500;
     private static int     llmRetryMaxBackoffMs = 4_000;
@@ -93,6 +94,7 @@ public class AIConfigLoader {
             onnxHardCandidateLimit    = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
 
             visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
+            visionAllowWeb           = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
             baselineTtlDays          = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
             llmHealMaxWaitMs         = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
             llmRetryInitialBackoffMs = parseInt(p, "ai.llm.retryInitialBackoffMs", llmRetryInitialBackoffMs);
@@ -201,6 +203,7 @@ public class AIConfigLoader {
     public static int    getOnnxReadableMaxCandidates()   { return onnxReadableMaxCandidates; }
     public static int    getOnnxHardCandidateLimit()      { return onnxHardCandidateLimit; }
     public static boolean isVisionAllowedOnMobile()       { return visionAllowMobile; }
+    public static boolean isVisionAllowedOnWeb()          { return visionAllowWeb; }
     public static int    getBaselineTtlDays()             { return baselineTtlDays; }
     public static boolean isStrategyRescueEnabled()       { return strategyRescueEnabled; }
     public static double getGateFingerprintFloor()        { return gateFingerprintFloor; }

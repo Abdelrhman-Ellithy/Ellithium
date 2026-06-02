@@ -279,10 +279,16 @@ public class BaselineStore {
         List<Map<String, Object>> attrsBatch =
                 Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidates);
 
+        // Batch failed (Appium native / blocked JS): each candidate now costs ~12 WebDriver
+        // round-trips, so cap the scan hard to keep the heal bounded.
+        int scanLimit = (attrsBatch == null)
+                ? Math.min(candidates.size(), T1_FALLBACK_SCAN_LIMIT)
+                : candidates.size();
+
         WebElement bestEl = null;
         double bestScore = -1.0;
 
-        for (int i = 0; i < candidates.size(); i++) {
+        for (int i = 0; i < scanLimit; i++) {
             WebElement candidate = candidates.get(i);
             try {
                 Map<String, Object> attrs = (attrsBatch != null && i < attrsBatch.size()) ? attrsBatch.get(i) : null;
@@ -346,6 +352,7 @@ public class BaselineStore {
      * falling back to the broad interactive-elements selector.
      */
     private static final int T1_HARD_CANDIDATE_LIMIT = 500;
+    private static final int T1_FALLBACK_SCAN_LIMIT = 50;
 
     private static List<WebElement> collectCandidates(WebDriver driver, ElementFingerprint baseline) {
         List<WebElement> raw = null;
