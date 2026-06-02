@@ -31,7 +31,7 @@ public class DataScrubber {
 
     // Credit-card numbers (13–16 digits, optional space/dash grouping)
     private static final Pattern CREDIT_CARD = Pattern.compile(
-            "\\b(?:\\d[ -]?){13,16}\\b");
+            "(?<!\\d)(?:\\d[ -]?){13,16}(?!\\d)");
 
     // US Social Security numbers
     private static final Pattern SSN = Pattern.compile(
@@ -64,6 +64,15 @@ public class DataScrubber {
     private static final Pattern COOKIE_VALUE = Pattern.compile(
             "((?:session|sid|token|auth)[a-zA-Z0-9_-]*\\s*=\\s*)([^;\\s\"]{8,})",
             Pattern.CASE_INSENSITIVE);
+
+    // Prompt-injection control phrases embedded in DOM content
+    private static final Pattern PROMPT_INJECTION = Pattern.compile(
+            "(?i)\\b(?:ignore\\s+(?:all\\s+)?(?:previous|prior|above)\\s+instructions?" +
+            "|forget\\s+(?:your\\s+)?(?:context|instructions?|training)" +
+            "|you\\s+are\\s+now\\s+a" +
+            "|act\\s+as\\s+(?:a|an|if)" +
+            "|disregard\\s+(?:all\\s+)?(?:previous|prior)" +
+            "|new\\s+system\\s+prompt)\\b");
 
     /**
      * Scrubs sensitive data from the given text content.
@@ -140,6 +149,12 @@ public class DataScrubber {
         // Mask phone numbers
         if (PHONE.matcher(result).find()) {
             result = PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
+            maskedCount++;
+        }
+
+        // Strip prompt-injection control phrases
+        if (PROMPT_INJECTION.matcher(result).find()) {
+            result = PROMPT_INJECTION.matcher(result).replaceAll("[REMOVED]");
             maskedCount++;
         }
 

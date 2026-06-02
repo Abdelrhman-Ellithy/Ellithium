@@ -96,4 +96,95 @@ public class UniqueLocatorGeneratorTest {
         Assert.assertFalse(UniqueLocatorGenerator.looksDynamic("loginBtn"));
         Assert.assertFalse(UniqueLocatorGenerator.looksDynamic("submit"));
     }
+
+    @Test
+    public void looksDynamic_nullAndBlank_returnFalse() {
+        Assert.assertFalse(UniqueLocatorGenerator.looksDynamic(null));
+        Assert.assertFalse(UniqueLocatorGenerator.looksDynamic(""));
+    }
+
+    @Test
+    public void fromCapture_cssType_createsByCssSelector() {
+        LocatorCandidate c = UniqueLocatorGenerator.fromCapture("css", "[data-testid='btn']", "btn", "data-testid", true, false);
+        Assert.assertNotNull(c.by());
+        Assert.assertTrue(c.javaExpression().startsWith("By.cssSelector"), c.javaExpression());
+    }
+
+    @Test
+    public void fromCapture_nameType_createsByName() {
+        LocatorCandidate c = UniqueLocatorGenerator.fromCapture("name", null, "email", "name", true, false);
+        Assert.assertTrue(c.javaExpression().startsWith("By.name"), c.javaExpression());
+    }
+
+    @Test
+    public void fromCapture_classNameType_createsByClassName() {
+        LocatorCandidate c = UniqueLocatorGenerator.fromCapture("className", null, "btn-primary", "class-name", true, false);
+        Assert.assertTrue(c.javaExpression().startsWith("By.className"), c.javaExpression());
+    }
+
+    @Test
+    public void fromCapture_tagNameType_createsByTagName() {
+        LocatorCandidate c = UniqueLocatorGenerator.fromCapture("tagName", null, "button", "tag-name", true, false);
+        Assert.assertTrue(c.javaExpression().startsWith("By.tagName"), c.javaExpression());
+    }
+
+    @Test
+    public void fromCapture_uniqueScoreHigherThanNonUnique() {
+        LocatorCandidate unique    = UniqueLocatorGenerator.fromCapture("css", "[aria-label='Save']", "Save", "aria-label", true,  false);
+        LocatorCandidate nonUnique = UniqueLocatorGenerator.fromCapture("css", "[aria-label='Save']", "Save", "aria-label", false, false);
+        Assert.assertTrue(unique.score() > nonUnique.score());
+    }
+
+    @Test
+    public void tierWeight_allNewTiers_areRankedCorrectly() throws Exception {
+        java.lang.reflect.Method tw = UniqueLocatorGenerator.class.getDeclaredMethod("tierWeight", String.class);
+        tw.setAccessible(true);
+        double hrefCss   = (double) tw.invoke(null, "href-css");
+        double attrCss   = (double) tw.invoke(null, "attr-css");
+        double tagAttr   = (double) tw.invoke(null, "tag-attr-css");
+        double comboCss  = (double) tw.invoke(null, "combo-css");
+        double ancestorC = (double) tw.invoke(null, "ancestor-css");
+        double xpathIdx  = (double) tw.invoke(null, "xpath-indexed");
+        double classCss  = (double) tw.invoke(null, "class-css");
+        double tagClsCs  = (double) tw.invoke(null, "tag-class-css");
+        double textCont  = (double) tw.invoke(null, "text-contains");
+        double tcIdx     = (double) tw.invoke(null, "text-contains-indexed");
+        double csspath   = (double) tw.invoke(null, "css-path");
+        double tagName   = (double) tw.invoke(null, "tag-name");
+
+        Assert.assertTrue(hrefCss  > tagAttr,  "href-css should beat tag-attr-css");
+        Assert.assertTrue(attrCss  > tagAttr,  "attr-css should beat tag-attr-css");
+        Assert.assertTrue(tagAttr  > comboCss, "tag-attr-css should beat combo-css");
+        Assert.assertTrue(comboCss > ancestorC,"combo-css should beat ancestor-css");
+        Assert.assertTrue(ancestorC > xpathIdx,"ancestor-css should beat xpath-indexed");
+        Assert.assertTrue(xpathIdx > classCss, "xpath-indexed should beat class-css");
+        Assert.assertTrue(tagClsCs  > classCss,"tag-class-css should beat class-css");
+        Assert.assertTrue(textCont  > xpathIdx,"text-contains should beat xpath-indexed");
+        Assert.assertTrue(xpathIdx >= tcIdx,   "xpath-indexed should be >= text-contains-indexed");
+        Assert.assertTrue(csspath < 0.2,       "css-path must be a last-resort low weight");
+        Assert.assertTrue(tagName  <= csspath,  "tag-name must be at most css-path weight");
+    }
+
+    @Test
+    public void tierWeight_coreHierarchy() throws Exception {
+        java.lang.reflect.Method tw = UniqueLocatorGenerator.class.getDeclaredMethod("tierWeight", String.class);
+        tw.setAccessible(true);
+        double testid = (double) tw.invoke(null, "data-testid");
+        double id     = (double) tw.invoke(null, "id");
+        double name   = (double) tw.invoke(null, "name");
+        double aria   = (double) tw.invoke(null, "aria-label");
+        double text   = (double) tw.invoke(null, "text");
+        Assert.assertTrue(testid > id);
+        Assert.assertTrue(id    > name);
+        Assert.assertTrue(name  > aria);
+        Assert.assertTrue(aria  >= text);
+    }
+
+    @Test
+    public void tierWeight_defaultDataAttr_usesDataWeight() throws Exception {
+        java.lang.reflect.Method tw = UniqueLocatorGenerator.class.getDeclaredMethod("tierWeight", String.class);
+        tw.setAccessible(true);
+        double d = (double) tw.invoke(null, "data-custom-attr");
+        Assert.assertTrue(d > 0.5 && d < 1.0, "generic data-* should be between 0.5 and 1.0: " + d);
+    }
 }

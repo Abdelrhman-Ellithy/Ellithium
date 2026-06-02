@@ -12,6 +12,7 @@ public final class RecordedStep {
     private final List<LocatorCandidate> candidates;
     private final List<Integer> frameChain;
     private volatile int chosenIndex;
+    private volatile String generatorMethod;
 
     public RecordedStep(String id, String actionType, String data, String tagName,
                         String elementName, List<LocatorCandidate> candidates) {
@@ -46,4 +47,7 @@ public final class RecordedStep {
     public void choose(int index) {
         if (index >= 0 && index < candidates.size()) chosenIndex = index;
     }
+
+    public String getGeneratorMethod() { return generatorMethod; }
+    public void setGeneratorMethod(String method) { this.generatorMethod = method; }
 }

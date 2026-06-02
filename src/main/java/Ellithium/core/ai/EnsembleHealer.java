@@ -24,8 +24,6 @@ import java.util.*;
 /** Tier 3 local embedding healer. See ai-context for architecture notes. */
 public class EnsembleHealer {
 
-    private static final String MODEL_RESOURCE     = "/Ellithium-ai-model/model_quantized.onnx";
-    private static final String TOKENIZER_RESOURCE = "/Ellithium-ai-model/tokenizer.json";
     private static final String EXTERNAL_MODEL_DIR = System.getProperty("ellithium.ai.modelDir",
             System.getProperty("user.home") + "/.ellithium/ai-model");
     private static final String BGE_QUERY_PREFIX   =
@@ -73,24 +71,31 @@ public class EnsembleHealer {
         if (initialized) return;
         initialized = true;
 
-        byte[] modelBytes = loadResource(MODEL_RESOURCE);
+        byte[] modelBytes = Ellithium.core.ai.crypto.ModelDecryptor.decryptModel();
         if (modelBytes == null) {
-            Reporter.log("[ENSEMBLE] Model not found at " + MODEL_RESOURCE
-                    + " or " + EXTERNAL_MODEL_DIR + " — Tier 2 unavailable", LogLevel.WARN);
+            Reporter.log("[ENSEMBLE] Model not found — Tier 2 unavailable", LogLevel.WARN);
             return;
         }
 
         try {
-            byte[] tokenizerBytes = loadResource(TOKENIZER_RESOURCE);
+            byte[] tokenizerBytes = Ellithium.core.ai.crypto.ModelDecryptor.loadTokenizer();
             if (tokenizerBytes == null) {
-                Reporter.log("[ENSEMBLE] Tokenizer not found at " + TOKENIZER_RESOURCE + " — Tier 2 unavailable", LogLevel.WARN);
+                String extTok = EXTERNAL_MODEL_DIR + "/tokenizer.json";
+                try (java.io.InputStream is = new java.io.FileInputStream(extTok)) {
+                    tokenizerBytes = readAllBytes(is);
+                } catch (Exception ignored) {}
+            }
+            if (tokenizerBytes == null) {
+                Reporter.log("[ENSEMBLE] Tokenizer not found — Tier 2 unavailable", LogLevel.WARN);
                 return;
             }
 
+            int modelKb = modelBytes.length / 1024;
             initOrtSession(modelBytes);
+            java.util.Arrays.fill(modelBytes, (byte) 0);
             initTokenizer(tokenizerBytes);
             available = true;
-            Reporter.log("[ENSEMBLE] ONNX session active — " + modelBytes.length / 1024
+            Reporter.log("[ENSEMBLE] ONNX session active — " + modelKb
                     + " KB INT8 model loaded | pooling=cls", LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
@@ -126,11 +131,9 @@ public class EnsembleHealer {
     public static boolean isAvailable() { return available; }
 
     public static boolean isModelPresent() {
-        try (InputStream is = EnsembleHealer.class.getResourceAsStream(MODEL_RESOURCE)) {
-            if (is != null) return true;
-        } catch (Exception ignored) {}
-        String fileName = MODEL_RESOURCE.substring(MODEL_RESOURCE.lastIndexOf('/') + 1);
-        return java.nio.file.Files.exists(java.nio.file.Paths.get(EXTERNAL_MODEL_DIR, fileName));
+        if (Ellithium.core.ai.crypto.ModelDecryptor.isModelResourcePresent()) return true;
+        return java.nio.file.Files.exists(
+                java.nio.file.Paths.get(EXTERNAL_MODEL_DIR, "model_quantized.onnx.enc"));
     }
 
     /**
@@ -765,16 +768,6 @@ public class EnsembleHealer {
         if (v != null && !v.isBlank()) sb.append(" ").append(v.trim());
     }
 
-    private static byte[] loadResource(String path) {
-        try (InputStream is = EnsembleHealer.class.getResourceAsStream(path)) {
-            if (is != null) return readAllBytes(is);
-        } catch (Exception ignored) {}
-        String fileName = path.substring(path.lastIndexOf('/') + 1);
-        java.nio.file.Path ext = java.nio.file.Paths.get(EXTERNAL_MODEL_DIR, fileName);
-        try (InputStream is = new java.io.FileInputStream(ext.toFile())) {
-            return readAllBytes(is);
-        } catch (Exception e) { return null; }
-    }
 
     private static byte[] readAllBytes(InputStream is) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();

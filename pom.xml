@@ -613,12 +613,24 @@
                 </includes>
             </resource>
             <resource>
-                <!-- ONNX model + tokenizer for Tier 3 AI healing.
-                     filtering=false is mandatory: Maven's text-based substitution corrupts binary files. -->
+                <!-- Encrypted ONNX model + tokenizer for AI healing.
+                     filtering=false is mandatory: Maven's text-based substitution corrupts binary files.
+                     Only the .enc file is included — the plaintext .onnx is never packaged. -->
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <includes>
-                    <include>Ellithium-ai-model/**</include>
+                    <include>Ellithium-ai-model/model_quantized.onnx.enc</include>
+                    <include>Ellithium-ai-model/tokenizer.json</include>
+                    <include>native/*.dll</include>
+                    <include>native/*.so</include>
+                    <include>native/*.dylib</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources/properties</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*</include>
                 </includes>
             </resource>
             <resource>

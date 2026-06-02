@@ -159,6 +159,15 @@ public final class InteractionRecorder {
             options = options.withAssertMode(options.isSoftAssert() ? "hard" : "soft");
             return true;
         }
+        if ("autoGenerate".equals(type)) {
+            String stepId = str(ev.get("id"));
+            if (stepId == null) return false;
+            RecordedStep step = BY_ID.get(stepId);
+            if (step == null) return false;
+            Object m = ev.get("method");
+            step.setGeneratorMethod((m == null || "null".equals(m.toString()) || m.toString().isBlank()) ? null : m.toString());
+            return true;
+        }
         if ("delete".equals(type)) {
             String delId = str(ev.get("id"));
             if (delId == null) return false;
@@ -276,6 +285,13 @@ public final class InteractionRecorder {
         return u == null || u.isBlank() || u.startsWith("about:") || u.startsWith("data:") || u.startsWith("chrome:");
     }
 
+    private static boolean isInternalUrl(String u) {
+        if (u == null || u.isBlank()) return true;
+        return u.startsWith("chrome-devtools://") || u.startsWith("devtools://")
+                || u.startsWith("chrome://") || u.startsWith("edge://")
+                || u.startsWith("about:") || u.startsWith("data:");
+    }
+
     private static void checkNewTabs() {
         if (driver == null) return;
         try {
@@ -289,6 +305,7 @@ public final class InteractionRecorder {
                 knownHandles.addAll(handles);
                 driver.switchTo().window(genuinelyNew);
                 lastUrl = currentUrl();
+                if (isInternalUrl(lastUrl)) return;
                 navHintEpoch = 0L;
                 STEPS.add(new RecordedStep("tab-" + System.currentTimeMillis(), "navigate",
                         lastUrl, null, null, List.of()));
@@ -343,7 +360,7 @@ public final class InteractionRecorder {
     private static void removeOverlay() {
         if (!(driver instanceof JavascriptExecutor js)) return;
         try {
-            js.executeScript("var b=document.getElementById('ellithium-recorder-toolbar');if(b)b.remove();");
+            js.executeScript("var b=document.getElementById('ellithium-recorder-toolbar');if(b)b.remove(); window.__ellOverlayDone=false;");
         } catch (Exception ignored) {}
     }
 
@@ -356,6 +373,7 @@ public final class InteractionRecorder {
                 o.addProperty("id", s.getId());
                 o.addProperty("action", s.getActionType());
                 o.addProperty("data", s.getData());
+                o.addProperty("generatorMethod", s.getGeneratorMethod());
                 o.addProperty("chosenIndex", s.getChosenIndex());
                 JsonArray fr = new JsonArray();
                 for (Integer idx : s.getFrameChain()) fr.add(idx);
@@ -564,7 +582,8 @@ public final class InteractionRecorder {
 
     private static final String OVERLAY_SCRIPT =
             "(function(){"
-            + " var __ex=document.querySelectorAll('#ellithium-recorder-toolbar'); for(var __i=1;__i<__ex.length;__i++)__ex[__i].remove(); if(__ex.length>=1) return;"
+            + " if(window.__ellOverlayDone && document.getElementById('ellithium-recorder-toolbar')) return;"
+            + " var __ex=document.querySelectorAll('#ellithium-recorder-toolbar'); for(var __i=1;__i<__ex.length;__i++)__ex[__i].remove(); if(__ex.length>=1){ window.__ellOverlayDone=true; return; }"
             + " var bar=document.createElement('div'); bar.id='ellithium-recorder-toolbar';"
             + " bar.style.cssText='position:fixed;top:10px;right:10px;z-index:2147483647;width:360px;max-height:80vh;"
             + "overflow:auto;background:rgba(20,20,20,0.95);color:#fff;padding:10px;border-radius:10px;"
@@ -615,6 +634,7 @@ public final class InteractionRecorder {
             + "   drag=true; var r=bar.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; bar.style.right='auto'; e.preventDefault(); });"
             + " document.addEventListener('mousemove', function(e){ if(!drag) return; bar.style.left=Math.max(0,e.clientX-ox)+'px'; bar.style.top=Math.max(0,e.clientY-oy)+'px'; });"
             + " document.addEventListener('mouseup', function(){ drag=false; });"
+            + " window.__ellOverlayDone=true;"
             + "})();";
 
     private static final String RENDER_SCRIPT =
@@ -628,8 +648,23 @@ public final class InteractionRecorder {
             + " if(pf){ if(picked && picked.candidates && picked.candidates.length){ var ph='<div style=\"border:1px solid #0a84ff;border-radius:6px;padding:6px;margin-bottom:6px\"><b>Picked locator</b>';"
             + "   for(var i=0;i<picked.candidates.length;i++) ph+=row(picked.candidates[i]); pf.innerHTML=ph+'</div>'; } else pf.innerHTML=''; }"
             + " var host=document.getElementById('ell-steps'); if(!host) return; var html='';"
+            + " var TDG_METHODS=[{g:'Name',m:['getRandomFullName','getRandomFirstName','getRandomLastName','getRandomUsername']},"
+            + "   {g:'Contact',m:['getRandomEmail','getRandomPhoneNumber']},"
+            + "   {g:'Location',m:['getRandomAddress','getRandomStreetAddress','getRandomCity','getRandomState','getRandomCountry','getRandomZipCode']},"
+            + "   {g:'Professional',m:['getRandomCompany','getRandomJobTitle']},"
+            + "   {g:'Security',m:['getRandomPassword']},"
+            + "   {g:'Web',m:['getRandomWebsite','getRandomIPAddress']},"
+            + "   {g:'Content',m:['getRandomSentence','getRandomParagraph']},"
+            + "   {g:'Date',m:['getDayDateStamp','getRandomBirthDate']},"
+            + "   {g:'Other',m:['getRandomCreditCardNumber','getRandomColor','getRandomUniversity']}];"
+            + " function tdgOptions(){ var s='<option value=\"\">\\u2014 Use JSON value (manual)</option>'; for(var g=0;g<TDG_METHODS.length;g++){ s+='<optgroup label=\"'+TDG_METHODS[g].g+'\">'; for(var m=0;m<TDG_METHODS[g].m.length;m++) s+='<option value=\"'+TDG_METHODS[g].m[m]+'\">'+TDG_METHODS[g].m[m]+'()</option>'; s+='</optgroup>'; } return s; }"
+            + " var isInput=function(a){ return a==='input'||a==='sendData'; };"
             + " for(var s=0;s<steps.length;s++){ var st=steps[s]; var fl=(st.frame&&st.frame.length)?(' [frame '+st.frame.join('>')+']'):'';"
-            + "   html+='<div style=\"border-top:1px solid #333;padding:6px 0\"><div style=\"display:flex;color:#0a84ff;font-weight:bold\"><span>'+(s+1)+'. '+st.action+fl+(st.data?(' \\u2192 '+(''+st.data).slice(0,40)):'')+'</span><button class=\"ell-del\" data-del=\"'+st.id+'\" title=\"Cancel step\" style=\"margin-left:auto;background:#633;color:#fff;border:0;border-radius:3px;cursor:pointer\">\\u2715</button></div>';"
+            + "   var genBadge=st.generatorMethod?(' <span style=\"background:#1c3a1c;color:#30d158;border-radius:3px;padding:1px 4px;font-size:10px\">\\uD83C\\uDFB2 '+st.generatorMethod+'()</span>'):'(st.data?(\\' \\u2192 \\'+(\\'\\'+st.data).slice(0,40)):\\'\\');"
+            + "   if(st.generatorMethod) genBadge=' <span style=\"background:#1c3a1c;color:#30d158;border-radius:3px;padding:1px 4px;font-size:10px\">\\uD83C\\uDFB2 '+st.generatorMethod+'()</span>';"
+            + "   else genBadge=st.data?(' \\u2192 '+(''+st.data).slice(0,40)):'';"
+            + "   var genBtn=isInput(st.action)?('<select class=\"ell-gen\" data-id=\"'+st.id+'\" title=\"Auto-generate test data\" style=\"margin-left:4px;background:#333;color:#fff;border:1px solid #555;border-radius:3px;font-size:10px;cursor:pointer\">'+tdgOptions()+'</select>'):'';"
+            + "   html+='<div style=\"border-top:1px solid #333;padding:6px 0\"><div style=\"display:flex;align-items:center;color:#0a84ff;font-weight:bold\"><span>'+(s+1)+'. '+st.action+fl+genBadge+'</span>'+genBtn+'<button class=\"ell-del\" data-del=\"'+st.id+'\" title=\"Cancel step\" style=\"margin-left:4px;background:#633;color:#fff;border:0;border-radius:3px;cursor:pointer\">\\u2715</button></div>';"
             + "   for(var j=0;j<st.candidates.length;j++){ var c=st.candidates[j]; var sel=(j===st.chosenIndex);"
             + "     html+='<label style=\"display:flex;gap:6px;align-items:center;cursor:pointer\"><input type=\"radio\" name=\"ell-'+st.id+'\" '+(sel?'checked':'')+' data-id=\"'+st.id+'\" data-idx=\"'+j+'\">'"
             + "       +'<span style=\"color:'+(c.unique?'#30d158':'#ff9f0a')+'\">'+(c.unique?'\\u2713':'\\u26a0')+'</span><code>'+c.expr.replace(/</g,'&lt;')+'</code>'"
@@ -637,6 +672,10 @@ public final class InteractionRecorder {
             + "   html+='</div>'; }"
             + " host.innerHTML=html;"
             + " function push(o){ var a=JSON.parse(localStorage.getItem('__ellRecLog')||'[]'); a.push(o); localStorage.setItem('__ellRecLog', JSON.stringify(a)); }"
+            + " var gens=host.querySelectorAll('.ell-gen');"
+            + " for(var gi=0;gi<gens.length;gi++){ (function(sel){ var sid=sel.getAttribute('data-id');"
+            + "   var cur=null; for(var si=0;si<steps.length;si++){ if(steps[si].id===sid){ cur=steps[si].generatorMethod||''; break; } }"
+            + "   sel.value=cur||''; sel.addEventListener('change',function(){ push({type:'autoGenerate',id:sid,method:this.value||null}); }); })(gens[gi]); }"
             + " var radios=host.querySelectorAll('input[type=radio]');"
             + " for(var k=0;k<radios.length;k++){ radios[k].addEventListener('change', function(){"
             + "   push({type:'override', id:this.getAttribute('data-id'), index:parseInt(this.getAttribute('data-idx'))}); }); }"

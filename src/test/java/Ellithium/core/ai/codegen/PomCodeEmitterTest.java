@@ -113,7 +113,9 @@ public class PomCodeEmitterTest {
         Assert.assertTrue(src.contains(
                 "driverActions.navigation().navigateToUrl(\"https://the-internet.herokuapp.com/login\");"), src);
         Assert.assertTrue(src.contains("@Test\n    public void perform() {"), src);
-        Assert.assertTrue(src.contains("driverActions.elements().sendData(username, \"tomsmith\");"), src);
+        Assert.assertTrue(src.contains(
+                "driverActions.elements().sendData(username, Ellithium.Utilities.helpers.JsonHelper"
+                + ".getJsonKeyValue(\"src/test/resources/TestData/LoginPage.json\", \"username\"));"), src);
         Assert.assertTrue(src.contains("DriverFactory.quitDriver();"), src);
         Assert.assertFalse(src.contains("return this;"), "a test method must not return this");
     }
@@ -140,16 +142,22 @@ public class PomCodeEmitterTest {
                 step("input", "playwright", "Search", c),
                 step("pressEnter", null, "Search", c));
         String stmts = String.join("\n", PomCodeEmitter.build(steps, "P").statements());
-        Assert.assertTrue(stmts.contains("driverActions.elements().sendData(search, \"playwright\");"), stmts);
+        Assert.assertTrue(stmts.contains(
+                "driverActions.elements().sendData(search, Ellithium.Utilities.helpers.JsonHelper"
+                + ".getJsonKeyValue(\"src/test/resources/TestData/P.json\", \"search\"));"), stmts);
         Assert.assertTrue(stmts.contains("driverActions.elements().sendData(search, org.openqa.selenium.Keys.ENTER);"), stmts);
     }
 
     @Test
     public void passwordValue_isEmittedAsEnvLookupNotPlaintext() {
         LocatorCandidate c = new LocatorCandidate(By.id("pw"), "By.id(\"pw\")", 0.9, "id", true, false);
-        String stmts = String.join("\n", PomCodeEmitter.build(List.of(step("input", "__ELL_SECRET__", "Password", c)), "P").statements());
-        Assert.assertTrue(stmts.contains("System.getenv(\"ELLITHIUM_SECRET\")"), stmts);
+        PomCodeEmitter.EmitResult r = PomCodeEmitter.build(List.of(step("input", "__ELL_SECRET__", "Password", c)), "P");
+        String stmts = String.join("\n", r.statements());
+        Assert.assertTrue(stmts.contains(
+                "driverActions.elements().sendData(password, Ellithium.Utilities.helpers.JsonHelper"
+                + ".getJsonKeyValue(\"src/test/resources/TestData/P.json\", \"password\"));"), stmts);
         Assert.assertFalse(stmts.contains("__ELL_SECRET__"), "the sentinel must not leak into code: " + stmts);
+        Assert.assertEquals(r.testData().get("password"), "", "secret stored as empty string for manual fill-in");
     }
 
     @Test
@@ -180,5 +188,124 @@ public class PomCodeEmitterTest {
         PomCodeEmitter.EmitResult r = PomCodeEmitter.build(
                 List.of(step("teleport", null, "X", c)), "P");
         Assert.assertTrue(r.statements().isEmpty(), "no API mapping → no statement emitted");
+    }
+
+    @Test
+    public void navigateBack_emitsNavigateBackCall() {
+        RecordedStep back = new RecordedStep("b1", "navigateBack", null, null, null, List.of());
+        List<String> stmts = PomCodeEmitter.build(List.of(back), "P").statements();
+        Assert.assertEquals(stmts.size(), 1);
+        Assert.assertEquals(stmts.get(0), "driverActions.navigation().navigateBack();");
+    }
+
+    @Test
+    public void navigateForward_emitsNavigateForwardCall() {
+        RecordedStep fwd = new RecordedStep("f1", "navigateForward", null, null, null, List.of());
+        List<String> stmts = PomCodeEmitter.build(List.of(fwd), "P").statements();
+        Assert.assertEquals(stmts.size(), 1);
+        Assert.assertEquals(stmts.get(0), "driverActions.navigation().navigateForward();");
+    }
+
+    @Test
+    public void generatorMethod_emitsTestDataGeneratorCall_notJsonHelper() {
+        LocatorCandidate c = new LocatorCandidate(By.id("email"), "By.id(\"email\")", 0.9, "id", true, false);
+        RecordedStep s = new RecordedStep("s1", "input", "test@example.com", "input", "Email", List.of(c));
+        s.setGeneratorMethod("getRandomEmail");
+        PomCodeEmitter.EmitResult r = PomCodeEmitter.build(List.of(s), "P");
+        String stmts = String.join("\n", r.statements());
+        Assert.assertTrue(stmts.contains("TestDataGenerator.getRandomEmail()"), stmts);
+        Assert.assertFalse(stmts.contains("JsonHelper"), "classified field must not use JsonHelper: " + stmts);
+        Assert.assertTrue(r.hasTestDataGen());
+        Assert.assertFalse(r.testData().containsKey("email"), "classified field must not go to JSON");
+    }
+
+    @Test
+    public void generatorMethod_null_fallsBackToJsonHelper() {
+        LocatorCandidate c = new LocatorCandidate(By.id("email"), "By.id(\"email\")", 0.9, "id", true, false);
+        RecordedStep s = new RecordedStep("s1", "input", "test@example.com", "input", "Email", List.of(c));
+        String stmts = String.join("\n", PomCodeEmitter.build(List.of(s), "P").statements());
+        Assert.assertTrue(stmts.contains("JsonHelper.getJsonKeyValue"), stmts);
+        Assert.assertFalse(stmts.contains("TestDataGenerator"), stmts);
+    }
+
+    @Test
+    public void sameLocatorReusedInTwoSteps_fieldEmittedOnce() {
+        LocatorCandidate c = new LocatorCandidate(By.id("btn"), "By.id(\"btn\")", 0.9, "id", true, false);
+        List<RecordedStep> steps = List.of(
+                step("click", null, "Btn", c),
+                step("click", null, "Btn", c));
+        List<String> fields = PomCodeEmitter.build(steps, "P").locatorFields();
+        long count = fields.stream().filter(f -> f.contains("By.id(\"btn\")")).count();
+        Assert.assertEquals(count, 1L, "same expression should produce exactly one field declaration");
+    }
+
+    @Test
+    public void identifier_digitLeadingName_prefixedWithEl() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod(
+                "identifier", String.class, String.class, String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(null, "123field", null, null);
+        Assert.assertTrue(result.startsWith("el"), "digit-leading field must be prefixed with 'el': " + result);
+    }
+
+    @Test
+    public void identifier_emptyName_fallsBackToElement() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod(
+                "identifier", String.class, String.class, String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(null, null, null, null);
+        Assert.assertFalse(result.isEmpty(), "identifier must never be empty");
+    }
+
+    @Test
+    public void esc_escapesSpecialCharacters() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod("esc", String.class);
+        m.setAccessible(true);
+        Assert.assertEquals(m.invoke(null, "a\\b"),  "a\\\\b");
+        Assert.assertEquals(m.invoke(null, "a\"b"), "a\\\"b");
+        Assert.assertEquals(m.invoke(null, "a\nb"), "a\\nb");
+        Assert.assertEquals(m.invoke(null, "a\rb"), "ab");
+        Assert.assertEquals(m.invoke(null, (Object) null), "");
+    }
+
+    @Test
+    public void templateDynamic_quotedDigit_templated() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod("templateDynamic", String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(null, "[data-choice-index='0']");
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.contains("%s"), result);
+    }
+
+    @Test
+    public void templateDynamic_trailingUnderscore_templated() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod("templateDynamic", String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(null, "month_0");
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.contains("%s"), result);
+    }
+
+    @Test
+    public void templateDynamic_plainDigit_templated() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod("templateDynamic", String.class);
+        m.setAccessible(true);
+        String result = (String) m.invoke(null, "item42");
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.contains("%s"), result);
+    }
+
+    @Test
+    public void templateDynamic_noDigit_returnsNull() throws Exception {
+        java.lang.reflect.Method m = PomCodeEmitter.class.getDeclaredMethod("templateDynamic", String.class);
+        m.setAccessible(true);
+        Assert.assertNull(m.invoke(null, "loginBtn"));
+    }
+
+    @Test
+    public void hasTestDataGen_falseWhenNoGeneratorMethod() {
+        LocatorCandidate c = new LocatorCandidate(By.id("x"), "By.id(\"x\")", 0.9, "id", true, false);
+        PomCodeEmitter.EmitResult r = PomCodeEmitter.build(List.of(step("click", null, "X", c)), "P");
+        Assert.assertFalse(r.hasTestDataGen());
     }
 }

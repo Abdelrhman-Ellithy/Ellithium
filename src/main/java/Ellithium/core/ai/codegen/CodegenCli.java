@@ -23,7 +23,7 @@ public final class CodegenCli {
         if (url == null && flags.isEmpty()) {
             System.out.println("Usage: codegen [url] [--browser chrome|edge|firefox|safari] "
                     + "[--target test|pom] [--assert soft|hard] [--output <dir>] [--package <pkg>] "
-                    + "[--save-storage <file>] [--load-storage <file>] [--headless] [--llm-polish]");
+                    + "[--class <ClassName>] [--save-storage <file>] [--load-storage <file>] [--headless] [--llm-polish]");
             System.out.println("(url is optional — omit it and type a URL in the browser after recording starts)");
             return;
         }
@@ -70,7 +70,9 @@ public final class CodegenCli {
                 return;
             }
             RecorderOptions effective = InteractionRecorder.getOptions();
-            String className = deriveClassName(url != null ? url : startUrl);
+            String className = flags.containsKey("class")
+                    ? sanitizeClassName(flags.get("class"))
+                    : deriveClassName(url != null ? url : startUrl);
             String path = effective.isTest()
                     ? PomCodeEmitter.emitTest(steps, className, effective, startUrl)
                     : PomCodeEmitter.emit(steps, className, effective);
@@ -113,6 +115,14 @@ public final class CodegenCli {
             case "safari" -> LocalDriverType.Safari;
             default -> LocalDriverType.Chrome;
         };
+    }
+
+    static String sanitizeClassName(String name) {
+        if (name == null || name.isBlank()) return "RecordedPage";
+        String clean = name.replaceAll("[^a-zA-Z0-9]", "");
+        if (clean.isEmpty()) return "RecordedPage";
+        if (Character.isDigit(clean.charAt(0))) clean = "Page" + clean;
+        return Character.toUpperCase(clean.charAt(0)) + clean.substring(1);
     }
 
     static String deriveClassName(String url) {

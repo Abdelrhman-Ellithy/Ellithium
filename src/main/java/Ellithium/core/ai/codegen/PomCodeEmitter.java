@@ -5,8 +5,10 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,9 +18,12 @@ public final class PomCodeEmitter {
     private PomCodeEmitter() {}
 
     private static final Pattern BY_EXPR = Pattern.compile("^By\\.(\\w+)\\(\"(.*)\"\\)$");
+    private static final String JSON_HELPER = "Ellithium.Utilities.helpers.JsonHelper";
+    private static final String TEST_DATA_DIR = "src/test/resources/TestData/";
 
     public record EmitResult(String className, List<String> locatorFields,
-                             List<String> methods, List<String> statements, boolean hasAssertions) {}
+                             List<String> methods, List<String> statements, boolean hasAssertions,
+                             Map<String, String> testData, boolean hasTestDataGen) {}
 
     static final String ASSERT_HARD = "Ellithium.Utilities.assertion.AssertionExecutor.hard";
     static final String SOFT_TYPE = "Ellithium.Utilities.assertion.AssertionExecutor.soft";
@@ -34,18 +39,25 @@ public final class PomCodeEmitter {
 
     public static EmitResult build(List<RecordedStep> steps, String className,
                                    boolean parameterize, boolean soft) {
+        String name = (className != null && !className.isBlank()) ? className : "RecordedPage";
+        String jsonPath = TEST_DATA_DIR + name + ".json";
+
         Set<String> usedFieldNames = new LinkedHashSet<>();
-        java.util.Map<String, String> exprToField = new java.util.HashMap<>();
+        Map<String, String> exprToField = new LinkedHashMap<>();
+        Map<String, String> inputData = new LinkedHashMap<>();
         List<String> locatorFields = new ArrayList<>();
         List<String> statements = new ArrayList<>();
         List<String> params = new ArrayList<>();
         String assertRef = soft ? SOFT_VAR : ASSERT_HARD;
         boolean hasAssertions = false;
+        boolean hasTestDataGen = false;
 
         for (RecordedStep step : steps) {
             String action = step.getActionType();
+            String data = step.getData();
+
             if ("navigate".equals(action)) {
-                statements.add("driverActions.navigation().navigateToUrl(\"" + esc(step.getData()) + "\");");
+                statements.add("driverActions.navigation().navigateToUrl(\"" + esc(data) + "\");");
                 continue;
             }
             if ("navigateBack".equals(action)) {
@@ -56,7 +68,7 @@ public final class PomCodeEmitter {
                 statements.add("driverActions.navigation().navigateForward();");
                 continue;
             }
-            if ("assertText".equals(action) && (step.getData() == null || step.getData().isBlank())) {
+            if ("assertText".equals(action) && (data == null || data.isBlank())) {
                 continue;
             }
             LocatorCandidate chosen = step.chosen();
@@ -76,7 +88,24 @@ public final class PomCodeEmitter {
                 byRef = fieldFor(step, chosen, usedFieldNames, locatorFields, exprToField);
             }
 
-            String stmt = statementFor(action, byRef, step.getData(), assertRef);
+            String stmt;
+            if (("input".equals(action) || "sendData".equals(action)) && data != null) {
+                String key = isFieldName(byRef) ? byRef
+                        : identifier(step.getElementName(), step.getTagName(), action);
+                String gen = step.getGeneratorMethod();
+                if (gen != null && !gen.isBlank()) {
+                    stmt = "driverActions.elements().sendData(" + byRef + ", "
+                            + "Ellithium.Utilities.generators.TestDataGenerator." + gen + "());";
+                    hasTestDataGen = true;
+                } else {
+                    inputData.put(key, SECRET.equals(data) ? "" : data);
+                    stmt = "driverActions.elements().sendData(" + byRef + ", "
+                            + JSON_HELPER + ".getJsonKeyValue(\"" + esc(jsonPath) + "\", \"" + key + "\"));";
+                }
+            } else {
+                stmt = statementFor(action, byRef, data, assertRef);
+            }
+
             if (stmt == null) {
                 Reporter.log("PomCodeEmitter: no API mapping for action '" + action + "' — step skipped",
                         LogLevel.WARN);
@@ -92,7 +121,6 @@ public final class PomCodeEmitter {
         }
 
         boolean softAll = soft && hasAssertions;
-        String name = (className != null && !className.isBlank()) ? className : "RecordedPage";
         String signature = "public " + name + " perform(" + paramList(params) + ")";
         StringBuilder body = new StringBuilder(signature).append(" {\n");
         if (softAll) body.append("        ").append(SOFT_TYPE).append(" ").append(SOFT_VAR)
@@ -101,7 +129,7 @@ public final class PomCodeEmitter {
         if (softAll) body.append("        ").append(SOFT_VAR).append(".assertAll();\n");
         body.append("        return this;\n    }");
 
-        return new EmitResult(name, locatorFields, List.of(body.toString()), statements, hasAssertions);
+        return new EmitResult(name, locatorFields, List.of(body.toString()), statements, hasAssertions, inputData, hasTestDataGen);
     }
 
     public static String previewSource(List<RecordedStep> steps, String className, String pkg) {
@@ -110,19 +138,7 @@ public final class PomCodeEmitter {
 
     public static String previewSource(List<RecordedStep> steps, String className, String pkg, boolean soft) {
         EmitResult r = build(steps, className, true, soft);
-        StringBuilder sb = new StringBuilder();
-        sb.append("package ").append(pkg).append(";\n\n");
-        sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
-        sb.append("import org.openqa.selenium.By;\n");
-        sb.append("import org.openqa.selenium.WebDriver;\n\n");
-        sb.append("public class ").append(r.className()).append(" {\n\n");
-        sb.append("    private final DriverActions<?> driverActions;\n\n");
-        for (String f : r.locatorFields()) sb.append("    ").append(f).append("\n");
-        sb.append("\n    public ").append(r.className()).append("(WebDriver driver) {\n");
-        sb.append("        this.driverActions = new DriverActions<>(driver);\n    }\n\n");
-        for (String m : r.methods()) sb.append("    ").append(m).append("\n\n");
-        sb.append("}\n");
-        return sb.toString();
+        return renderSource(r, pkg);
     }
 
     public static String previewTestSource(List<RecordedStep> steps, String className, String pkg,
@@ -133,11 +149,87 @@ public final class PomCodeEmitter {
     public static String previewTestSource(List<RecordedStep> steps, String className, String pkg,
                                            String startUrl, String browser, boolean soft) {
         EmitResult r = build(steps, className, false, soft);
+        return renderTestSource(r, pkg, startUrl, browser, soft);
+    }
+
+    public static String emitTest(List<RecordedStep> steps, String className, RecorderOptions opts, String startUrl) {
+        RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
+        EmitResult r = build(steps, className, false, o.isSoftAssert());
+        writeTestData(r.testData(), TEST_DATA_DIR + r.className() + ".json");
+        String src = renderTestSource(r, o.packageName(), startUrl, o.browser(), o.isSoftAssert());
+        String cls = r.className().endsWith("Test") ? r.className() : r.className() + "Test";
+        String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/') + "/" + cls + ".java";
+        try {
+            java.nio.file.Path p = java.nio.file.Paths.get(path);
+            java.nio.file.Files.createDirectories(p.getParent());
+            java.nio.file.Files.writeString(p, src);
+            Reporter.log("PomCodeEmitter: wrote test " + path, LogLevel.INFO_GREEN);
+            return path;
+        } catch (Exception e) {
+            Reporter.log("PomCodeEmitter: failed to write test: " + e.getMessage(), LogLevel.ERROR);
+            return null;
+        }
+    }
+
+    public static String emit(List<RecordedStep> steps, String className, RecorderOptions opts) {
+        RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
+        EmitResult result = build(steps, className, true, o.isSoftAssert());
+        writeTestData(result.testData(), TEST_DATA_DIR + result.className() + ".json");
+        String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/')
+                + "/" + result.className() + ".java";
+        boolean ok = PomClassGenerator.createPomClass(path, o.packageName(), result.className(),
+                result.locatorFields(), result.methods());
+        if (ok) Reporter.log("PomCodeEmitter: wrote " + path, LogLevel.INFO_GREEN);
+        return ok ? path : null;
+    }
+
+    static void writeTestData(Map<String, String> data, String jsonPath) {
+        if (data == null || data.isEmpty()) return;
+        try {
+            java.nio.file.Path dir = java.nio.file.Paths.get(jsonPath).getParent();
+            if (dir != null) java.nio.file.Files.createDirectories(dir);
+        } catch (Exception ignored) {}
+        for (Map.Entry<String, String> e : data.entrySet()) {
+            Ellithium.Utilities.helpers.JsonHelper.setJsonKeyValue(jsonPath, e.getKey(), e.getValue());
+        }
+        Reporter.log("PomCodeEmitter: test data saved to " + jsonPath, LogLevel.INFO_GREEN);
+    }
+
+    private static String renderSource(EmitResult r, String pkg) {
+        String jsonPath = TEST_DATA_DIR + r.className() + ".json";
+        StringBuilder sb = new StringBuilder();
+        sb.append("package ").append(pkg).append(";\n\n");
+        if (r.hasTestDataGen()) sb.append("import Ellithium.Utilities.generators.TestDataGenerator;\n");
+        if (!r.testData().isEmpty()) sb.append("import ").append(JSON_HELPER).append(";\n");
+        sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
+        sb.append("import org.openqa.selenium.By;\n");
+        sb.append("import org.openqa.selenium.WebDriver;\n\n");
+        if (!r.testData().isEmpty()) {
+            sb.append("/**\n");
+            sb.append(" * Input data for sendData steps is stored in ").append(jsonPath).append(".\n");
+            sb.append(" * Edit that file to update values. Password fields are empty — fill them in manually.\n");
+            sb.append(" */\n");
+        }
+        sb.append("public class ").append(r.className()).append(" {\n\n");
+        sb.append("    private final DriverActions<?> driverActions;\n\n");
+        for (String f : r.locatorFields()) sb.append("    ").append(f).append("\n");
+        sb.append("\n    public ").append(r.className()).append("(WebDriver driver) {\n");
+        sb.append("        this.driverActions = new DriverActions<>(driver);\n    }\n\n");
+        for (String m : r.methods()) sb.append("    ").append(m).append("\n\n");
+        sb.append("}\n");
+        return sb.toString();
+    }
+
+    private static String renderTestSource(EmitResult r, String pkg,
+                                           String startUrl, String browser, boolean soft) {
         boolean softAll = soft && r.hasAssertions();
         String cls = r.className().endsWith("Test") ? r.className() : r.className() + "Test";
         String br = (browser == null || browser.isBlank()) ? "Chrome" : browser;
+        String jsonPath = TEST_DATA_DIR + r.className() + ".json";
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(pkg).append(";\n\n");
+        if (r.hasTestDataGen()) sb.append("import Ellithium.Utilities.generators.TestDataGenerator;\n");
+        if (!r.testData().isEmpty()) sb.append("import ").append(JSON_HELPER).append(";\n");
         sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
         sb.append("import Ellithium.core.driver.DriverFactory;\n");
         sb.append("import Ellithium.core.driver.HeadlessMode;\n");
@@ -152,6 +244,12 @@ public final class PomCodeEmitter {
         sb.append("import org.testng.annotations.AfterClass;\n");
         sb.append("import org.testng.annotations.BeforeClass;\n");
         sb.append("import org.testng.annotations.Test;\n\n");
+        if (!r.testData().isEmpty()) {
+            sb.append("/**\n");
+            sb.append(" * Input data for sendData steps is stored in ").append(jsonPath).append(".\n");
+            sb.append(" * Edit that file to update values. Password fields are empty — fill them in manually.\n");
+            sb.append(" */\n");
+        }
         sb.append("public class ").append(cls).append(" {\n\n");
         sb.append("    private DriverActions<?> driverActions;\n");
         sb.append("    private WebDriver driver;\n\n");
@@ -177,43 +275,15 @@ public final class PomCodeEmitter {
         return sb.toString();
     }
 
-    public static String emitTest(List<RecordedStep> steps, String className, RecorderOptions opts, String startUrl) {
-        RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
-        String src = previewTestSource(steps, className, o.packageName(), startUrl, o.browser(), o.isSoftAssert());
-        String cls = (className == null || className.isBlank() ? "RecordedPage" : className);
-        if (!cls.endsWith("Test")) cls = cls + "Test";
-        String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/') + "/" + cls + ".java";
-        try {
-            java.nio.file.Path p = java.nio.file.Paths.get(path);
-            java.nio.file.Files.createDirectories(p.getParent());
-            java.nio.file.Files.writeString(p, src);
-            Reporter.log("PomCodeEmitter: wrote test " + path, LogLevel.INFO_GREEN);
-            return path;
-        } catch (Exception e) {
-            Reporter.log("PomCodeEmitter: failed to write test: " + e.getMessage(), LogLevel.ERROR);
-            return null;
-        }
-    }
-
-    public static String emit(List<RecordedStep> steps, String className, RecorderOptions opts) {
-        RecorderOptions o = opts != null ? opts : RecorderOptions.defaults();
-        EmitResult result = build(steps, className, true, o.isSoftAssert());
-        String path = o.outputBasePath() + "/" + o.packageName().replace('.', '/')
-                + "/" + result.className() + ".java";
-        boolean ok = PomClassGenerator.createPomClass(path, o.packageName(), result.className(),
-                result.locatorFields(), result.methods());
-        if (ok) Reporter.log("PomCodeEmitter: wrote " + path, LogLevel.INFO_GREEN);
-        return ok ? path : null;
-    }
-
     private static final String SECRET = "__ELL_SECRET__";
+
+    private static boolean isFieldName(String s) {
+        return s != null && !s.isEmpty() && s.indexOf('(') < 0 && s.indexOf(' ') < 0;
+    }
 
     private static String statementFor(String action, String byRef, String data, String assertRef) {
         return switch (action) {
             case "click" -> "driverActions.elements().clickOnElement(" + byRef + ");";
-            case "input", "sendData" -> SECRET.equals(data)
-                    ? "driverActions.elements().sendData(" + byRef + ", System.getenv(\"ELLITHIUM_SECRET\"));"
-                    : "driverActions.elements().sendData(" + byRef + ", \"" + esc(data) + "\");";
             case "pressEnter" -> "driverActions.elements().sendData(" + byRef + ", org.openqa.selenium.Keys.ENTER);";
             case "clear" -> "driverActions.elements().clearElement(" + byRef + ");";
             case "getText" -> "driverActions.elements().getText(" + byRef + ");";
@@ -233,7 +303,7 @@ public final class PomCodeEmitter {
     }
 
     private static String fieldFor(RecordedStep step, LocatorCandidate chosen, Set<String> used,
-                                   List<String> locatorFields, java.util.Map<String, String> exprToField) {
+                                   List<String> locatorFields, Map<String, String> exprToField) {
         String existing = exprToField.get(chosen.javaExpression());
         if (existing != null) return existing;
         String base = identifier(step.getElementName(), step.getTagName(), step.getActionType());

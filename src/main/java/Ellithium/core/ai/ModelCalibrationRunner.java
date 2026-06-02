@@ -32,7 +32,7 @@ import java.util.*;
  * </ol>
  *
  * <h3>How to run</h3>
- * <pre>java -cp ellithium-*.jar Ellithium.Utilities.ai.ModelCalibrationRunner [licenseKey]</pre>
+ * <pre>java -cp ellithium-*.jar Ellithium.core.ai.ModelCalibrationRunner</pre>
  * Pre-requisite: {@code EnsembleHealer.isAvailable()} must be true (model embedded).
  */
 public class ModelCalibrationRunner {
@@ -47,10 +47,6 @@ public class ModelCalibrationRunner {
     public static void main(String[] args) {
         System.out.println("=== Ellithium Tier 3 Model Calibration Runner (precision-first) ===");
         System.out.println("Timestamp: " + Instant.now());
-
-        if (args.length > 0 && !args[0].isBlank()) {
-            System.setProperty("ellithium.license.key.override", args[0]);
-        }
 
         AIConfigLoader.initialize();
         EnsembleHealer.initialize();

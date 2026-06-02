@@ -19,6 +19,8 @@ src/test/resources/TestData/DB-Info.json
 src/test/resources/TestData/Items and Prices.xlsx
 kaggle-finetune
 src/main/resources/Ellithium-ai-model
+src/main/resources/native
+native-crypto
 
 # Preserve specific Test-Output structure
 !Test-Output/Logs/
@@ -33,11 +35,7 @@ Test-Output/UpdateChecker/*
 # Allure Reports
 Test-Output/Reports/Allure/*
 !Test-Output/Reports/Allure/.gitkeep
-codegen.md
-
-src/test/java/Pages/WebLoginPageTest.java
 src/test/java/ignore/*
-unified-principal-review.md
 
 # Cucumber Reports
 Test-Output/Reports/Cucumber/*
@@ -59,6 +57,8 @@ Test-Output/Logs/*
 *.iml
 *.ipr
 *.iws
+context-features/*
+native-crypto/*
 
 ### Eclipse ###
 .apt_generated

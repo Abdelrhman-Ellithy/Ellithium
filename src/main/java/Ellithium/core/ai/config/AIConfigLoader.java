@@ -34,7 +34,6 @@ public class AIConfigLoader {
     private static String llmProviderClass = "";
     private static ExecutionMode executionMode = ExecutionMode.LOCAL;
     private static boolean visionRcaEnabled = false;
-    private static String licenseKey = "";
     private static double onnxSimilarityThreshold = 0.80;
     private static double onnxReadableThreshold   = 0.65;   // lower for READABLE — text-heavy elements score lower
     private static int onnxMaxCandidates         = 10;
@@ -86,7 +85,6 @@ public class AIConfigLoader {
 
             executionMode    = parseEnum(p, "ai.execution.mode", ExecutionMode.class, executionMode);
             visionRcaEnabled = parseBool(p, "ai.vision.rca.enabled", visionRcaEnabled);
-            licenseKey       = getPropertyOrDefault(p, "ai.license.key", "");
 
             onnxSimilarityThreshold   = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
             onnxMaxCandidates         = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
@@ -197,7 +195,6 @@ public class AIConfigLoader {
     public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
     public static int getMaxCandidates() { return maxCandidates; }
 
-    public static String getLicenseKey()                  { return licenseKey; }
     public static double getOnnxSimilarityThreshold()     { return onnxSimilarityThreshold; }
     public static double getOnnxReadableThreshold()       { return onnxReadableThreshold; }
     public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }
