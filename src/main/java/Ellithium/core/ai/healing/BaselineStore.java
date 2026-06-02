@@ -312,7 +312,8 @@ public class BaselineStore {
         }
 
         if (bestEl == null) return null;
-        By locator = ElementFingerprint.reconstructLocator(bestEl);
+        By locator = HealedLocatorBuilder.build(driver, bestEl, baseline);
+        if (locator == null) locator = ElementFingerprint.reconstructLocator(bestEl);
         if (locator == null) return null;
         return new ScoredCandidate(bestEl, locator, bestScore, buildMatchReasoning(baseline, bestEl));
     }

@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public final class UniqueLocatorGenerator {
 
@@ -24,9 +23,6 @@ public final class UniqueLocatorGenerator {
     public interface UniquenessProbe {
         int matchCount(By by);
     }
-
-    private static final Pattern DYNAMIC = Pattern.compile(
-            "\\d{4,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}|_\\d+$|:id/|[0-9a-f]{16,}");
 
     private static final double W_TESTID = 1.00, W_ID = 0.90, W_NAME = 0.85, W_ARIA = 0.80,
             W_TEXT = 0.78, W_DATA = 0.70, W_CSS = 0.60, W_XPATH = 0.40;
@@ -240,7 +236,8 @@ public final class UniqueLocatorGenerator {
         List<Draft> out = new ArrayList<>();
         if (!(driver instanceof JavascriptExecutor js)) return out;
         try {
-            Object res = js.executeScript(PATH_SCRIPT, target);
+            Object res = js.executeScript(
+                    Ellithium.core.ai.locators.LocatorTechniques.STRUCTURAL_PATH_SCRIPT, target);
             if (res instanceof Map<?, ?> m) {
                 String css = str(m.get("css"));
                 if (isPresent(css)) {
@@ -255,26 +252,6 @@ public final class UniqueLocatorGenerator {
         } catch (Exception ignored) {}
         return out;
     }
-
-    private static final String PATH_SCRIPT =
-            "var el=arguments[0];"
-            + "function stable(a){return a==='id'||a==='name'||a.indexOf('data-')===0;}"
-            + "function seg(n){var t=n.tagName.toLowerCase();"
-            + " var p=n.parentElement; if(!p) return t;"
-            + " var same=Array.prototype.filter.call(p.children,function(c){return c.tagName===n.tagName;});"
-            + " if(same.length===1) return t;"
-            + " return t+':nth-of-type('+(Array.prototype.indexOf.call(same,n)+1)+')';}"
-            + "function ancestor(n){var c=n;while(c&&c!==document.body){"
-            + " if(c.id&&document.querySelectorAll('#'+CSS.escape(c.id)).length===1) return c;"
-            + " var dt=c.getAttribute&&c.getAttribute('data-testid');"
-            + " if(dt&&document.querySelectorAll('[data-testid=\"'+dt+'\"]').length===1) return c;"
-            + " c=c.parentElement;} return null;}"
-            + "var root=ancestor(el), parts=[], cur=el, base='';"
-            + "if(root&&root!==el){ if(root.id){base='#'+CSS.escape(root.id);}"
-            + " else {base='[data-testid=\"'+root.getAttribute('data-testid')+'\"]';} }"
-            + "while(cur&&cur!==document.body&&cur!==root){parts.unshift(seg(cur));cur=cur.parentElement;}"
-            + "var css=(base?base+' ':'')+parts.join(' > ');"
-            + "return {'css': css, 'xpath': null};";
 
     private static List<Draft> buildGenericAttrDrafts(Map<String, String> all) {
         List<Draft> out = new ArrayList<>();
@@ -331,9 +308,7 @@ public final class UniqueLocatorGenerator {
     }
 
     static boolean looksDynamic(String v) {
-        if (v == null || v.isBlank()) return false;
-        if (v.trim().matches("\\d+")) return true;
-        return DYNAMIC.matcher(v).find();
+        return Ellithium.core.ai.locators.LocatorTechniques.looksDynamic(v);
     }
 
     private static boolean isClickableTag(String tag) {

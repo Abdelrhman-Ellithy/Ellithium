@@ -60,7 +60,7 @@ public final class HealingOrchestrator {
 
             By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
                     ? raw.reconstructedLocator()
-                    : ElementFingerprint.reconstructLocator(resolved);
+                    : reconstructBest(request.driver(), resolved, request.baseline());
             WebElement guarded = guardStaleHeal(request.driver(), resolved);
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
@@ -116,6 +116,16 @@ public final class HealingOrchestrator {
         } catch (Exception ex) {
             return healed;
         }
+    }
+
+    /**
+     * Reconstructs the strongest DOM-validated locator for a healed element via
+     * {@link HealedLocatorBuilder}; falls back to the lightweight fingerprint reconstruction.
+     */
+    private static By reconstructBest(WebDriver driver, WebElement healed,
+                                      ElementFingerprint baseline) {
+        By best = HealedLocatorBuilder.build(driver, healed, baseline);
+        return best != null ? best : ElementFingerprint.reconstructLocator(healed);
     }
 
     private static WebElement guardStaleHeal(WebDriver driver, WebElement healed) {
