@@ -199,13 +199,15 @@ public final class InteractionRecorder {
             dropTrailingClicks(candidates.isEmpty() ? null : candidates.get(0).javaExpression());
         }
         List<Integer> frame = frameChainOf(ev.get("frame"));
+        List<LocatorCandidate> targetCandidates = buildCandidates(ev.get("targetCandidates"));
         RecordedStep step = new RecordedStep(id, type, str(ev.get("value")),
-                str(ev.get("tag")), str(ev.get("name")), candidates, frame);
+                str(ev.get("tag")), str(ev.get("name")), candidates, frame, targetCandidates);
         if (frame.isEmpty()) seedOne(candidates);
         STEPS.add(step);
         BY_ID.put(id, step);
         if ("click".equals(type) || "select".equals(type) || "input".equals(type)
-                || "pressEnter".equals(type) || "doubleClick".equals(type)) {
+                || "pressEnter".equals(type) || "doubleClick".equals(type)
+                || "dragAndDrop".equals(type)) {
             navHintEpoch = System.currentTimeMillis();
         }
         return true;
@@ -386,6 +388,8 @@ public final class InteractionRecorder {
                 for (Integer idx : s.getFrameChain()) fr.add(idx);
                 o.add("frame", fr);
                 o.add("candidates", candidatesJson(s.getCandidates()));
+                if (!s.getTargetCandidates().isEmpty())
+                    o.add("targetCandidates", candidatesJson(s.getTargetCandidates()));
                 arr.add(o);
             }
         }
@@ -486,8 +490,11 @@ public final class InteractionRecorder {
             + " function meaningful(el){ var c=el,n=0; while(c&&n<5){ var t=(c.tagName||'').toLowerCase();"
             + "   var r=c.getAttribute&&c.getAttribute('role');"
             + "   if(c.id||(c.getAttribute&&(c.getAttribute('data-testid')||c.getAttribute('name')||c.getAttribute('aria-label')))||(r&&r!=='presentation'&&r!=='none'&&r!=='generic')||['a','button','input','select','textarea','summary','label'].indexOf(t)>=0) return c;"
-            + "   var mcl=c.getAttribute&&c.getAttribute('class'); if(mcl){ var msc=mcl.trim().split(/\\s+/).filter(function(x){return x&&!dyn(x)&&x.length>2;}); if(msc.length>=2) return c; }"
             + "   c=c.parentElement; n++; } return el; }"
+            + " function isInteractable(el){ if(!el)return false;"
+            + "   try{ var cs=window.getComputedStyle(el);"
+            + "     if(cs.pointerEvents==='none'||cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0') return false; }catch(x){}"
+            + "   return !!(el.offsetWidth>0||el.offsetHeight>0||el.getClientRects().length>0); }"
             + " function stableClassOf(el){ var c=el.getAttribute&&el.getAttribute('class'); if(!c)return null; var t=c.trim().split(/\\s+/); for(var i=0;i<t.length;i++){ if(t[i]&&!dyn(t[i])) return t[i]; } return null; }"
             + " function xpIndexOf(d,xp,el){ try{ var r=d.evaluate(xp,d,null,XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,null); for(var i=0;i<r.snapshotLength;i++){ if(r.snapshotItem(i)===el) return i+1; } }catch(e){} return 0; }"
             + " function attrW(nm){"
@@ -584,16 +591,43 @@ public final class InteractionRecorder {
             + "     if(m==='assertVisible'){e.preventDefault();e.stopPropagation();emitEl('assertVisible',raw,null,frame);disarm();return;}"
             + "     if(m==='assertText'){e.preventDefault();e.stopPropagation();emitEl('assertText',raw,((raw.innerText||raw.textContent||'').trim()).slice(0,80),frame);disarm();return;}"
             + "     if(m==='assertValue'){e.preventDefault();e.stopPropagation();emitEl('assertValue',raw,(raw.value!=null?raw.value:''),frame);disarm();return;}"
+            + "     if(m==='assertEnabled'){e.preventDefault();e.stopPropagation();emitEl('assertEnabled',raw,null,frame);disarm();return;}"
+            + "     if(m==='assertSelected'){e.preventDefault();e.stopPropagation();emitEl('assertSelected',raw,null,frame);disarm();return;}"
             + "     if(m==='hover'){e.preventDefault();e.stopPropagation();emitEl('hover',meaningful(raw),null,frame);disarm();return;}"
-            + "     if(W.__ellPaused)return; emitEl('click',meaningful(raw),null,frame); },true);"
+            + "     if(W.__ellPaused)return;"
+            + "     var me=meaningful(raw); var meTag=(me.tagName||'').toLowerCase();"
+            + "     if(meTag==='select'||meTag==='option') return;"  // change handler covers selects
+            + "     if(!isInteractable(me)) return;"                 // skip invisible/zero-size elements
+            + "     var now=Date.now();"                             // label→input dedup: suppress synthetic clicks within 80ms of same element
+            + "     if(W.__ellLastClickEl===me&&(now-W.__ellLastClickTs)<80) return;"
+            + "     W.__ellLastClickEl=me; W.__ellLastClickTs=now;"
+            + "     emitEl('click',me,null,frame); },true);"
             + "   doc.addEventListener('dblclick',function(e){ var el=tgt(e); if(inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return; emitEl('doubleClick', meaningful(el), null, frame); },true);"
+            + "   doc.addEventListener('dragstart',function(e){ var el=meaningful(tgt(e)); if(inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
+            + "     W.__ellDragSrc={el:el,cands:cands(el)}; },true);"
+            + "   doc.addEventListener('drop',function(e){ var src=W.__ellDragSrc; W.__ellDragSrc=null; if(!src)return; var tg=meaningful(tgt(e)); if(inBar(tg))return;"
+            + "     if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
+            + "     emit({id:nid(),type:'dragAndDrop',tag:(src.el.tagName||'').toLowerCase(),"
+            + "       name:(src.el.getAttribute&&(src.el.getAttribute('aria-label')||src.el.getAttribute('name')))||(src.el.textContent||'').trim().slice(0,40),"
+            + "       value:null,frame:frame,candidates:src.cands,targetCandidates:cands(tg)}); },true);"
             + "   doc.addEventListener('change',function(e){ var el=tgt(e); if(!el||inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
-            + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='select'){ var t=el.options[el.selectedIndex]?el.options[el.selectedIndex].text:el.value; emitEl('select',el,t,frame); }"
+            + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='select'){"
+            + "       if(el.multiple){"
+            + "         var desel=[]; for(var oi=0;oi<el.options.length;oi++){ if(!el.options[oi].selected&&el.options[oi].__ellWasSel) desel.push(el.options[oi].text); }"
+            + "         for(var oi=0;oi<el.options.length;oi++) el.options[oi].__ellWasSel=el.options[oi].selected;"
+            + "         if(desel.length>0){ emitEl('deselectByText',el,desel[0],frame); return; }"
+            + "       }"
+            + "       var t=el.options[el.selectedIndex]?el.options[el.selectedIndex].text:el.value; emitEl('select',el,t,frame); }"
             + "     else if(tag==='input'||tag==='textarea'){ var ty=(el.getAttribute('type')||'').toLowerCase();"
             + "       if(ty==='file'){ emitEl('uploadFile', el, (el.value||'').split('\\\\').pop(), frame); return; }"
             + "       if(ty==='checkbox'||ty==='radio'||ty==='submit'||ty==='button'||ty==='image') return;"
             + "       inp(el,frame); } },true);"
-            + "   doc.addEventListener('keydown',function(e){ if(e.key!=='Enter')return; var el=tgt(e); if(!el||inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
+            + "   doc.addEventListener('focus',function(e){ var el=tgt(e); if(!el||el.tagName!=='SELECT'||!el.multiple)return;"
+            + "     for(var oi=0;oi<el.options.length;oi++) el.options[oi].__ellWasSel=el.options[oi].selected; },true);"
+            + "   doc.addEventListener('keydown',function(e){ var el=tgt(e); if(!el||inBar(el))return;"
+            + "     if((e.key==='F5'||(e.ctrlKey&&e.key==='r'))&&!inBar(el)){ if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
+            + "       e.preventDefault(); emit({id:nid(),type:'navigateRefresh',tag:'',name:'',value:null,frame:frame,candidates:[]}); return; }"
+            + "     if(e.key!=='Enter')return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return;"
             + "     var tag=(el.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea'){ inp(el,frame); emitEl('pressEnter',el,null,frame); } },true);"
             + "   doc.addEventListener('contextmenu',function(e){ var el=tgt(e); if(inBar(el))return; if(W.__ellPaused||(W.__ellMode||'record')!=='record')return; emitEl('rightClick', meaningful(el), null, frame); },true);"
             + "   doc.addEventListener('mousemove',function(e){ var m=W.__ellMode||'record'; if(m==='record'){ if(W.__ellHi){try{W.__ellHi.style.outline=W.__ellHiPrev||''}catch(x){} W.__ellHi=null;} return; }"
@@ -619,6 +653,7 @@ public final class InteractionRecorder {
             + "  +btn('ell-rec','Pause','Pause/Resume recording')+btn('ell-pick','Inspect','Inspect / pick locator (toggle)')"
             + "  +btn('ell-hover','Hover','Record a hover on the next click')"
             + "  +btn('ell-av','Eye','Assert visible')+btn('ell-at','Aa','Assert text')+btn('ell-aval','Val','Assert value')"
+            + "  +btn('ell-aen','En','Assert enabled')+btn('ell-asel','Sel','Assert selected')"
             + "  +btn('ell-assert','Assert: soft','Toggle hard/soft asserts')+btn('ell-clear','Clear','Clear all steps')+btn('ell-stop','Stop','Stop and generate')+'</div>'"
             + "  +'<input id=\"ell-eval\" placeholder=\"Evaluate CSS or XPath...\" style=\"width:100%;box-sizing:border-box;background:#111;color:#fff;border:1px solid #333;border-radius:4px;padding:4px;margin-bottom:4px\">'"
             + "  +'<div id=\"ell-eval-count\" style=\"color:#888;margin-bottom:6px\">&nbsp;</div>'"
@@ -632,7 +667,7 @@ public final class InteractionRecorder {
             + " function arm(id,mode){ document.getElementById(id).addEventListener('click', function(){ var on=window.__ellMode===mode;"
             + "   var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed');"
             + "   window.__ellMode=on?'record':mode; if(!on) this.classList.add('ell-armed'); }); }"
-            + " arm('ell-pick','inspect'); arm('ell-hover','hover'); arm('ell-av','assertVisible'); arm('ell-at','assertText'); arm('ell-aval','assertValue');"
+            + " arm('ell-pick','inspect'); arm('ell-hover','hover'); arm('ell-av','assertVisible'); arm('ell-at','assertText'); arm('ell-aval','assertValue'); arm('ell-aen','assertEnabled'); arm('ell-asel','assertSelected');"
             + " function logPush(o){ try{ var a=JSON.parse(localStorage.getItem('__ellRecLog')||'[]'); a.push(o); localStorage.setItem('__ellRecLog',JSON.stringify(a)); }catch(e){} }"
             + " (function(){ var rb=document.getElementById('ell-rec'); if(window.__ellPaused){ rb.textContent='Resume';"
             + "   document.getElementById('ell-dot').style.background='#888'; } })();"

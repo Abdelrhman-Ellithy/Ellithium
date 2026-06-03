@@ -13,14 +13,22 @@ public final class RecordedStep {
     private final List<Integer> frameChain;
     private volatile int chosenIndex;
     private volatile String generatorMethod;
+    private final List<LocatorCandidate> targetCandidates;  // non-null only for dragAndDrop
+    private volatile int targetChosenIndex;
 
     public RecordedStep(String id, String actionType, String data, String tagName,
                         String elementName, List<LocatorCandidate> candidates) {
-        this(id, actionType, data, tagName, elementName, candidates, List.of());
+        this(id, actionType, data, tagName, elementName, candidates, List.of(), List.of());
     }
 
     public RecordedStep(String id, String actionType, String data, String tagName,
                         String elementName, List<LocatorCandidate> candidates, List<Integer> frameChain) {
+        this(id, actionType, data, tagName, elementName, candidates, frameChain, List.of());
+    }
+
+    public RecordedStep(String id, String actionType, String data, String tagName,
+                        String elementName, List<LocatorCandidate> candidates, List<Integer> frameChain,
+                        List<LocatorCandidate> targetCandidates) {
         this.id = id;
         this.actionType = actionType;
         this.data = data;
@@ -29,6 +37,8 @@ public final class RecordedStep {
         this.candidates = candidates != null ? candidates : List.of();
         this.frameChain = frameChain != null ? frameChain : List.of();
         this.chosenIndex = this.candidates.isEmpty() ? -1 : 0;
+        this.targetCandidates = targetCandidates != null ? targetCandidates : List.of();
+        this.targetChosenIndex = this.targetCandidates.isEmpty() ? -1 : 0;
     }
 
     public String getId() { return id; }
@@ -50,4 +60,17 @@ public final class RecordedStep {
 
     public String getGeneratorMethod() { return generatorMethod; }
     public void setGeneratorMethod(String method) { this.generatorMethod = method; }
+
+    public List<LocatorCandidate> getTargetCandidates() { return targetCandidates; }
+
+    public LocatorCandidate targetChosen() {
+        return (targetChosenIndex >= 0 && targetChosenIndex < targetCandidates.size())
+                ? targetCandidates.get(targetChosenIndex) : null;
+    }
+
+    public void chooseTarget(int index) {
+        if (index >= 0 && index < targetCandidates.size()) targetChosenIndex = index;
+    }
+
+    public int getTargetChosenIndex() { return targetChosenIndex; }
 }

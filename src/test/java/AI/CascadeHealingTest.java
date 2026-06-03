@@ -1,6 +1,6 @@
 package ai;
 
-import Ellithium.Utilities.interactions.BaseActions;
+import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.healing.BaselineStore;
 import org.openqa.selenium.By;
@@ -25,11 +25,6 @@ import static org.mockito.Mockito.when;
  */
 public class CascadeHealingTest {
 
-    /** Minimal concrete BaseActions to reach the protected constructor + public findWebElement. */
-    static class TestActions extends BaseActions<WebDriver> {
-        TestActions(WebDriver driver) { super(driver); }
-    }
-
     @BeforeClass
     public void disableHealing() {
         // Defaults are already DISABLED + null provider (no initialize call needed); just ensure no
@@ -44,10 +39,8 @@ public class CascadeHealingTest {
                 .thenThrow(new NoSuchElementException("no such element"));
         lenient().when(driver.findElements(any(By.class))).thenReturn(Collections.emptyList());
 
-        TestActions actions = new TestActions(driver);
+        DriverActions<WebDriver> actions = new DriverActions<>(driver);
 
-        // No baseline + no model + DISABLED Tier 4 → every tier returns null → the cascade must
-        // throw (test fails), NOT return null or a wrong element (which would silently pass).
         boolean threw = false;
         try {
             actions.findWebElement(By.id("doesNotExist"));

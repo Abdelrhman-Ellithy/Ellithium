@@ -68,11 +68,33 @@ public final class PomCodeEmitter {
                 statements.add("driverActions.navigation().navigateForward();");
                 continue;
             }
+            if ("navigateRefresh".equals(action)) {
+                statements.add("driverActions.navigation().refreshPage();");
+                continue;
+            }
             if ("assertText".equals(action) && (data == null || data.isBlank())) {
                 continue;
             }
             LocatorCandidate chosen = step.chosen();
             if (chosen == null) continue;
+
+            // dragAndDrop needs both source and target locators
+            if ("dragAndDrop".equals(action)) {
+                LocatorCandidate targetChosen = step.targetChosen();
+                if (targetChosen == null) continue;
+                String srcRef = fieldFor(step, chosen, usedFieldNames, locatorFields, exprToField);
+                String tgtRef = exprToField.get(targetChosen.javaExpression());
+                if (tgtRef == null) {
+                    String base = identifier(step.getElementName(), step.getTagName(), "target");
+                    tgtRef = base;
+                    int n = 2;
+                    while (!usedFieldNames.add(tgtRef)) tgtRef = base + n++;
+                    locatorFields.add("private final By " + tgtRef + " = " + targetChosen.javaExpression() + ";");
+                    exprToField.put(targetChosen.javaExpression(), tgtRef);
+                }
+                statements.add("driverActions.mouse().dragAndDrop(" + srcRef + ", " + tgtRef + ");");
+                continue;
+            }
 
             String byRef;
             if (parameterize && chosen.parameterizable()) {
@@ -282,21 +304,38 @@ public final class PomCodeEmitter {
 
     private static String statementFor(String action, String byRef, String data, String assertRef) {
         return switch (action) {
-            case "click" -> "driverActions.elements().clickOnElement(" + byRef + ");";
-            case "pressEnter" -> "driverActions.elements().sendData(" + byRef + ", org.openqa.selenium.Keys.ENTER);";
-            case "clear" -> "driverActions.elements().clearElement(" + byRef + ");";
-            case "getText" -> "driverActions.elements().getText(" + byRef + ");";
-            case "select", "selectByText" -> "driverActions.select().selectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
-            case "hover" -> "driverActions.mouse().hoverOverElement(" + byRef + ");";
+            case "click"       -> "driverActions.elements().clickOnElement(" + byRef + ");";
+            case "pressEnter"  -> "driverActions.elements().sendData(" + byRef + ", org.openqa.selenium.Keys.ENTER);";
+            case "clear"       -> "driverActions.elements().clearElement(" + byRef + ");";
+            case "getText"     -> "driverActions.elements().getText(" + byRef + ");";
+            case "scrollIntoView" -> "driverActions.elements().scrollIntoView(" + byRef + ");";
+            case "select", "selectByText"
+                               -> "driverActions.select().selectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
+            case "selectByValue"
+                               -> "driverActions.select().selectDropdownByValue(" + byRef + ", \"" + esc(data) + "\");";
+            case "selectByIndex"
+                               -> "driverActions.select().selectDropdownByIndex(" + byRef + ", " + esc(data) + ");";
+            case "deselectAll" -> "driverActions.select().deselectAll(" + byRef + ");";
+            case "deselectByText"
+                               -> "driverActions.select().deselectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
+            case "hover"       -> "driverActions.mouse().hoverOverElement(" + byRef + ");";
             case "doubleClick" -> "driverActions.mouse().doubleClick(" + byRef + ");";
-            case "rightClick" -> "driverActions.mouse().rightClick(" + byRef + ");";
-            case "uploadFile" -> "driverActions.elements().uploadFile(" + byRef + ", \"" + esc(data) + "\");";
-            case "assertVisible" -> assertRef + ".assertTrue(driverActions.elements().isElementDisplayed("
-                    + byRef + "), \"element should be visible\");";
-            case "assertText" -> assertRef + ".assertContains(driverActions.elements().getText("
-                    + byRef + "), \"" + esc(data) + "\");";
+            case "rightClick"  -> "driverActions.mouse().rightClick(" + byRef + ");";
+            case "uploadFile"  -> "driverActions.elements().uploadFile(" + byRef + ", \"" + esc(data) + "\");";
+            case "navigateRefresh" -> "driverActions.navigation().refreshPage();";
+            case "assertVisible"
+                               -> assertRef + ".assertTrue(driverActions.elements().isElementDisplayed("
+                                    + byRef + "), \"element should be visible\");";
+            case "assertText"  -> assertRef + ".assertContains(driverActions.elements().getText("
+                                    + byRef + "), \"" + esc(data) + "\");";
             case "assertValue" -> assertRef + ".assertEquals(driverActions.elements().getAttributeValue("
-                    + byRef + ", \"value\"), \"" + esc(data) + "\");";
+                                    + byRef + ", \"value\"), \"" + esc(data) + "\");";
+            case "assertEnabled"
+                               -> assertRef + ".assertTrue(driverActions.elements().isElementEnabled("
+                                    + byRef + "), \"element should be enabled\");";
+            case "assertSelected"
+                               -> assertRef + ".assertTrue(driverActions.elements().isElementSelected("
+                                    + byRef + "), \"element should be selected\");";
             default -> null;
         };
     }
