@@ -39,11 +39,19 @@ public class ElementFingerprint {
     private String value;            // element.getAttribute("value")
     private String role;             // element.getAttribute("role")
     private String dataTestId;       // element.getAttribute("data-testid")
+    private String dataTest;         // element.getAttribute("data-test")   (Cypress alternative)
+    private String dataCy;           // element.getAttribute("data-cy")     (Cypress convention)
+    private String dataQa;           // element.getAttribute("data-qa")     (QA convention)
 
     // ── Mobile primaries (Appium-only; null on web) ──
     private String resourceId;       // Android resource-id (e.g. "com.app:id/loginBtn")
     private String accessibilityId;  // Appium accessibility id (Android content-desc / iOS accessibility-id)
     private String contentDesc;      // Android content-desc (also used as accessibility-id source)
+
+    // ── Adaptive data-* attributes (JS-dependent) ──
+    // Captures every data-* attribute the element has, beyond the named ones above.
+    // Keyed by attribute name; value is the attribute value. Null when absent or on Appium native.
+    private java.util.Map<String, String> customDataAttrs;
 
     // ── Structural (JS-dependent, gracefully skipped for Appium) ──
     private String parentTag;        // parent element's tag name
@@ -101,6 +109,9 @@ public class ElementFingerprint {
         fp.value = safeGetAttribute(element, "value");
         fp.role = safeGetAttribute(element, "role");
         fp.dataTestId = safeGetAttribute(element, "data-testid");
+        fp.dataTest   = safeGetAttribute(element, "data-test");
+        fp.dataCy     = safeGetAttribute(element, "data-cy");
+        fp.dataQa     = safeGetAttribute(element, "data-qa");
         fp.resourceId      = safeGetAttribute(element, "resource-id");
         fp.accessibilityId = safeGetAttribute(element, "accessibility-id");
         fp.contentDesc     = safeGetAttribute(element, "content-desc");
@@ -122,28 +133,48 @@ public class ElementFingerprint {
             fp.text = null;
         }
 
-        // Structural: parent tag + child index + sibling tags via ONE JS call
-        // (gracefully skipped if unavailable, e.g. Appium native context).
+        // Structural + adaptive data-* attrs — ONE JS call, zero extra round-trips.
         fp.parentTag = null;
         fp.childIndex = -1;
         fp.prevSiblingTag = null;
         fp.nextSiblingTag = null;
+        fp.customDataAttrs = null;
         if (driver instanceof JavascriptExecutor) {
             try {
                 JavascriptExecutor js = (JavascriptExecutor) driver;
                 Object result = js.executeScript(
                         "var el=arguments[0], p=el.parentElement;"
-                                + "var prev=el.previousElementSibling, next=el.nextElementSibling;"
-                                + "return [p?p.tagName.toLowerCase():null,"
-                                + " p?Array.from(p.children).indexOf(el):-1,"
-                                + " prev?prev.tagName.toLowerCase():null,"
-                                + " next?next.tagName.toLowerCase():null];",
+                        + "var prev=el.previousElementSibling, next=el.nextElementSibling;"
+                        + "var dm={}, at=el.attributes;"
+                        + "for(var k=0;k<at.length;k++){"
+                        + " var n=at[k].name, v=at[k].value;"
+                        + " if(n.indexOf('data-')===0 && n!=='data-ellithium-pick' && v) dm[n]=v;"
+                        + "}"
+                        + "return [p?p.tagName.toLowerCase():null,"
+                        + " p?Array.prototype.indexOf.call(p.children,el):-1,"
+                        + " prev?prev.tagName.toLowerCase():null,"
+                        + " next?next.tagName.toLowerCase():null,"
+                        + " dm];",
                         element);
-                if (result instanceof java.util.List<?> r && r.size() == 4) {
+                if (result instanceof java.util.List<?> r && r.size() >= 4) {
                     if (r.get(0) != null) fp.parentTag = r.get(0).toString();
                     if (r.get(1) instanceof Number n) fp.childIndex = n.intValue();
                     if (r.get(2) != null) fp.prevSiblingTag = r.get(2).toString();
                     if (r.get(3) != null) fp.nextSiblingTag = r.get(3).toString();
+                    if (r.size() >= 5 && r.get(4) instanceof java.util.Map<?, ?> dm && !dm.isEmpty()) {
+                        java.util.Map<String, String> custom = new java.util.LinkedHashMap<>();
+                        for (java.util.Map.Entry<?, ?> e : dm.entrySet()) {
+                            if (e.getKey() == null || e.getValue() == null) continue;
+                            String an = e.getKey().toString();
+                            String av = e.getValue().toString();
+                            if (av.isBlank()) continue;
+                            // skip the four already-captured named attrs to avoid double-scoring
+                            if ("data-testid".equals(an) || "data-test".equals(an)
+                                    || "data-cy".equals(an) || "data-qa".equals(an)) continue;
+                            custom.put(an, av);
+                        }
+                        if (!custom.isEmpty()) fp.customDataAttrs = custom;
+                    }
                 }
             } catch (Exception ignored) {
                 // JS not supported (some Appium contexts) — skip gracefully
@@ -237,10 +268,29 @@ public class ElementFingerprint {
             else if (isNonBlank(ccd) && (ccd.contains(this.contentDesc) || this.contentDesc.contains(ccd))) score += 9;
         }
 
-        // data-testid: 30 pts (most stable test attribute)
+        // data-testid / data-test / data-cy / data-qa: 30 pts each (stable test attributes)
         if (isNonBlank(this.dataTestId)) {
             dynamicMax += 30;
             if (this.dataTestId.equals(safeGetAttribute(candidate, "data-testid"))) score += 30;
+        }
+        if (isNonBlank(this.dataTest)) {
+            dynamicMax += 30;
+            if (this.dataTest.equals(safeGetAttribute(candidate, "data-test"))) score += 30;
+        }
+        if (isNonBlank(this.dataCy)) {
+            dynamicMax += 30;
+            if (this.dataCy.equals(safeGetAttribute(candidate, "data-cy"))) score += 30;
+        }
+        if (isNonBlank(this.dataQa)) {
+            dynamicMax += 30;
+            if (this.dataQa.equals(safeGetAttribute(candidate, "data-qa"))) score += 30;
+        }
+        // Adaptive data-* attributes: 30 pts each (any attribute the app uses beyond the named four)
+        if (this.customDataAttrs != null) {
+            for (java.util.Map.Entry<String, String> e : this.customDataAttrs.entrySet()) {
+                dynamicMax += 30;
+                if (e.getValue().equals(safeGetAttribute(candidate, e.getKey()))) score += 30;
+            }
         }
 
         // id: 25 pts exact, 12 pts token-Jaccard ≥ 0.5
@@ -300,6 +350,14 @@ public class ElementFingerprint {
                     score += 7;
                 }
             }
+        }
+
+        // href: 20 pts exact, 10 pts contains (strong discriminator for anchors)
+        if (isNonBlank(this.href)) {
+            dynamicMax += 20;
+            String ch = safeGetAttribute(candidate, "href");
+            if (this.href.equals(ch)) score += 20;
+            else if (isNonBlank(ch) && (ch.contains(this.href) || this.href.contains(ch))) score += 10;
         }
 
         // type: 8 pts
@@ -392,6 +450,26 @@ public class ElementFingerprint {
             dynamicMax += 30;
             if (this.dataTestId.equals(asStr(attrs.get("data-testid")))) score += 30;
         }
+        if (isNonBlank(this.dataTest)) {
+            dynamicMax += 30;
+            if (this.dataTest.equals(asStr(attrs.get("data-test")))) score += 30;
+        }
+        if (isNonBlank(this.dataCy)) {
+            dynamicMax += 30;
+            if (this.dataCy.equals(asStr(attrs.get("data-cy")))) score += 30;
+        }
+        if (isNonBlank(this.dataQa)) {
+            dynamicMax += 30;
+            if (this.dataQa.equals(asStr(attrs.get("data-qa")))) score += 30;
+        }
+        if (this.customDataAttrs != null) {
+            Object dm = attrs.get("dataAttrs");
+            for (java.util.Map.Entry<String, String> e : this.customDataAttrs.entrySet()) {
+                dynamicMax += 30;
+                String cv = (dm instanceof java.util.Map<?, ?> dmap) ? asStr(dmap.get(e.getKey())) : null;
+                if (e.getValue().equals(cv)) score += 30;
+            }
+        }
         if (isNonBlank(this.id)) {
             dynamicMax += 25;
             String cid = asStr(attrs.get("id"));
@@ -440,6 +518,12 @@ public class ElementFingerprint {
                     score += 7;
                 }
             }
+        }
+        if (isNonBlank(this.href)) {
+            dynamicMax += 20;
+            String ch = asStr(attrs.get("href"));
+            if (this.href.equals(ch)) score += 20;
+            else if (isNonBlank(ch) && (ch.contains(this.href) || this.href.contains(ch))) score += 10;
         }
         if (isNonBlank(this.type)) {
             dynamicMax += 8;
@@ -650,6 +734,12 @@ public class ElementFingerprint {
 
             String dataTestId = safeGetAttribute(element, "data-testid");
             if (isNonBlank(dataTestId)) return By.cssSelector("[data-testid='" + dataTestId + "']");
+            String dataTest = safeGetAttribute(element, "data-test");
+            if (isNonBlank(dataTest)) return By.cssSelector("[data-test='" + dataTest + "']");
+            String dataCy = safeGetAttribute(element, "data-cy");
+            if (isNonBlank(dataCy)) return By.cssSelector("[data-cy='" + dataCy + "']");
+            String dataQa = safeGetAttribute(element, "data-qa");
+            if (isNonBlank(dataQa)) return By.cssSelector("[data-qa='" + dataQa + "']");
 
             String ariaLabel = safeGetAttribute(element, "aria-label");
             if (isNonBlank(ariaLabel)) return By.cssSelector("[aria-label='" + ariaLabel + "']");
@@ -700,6 +790,10 @@ public class ElementFingerprint {
     public String getValue() { return value; }
     public String getRole() { return role; }
     public String getDataTestId() { return dataTestId; }
+    public String getDataTest()   { return dataTest; }
+    public String getDataCy()     { return dataCy; }
+    public String getDataQa()     { return dataQa; }
+    public java.util.Map<String, String> getCustomDataAttrs() { return customDataAttrs; }
     public String getResourceId() { return resourceId; }
     public String getAccessibilityId() { return accessibilityId; }
     public String getContentDesc() { return contentDesc; }
@@ -712,6 +806,8 @@ public class ElementFingerprint {
      */
     public boolean hasStrongIdentity() {
         return isNonBlank(id) || isNonBlank(name) || isNonBlank(dataTestId)
+                || isNonBlank(dataTest) || isNonBlank(dataCy) || isNonBlank(dataQa)
+                || (customDataAttrs != null && !customDataAttrs.isEmpty())
                 || isNonBlank(resourceId) || isNonBlank(accessibilityId);
     }
     public String getParentTag() { return parentTag; }

@@ -149,15 +149,16 @@ public class PomCodeEmitterTest {
     }
 
     @Test
-    public void passwordValue_isEmittedAsEnvLookupNotPlaintext() {
+    public void passwordInput_storedInJsonAtFaceValue() {
         LocatorCandidate c = new LocatorCandidate(By.id("pw"), "By.id(\"pw\")", 0.9, "id", true, false);
-        PomCodeEmitter.EmitResult r = PomCodeEmitter.build(List.of(step("input", "__ELL_SECRET__", "Password", c)), "P");
+        PomCodeEmitter.EmitResult r = PomCodeEmitter.build(
+                List.of(step("input", "secret123", "Password", c)), "P");
         String stmts = String.join("\n", r.statements());
         Assert.assertTrue(stmts.contains(
                 "driverActions.elements().sendData(password, Ellithium.Utilities.helpers.JsonHelper"
                 + ".getJsonKeyValue(\"src/test/resources/TestData/P.json\", \"password\"));"), stmts);
-        Assert.assertFalse(stmts.contains("__ELL_SECRET__"), "the sentinel must not leak into code: " + stmts);
-        Assert.assertEquals(r.testData().get("password"), "", "secret stored as empty string for manual fill-in");
+        Assert.assertEquals(r.testData().get("password"), "secret123",
+                "password stored at face value — no masking, user edits JSON as needed");
     }
 
     @Test

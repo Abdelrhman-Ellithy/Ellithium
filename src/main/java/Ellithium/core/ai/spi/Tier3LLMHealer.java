@@ -1,6 +1,7 @@
 package Ellithium.core.ai.spi;
 
 import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.core.ai.healing.HealedLocatorBuilder;
 import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
@@ -31,6 +32,7 @@ public final class Tier3LLMHealer implements HealingTier {
                 request.driver(), request.brokenLocator(), request.stackTrace());
         if (element == null) return null;
         By healed = AISelfHealer.getCachedHealedLocator(request.driver(), request.brokenLocator());
+        if (healed == null) healed = HealedLocatorBuilder.build(request.driver(), element, request.baseline());
         if (healed == null) healed = ElementFingerprint.reconstructLocator(element);
         return HealOutcome.of(element, healed, AISelfHealer.getLastHealConfidence(), 3);
     }

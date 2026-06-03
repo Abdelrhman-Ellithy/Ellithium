@@ -305,14 +305,15 @@ public class EnsembleHealer {
                     }
                     if (docVector == null) continue;
 
-                    double cosine = dotProduct(queryVector, docVector);                 // f3: bi-encoder
+                    double cosine = dotProduct(queryVector, docVector);
                     double f1     = (attrs != null) ? baselineProximity(baseline, attrs)
                                                     : baselineProximity(baseline, candidate);
-                    double attrW  = (attrs != null)
+                    double rawAttrW = (attrs != null)
                             ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
                             : Double.NaN;
+                    double attrW  = (rawAttrW <= 0.0) ? Double.NaN : rawAttrW;
                     Double hitW   = resolverWeights.get(candidate);
-                    double f2     = maxScore(attrW, hitW == null ? Double.NaN : hitW);   // resolver retriever
+                    double f2     = maxScore(attrW, hitW == null ? Double.NaN : hitW);
                     double combined = Double.isNaN(f2) ? cosine : (f2 + cosine) / 2.0;
 
                     if (bestElement == null || combined > bestCombined
@@ -416,6 +417,14 @@ public class EnsembleHealer {
             "//*[@resource-id and string-length(@resource-id) > 0]"
     };
 
+    private static final String PRIORITY_COLLECT_SCRIPT =
+            "var sels=arguments[0],lim=arguments[1],seen=new Set(),out=[];"
+            + "for(var i=0;i<sels.length&&out.length<lim;i++){"
+            + " var els=document.querySelectorAll(sels[i]);"
+            + " for(var j=0;j<els.length&&out.length<lim;j++)"
+            + "  if(!seen.has(els[j])){seen.add(els[j]);out.push(els[j]);}"
+            + "} return out;";
+
     private static List<WebElement> collectCandidates(WebDriver driver,
                                                        ElementFingerprint baseline,
                                                        String actionType) {
@@ -425,14 +434,25 @@ public class EnsembleHealer {
         }
         int hardLimit = AIConfigLoader.getOnnxHardCandidateLimit();
         java.util.LinkedHashSet<WebElement> seen = new java.util.LinkedHashSet<>();
-        outer:
-        for (String selector : CANDIDATE_SELECTORS) {
+
+        if (driver instanceof org.openqa.selenium.JavascriptExecutor js) {
             try {
-                for (WebElement el : driver.findElements(By.cssSelector(selector))) {
-                    seen.add(el);
-                    if (seen.size() >= hardLimit) break outer;
+                Object res = js.executeScript(PRIORITY_COLLECT_SCRIPT, CANDIDATE_SELECTORS, hardLimit);
+                if (res instanceof List<?> rows) {
+                    for (Object o : rows) if (o instanceof WebElement w) seen.add(w);
                 }
             } catch (Exception ignored) {}
+        }
+        if (seen.isEmpty()) {
+            outer:
+            for (String selector : CANDIDATE_SELECTORS) {
+                try {
+                    for (WebElement el : driver.findElements(By.cssSelector(selector))) {
+                        seen.add(el);
+                        if (seen.size() >= hardLimit) break outer;
+                    }
+                } catch (Exception ignored) {}
+            }
         }
         if (seen.size() < hardLimit) {
             seen.addAll(collectShadowDomCandidates(driver, hardLimit - seen.size()));

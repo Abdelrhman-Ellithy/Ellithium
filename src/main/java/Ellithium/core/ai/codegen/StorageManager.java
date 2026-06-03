@@ -85,6 +85,7 @@ public final class StorageManager {
                                 .path(d.path != null ? d.path : "/")
                                 .isSecure(d.secure).isHttpOnly(d.httpOnly);
                         if (d.expiryEpoch != null) b.expiresOn(new Date(d.expiryEpoch));
+                        if (d.sameSite != null && !d.sameSite.isBlank()) b.sameSite(d.sameSite);
                         driver.manage().addCookie(b.build());
                         cookies++;
                     } catch (Exception perCookie) {

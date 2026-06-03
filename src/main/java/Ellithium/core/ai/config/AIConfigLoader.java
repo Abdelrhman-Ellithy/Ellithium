@@ -49,7 +49,7 @@ public class AIConfigLoader {
     private static int     llmRetryMaxBackoffMs = 4_000;
     private static int     telemetryMaxRecords = 100_000;
 
-    private static boolean initialized = false;
+    private static volatile boolean initialized = false;
 
     /**
      * Execution mode controls whether AI writes files directly or queues changes for review.
@@ -71,15 +71,23 @@ public class AIConfigLoader {
             String p = ConfigContext.getAiFilePath();
 
             healingStrategy       = parseEnum(p, "ai.healing.strategy", HealingStrategy.class, healingStrategy);
-            confidenceThreshold   = parseDouble(p, "ai.healing.confidenceThreshold", confidenceThreshold);
-            healingStoreThreshold = parseDouble(p, "ai.healing.storeThreshold", healingStoreThreshold);
+            confidenceThreshold   = clamp01("ai.healing.confidenceThreshold",
+                    parseDouble(p, "ai.healing.confidenceThreshold", confidenceThreshold));
+            healingStoreThreshold = clamp01("ai.healing.storeThreshold",
+                    parseDouble(p, "ai.healing.storeThreshold", healingStoreThreshold));
 
             int mc = parseInt(p, "ai.healing.maxCandidates", maxCandidates);
             if (mc >= 1 && mc <= 10) maxCandidates = mc;
             else Logger.warn("ai.healing.maxCandidates must be between 1-10. Using " + maxCandidates + ".");
 
             llmProviderName  = getPropertyOrDefault(p, "ai.llm.provider", "");
-            llmApiKey        = getPropertyOrDefault(p, "ai.llm.apiKey", "");
+            String rawKey    = getPropertyOrDefault(p, "ai.llm.apiKey", "");
+            if (rawKey.contains("${")) {
+                Logger.warn("ai.llm.apiKey contains an unresolved placeholder '" + rawKey
+                        + "' — set the corresponding environment variable. LLM healing disabled.");
+                rawKey = "";
+            }
+            llmApiKey = rawKey;
             llmModel         = getPropertyOrDefault(p, "ai.llm.model", "");
             llmBaseUrl       = getPropertyOrDefault(p, "ai.llm.baseUrl", "");
             llmProviderClass = getPropertyOrDefault(p, "ai.llm.providerClass", "");
@@ -141,6 +149,14 @@ public class AIConfigLoader {
     private static boolean parseBool(String configPath, String key, boolean def) {
         String v = raw(configPath, key);
         return (v == null || v.isEmpty()) ? def : Boolean.parseBoolean(v);
+    }
+
+    private static double clamp01(String key, double v) {
+        if (v < 0.0 || v > 1.0) {
+            Logger.warn(key + "=" + v + " is outside [0.0, 1.0] — clamped.");
+            return Math.max(0.0, Math.min(1.0, v));
+        }
+        return v;
     }
 
     private static <E extends Enum<E>> E parseEnum(String configPath, String key, Class<E> type, E def) {

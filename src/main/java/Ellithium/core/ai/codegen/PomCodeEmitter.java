@@ -98,7 +98,7 @@ public final class PomCodeEmitter {
                             + "Ellithium.Utilities.generators.TestDataGenerator." + gen + "());";
                     hasTestDataGen = true;
                 } else {
-                    inputData.put(key, SECRET.equals(data) ? "" : data);
+                    inputData.put(key, data);
                     stmt = "driverActions.elements().sendData(" + byRef + ", "
                             + JSON_HELPER + ".getJsonKeyValue(\"" + esc(jsonPath) + "\", \"" + key + "\"));";
                 }
@@ -275,7 +275,6 @@ public final class PomCodeEmitter {
         return sb.toString();
     }
 
-    private static final String SECRET = "__ELL_SECRET__";
 
     private static boolean isFieldName(String s) {
         return s != null && !s.isEmpty() && s.indexOf('(') < 0 && s.indexOf(' ') < 0;

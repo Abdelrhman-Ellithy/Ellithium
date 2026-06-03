@@ -61,7 +61,7 @@ public final class HealingOrchestrator {
             By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
-            WebElement guarded = guardStaleHeal(request.driver(), resolved);
+            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
         return null;
@@ -128,9 +128,11 @@ public final class HealingOrchestrator {
         return best != null ? best : ElementFingerprint.reconstructLocator(healed);
     }
 
-    private static WebElement guardStaleHeal(WebDriver driver, WebElement healed) {
+    private static WebElement guardStaleHeal(WebDriver driver, WebElement healed,
+                                             ElementFingerprint baseline, By fallback) {
         if (healed == null) return null;
-        By reconstructed = ElementFingerprint.reconstructLocator(healed);
+        By reconstructed = HealedLocatorBuilder.build(driver, healed, baseline);
+        if (reconstructed == null) reconstructed = fallback;
         try {
             healed.isEnabled();
             return healed;

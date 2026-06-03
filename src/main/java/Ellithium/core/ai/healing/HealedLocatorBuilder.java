@@ -94,6 +94,19 @@ public final class HealedLocatorBuilder {
 
     /** Strong, stable identity that does not need validation. Pure. */
     static By fastPathLocator(Map<String, Object> attrs) {
+        // Priority 1: any non-dynamic data-* attribute (covers data-testid, data-test, and any
+        // custom attr the app uses — e.g. data-automation-id, data-ftid, data-qa-selector).
+        Object dm = attrs.get("dataAttrs");
+        if (dm instanceof Map<?, ?> dataMap) {
+            for (Map.Entry<?, ?> e : dataMap.entrySet()) {
+                String n = e.getKey() != null ? e.getKey().toString() : null;
+                String v = e.getValue() != null ? e.getValue().toString() : null;
+                if (present(n) && present(v) && !LocatorTechniques.looksDynamic(v)) {
+                    return By.cssSelector("[" + n + "='" + cssEsc(v) + "']");
+                }
+            }
+        }
+        // Fallback for when dataAttrs map is absent (older batch or non-batch path)
         for (String a : new String[]{"data-testid", "data-test"}) {
             String v = str(attrs.get(a));
             if (present(v) && !LocatorTechniques.looksDynamic(v)) {

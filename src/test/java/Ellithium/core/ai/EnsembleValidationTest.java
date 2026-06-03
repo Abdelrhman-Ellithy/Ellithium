@@ -3,7 +3,6 @@ package Ellithium.core.ai;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.scoring.SemanticQueryBuilder;
-import Ellithium.core.ai.scoring.SignalFusion;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.testng.SkipException;
@@ -101,12 +100,10 @@ public class EnsembleValidationTest {
 
         ElementFingerprint baseline = fingerprintFromMap(fp);
 
-        // Score every candidate through the REAL SignalFusion path (f1 fingerprint + f3 cosine),
-        // exactly as production fuses them — f2 (live strategy match) is unavailable offline, so it
-        // stays absent (NaN) and contributes nothing, which is the correct cold-start behaviour.
-        List<SignalFusion.Candidate> cands = new ArrayList<>();
-        Map<SignalFusion.Candidate, Boolean> correctness = new IdentityHashMap<>();
-        Map<SignalFusion.Candidate, Double> cosineOf = new IdentityHashMap<>();
+        // Score every candidate using the same inline formula as EnsembleHealer:
+        // combined = cosine (f3) when no strategy signal (f2=NaN offline), f1 used as tiebreak.
+        record ScoredCand(Map<String, Object> cand, double combined, double cosine, double f1, boolean correct) {}
+        List<ScoredCand> cands = new ArrayList<>();
         for (Map<String, Object> cand : e.candidates) {
             boolean isCorrect = Boolean.TRUE.equals(cand.get("correct"));
             Map<String, String> attrs = toAttrs(cand);
@@ -116,35 +113,33 @@ public class EnsembleValidationTest {
             if (dv == null) continue;
             double cosine = cosine(qv, dv);
             double f1 = (baseline != null) ? baseline.scoreSimilarity(toObjAttrs(cand)) : Double.NaN;
-
-            Map<String, Double> sig = new LinkedHashMap<>();
-            if (!Double.isNaN(f1)) sig.put(SignalFusion.F1_FINGERPRINT, f1);
-            sig.put(SignalFusion.F3_BIENCODER, cosine);
-            SignalFusion.Candidate c = new SignalFusion.Candidate(cand, sig);
-            cands.add(c);
-            correctness.put(c, isCorrect);
-            cosineOf.put(c, cosine);
+            // f2 is unavailable offline (no live DOM strategy match) → combined = cosine
+            double combined = cosine;
+            cands.add(new ScoredCand(cand, combined, cosine, f1, isCorrect));
         }
         if (cands.isEmpty()) return null;
 
-        SignalFusion.Result fused = SignalFusion.fuse(cands, SignalFusion.Weights.defaults());
+        cands.sort((a, b) -> {
+            int c = Double.compare(b.combined(), a.combined());
+            if (c != 0) return c;
+            return Double.compare(Double.isNaN(b.f1()) ? -1 : b.f1(), Double.isNaN(a.f1()) ? -1 : a.f1());
+        });
 
         double correctFused = Double.NEGATIVE_INFINITY, correctCosine = Double.NEGATIVE_INFINITY;
         List<Double> wrongScores = new ArrayList<>();
         int correctCount = 0, rank = 1;
-        for (SignalFusion.Scored sc : fused.ranked) {
-            boolean isCorrect = Boolean.TRUE.equals(correctness.get(sc.candidate));
-            if (isCorrect) {
-                correctFused = Math.max(correctFused, sc.fused);
-                correctCosine = Math.max(correctCosine, cosineOf.get(sc.candidate));
+        for (ScoredCand sc : cands) {
+            if (sc.correct()) {
+                correctFused  = Math.max(correctFused,  sc.combined());
+                correctCosine = Math.max(correctCosine, sc.cosine());
                 correctCount++;
             } else {
-                wrongScores.add(cosineOf.get(sc.candidate));
+                wrongScores.add(sc.cosine());
             }
         }
         if (correctCount == 0) return null;
-        for (SignalFusion.Scored sc : fused.ranked) {
-            if (!Boolean.TRUE.equals(correctness.get(sc.candidate)) && sc.fused > correctFused) rank++;
+        for (ScoredCand sc : cands) {
+            if (!sc.correct() && sc.combined() > correctFused) rank++;
         }
 
         EntryResult r = new EntryResult();

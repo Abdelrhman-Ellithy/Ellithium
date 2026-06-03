@@ -53,8 +53,8 @@ public class BaselineStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
     static final int MAX_HISTORY = 3;
-    private static final double T1_ACCEPT_STRONG = 0.60;   // baseline has a strong-identity anchor
-    private static final double T1_ACCEPT_WEAK   = 0.75;   // thin evidence (tag/class only)
+    private static final double T1_ACCEPT_STRONG = 0.70;   // baseline has a strong-identity anchor
+    private static final double T1_ACCEPT_WEAK   = 0.80;   // thin evidence (tag/class only)
 
     /**
      * In-memory store: locatorKey → immutable ordered list of up to MAX_HISTORY fingerprints.
@@ -215,27 +215,37 @@ public class BaselineStore {
      */
     private static WebElement tryAttributePreSearch(WebDriver driver, ElementFingerprint baseline,
                                                      List<ElementFingerprint> history) {
-        // Priority 1: data-testid (most stable)
-        WebElement found = tryDirectLookup(driver,
-                baseline.getDataTestId() != null
-                        ? By.cssSelector("[data-testid='" + baseline.getDataTestId() + "']") : null,
-                history, 0.85);
-        if (found != null) return found;
+        // Priority 1: stable test attributes — named + any custom data-* attrs the app uses
+        for (String[] pair : namedTestAttrs(baseline)) {
+            WebElement found = tryDirectLookup(driver,
+                    By.cssSelector("[" + pair[0] + "='" + escapeAttr(pair[1]) + "']"), history, 0.85);
+            if (found != null) return found;
+        }
+        if (baseline.getDataTestId() != null) {
+            WebElement found = tryDirectLookup(driver,
+                    By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']"), history, 0.80);
+            if (found != null) return found;
+        }
 
-        found = tryDirectLookup(driver,
-                baseline.getDataTestId() != null
-                        ? By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']") : null,
-                history, 0.80);
-        if (found != null) return found;
+        // Adaptive: any custom data-* attribute stored in the fingerprint (exact match)
+        java.util.Map<String, String> custom = baseline.getCustomDataAttrs();
+        if (custom != null) {
+            for (java.util.Map.Entry<String, String> e : custom.entrySet()) {
+                WebElement found = tryDirectLookup(driver,
+                        By.cssSelector("[" + e.getKey() + "='" + escapeAttr(e.getValue()) + "']"),
+                        history, 0.85);
+                if (found != null) return found;
+            }
+        }
 
         // Priority 2: aria-label
-        found = tryDirectLookup(driver,
+        WebElement found = tryDirectLookup(driver,
                 baseline.getAriaLabel() != null
                         ? By.cssSelector("[aria-label='" + escapeAttr(baseline.getAriaLabel()) + "']") : null,
                 history, 0.80);
         if (found != null) return found;
 
-        // Priority 3: placeholder (inputs only)
+        // Priority 3: placeholder
         found = tryDirectLookup(driver,
                 baseline.getPlaceholder() != null
                         ? By.cssSelector("[placeholder='" + escapeAttr(baseline.getPlaceholder()) + "']") : null,
@@ -243,10 +253,18 @@ public class BaselineStore {
         if (found != null) return found;
 
         // Priority 4: name
-        found = tryDirectLookup(driver,
+        return tryDirectLookup(driver,
                 baseline.getName() != null ? By.name(baseline.getName()) : null,
                 history, 0.75);
-        return found;
+    }
+
+    private static java.util.List<String[]> namedTestAttrs(ElementFingerprint b) {
+        java.util.List<String[]> pairs = new java.util.ArrayList<>();
+        if (b.getDataTestId() != null) pairs.add(new String[]{"data-testid", b.getDataTestId()});
+        if (b.getDataTest()   != null) pairs.add(new String[]{"data-test",   b.getDataTest()});
+        if (b.getDataCy()     != null) pairs.add(new String[]{"data-cy",     b.getDataCy()});
+        if (b.getDataQa()     != null) pairs.add(new String[]{"data-qa",     b.getDataQa()});
+        return pairs;
     }
 
     private static WebElement tryDirectLookup(WebDriver driver, By locator,
@@ -286,6 +304,7 @@ public class BaselineStore {
                 : candidates.size();
 
         WebElement bestEl = null;
+        Map<String, Object> bestAttrs = null;
         double bestScore = -1.0;
 
         for (int i = 0; i < scanLimit; i++) {
@@ -304,6 +323,7 @@ public class BaselineStore {
 
                 if (bestEl == null || score > bestScore) {
                     bestEl = candidate;
+                    bestAttrs = attrs;
                     bestScore = score;
                     if (score >= 0.90) break;
                 }
@@ -315,7 +335,7 @@ public class BaselineStore {
         By locator = HealedLocatorBuilder.build(driver, bestEl, baseline);
         if (locator == null) locator = ElementFingerprint.reconstructLocator(bestEl);
         if (locator == null) return null;
-        return new ScoredCandidate(bestEl, locator, bestScore, buildMatchReasoning(baseline, bestEl));
+        return new ScoredCandidate(bestEl, locator, bestScore, buildMatchReasoning(baseline, bestAttrs, bestEl));
     }
 
     private static ElementFingerprint.StructuralContext structuralFrom(Map<String, Object> attrs) {
@@ -355,37 +375,65 @@ public class BaselineStore {
     private static final int T1_HARD_CANDIDATE_LIMIT = 500;
     private static final int T1_FALLBACK_SCAN_LIMIT = 50;
 
+    private static final String SHADOW_CANDIDATE_SELECTOR =
+            "input,button,select,textarea,a,label,[role='button'],[role='link'],[role='textbox'],"
+            + "[role='checkbox'],[role='radio'],[role='tab'],[role='menuitem'],[data-testid]";
+
+    private static final String SHADOW_DOM_SCRIPT =
+            "var sel=arguments[0],lim=arguments[1],out=[];"
+            + "function walk(root){"
+            + " if(out.length>=lim)return;"
+            + " var els=root.querySelectorAll(sel);"
+            + " for(var i=0;i<els.length&&out.length<lim;i++) out.push(els[i]);"
+            + " var all=root.querySelectorAll('*');"
+            + " for(var j=0;j<all.length&&out.length<lim;j++) if(all[j].shadowRoot) walk(all[j].shadowRoot);"
+            + "}"
+            + "walk(document); return out;";
+
     private static List<WebElement> collectCandidates(WebDriver driver, ElementFingerprint baseline) {
-        List<WebElement> raw = null;
+        java.util.LinkedHashSet<WebElement> seen = new java.util.LinkedHashSet<>();
+
         if (isNonBlank(baseline.getTagName())) {
             try {
-                List<WebElement> tagCandidates = driver.findElements(By.tagName(baseline.getTagName()));
-                if (!tagCandidates.isEmpty()) raw = tagCandidates;
+                driver.findElements(By.tagName(baseline.getTagName())).forEach(seen::add);
             } catch (Exception ignored) {}
         }
-        if (raw == null) {
+
+        if (seen.isEmpty()) {
             try {
-                raw = driver.findElements(By.cssSelector(
+                driver.findElements(By.cssSelector(
                         "input, button, select, textarea, a, form, label, "
                         + "[role='button'], [role='link'], [role='textbox'], [role='checkbox'], "
-                        + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"));
+                        + "[role='radio'], [role='tab'], [role='menuitem'], [data-testid]"))
+                        .forEach(seen::add);
             } catch (Exception e) {
                 try {
-                    raw = driver.findElements(By.xpath(
+                    driver.findElements(By.xpath(
                             "//*[self::input or self::button or self::select or self::textarea "
-                            + "or self::a or self::form or self::label]"));
+                            + "or self::a or self::form or self::label]")).forEach(seen::add);
                 } catch (Exception ex) {
                     Reporter.log("BaselineStore: Failed to query DOM: " + ex.getMessage(), LogLevel.WARN);
-                    return List.of();
                 }
             }
         }
-        if (raw.size() > T1_HARD_CANDIDATE_LIMIT) {
-            Reporter.log("BaselineStore: capped " + raw.size() + " candidates to "
-                    + T1_HARD_CANDIDATE_LIMIT + " (heavy DOM)", LogLevel.DEBUG);
-            return raw.subList(0, T1_HARD_CANDIDATE_LIMIT);
+
+        if (seen.size() < T1_HARD_CANDIDATE_LIMIT && driver instanceof org.openqa.selenium.JavascriptExecutor js) {
+            try {
+                Object res = js.executeScript(SHADOW_DOM_SCRIPT, SHADOW_CANDIDATE_SELECTOR,
+                        T1_HARD_CANDIDATE_LIMIT - seen.size());
+                if (res instanceof List<?> rows) {
+                    for (Object o : rows) if (o instanceof WebElement w) seen.add(w);
+                }
+            } catch (Exception ignored) {}
         }
-        return raw;
+
+        if (seen.size() > T1_HARD_CANDIDATE_LIMIT) {
+            Reporter.log("BaselineStore: capped " + seen.size() + " candidates to "
+                    + T1_HARD_CANDIDATE_LIMIT + " (heavy DOM)", LogLevel.DEBUG);
+            List<WebElement> list = new ArrayList<>(seen);
+            return list.subList(0, T1_HARD_CANDIDATE_LIMIT);
+        }
+        return new ArrayList<>(seen);
     }
 
     /** Scores a candidate against ALL history fingerprints (no structural context). */
@@ -447,23 +495,24 @@ public class BaselineStore {
 
     // ──────────────────────── Reasoning ────────────────────────
 
-    private static String buildMatchReasoning(ElementFingerprint baseline, WebElement candidate) {
+    private static String buildMatchReasoning(ElementFingerprint baseline,
+                                               Map<String, Object> attrs, WebElement candidate) {
         StringBuilder sb = new StringBuilder("Matched by:");
         try {
-            String cid = candidate.getAttribute("id");
-            if (cid != null && cid.equals(baseline.getId())) sb.append(" id='").append(cid).append("'");
-            String cn = candidate.getAttribute("name");
-            if (cn != null && cn.equals(baseline.getName())) sb.append(" name='").append(cn).append("'");
-            String cal = candidate.getAttribute("aria-label");
-            if (cal != null && cal.equals(baseline.getAriaLabel())) sb.append(" aria-label='").append(cal).append("'");
-            String cdt = candidate.getAttribute("data-testid");
-            if (cdt != null && cdt.equals(baseline.getDataTestId())) sb.append(" data-testid='").append(cdt).append("'");
-            String cph = candidate.getAttribute("placeholder");
-            if (cph != null && cph.equals(baseline.getPlaceholder())) sb.append(" placeholder='").append(cph).append("'");
-            String ct = candidate.getTagName();
-            if (ct != null && ct.equalsIgnoreCase(baseline.getTagName())) sb.append(" tag='").append(ct).append("'");
-            String txt = candidate.getText();
-            if (txt != null && baseline.getText() != null && txt.contains(baseline.getText())) sb.append(" text(partial)");
+            String cid    = attrs != null ? asStr(attrs.get("id"))          : candidate.getAttribute("id");
+            String cn     = attrs != null ? asStr(attrs.get("name"))        : candidate.getAttribute("name");
+            String cal    = attrs != null ? asStr(attrs.get("aria-label"))  : candidate.getAttribute("aria-label");
+            String cdt    = attrs != null ? asStr(attrs.get("data-testid")) : candidate.getAttribute("data-testid");
+            String cph    = attrs != null ? asStr(attrs.get("placeholder")) : candidate.getAttribute("placeholder");
+            String ct     = attrs != null ? asStr(attrs.get("tag"))         : candidate.getTagName();
+            String txt    = attrs != null ? asStr(attrs.get("text"))        : candidate.getText();
+            if (cid  != null && cid.equals(baseline.getId()))               sb.append(" id='").append(cid).append("'");
+            if (cn   != null && cn.equals(baseline.getName()))              sb.append(" name='").append(cn).append("'");
+            if (cal  != null && cal.equals(baseline.getAriaLabel()))        sb.append(" aria-label='").append(cal).append("'");
+            if (cdt  != null && cdt.equals(baseline.getDataTestId()))       sb.append(" data-testid='").append(cdt).append("'");
+            if (cph  != null && cph.equals(baseline.getPlaceholder()))      sb.append(" placeholder='").append(cph).append("'");
+            if (ct   != null && ct.equalsIgnoreCase(baseline.getTagName())) sb.append(" tag='").append(ct).append("'");
+            if (txt  != null && baseline.getText() != null && txt.contains(baseline.getText())) sb.append(" text(partial)");
         } catch (Exception ignored) {}
         return sb.toString();
     }

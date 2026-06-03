@@ -23,13 +23,14 @@ public final class InteractionRecorder {
 
     private static final Gson GSON = new Gson();
     private static final long POLL_MS = 250L;
+    private static final long CODE_PREVIEW_DEBOUNCE_MS = 1_000L;
 
     private static volatile boolean recording = false;
     private static volatile WebDriver driver = null;
-    private static volatile RecorderOptions options = RecorderOptions.defaults();
+    static volatile RecorderOptions options = RecorderOptions.defaults();
     private static volatile Thread drainThread = null;
     private static volatile String lastUrl = null;
-    private static volatile String startUrl = null;
+    static volatile String startUrl = null;
     private static volatile long navHintEpoch = 0L;
     private static final java.util.Set<String> knownHandles =
             java.util.Collections.synchronizedSet(new java.util.LinkedHashSet<>());
@@ -38,9 +39,12 @@ public final class InteractionRecorder {
     private static volatile int urlIndex = -1;
     private static final long NAV_HINT_TTL = 10_000L;
 
-    private static final List<RecordedStep> STEPS = Collections.synchronizedList(new ArrayList<>());
-    private static final Map<String, RecordedStep> BY_ID = new ConcurrentHashMap<>();
-    private static volatile List<LocatorCandidate> lastPicked = List.of();
+    static final List<RecordedStep> STEPS = Collections.synchronizedList(new ArrayList<>());
+    static final Map<String, RecordedStep> BY_ID = new ConcurrentHashMap<>();
+    static volatile List<LocatorCandidate> lastPicked = List.of();
+
+    static volatile long lastCodeRenderMs = 0L;
+    static volatile String cachedCodePreview = "";
 
     public static synchronized void start(WebDriver d, RecorderOptions opts) {
         start(d, opts, null);
@@ -53,6 +57,8 @@ public final class InteractionRecorder {
         STEPS.clear();
         BY_ID.clear();
         lastPicked = List.of();
+        lastCodeRenderMs = 0L;
+        cachedCodePreview = "";
         recording = true;
         lastUrl = currentUrl();
         startUrl = (explicitStartUrl != null && !explicitStartUrl.isBlank()) ? explicitStartUrl : currentUrl();
@@ -143,7 +149,7 @@ public final class InteractionRecorder {
         }
     }
 
-    private static boolean processEvent(Map<String, Object> ev) {
+    static boolean processEvent(Map<String, Object> ev) {
         String type = str(ev.get("type"));
         if (type == null) return false;
         if ("override".equals(type)) {
@@ -364,7 +370,7 @@ public final class InteractionRecorder {
         } catch (Exception ignored) {}
     }
 
-    private static String renderJson() {
+    static String renderJson() {
         JsonObject root = new JsonObject();
         JsonArray arr = new JsonArray();
         synchronized (STEPS) {
@@ -373,7 +379,8 @@ public final class InteractionRecorder {
                 o.addProperty("id", s.getId());
                 o.addProperty("action", s.getActionType());
                 o.addProperty("data", s.getData());
-                o.addProperty("generatorMethod", s.getGeneratorMethod());
+                String gm = s.getGeneratorMethod();
+                o.addProperty("generatorMethod", gm != null ? gm : "");
                 o.addProperty("chosenIndex", s.getChosenIndex());
                 JsonArray fr = new JsonArray();
                 for (Integer idx : s.getFrameChain()) fr.add(idx);
@@ -390,15 +397,19 @@ public final class InteractionRecorder {
             root.add("picked", p);
         }
         root.addProperty("assertMode", options.assertMode());
-        try {
-            List<RecordedStep> snap = new ArrayList<>(STEPS);
-            boolean soft = options.isSoftAssert();
-            String code = options.isTest()
-                    ? PomCodeEmitter.previewTestSource(snap, CodegenCli.deriveClassName(startUrl),
-                        options.packageName(), startUrl, options.browser(), soft)
-                    : PomCodeEmitter.previewSource(snap, "RecordedPage", options.packageName(), soft);
-            root.addProperty("code", code);
-        } catch (Exception ignored) {}
+        long now = System.currentTimeMillis();
+        if (now - lastCodeRenderMs >= CODE_PREVIEW_DEBOUNCE_MS) {
+            try {
+                List<RecordedStep> snap = new ArrayList<>(STEPS);
+                boolean soft = options.isSoftAssert();
+                cachedCodePreview = options.isTest()
+                        ? PomCodeEmitter.previewTestSource(snap, CodegenCli.deriveClassName(startUrl),
+                            options.packageName(), startUrl, options.browser(), soft)
+                        : PomCodeEmitter.previewSource(snap, "RecordedPage", options.packageName(), soft);
+                lastCodeRenderMs = now;
+            } catch (Exception ignored) {}
+        }
+        root.addProperty("code", cachedCodePreview);
         return GSON.toJson(root);
     }
 
@@ -438,7 +449,21 @@ public final class InteractionRecorder {
         try { return (long) Double.parseDouble(String.valueOf(o)); } catch (Exception e) { return -1L; }
     }
 
-    private static final String CAPTURE_SCRIPT =
+    static void resetForTest() {
+        STEPS.clear();
+        BY_ID.clear();
+        lastPicked = List.of();
+        options = RecorderOptions.defaults();
+        startUrl = null;
+        lastUrl = null;
+        navHintEpoch = 0L;
+        lastCodeRenderMs = 0L;
+        cachedCodePreview = "";
+        recording = false;
+        driver = null;
+    }
+
+    static final String CAPTURE_SCRIPT =
             "(function(pick){"
             + " var W=window;"
             + " if(!W.__ellRecInit){ W.__ellRecInit=true; W.__ellMode=pick?'pick':'record'; W.__ellStop=false;"
@@ -552,8 +577,7 @@ public final class InteractionRecorder {
             + " function emitEl(type,el,value,frame){ if(inBar(el))return; var nm=(el.getAttribute&&(el.getAttribute('aria-label')||el.getAttribute('name')||el.getAttribute('placeholder')))||(el.textContent||'').trim().slice(0,40);"
             + "   emit({id:nid(),type:type,tag:(el.tagName||'').toLowerCase(),name:nm,value:(value==null?null:value),frame:frame,candidates:cands(el)}); }"
             + " function disarm(){ W.__ellMode='record'; var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed'); }"
-            + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v);"
-            + "   var pw=((el.getAttribute('type')||'').toLowerCase()==='password'); emitEl('input',el, pw?'__ELL_SECRET__':v, frame); }"
+            + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v); emitEl('input',el,v,frame); }"
             + " function attach(doc,frame){ if(!doc||doc.__ellAttached)return; doc.__ellAttached=true;"
             + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw))return; var m=W.__ellMode||'record';"
             + "     if(m==='inspect'){e.preventDefault();e.stopPropagation();emitEl('inspect',raw,null,frame);return;}"
@@ -580,7 +604,7 @@ public final class InteractionRecorder {
             + " walk(document,[],0);"
             + "})(arguments[0]);";
 
-    private static final String OVERLAY_SCRIPT =
+    static final String OVERLAY_SCRIPT =
             "(function(){"
             + " if(window.__ellOverlayDone && document.getElementById('ellithium-recorder-toolbar')) return;"
             + " var __ex=document.querySelectorAll('#ellithium-recorder-toolbar'); for(var __i=1;__i<__ex.length;__i++)__ex[__i].remove(); if(__ex.length>=1){ window.__ellOverlayDone=true; return; }"
@@ -637,7 +661,7 @@ public final class InteractionRecorder {
             + " window.__ellOverlayDone=true;"
             + "})();";
 
-    private static final String RENDER_SCRIPT =
+    static final String RENDER_SCRIPT =
             "(function(json){"
             + " var data=JSON.parse(json); var steps=data.steps||[]; var picked=data.picked;"
             + " var ce=document.getElementById('ell-code'); if(ce) ce.textContent=data.code||'';"
@@ -660,8 +684,8 @@ public final class InteractionRecorder {
             + " function tdgOptions(){ var s='<option value=\"\">\\u2014 Use JSON value (manual)</option>'; for(var g=0;g<TDG_METHODS.length;g++){ s+='<optgroup label=\"'+TDG_METHODS[g].g+'\">'; for(var m=0;m<TDG_METHODS[g].m.length;m++) s+='<option value=\"'+TDG_METHODS[g].m[m]+'\">'+TDG_METHODS[g].m[m]+'()</option>'; s+='</optgroup>'; } return s; }"
             + " var isInput=function(a){ return a==='input'||a==='sendData'; };"
             + " for(var s=0;s<steps.length;s++){ var st=steps[s]; var fl=(st.frame&&st.frame.length)?(' [frame '+st.frame.join('>')+']'):'';"
-            + "   var genBadge=st.generatorMethod?(' <span style=\"background:#1c3a1c;color:#30d158;border-radius:3px;padding:1px 4px;font-size:10px\">\\uD83C\\uDFB2 '+st.generatorMethod+'()</span>'):'(st.data?(\\' \\u2192 \\'+(\\'\\'+st.data).slice(0,40)):\\'\\');"
-            + "   if(st.generatorMethod) genBadge=' <span style=\"background:#1c3a1c;color:#30d158;border-radius:3px;padding:1px 4px;font-size:10px\">\\uD83C\\uDFB2 '+st.generatorMethod+'()</span>';"
+            + "   var genBadge;"
+            + "   if(st.generatorMethod) genBadge=' <span style=\"background:#1c3a1c;color:#30d158;border-radius:3px;padding:1px 4px;font-size:10px\">&#x1F3B2; '+st.generatorMethod+'()</span>';"
             + "   else genBadge=st.data?(' \\u2192 '+(''+st.data).slice(0,40)):'';"
             + "   var genBtn=isInput(st.action)?('<select class=\"ell-gen\" data-id=\"'+st.id+'\" title=\"Auto-generate test data\" style=\"margin-left:4px;background:#333;color:#fff;border:1px solid #555;border-radius:3px;font-size:10px;cursor:pointer\">'+tdgOptions()+'</select>'):'';"
             + "   html+='<div style=\"border-top:1px solid #333;padding:6px 0\"><div style=\"display:flex;align-items:center;color:#0a84ff;font-weight:bold\"><span>'+(s+1)+'. '+st.action+fl+genBadge+'</span>'+genBtn+'<button class=\"ell-del\" data-del=\"'+st.id+'\" title=\"Cancel step\" style=\"margin-left:4px;background:#633;color:#fff;border:0;border-radius:3px;cursor:pointer\">\\u2715</button></div>';"
