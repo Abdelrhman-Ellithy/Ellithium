@@ -160,6 +160,11 @@ public class BaselineStore {
         Reporter.log("BaselineStore: Baseline found (" + history.size() + " history entries) for "
                 + brokenLocator + " — Tier 1 healing", LogLevel.DEBUG);
 
+        boolean switchedFrame = baseline.enterIframeContext(driver);
+        if (switchedFrame) {
+            Reporter.log("BaselineStore: element is inside iframe — switched frame context for Tier 1 heal",
+                    LogLevel.DEBUG);
+        }
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
@@ -203,6 +208,9 @@ public class BaselineStore {
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+            if (switchedFrame) {
+                try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
+            }
         }
     }
 

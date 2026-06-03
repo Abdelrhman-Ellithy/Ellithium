@@ -151,14 +151,25 @@ public class EnsembleHealer {
 
         invalidateCacheOnDomMutation(driver);
 
-        String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
-        if (query.isBlank()) return null;
+        boolean switchedFrame = (baseline != null) && baseline.enterIframeContext(driver);
+        if (switchedFrame) {
+            Reporter.log("[ENSEMBLE] element is inside iframe — switched frame context for Tier 2 heal",
+                    LogLevel.DEBUG);
+        }
+        try {
+            String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
+            if (query.isBlank()) return null;
 
-        float[] queryVector = embed(query, true);
-        if (queryVector == null) return null;
+            float[] queryVector = embed(query, true);
+            if (queryVector == null) return null;
 
-        return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
-                callerMethod, fieldName, locatorValue);
+            return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
+                    callerMethod, fieldName, locatorValue);
+        } finally {
+            if (switchedFrame) {
+                try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
+            }
+        }
     }
 
     /**
@@ -768,6 +779,9 @@ public class EnsembleHealer {
             case "role"             -> fp.getRole();
             case "placeholder"      -> fp.getPlaceholder();
             case "data-testid"      -> fp.getDataTestId();
+            case "data-test"        -> fp.getDataTest();
+            case "data-cy"          -> fp.getDataCy();
+            case "data-qa"          -> fp.getDataQa();
             case "type"             -> fp.getType();
             default                 -> null;
         }, fp.getTagName(), fp.getText());

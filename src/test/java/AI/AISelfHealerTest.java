@@ -3,7 +3,7 @@ package ai;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.config.AIConfigLoader;
-import Ellithium.core.ai.config.HealingStrategy;
+import Ellithium.Utilities.ai.HealingStrategy;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;

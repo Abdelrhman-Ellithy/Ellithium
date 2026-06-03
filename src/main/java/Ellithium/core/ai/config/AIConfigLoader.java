@@ -1,5 +1,6 @@
 package Ellithium.core.ai.config;
 
+import Ellithium.Utilities.ai.HealingStrategy;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.core.logging.LogLevel;

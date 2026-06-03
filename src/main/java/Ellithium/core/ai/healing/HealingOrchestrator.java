@@ -14,11 +14,16 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
 public final class HealingOrchestrator {
+
+    private static final java.nio.file.Path KILL_SWITCH_PATH =
+            Paths.get(System.getProperty("user.home"), ".ellithium", "ai-disable");
 
     private static final HealingOrchestrator INSTANCE = new HealingOrchestrator(List.of(
             new Tier1AlgorithmicHealer(), new Tier2EnsembleHealer(), new Tier3LLMHealer()));
@@ -34,6 +39,11 @@ public final class HealingOrchestrator {
     }
 
     public HealOutcome heal(HealingRequest request) {
+        if (Files.exists(KILL_SWITCH_PATH)) {
+            Reporter.log("[AI] Kill switch active (~/.ellithium/ai-disable exists) — all healing disabled",
+                    LogLevel.WARN);
+            return null;
+        }
         for (HealingTier tier : tiers) {
             if (!tier.isAvailable()) continue;
 

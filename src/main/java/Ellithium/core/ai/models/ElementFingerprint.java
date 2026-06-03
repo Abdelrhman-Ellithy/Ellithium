@@ -63,6 +63,12 @@ public class ElementFingerprint {
     private long lastSeenEpoch;      // System.currentTimeMillis()
     private String pageUrl;          // driver.getCurrentUrl()
 
+    // ── iframe context ──
+    // XPath selectors (or index strings) of the iframe chain from the top document to this element,
+    // innermost last. Null/empty means the element lives in the top document.
+    // Example: ["iframe#authFrame", "iframe:nth-of-type(2)"]
+    private java.util.List<String> iframeChain;
+
     /** No-arg constructor for Gson deserialization. */
     public ElementFingerprint() {}
 
@@ -150,11 +156,21 @@ public class ElementFingerprint {
                         + " var n=at[k].name, v=at[k].value;"
                         + " if(n.indexOf('data-')===0 && n!=='data-ellithium-pick' && v) dm[n]=v;"
                         + "}"
+                        + "var ifc=[];"
+                        + "try{ var w=window;"
+                        + "  while(w!==w.top){"
+                        + "    var fe=w.frameElement; if(!fe)break;"
+                        + "    var fid=fe.getAttribute('id')||fe.getAttribute('name');"
+                        + "    var sibs=fe.parentElement?Array.prototype.slice.call(fe.parentElement.querySelectorAll('iframe,frame')):[];"
+                        + "    ifc.unshift(fid?fid:(':'+sibs.indexOf(fe)));"
+                        + "    w=w.parent;"
+                        + "  }"
+                        + "}catch(e){}"
                         + "return [p?p.tagName.toLowerCase():null,"
                         + " p?Array.prototype.indexOf.call(p.children,el):-1,"
                         + " prev?prev.tagName.toLowerCase():null,"
                         + " next?next.tagName.toLowerCase():null,"
-                        + " dm];",
+                        + " dm, ifc];",
                         element);
                 if (result instanceof java.util.List<?> r && r.size() >= 4) {
                     if (r.get(0) != null) fp.parentTag = r.get(0).toString();
@@ -168,12 +184,16 @@ public class ElementFingerprint {
                             String an = e.getKey().toString();
                             String av = e.getValue().toString();
                             if (av.isBlank()) continue;
-                            // skip the four already-captured named attrs to avoid double-scoring
                             if ("data-testid".equals(an) || "data-test".equals(an)
                                     || "data-cy".equals(an) || "data-qa".equals(an)) continue;
                             custom.put(an, av);
                         }
                         if (!custom.isEmpty()) fp.customDataAttrs = custom;
+                    }
+                    if (r.size() >= 6 && r.get(5) instanceof java.util.List<?> ifc && !ifc.isEmpty()) {
+                        java.util.List<String> chain = new java.util.ArrayList<>();
+                        for (Object item : ifc) if (item != null) chain.add(item.toString());
+                        if (!chain.isEmpty()) fp.iframeChain = java.util.List.copyOf(chain);
                     }
                 }
             } catch (Exception ignored) {
@@ -816,6 +836,34 @@ public class ElementFingerprint {
     public String getNextSiblingTag() { return nextSiblingTag; }
     public long getLastSeenEpoch() { return lastSeenEpoch; }
     public String getPageUrl() { return pageUrl; }
+    public java.util.List<String> getIframeChain() {
+        return iframeChain != null ? iframeChain : java.util.List.of();
+    }
+    public boolean isInsideIframe() { return iframeChain != null && !iframeChain.isEmpty(); }
+
+    /**
+     * Switches {@code driver} into the iframe chain recorded at capture time.
+     * Returns {@code true} if any frame switch was made (caller must call
+     * {@code driver.switchTo().defaultContent()} after the operation).
+     * Returns {@code false} if the chain is empty (no switch needed, top frame).
+     */
+    public boolean enterIframeContext(org.openqa.selenium.WebDriver driver) {
+        if (!isInsideIframe()) return false;
+        try {
+            for (String frame : iframeChain) {
+                if (frame.startsWith(":")) {
+                    int idx = Integer.parseInt(frame.substring(1));
+                    driver.switchTo().frame(idx);
+                } else {
+                    driver.switchTo().frame(frame);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
+            return false;
+        }
+    }
 
     @Override
     public String toString() {
