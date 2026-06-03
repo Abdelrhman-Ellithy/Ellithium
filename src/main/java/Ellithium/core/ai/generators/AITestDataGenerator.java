@@ -1,6 +1,6 @@
 package Ellithium.core.ai.generators;
 
-import Ellithium.core.ai.provider.LLMProvider;
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.JsonArray;

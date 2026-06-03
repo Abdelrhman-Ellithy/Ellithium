@@ -1,4 +1,4 @@
-package Ellithium.core.ai.provider;
+package Ellithium.Utilities.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;

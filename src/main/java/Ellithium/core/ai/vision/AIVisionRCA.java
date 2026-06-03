@@ -1,7 +1,7 @@
 package Ellithium.core.ai.vision;
 
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.config.AIConfigLoader;
-import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.qameta.allure.Allure;

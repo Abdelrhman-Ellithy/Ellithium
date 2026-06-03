@@ -1,7 +1,7 @@
 package Ellithium.core.ai.generators;
 
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.models.RecordedInteraction;
-import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.ai.sanitizers.DataScrubber;
 import Ellithium.core.ai.sanitizers.DOMMinimizer;
 import Ellithium.core.logging.LogLevel;

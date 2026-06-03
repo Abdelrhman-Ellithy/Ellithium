@@ -7,7 +7,6 @@ import Ellithium.core.ai.generators.PomClassGenerator;
 import Ellithium.core.ai.models.GeneratedAssets;
 import Ellithium.core.ai.models.TestCaseSource;
 import Ellithium.core.ai.models.TraceabilityRecord;
-import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.ai.readers.JsonTestCaseReader;
 import Ellithium.core.ai.readers.TestCaseReader;
 import Ellithium.core.ai.readers.TextTestCaseReader;

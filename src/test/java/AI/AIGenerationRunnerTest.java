@@ -1,8 +1,9 @@
 package ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
-import Ellithium.core.ai.provider.LLMProvider;
-import Ellithium.core.ai.provider.LLMProviderFactory;
+import Ellithium.Utilities.ai.LLMProvider;
+import Ellithium.Utilities.ai.LLMProviderFactory;
+
 import org.testng.annotations.Test;
 
 import java.io.File;

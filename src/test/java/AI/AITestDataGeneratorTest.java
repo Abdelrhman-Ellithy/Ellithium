@@ -1,7 +1,8 @@
 package ai;
 
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.generators.AITestDataGenerator;
-import Ellithium.core.ai.provider.LLMProvider;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

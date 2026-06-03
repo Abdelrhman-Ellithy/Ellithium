@@ -1,9 +1,10 @@
 package ai;
 
 import Ellithium.core.ai.healing.AISelfHealer;
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.config.HealingStrategy;
-import Ellithium.core.ai.provider.LLMProvider;
+
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.openqa.selenium.By;

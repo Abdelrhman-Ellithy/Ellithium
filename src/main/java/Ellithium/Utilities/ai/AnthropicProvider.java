@@ -1,4 +1,4 @@
-package Ellithium.core.ai.provider;
+package Ellithium.Utilities.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -38,8 +38,6 @@ public class AnthropicProvider implements LLMProvider {
             payload.put("model", model);
             payload.put("max_tokens", 1024);
             payload.put("temperature", 0.0);
-            
-            // Anthropic accepts system prompt at the top level
             payload.put("system", systemPrompt);
 
             JSONArray messages = new JSONArray();

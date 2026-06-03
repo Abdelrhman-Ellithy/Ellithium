@@ -1,5 +1,7 @@
 package Ellithium.config.managment;
 
+import Ellithium.Utilities.ai.LLMProvider;
+import Ellithium.Utilities.ai.LLMProviderFactory;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.API.APIFilterHelper;
@@ -12,8 +14,6 @@ import Ellithium.core.logging.Logger;
 import Ellithium.core.ai.vision.AIVisionRCA;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.config.AIConfigLoader;
-import Ellithium.core.ai.provider.LLMProvider;
-import Ellithium.core.ai.provider.LLMProviderFactory;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;

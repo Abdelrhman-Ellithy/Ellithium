@@ -1,10 +1,10 @@
 package ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.TraceabilityManager;
 import Ellithium.core.ai.models.TraceabilityRecord;
 import Ellithium.core.ai.models.TestCaseSource;
-import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.ai.readers.TextTestCaseReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;

@@ -1,7 +1,7 @@
 package Ellithium.core.execution.listener;
+import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.generators.LiveContextGenerator;
 import Ellithium.core.ai.models.RecordedInteraction;
-import Ellithium.core.ai.provider.LLMProvider;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
