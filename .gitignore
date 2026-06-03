@@ -54,6 +54,8 @@ Test-Output/Logs/*
 *.iml
 *.ipr
 *.iws
+src/main/resources/native
+context-features
 
 ### Eclipse ###
 .apt_generated
