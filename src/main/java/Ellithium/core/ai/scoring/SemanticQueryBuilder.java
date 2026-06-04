@@ -74,6 +74,8 @@ public class SemanticQueryBuilder {
         String lastPlaceholder = fingerprint != null ? fingerprint.getPlaceholder() : null;
         String lastDataTestId  = fingerprint != null ? fingerprint.getDataTestId()  : null;
         String lastTagName     = fingerprint != null ? fingerprint.getTagName()     : null;
+        String lastRole        = fingerprint != null ? fingerprint.getRole()        : null;
+        String lastType        = fingerprint != null ? fingerprint.getType()        : null;
         String lastResId       = fingerprint != null ? fingerprint.getResourceId()       : null;
         String lastAccId       = fingerprint != null ? fingerprint.getAccessibilityId()  : null;
         String lastContentDesc = fingerprint != null ? fingerprint.getContentDesc()      : null;
@@ -87,24 +89,25 @@ public class SemanticQueryBuilder {
 
         return build(actionType, locatorValue, methodName, null,
                 lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName,
-                lastResId, lastAccId, lastContentDesc);
+                lastRole, lastType, lastResId, lastAccId, lastContentDesc);
     }
 
     /** Web-only overload — preserves byte-identical output for the existing parity fixtures
-     *  (the mobile slots are passed as null and contribute no tokens). */
+     *  (the role/type + mobile slots are passed as null and contribute no tokens). */
     public static String build(String actionType, String locatorValue, String methodName,
                                String hint,
                                String lastText, String lastId, String lastAriaLabel,
                                String lastPlaceholder, String lastDataTestId, String lastTagName) {
         return build(actionType, locatorValue, methodName, hint,
                 lastText, lastId, lastAriaLabel, lastPlaceholder, lastDataTestId, lastTagName,
-                null, null, null);
+                null, null, null, null, null);
     }
 
     public static String build(String actionType, String locatorValue, String methodName,
                                 String hint,
                                 String lastText, String lastId, String lastAriaLabel,
                                 String lastPlaceholder, String lastDataTestId, String lastTagName,
+                                String lastRole, String lastType,
                                 String lastResourceId, String lastAccessibilityId, String lastContentDesc) {
         List<String> tokens = new ArrayList<>();
 
@@ -149,6 +152,14 @@ public class SemanticQueryBuilder {
 
         if (isPresent(lastTagName)) {
             tokens.add(lastTagName.toLowerCase());
+        }
+
+        if (isPresent(lastRole)) {
+            tokens.add(deCamelCase(lastRole));
+        }
+
+        if (isPresent(lastType)) {
+            tokens.add(lastType.toLowerCase());
         }
 
         if (isPresent(lastResourceId)) {

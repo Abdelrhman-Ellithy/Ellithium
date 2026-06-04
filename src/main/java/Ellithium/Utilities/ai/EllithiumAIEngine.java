@@ -1,5 +1,7 @@
 package Ellithium.Utilities.ai;
 
+import Ellithium.core.ai.codegen.InteractionRecorder;
+import Ellithium.core.ai.codegen.RecorderOptions;
 import Ellithium.core.ai.TraceabilityManager;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.generators.FeatureFileModifier;
@@ -12,10 +14,8 @@ import Ellithium.core.ai.readers.TestCaseReader;
 import Ellithium.core.ai.readers.TextTestCaseReader;
 import Ellithium.core.ai.sanitizers.DataScrubber;
 import Ellithium.core.ai.sanitizers.DOMMinimizer;
-import Ellithium.core.ai.codegen.InteractionRecorder;
 import Ellithium.core.ai.codegen.PomCodeEmitter;
 import Ellithium.core.ai.codegen.RecordedStep;
-import Ellithium.core.ai.codegen.RecorderOptions;
 import Ellithium.core.ai.generators.LiveContextGenerator;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;

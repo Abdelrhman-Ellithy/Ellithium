@@ -254,13 +254,9 @@ public class EnsembleHealer {
         SemanticLocatorResolver.ElementCategory cat =
                 SemanticLocatorResolver.categorizeAction(actionType);
         String category      = cat != null ? cat.name() : null;
-        boolean isReadable   = SemanticLocatorResolver.ElementCategory.READABLE == cat;
-        double  threshold    = isReadable
-                ? AIConfigLoader.getOnnxReadableThreshold()
-                : AIConfigLoader.getOnnxSimilarityThreshold();
-        int     maxCandidates = isReadable
-                ? AIConfigLoader.getOnnxReadableMaxCandidates()
-                : AIConfigLoader.getOnnxMaxCandidates();
+        boolean isReadable    = SemanticLocatorResolver.ElementCategory.READABLE == cat;
+        double  threshold     = AIConfigLoader.getOnnxSimilarityThreshold();
+        int     maxCandidates = AIConfigLoader.getOnnxMaxCandidates();
 
         String semanticMethodName = isReadable ? null : callerMethod;
         List<String> semanticNames =
@@ -325,7 +321,7 @@ public class EnsembleHealer {
                     double attrW  = (rawAttrW <= 0.0) ? Double.NaN : rawAttrW;
                     Double hitW   = resolverWeights.get(candidate);
                     double f2     = maxScore(attrW, hitW == null ? Double.NaN : hitW);
-                    double combined = Double.isNaN(f2) ? cosine : (f2 + cosine) / 2.0;
+                    double combined = fuseConfidence(f2, cosine);
 
                     if (bestElement == null || combined > bestCombined
                             || (Math.abs(combined - bestCombined) < 1e-6 && f1 > bestF1)) {
@@ -378,6 +374,21 @@ public class EnsembleHealer {
         if (Double.isNaN(a)) return b;
         if (Double.isNaN(b)) return a;
         return Math.max(a, b);
+    }
+
+    private static final double SIGNAL_AGREEMENT = 0.5;
+
+    /**
+     * Fuses the resolver/strategy signal (f2) and the bi-encoder cosine (f3) into one confidence.
+     * The strongest signal sets the floor — a cosine degraded by a broken/typo'd query can never
+     * drag a gold resolver hit below its own value — and agreement between the two adds a damped
+     * bonus over the remaining headroom. NaN f2 (no resolver signal) → cosine alone.
+     */
+    static double fuseConfidence(double f2, double f3) {
+        if (Double.isNaN(f2)) return f3;
+        double hi = Math.max(f2, f3);
+        double lo = Math.min(f2, f3);
+        return hi + (1.0 - hi) * lo * SIGNAL_AGREEMENT;
     }
 
     static List<WebElement> mergeCandidates(List<WebElement> resolverElements, List<WebElement> poolElements) {

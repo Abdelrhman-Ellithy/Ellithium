@@ -35,10 +35,8 @@ public class AIConfigLoader {
     private static String llmProviderClass = "";
     private static ExecutionMode executionMode = ExecutionMode.LOCAL;
     private static boolean visionRcaEnabled = false;
-    private static double onnxSimilarityThreshold = 0.80;
-    private static double onnxReadableThreshold   = 0.65;   // lower for READABLE — text-heavy elements score lower
-    private static int onnxMaxCandidates         = 10;
-    private static int onnxReadableMaxCandidates  = 25;     // wider net for text-bearing element search
+    private static double onnxSimilarityThreshold = 0.60;
+    private static int onnxMaxCandidates         = 15;
     private static int     onnxHardCandidateLimit = 300;
     private static int     baselineTtlDays = 30;
     private static boolean strategyRescueEnabled = true;
@@ -98,8 +96,6 @@ public class AIConfigLoader {
 
             onnxSimilarityThreshold   = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
             onnxMaxCandidates         = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
-            onnxReadableThreshold     = parseDouble(p, "ai.onnx.similarityThreshold.readable", onnxReadableThreshold);
-            onnxReadableMaxCandidates = parseInt(p, "ai.onnx.maxCandidates.readable", onnxReadableMaxCandidates);
             onnxHardCandidateLimit    = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
 
             visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
@@ -215,9 +211,7 @@ public class AIConfigLoader {
     public static int getMaxCandidates() { return maxCandidates; }
 
     public static double getOnnxSimilarityThreshold()     { return onnxSimilarityThreshold; }
-    public static double getOnnxReadableThreshold()       { return onnxReadableThreshold; }
     public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }
-    public static int    getOnnxReadableMaxCandidates()   { return onnxReadableMaxCandidates; }
     public static int    getOnnxHardCandidateLimit()      { return onnxHardCandidateLimit; }
     public static boolean isVisionAllowedOnMobile()       { return visionAllowMobile; }
     public static boolean isVisionAllowedOnWeb()          { return visionAllowWeb; }

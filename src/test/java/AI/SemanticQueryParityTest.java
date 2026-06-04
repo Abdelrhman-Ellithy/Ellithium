@@ -133,10 +133,48 @@ public class SemanticQueryParityTest {
                                                      String expected) {
         String actual = SemanticQueryBuilder.build(action, locator, method, null,
                 null, null, null, null, null, lastTag,
-                resourceId, accessibilityId, contentDesc);
+                null, null, resourceId, accessibilityId, contentDesc);
         Assert.assertEquals(actual, expected,
                 "Mobile query parity broken for '" + label + "' — Java diverged from Python "
                         + "build_query_v2 mobile slots. Fix both sides in the same commit.");
+    }
+
+    /**
+     * role + type parity: the semantic role (button/textbox/combobox/status) and input type
+     * (email/password/tel) slots must produce the SAME query as Python build_query_v2. Expected
+     * strings are GROUND TRUTH from the real Python with role/type in the fingerprint dict. role is
+     * appended after tag, type after role (both before the mobile slots). Columns: label, serve
+     * action, locator, method, lastId, lastTag, lastRole, lastType, expected.
+     */
+    @DataProvider(name = "roleTypeParityCases")
+    public Object[][] roleTypeParityCases() {
+        return new Object[][]{
+                {"role+type survive", "sendData", "By.id: phoneField", "setPhone",
+                        "phone", "input", "textbox", "tel",
+                        "type input enter text phone field textbox tel"},
+                {"type token absorbed by dedup", "sendData", "By.id: userEmail", "setUserEmail",
+                        "userEmail", "input", "textbox", "email",
+                        "type input enter text user email textbox"},
+                {"role button absorbed by action expansion", "clickOnElement", "By.id: loginBtn",
+                        "clickLoginButton", "loginBtn", "button", "button", null,
+                        "click press button login btn"},
+                {"role status kept for readable", "getText", "By.id: message", "getStatusMessage",
+                        "message", "div", "status", null,
+                        "read text label value message status div"},
+        };
+    }
+
+    @Test(dataProvider = "roleTypeParityCases")
+    public void buildRoleTypeMatchesPythonBuildQueryV2(String label, String action, String locator,
+                                                       String method, String lastId, String lastTag,
+                                                       String lastRole, String lastType,
+                                                       String expected) {
+        String actual = SemanticQueryBuilder.build(action, locator, method, null,
+                null, lastId, null, null, null, lastTag,
+                lastRole, lastType, null, null, null);
+        Assert.assertEquals(actual, expected,
+                "role/type query parity broken for '" + label + "' — Java diverged from Python "
+                        + "build_query_v2 role/type slots. Fix both sides in the same commit.");
     }
 
     /** Tokens must never repeat — the dedup is the headline parity fix. */

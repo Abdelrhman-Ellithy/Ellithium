@@ -157,7 +157,7 @@ public class MobileEnsembleHealingTest {
     public void queryBuilderFoldsMobileAttributesIntoQuery() {
         String query = SemanticQueryBuilder.build("clickOnElement", "By.id: loginBtn", "clickLogin",
                 null, null, null, null, null, null, null,
-                "com.app:id/loginBtn", "login_button", "Login");
+                null, null, "com.app:id/loginBtn", "login_button", "Login");
         Assert.assertTrue(query.contains("login"), "query must include mobile-derived tokens: " + query);
     }
 }

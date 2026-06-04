@@ -189,7 +189,7 @@ public class EnsembleValidationTest {
         Report report = new Report();
         report.generatedAt = Instant.now().toString();
         report.useThreshold = AIConfigLoader.getOnnxSimilarityThreshold();
-        report.readableThreshold = AIConfigLoader.getOnnxReadableThreshold();
+        report.readableThreshold = AIConfigLoader.getOnnxSimilarityThreshold();
         report.overall = summarize(results);
 
         Map<String, List<EntryResult>> byCat = new TreeMap<>();
