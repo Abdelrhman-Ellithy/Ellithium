@@ -13,6 +13,7 @@ public final class RecordedStep {
     private final List<Integer> frameChain;
     private volatile int chosenIndex;
     private volatile String generatorMethod;
+    private volatile String assertAttr;
     private final List<LocatorCandidate> targetCandidates;  // non-null only for dragAndDrop
     private volatile int targetChosenIndex;
 
@@ -60,6 +61,9 @@ public final class RecordedStep {
 
     public String getGeneratorMethod() { return generatorMethod; }
     public void setGeneratorMethod(String method) { this.generatorMethod = method; }
+
+    public String getAssertAttr() { return assertAttr; }
+    public void setAssertAttr(String attr) { this.assertAttr = attr; }
 
     public List<LocatorCandidate> getTargetCandidates() { return targetCandidates; }
 

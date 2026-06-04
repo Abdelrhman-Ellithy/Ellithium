@@ -50,7 +50,7 @@ public final class HealingOrchestrator {
             HealOutcome raw;
             try {
                 raw = tier.heal(request);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Reporter.log("[TIER " + tier.order() + "] heal raised " + e.getClass().getSimpleName()
                         + " — falling through", LogLevel.WARN);
                 continue;

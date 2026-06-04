@@ -95,6 +95,9 @@ public class EnsembleHealer {
             java.util.Arrays.fill(modelBytes, (byte) 0);
             initTokenizer(tokenizerBytes);
             available = true;
+            // Warmup inference: forces ORT JIT compilation so the first real heal
+            // doesn't pay a 2-5× latency penalty.
+            try { embed("warmup click button input", false); } catch (Exception ignored) {}
             Reporter.log("[ENSEMBLE] ONNX session active — " + modelKb
                     + " KB INT8 model loaded | pooling=cls", LogLevel.INFO_GREEN);
 

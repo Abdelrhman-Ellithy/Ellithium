@@ -59,6 +59,7 @@ Test-Output/Logs/*
 *.iws
 context-features/
 native-crypto/
+src/test/resources/TestData/*
 
 ### Eclipse ###
 .apt_generated

@@ -54,11 +54,51 @@ public class InteractionRecorderTest {
 
     @Test
     public void overlayScript_isIIFE_noArguments() {
+        // OVERLAY_SCRIPT is called via js.executeScript(OVERLAY_SCRIPT) — it uses "return" so the caller
+        // can detect first injection; the IIFE itself carries no arguments.
         String s = InteractionRecorder.OVERLAY_SCRIPT;
-        Assert.assertTrue(s.startsWith("(function(){"),
-                "OVERLAY_SCRIPT must be an IIFE: " + s.substring(0, Math.min(30, s.length())));
+        Assert.assertTrue(s.startsWith("return (function(){"),
+                "OVERLAY_SCRIPT must be a 'return (function(){...})();' expression for boolean result: "
+                + s.substring(0, Math.min(40, s.length())));
         Assert.assertTrue(s.endsWith("})();"),
                 "OVERLAY_SCRIPT must close with })(); got: " + s.substring(Math.max(0, s.length() - 10)));
+    }
+
+    @Test
+    public void overlayScript_returnsBoolean_truOnFirstInjection() {
+        // must set window.__ellOverlayDone=true and return true on first injection
+        String s = InteractionRecorder.OVERLAY_SCRIPT;
+        Assert.assertTrue(s.contains("window.__ellOverlayDone=true; return true;"),
+                "overlay must set done flag and return true on first injection");
+    }
+
+    @Test
+    public void captureScript_attrDialog_excludedFromRecording() {
+        // The attribute dialog (#ell-attr-dlg) must be excluded by __ellInBar so that
+        // choosing an attribute from the <select> inside the dialog does not record a 'select' step.
+        String s = InteractionRecorder.CAPTURE_SCRIPT;
+        Assert.assertTrue(s.contains("ell-attr-dlg"),
+                "CAPTURE_SCRIPT __ellInBar must exclude #ell-attr-dlg: " + s.substring(
+                        Math.max(0, s.indexOf("__ellInBar") - 0), Math.min(s.length(), s.indexOf("__ellInBar") + 200)));
+    }
+
+    @Test
+    public void overlayScript_attrDialog_excludedFromRecording() {
+        // window.__ellInBar in OVERLAY_SCRIPT must also exclude #ell-attr-dlg so the full
+        // page-level guard is consistent with the CAPTURE_SCRIPT guard.
+        String s = InteractionRecorder.OVERLAY_SCRIPT;
+        Assert.assertTrue(s.contains("ell-attr-dlg"),
+                "OVERLAY_SCRIPT window.__ellInBar must exclude #ell-attr-dlg");
+    }
+
+    @Test
+    public void overlayScript_showAttrDialog_pusheAssertValueType() {
+        // The Add button inside the attribute dialog must push type:'assertValue' into the log.
+        String s = InteractionRecorder.OVERLAY_SCRIPT;
+        Assert.assertTrue(s.contains("type:'assertValue'"),
+                "attr dialog Add button must push assertValue event, not select");
+        Assert.assertTrue(s.contains("assertAttr"),
+                "attr dialog event must carry assertAttr field");
     }
 
     @Test
@@ -256,6 +296,57 @@ public class InteractionRecorderTest {
         boolean result = InteractionRecorder.processEvent(
                 Map.of("type", "autoGenerate", "id", "ghost", "method", "getRandomEmail"));
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void processEvent_assertValue_setsAssertAttr() {
+        // assertValue events from the attribute dialog carry assertAttr; it must be stored on the step.
+        boolean result = InteractionRecorder.processEvent(java.util.Map.of(
+                "type", "assertValue",
+                "id", "av1",
+                "tag", "input",
+                "name", "Email",
+                "value", "user@test.com",
+                "assertAttr", "value",
+                "frame", java.util.List.of(),
+                "candidates", java.util.List.of()));
+        Assert.assertTrue(result);
+        Assert.assertEquals(InteractionRecorder.STEPS.size(), 1);
+        RecordedStep s = InteractionRecorder.STEPS.get(0);
+        Assert.assertEquals(s.getActionType(), "assertValue");
+        Assert.assertEquals(s.getAssertAttr(), "value");
+        Assert.assertEquals(s.getData(), "user@test.com");
+    }
+
+    @Test
+    public void processEvent_assertValue_withoutAssertAttr_stepStillAdded_butAttrIsNull() {
+        // assertValue events without assertAttr are still added (PomCodeEmitter skips them at emit time).
+        boolean result = InteractionRecorder.processEvent(java.util.Map.of(
+                "type", "assertValue",
+                "id", "av2",
+                "tag", "div",
+                "name", "X",
+                "value", "something",
+                "frame", java.util.List.of(),
+                "candidates", java.util.List.of()));
+        Assert.assertTrue(result);
+        RecordedStep s = InteractionRecorder.STEPS.get(0);
+        Assert.assertNull(s.getAssertAttr(), "missing assertAttr must remain null");
+    }
+
+    @Test
+    public void processEvent_assertValue_textAttr_preserved() {
+        // text() is a valid pseudo-attribute for assertValue
+        InteractionRecorder.processEvent(java.util.Map.of(
+                "type", "assertValue",
+                "id", "av3",
+                "tag", "h1",
+                "name", "Title",
+                "value", "Welcome",
+                "assertAttr", "text()",
+                "frame", java.util.List.of(),
+                "candidates", java.util.List.of()));
+        Assert.assertEquals(InteractionRecorder.STEPS.get(0).getAssertAttr(), "text()");
     }
 
     @Test

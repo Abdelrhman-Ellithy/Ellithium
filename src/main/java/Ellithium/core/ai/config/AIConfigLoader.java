@@ -37,6 +37,8 @@ public class AIConfigLoader {
     private static boolean visionRcaEnabled = false;
     private static double onnxSimilarityThreshold = 0.60;
     private static int onnxMaxCandidates         = 15;
+    private static double tier3BaselineMatchFloor          = 0.40;
+    private static double tier3StaleBaselineConfidenceFloor = 0.90;
     private static int     onnxHardCandidateLimit = 300;
     private static int     baselineTtlDays = 30;
     private static boolean strategyRescueEnabled = true;
@@ -64,7 +66,7 @@ public class AIConfigLoader {
      * Loads AI configuration from config.properties.
      * Safe to call multiple times — will only initialize once.
      */
-    public static void initialize() {
+    public static synchronized void initialize() {
         if (initialized) return;
         try {
             String p = ConfigContext.getAiFilePath();
@@ -97,6 +99,8 @@ public class AIConfigLoader {
             onnxSimilarityThreshold   = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
             onnxMaxCandidates         = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
             onnxHardCandidateLimit    = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
+            tier3BaselineMatchFloor          = parseDouble(p, "ai.healing.tier3BaselineMatchFloor", tier3BaselineMatchFloor);
+            tier3StaleBaselineConfidenceFloor = parseDouble(p, "ai.healing.tier3StaleBaselineConfidenceFloor", tier3StaleBaselineConfidenceFloor);
 
             visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
             visionAllowWeb           = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
@@ -222,4 +226,6 @@ public class AIConfigLoader {
     public static int    getLlmRetryInitialBackoffMs()    { return llmRetryInitialBackoffMs; }
     public static int    getLlmRetryMaxBackoffMs()        { return llmRetryMaxBackoffMs; }
     public static int    getTelemetryMaxRecords()         { return telemetryMaxRecords; }
+    public static double getTier3BaselineMatchFloor()            { return tier3BaselineMatchFloor; }
+    public static double getTier3StaleBaselineConfidenceFloor()  { return tier3StaleBaselineConfidenceFloor; }
 }

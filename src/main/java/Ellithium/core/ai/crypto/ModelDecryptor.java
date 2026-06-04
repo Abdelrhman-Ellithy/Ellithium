@@ -97,6 +97,15 @@ public class ModelDecryptor {
             String suffix = resourcePath.substring(resourcePath.lastIndexOf('.'));
             java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
             tmp.toFile().deleteOnExit();
+            // Restrict to owner-read-only before writing, so other processes on a shared
+            // system (e.g., shared Linux CI runner) cannot read the native library.
+            try {
+                java.nio.file.attribute.PosixFileAttributeView view =
+                        Files.getFileAttributeView(tmp, java.nio.file.attribute.PosixFileAttributeView.class);
+                if (view != null) {
+                    view.setPermissions(java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
+                }
+            } catch (Exception ignored) {} // Windows: no POSIX attributes; silently skip
             Files.write(tmp, libBytes);
             return loadLibraryFile(tmp.toFile());
         } catch (IOException e) {

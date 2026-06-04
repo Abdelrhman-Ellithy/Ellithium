@@ -18,16 +18,18 @@ public final class PomCodeEmitter {
     private PomCodeEmitter() {}
 
     private static final Pattern BY_EXPR = Pattern.compile("^By\\.(\\w+)\\(\"(.*)\"\\)$");
-    private static final String JSON_HELPER = "Ellithium.Utilities.helpers.JsonHelper";
-    private static final String TEST_DATA_DIR = "src/test/resources/TestData/";
+    private static final String JSON_HELPER      = "Ellithium.Utilities.helpers.JsonHelper";
+    private static final String JSON_HELPER_CALL = "JsonHelper";
+    private static final String TEST_DATA_DIR    = "src/test/resources/TestData/";
 
     public record EmitResult(String className, List<String> locatorFields,
                              List<String> methods, List<String> statements, boolean hasAssertions,
                              Map<String, String> testData, boolean hasTestDataGen) {}
 
-    static final String ASSERT_HARD = "Ellithium.Utilities.assertion.AssertionExecutor.hard";
-    static final String SOFT_TYPE = "Ellithium.Utilities.assertion.AssertionExecutor.soft";
-    static final String SOFT_VAR = "softAssert";
+    private static final String ASSERT_EXECUTOR_IMPORT = "Ellithium.Utilities.assertion.AssertionExecutor";
+    static final String ASSERT_HARD = "AssertionExecutor.hard";
+    static final String SOFT_TYPE   = "AssertionExecutor.soft";
+    static final String SOFT_VAR    = "softAssert";
 
     public static EmitResult build(List<RecordedStep> steps, String className) {
         return build(steps, className, true, true);
@@ -111,29 +113,44 @@ public final class PomCodeEmitter {
             }
 
             String stmt;
-            if (("input".equals(action) || "sendData".equals(action)) && data != null) {
+            if ("assertValue".equals(action)) {
+                String attr = step.getAssertAttr();
+                if (attr != null && !attr.isBlank() && data != null && !data.isBlank()) {
+                    if ("text()".equals(attr)) {
+                        stmt = assertRef + ".assertContains(driverActions.elements().getText("
+                             + byRef + "), \"" + esc(data) + "\");";
+                    } else {
+                        stmt = assertRef + ".assertContains(driverActions.elements().getAttributeValue("
+                             + byRef + ", \"" + esc(attr) + "\"), \"" + esc(data) + "\");";
+                    }
+                    hasAssertions = true;
+                } else {
+                    stmt = null;
+                }
+            } else if (("input".equals(action) || "sendData".equals(action)) && data != null) {
                 String key = isFieldName(byRef) ? byRef
                         : identifier(step.getElementName(), step.getTagName(), action);
                 String gen = step.getGeneratorMethod();
                 if (gen != null && !gen.isBlank()) {
                     stmt = "driverActions.elements().sendData(" + byRef + ", "
-                            + "Ellithium.Utilities.generators.TestDataGenerator." + gen + "());";
+                            + "TestDataGenerator." + gen + "());";
                     hasTestDataGen = true;
                 } else {
                     inputData.put(key, data);
                     stmt = "driverActions.elements().sendData(" + byRef + ", "
-                            + JSON_HELPER + ".getJsonKeyValue(\"" + esc(jsonPath) + "\", \"" + key + "\"));";
+                            + JSON_HELPER_CALL + ".getJsonKeyValue(\"" + esc(jsonPath) + "\", \"" + key + "\"));";
                 }
             } else {
                 stmt = statementFor(action, byRef, data, assertRef);
+                if (stmt != null && action.startsWith("assert")) hasAssertions = true;
             }
 
             if (stmt == null) {
-                Reporter.log("PomCodeEmitter: no API mapping for action '" + action + "' — step skipped",
-                        LogLevel.WARN);
+                if (!"assertValue".equals(action))
+                    Reporter.log("PomCodeEmitter: no API mapping for action '" + action + "' — step skipped",
+                            LogLevel.WARN);
                 continue;
             }
-            if (action.startsWith("assert")) hasAssertions = true;
             List<Integer> frames = step.getFrameChain();
             for (Integer idx : frames) {
                 statements.add("driverActions.frames().switchToFrameByIndex(" + idx + ");");
@@ -220,18 +237,14 @@ public final class PomCodeEmitter {
     private static String renderSource(EmitResult r, String pkg) {
         String jsonPath = TEST_DATA_DIR + r.className() + ".json";
         StringBuilder sb = new StringBuilder();
+        sb.append(fileHeader(jsonPath, r.testData().isEmpty()));
         sb.append("package ").append(pkg).append(";\n\n");
         if (r.hasTestDataGen()) sb.append("import Ellithium.Utilities.generators.TestDataGenerator;\n");
         if (!r.testData().isEmpty()) sb.append("import ").append(JSON_HELPER).append(";\n");
+        if (r.hasAssertions()) sb.append("import ").append(ASSERT_EXECUTOR_IMPORT).append(";\n");
         sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
         sb.append("import org.openqa.selenium.By;\n");
         sb.append("import org.openqa.selenium.WebDriver;\n\n");
-        if (!r.testData().isEmpty()) {
-            sb.append("/**\n");
-            sb.append(" * Input data for sendData steps is stored in ").append(jsonPath).append(".\n");
-            sb.append(" * Edit that file to update values. Password fields are empty — fill them in manually.\n");
-            sb.append(" */\n");
-        }
         sb.append("public class ").append(r.className()).append(" {\n\n");
         sb.append("    private final DriverActions<?> driverActions;\n\n");
         for (String f : r.locatorFields()) sb.append("    ").append(f).append("\n");
@@ -249,9 +262,11 @@ public final class PomCodeEmitter {
         String br = (browser == null || browser.isBlank()) ? "Chrome" : browser;
         String jsonPath = TEST_DATA_DIR + r.className() + ".json";
         StringBuilder sb = new StringBuilder();
+        sb.append(fileHeader(jsonPath, r.testData().isEmpty()));
         sb.append("package ").append(pkg).append(";\n\n");
         if (r.hasTestDataGen()) sb.append("import Ellithium.Utilities.generators.TestDataGenerator;\n");
         if (!r.testData().isEmpty()) sb.append("import ").append(JSON_HELPER).append(";\n");
+        if (r.hasAssertions()) sb.append("import ").append(ASSERT_EXECUTOR_IMPORT).append(";\n");
         sb.append("import Ellithium.Utilities.interactions.DriverActions;\n");
         sb.append("import Ellithium.core.driver.DriverFactory;\n");
         sb.append("import Ellithium.core.driver.HeadlessMode;\n");
@@ -266,12 +281,6 @@ public final class PomCodeEmitter {
         sb.append("import org.testng.annotations.AfterClass;\n");
         sb.append("import org.testng.annotations.BeforeClass;\n");
         sb.append("import org.testng.annotations.Test;\n\n");
-        if (!r.testData().isEmpty()) {
-            sb.append("/**\n");
-            sb.append(" * Input data for sendData steps is stored in ").append(jsonPath).append(".\n");
-            sb.append(" * Edit that file to update values. Password fields are empty — fill them in manually.\n");
-            sb.append(" */\n");
-        }
         sb.append("public class ").append(cls).append(" {\n\n");
         sb.append("    private DriverActions<?> driverActions;\n");
         sb.append("    private WebDriver driver;\n\n");
@@ -297,6 +306,20 @@ public final class PomCodeEmitter {
         return sb.toString();
     }
 
+
+    private static String fileHeader(String jsonPath, boolean noTestData) {
+        StringBuilder h = new StringBuilder();
+        h.append("/**\n");
+        h.append(" * Auto-generated by Ellithium Code Generator.\n");
+        if (!noTestData) {
+            h.append(" *\n");
+            h.append(" * <p>Test data for {@code sendData} steps is stored in\n");
+            h.append(" * {@code ").append(jsonPath).append("}.\n");
+            h.append(" * Edit that JSON file to update input values between runs.</p>\n");
+        }
+        h.append(" */\n");
+        return h.toString();
+    }
 
     private static boolean isFieldName(String s) {
         return s != null && !s.isEmpty() && s.indexOf('(') < 0 && s.indexOf(' ') < 0;
@@ -328,8 +351,7 @@ public final class PomCodeEmitter {
                                     + byRef + "), \"element should be visible\");";
             case "assertText"  -> assertRef + ".assertContains(driverActions.elements().getText("
                                     + byRef + "), \"" + esc(data) + "\");";
-            case "assertValue" -> assertRef + ".assertEquals(driverActions.elements().getAttributeValue("
-                                    + byRef + ", \"value\"), \"" + esc(data) + "\");";
+            case "assertValue" -> null;
             case "assertEnabled"
                                -> assertRef + ".assertTrue(driverActions.elements().isElementEnabled("
                                     + byRef + "), \"element should be enabled\");";

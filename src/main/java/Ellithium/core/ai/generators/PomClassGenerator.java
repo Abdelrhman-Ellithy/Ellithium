@@ -69,10 +69,20 @@ public class PomClassGenerator {
             }
             sb.append("}\n");
 
-            // Ensure parent directories exist
+            // Validate syntax before writing — reject LLM-generated code with static
+            // initializers, extra class blocks, or other malformed constructs.
+            String source = sb.toString();
+            try {
+                StaticJavaParser.parse(source);
+            } catch (Exception parseEx) {
+                Reporter.log("POM class rejected (syntax error in LLM output): "
+                        + parseEx.getMessage(), LogLevel.ERROR);
+                return false;
+            }
+
             Path path = Paths.get(outputPath);
             Files.createDirectories(path.getParent());
-            Files.writeString(path, sb.toString());
+            Files.writeString(path, source);
 
             Reporter.log("POM class created: " + outputPath, LogLevel.INFO_GREEN);
             return true;

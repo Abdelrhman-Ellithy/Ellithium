@@ -310,8 +310,8 @@ public class AISelfHealer {
 
             if (baseline != null) {
                 double matchScore = baseline.scoreSimilarity(foundEl);
-                if (matchScore < 0.40) {
-                    if (matchScore == 0.0 && candidate.getConfidence() >= 0.90
+                if (matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
+                    if (matchScore == 0.0 && candidate.getConfidence() >= AIConfigLoader.getTier3StaleBaselineConfidenceFloor()
                             && HealingResponseParser.isStableLocatorStrategy(candidateLocator)) {
                         Reporter.log("[TIER 3] Stale baseline (score=0.0); accepting stable-strategy LLM heal "
                                 + "(confidence=" + String.format("%.2f", candidate.getConfidence()) + "): "
@@ -444,6 +444,9 @@ public class AISelfHealer {
     public static void cleanup() {
         llmProviderThread.remove();
         strategyThread.remove();
+        if (!HealingContextBuilder.TIER4_PREP_POOL.isShutdown()) {
+            HealingContextBuilder.TIER4_PREP_POOL.shutdown();
+        }
     }
 
     /** Returns the global healed cache (for use by BaseActions findWebElements). */

@@ -286,7 +286,9 @@ public class BaselineStore {
                     return candidate;
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Reporter.log("BaselineStore: tryDirectLookup skipped candidate: " + e.getClass().getSimpleName(), LogLevel.DEBUG);
+        }
         return null;
     }
 
@@ -335,7 +337,8 @@ public class BaselineStore {
                     bestScore = score;
                     if (score >= 0.90) break;
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                Reporter.log("BaselineStore: skipped candidate during scoring: " + e.getClass().getSimpleName(), LogLevel.DEBUG);
             }
         }
 

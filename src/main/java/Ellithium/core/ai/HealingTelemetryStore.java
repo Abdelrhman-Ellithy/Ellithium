@@ -74,10 +74,15 @@ public class HealingTelemetryStore {
         records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
                 query, category, CURRENT_TEST.get()));
         int n = recordCount.incrementAndGet();
-        if (max > 0) {
+        if (max > 0 && n > max) {
+            boolean dropped = false;
             while (n > max) {
-                if (records.poll() != null) n = recordCount.decrementAndGet();
+                if (records.poll() != null) { n = recordCount.decrementAndGet(); dropped = true; }
                 else break;
+            }
+            if (dropped) {
+                Reporter.log("[TELEMETRY] Record limit (" + max + ") reached — oldest entries evicted. "
+                        + "Increase ai.telemetry.maxRecords to retain full history.", LogLevel.WARN);
             }
         }
     }
