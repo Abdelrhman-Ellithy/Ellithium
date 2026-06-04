@@ -8,8 +8,7 @@ import static Ellithium.core.ai.EnsembleHealer.fuseConfidence;
 /**
  * Behaviour spec for {@link EnsembleHealer#fuseConfidence}. The strongest signal sets the floor —
  * a cosine degraded by a broken/typo'd query can never drag a gold resolver hit below its own
- * value — and agreement adds a damped bonus over the remaining headroom. Replaces the old flat
- * mean that let a weak cosine veto a 100%-certain resolver hit (combined 0.708 for f2=1.0, f3=0.42).
+ * value — and agreement adds a damped bonus over the remaining headroom.
  */
 public class ConfidenceFusionTest {
 

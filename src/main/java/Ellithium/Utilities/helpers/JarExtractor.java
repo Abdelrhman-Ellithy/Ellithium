@@ -170,13 +170,9 @@ public class JarExtractor {
                         outputFile.getParentFile().mkdirs();
                     }
                     Files.copy(jar.getInputStream(entry), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    System.out.println("Extracted file from JAR: " + filePathInJar);
-                } else {
-                    System.err.println("File not found in JAR: " + filePathInJar);
                 }
             }
-            catch (IOException e) {
-                System.err.println("Extracted file from JAR: " + e.getMessage());
+            catch (IOException ignored) {
             }
         }
     }

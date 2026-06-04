@@ -87,7 +87,6 @@ public class InteractionRecorderTest {
                 "genBadge must use if/else pattern");
         Assert.assertTrue(s.contains("else genBadge=st.data?"),
                 "else branch must fall back to data value");
-        // Verify the dead ternary line (the BUG-1 pattern) is gone
         Assert.assertFalse(s.contains("'(st.data?(\\' \\u2192"),
                 "dead first genBadge ternary with complex \\\\' escaping must not be present");
     }
