@@ -95,8 +95,12 @@ public class ModelDecryptor {
         try {
             String suffix = resourcePath.substring(resourcePath.lastIndexOf('.'));
             java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
-            tmp.toFile().deleteOnExit();
-            // Restrict to owner-read-only before writing, so other processes on a shared
+            // Register a shutdown hook instead of relying on deleteOnExit(), which is
+            // unreliable on Windows and silently skipped on abnormal JVM exit (SIGKILL, OOM).
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
+            }, "ell-native-cleanup"));
+            // Restrict to owner-only before writing, so other processes on a shared
             // system (e.g., shared Linux CI runner) cannot read the native library.
             try {
                 java.nio.file.attribute.PosixFileAttributeView view =

@@ -123,6 +123,11 @@ public class LocatorMutationEngine {
                         }
                     });
 
+    /** Clears the mutation cache. Call between suites to avoid stale mutations from a different AUT. */
+    public static void resetCache() {
+        MUTATION_CACHE.clear();
+    }
+
     public static List<By> generateMutations(By brokenLocator) {
         String key = brokenLocator.toString();
         List<By> cached = MUTATION_CACHE.get(key);

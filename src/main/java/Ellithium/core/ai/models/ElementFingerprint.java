@@ -314,12 +314,18 @@ public class ElementFingerprint {
             dynamicMax += 30;
             if (this.dataQa.equals(safeGetAttribute(candidate, "data-qa"))) score += 30;
         }
-        // Adaptive data-* attributes: 30 pts each (any attribute the app uses beyond the named four)
+        // Adaptive data-* attributes: 30 pts each, capped at 5 entries (150 pts group max).
+        // Without the cap, an element with 20+ data-* attrs would inflate dynamicMax by 600 pts,
+        // reducing every other signal below 5% contribution each.
         if (this.customDataAttrs != null) {
+            int dataCount = 0;
+            int dataDynamicMaxContrib = 0;
             for (java.util.Map.Entry<String, String> e : this.customDataAttrs.entrySet()) {
-                dynamicMax += 30;
+                if (dataCount++ >= 5) break;
+                dataDynamicMaxContrib += 30;
                 if (e.getValue().equals(safeGetAttribute(candidate, e.getKey()))) score += 30;
             }
+            dynamicMax += Math.min(dataDynamicMaxContrib, 150); // group cap: max 150 pts
         }
 
         // id: 25 pts exact, 12 pts token-Jaccard ≥ 0.5
@@ -426,7 +432,10 @@ public class ElementFingerprint {
             }
             if (this.childIndex >= 0 && sc.childIndex >= 0) {
                 dynamicMax += 2;
-                if (this.childIndex == sc.childIndex) score += 2;
+                // Range match ±1: a single DOM insertion shifts every subsequent sibling's
+                // index by 1 — exact equality would zero out this signal for the most common
+                // DOM change pattern (field/element insertion).
+                if (Math.abs(this.childIndex - sc.childIndex) <= 1) score += 2;
             }
             if (isNonBlank(this.prevSiblingTag)) {
                 dynamicMax += 2;
@@ -494,11 +503,15 @@ public class ElementFingerprint {
         }
         if (this.customDataAttrs != null) {
             Object dm = attrs.get("dataAttrs");
+            int dataCount2 = 0;
+            int dataDynamicMaxContrib2 = 0;
             for (java.util.Map.Entry<String, String> e : this.customDataAttrs.entrySet()) {
-                dynamicMax += 30;
+                if (dataCount2++ >= 5) break;
+                dataDynamicMaxContrib2 += 30;
                 String cv = (dm instanceof java.util.Map<?, ?> dmap) ? asStr(dmap.get(e.getKey())) : null;
                 if (e.getValue().equals(cv)) score += 30;
             }
+            dynamicMax += Math.min(dataDynamicMaxContrib2, 150);
         }
         if (isNonBlank(this.id)) {
             dynamicMax += 25;
@@ -584,7 +597,7 @@ public class ElementFingerprint {
             }
             if (this.childIndex >= 0 && sc.childIndex >= 0) {
                 dynamicMax += 2;
-                if (this.childIndex == sc.childIndex) score += 2;
+                if (Math.abs(this.childIndex - sc.childIndex) <= 1) score += 2;
             }
             if (isNonBlank(this.prevSiblingTag)) {
                 dynamicMax += 2;

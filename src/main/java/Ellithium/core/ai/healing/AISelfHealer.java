@@ -59,9 +59,19 @@ public class AISelfHealer {
             }
             String url = driver.getCurrentUrl();
             if (url == null) return "";
-            int q = url.indexOf('?');
-            if (q < 0) return url;
-            int hash = url.indexOf('#', q);
+            // Locate '#' from position 0 so hash-before-'?' URLs (e.g. http://app/#/page?x=1)
+            // are handled correctly. Strip the query string but keep the hash fragment so that
+            // two different SPA routes sharing the same locator produce different cache keys.
+            int hash = url.indexOf('#');
+            int q    = url.indexOf('?');
+            if (q < 0 && hash < 0) return url;          // plain URL — no fragments
+            if (hash >= 0 && (q < 0 || hash < q)) {
+                // Hash precedes '?' (typical SPA hash-routing): strip any trailing query
+                // inside the hash segment (e.g. #/page?session=123 → #/page).
+                int qInHash = url.indexOf('?', hash);
+                return qInHash >= 0 ? url.substring(0, qInHash) : url;
+            }
+            // '?' precedes '#' (or no '#'): strip the query string, keep the hash.
             return hash >= 0 ? url.substring(0, q) + url.substring(hash) : url.substring(0, q);
         } catch (Exception e) {
             return "";
@@ -78,6 +88,11 @@ public class AISelfHealer {
         inFlight.clear();
         pendingPatches.clear();
         knownUnhealable.clear();
+        // Clear per-locator mutation and strategy caches so a second suite (or a different
+        // AUT loaded in the same JVM) does not receive stale strategy lists built for the
+        // previous app's locator patterns.
+        Ellithium.core.ai.scoring.LocatorMutationEngine.resetCache();
+        Ellithium.core.ai.SemanticLocatorResolver.resetCache();
     }
 
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();

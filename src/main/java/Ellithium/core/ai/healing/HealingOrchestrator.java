@@ -51,6 +51,11 @@ public final class HealingOrchestrator {
             try {
                 raw = tier.heal(request);
             } catch (Throwable e) {
+                // Re-interrupt so executor-shutdown signals are not silently swallowed
+                // by this catch(Throwable) — without this, parallel-suite shutdown hangs.
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 Reporter.log("[TIER " + tier.order() + "] heal raised " + e.getClass().getSimpleName()
                         + " — falling through", LogLevel.WARN);
                 continue;

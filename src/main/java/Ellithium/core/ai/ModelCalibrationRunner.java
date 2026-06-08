@@ -194,10 +194,28 @@ public class ModelCalibrationRunner {
     }
 
     private static void writeOutput(CalibrationResult result) {
+        java.nio.file.Path target = java.nio.file.Paths.get(OUTPUT_FILE);
         try {
-            File out = new File(OUTPUT_FILE);
-            out.getParentFile().mkdirs();
-            try (Writer writer = new FileWriter(out)) { GSON.toJson(result, writer); }
+            java.nio.file.Files.createDirectories(target.getParent());
+            // Write to a temp file first, then atomically rename — a JVM crash mid-write
+            // cannot corrupt the calibration results (mirrors HealingTelemetryStore.flush()).
+            java.nio.file.Path tmp = java.nio.file.Files.createTempFile(
+                    target.getParent(), "calibration-results", ".tmp");
+            try {
+                try (Writer writer = new FileWriter(tmp.toFile())) {
+                    GSON.toJson(result, writer);
+                }
+                try {
+                    java.nio.file.Files.move(tmp, target,
+                            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                    java.nio.file.Files.move(tmp, target,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                java.nio.file.Files.deleteIfExists(tmp);
+            }
             System.out.println("[CALIBRATION] Results written to " + OUTPUT_FILE);
         } catch (IOException e) {
             System.err.println("[CALIBRATION] Failed to write output: " + e.getMessage());

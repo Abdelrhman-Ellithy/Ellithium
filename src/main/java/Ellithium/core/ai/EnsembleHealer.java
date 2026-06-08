@@ -42,10 +42,13 @@ public class EnsembleHealer {
     private static Object ortEnvironment = null;
     private static Object tokenizer      = null;
 
-    // Pool of 2 OrtSession objects — lets 2 threads embed concurrently without locking.
-    // Size-bounded to 2: each session costs ~34 MB native heap; 2 sessions = 68 MB total.
+    // ORT session pool — sized to min(availableProcessors, 4) so parallel suites don't queue.
+    // Each session costs ~34 MB native heap; 4 sessions = 136 MB worst-case, acceptable for
+    // CI agents with ≥ 512 MB heap. The old fixed-2 size caused 6/8 threads to wait 8 s each.
+    private static final int SESSION_POOL_SIZE =
+            Math.min(Runtime.getRuntime().availableProcessors(), 4);
     private static final java.util.concurrent.LinkedBlockingQueue<Object> SESSION_POOL =
-            new java.util.concurrent.LinkedBlockingQueue<>(2);
+            new java.util.concurrent.LinkedBlockingQueue<>(SESSION_POOL_SIZE);
 
     private static volatile java.util.concurrent.CompletableFuture<Void> INIT_FUTURE;
 
@@ -103,26 +106,41 @@ public class EnsembleHealer {
             }
 
             initOrtSession(modelBytes);
-            byte[] modelBytes2 = java.util.Arrays.copyOf(modelBytes, modelBytes.length);
-            java.util.Arrays.fill(modelBytes, (byte) 0);
-            Thread poolExpander = new Thread(() -> {
-                try {
-                    Class<?> optClass2 = Class.forName("ai.onnxruntime.OrtSession$SessionOptions");
-                    Object opts2 = optClass2.getDeclaredConstructor().newInstance();
-                    capOrtThreads(optClass2, opts2);
-                    Object sess2 = ortEnvironment.getClass()
-                            .getMethod("createSession", byte[].class, optClass2)
-                            .invoke(ortEnvironment, modelBytes2, opts2);
-                    java.util.Arrays.fill(modelBytes2, (byte) 0);
-                    SESSION_POOL.offer(sess2);
-                } catch (Throwable t) {
-                    java.util.Arrays.fill(modelBytes2, (byte) 0);
-                    Reporter.log("[ENSEMBLE] Second ORT session failed — running single-session (halved parallel throughput): "
-                            + t.getClass().getSimpleName(), LogLevel.WARN);
+            // Create SESSION_POOL_SIZE-1 additional sessions on a daemon thread so the pool
+            // reaches its configured depth without blocking suite startup.
+            final int extraSessions = SESSION_POOL_SIZE - 1;
+            if (extraSessions > 0) {
+                // Each extra session needs its own copy of modelBytes (zeroed after session creation).
+                final byte[][] extraCopies = new byte[extraSessions][];
+                for (int i = 0; i < extraSessions; i++) {
+                    extraCopies[i] = java.util.Arrays.copyOf(modelBytes, modelBytes.length);
                 }
-            }, "ellithium-onnx-pool-expand");
-            poolExpander.setDaemon(true);
-            poolExpander.start();
+                java.util.Arrays.fill(modelBytes, (byte) 0);
+                Thread poolExpander = new Thread(() -> {
+                    for (int i = 0; i < extraSessions; i++) {
+                        byte[] copy = extraCopies[i];
+                        try {
+                            Class<?> optClass2 = Class.forName("ai.onnxruntime.OrtSession$SessionOptions");
+                            Object opts2 = optClass2.getDeclaredConstructor().newInstance();
+                            capOrtThreads(optClass2, opts2);
+                            Object sess2 = ortEnvironment.getClass()
+                                    .getMethod("createSession", byte[].class, optClass2)
+                                    .invoke(ortEnvironment, copy, opts2);
+                            java.util.Arrays.fill(copy, (byte) 0);
+                            SESSION_POOL.offer(sess2);
+                        } catch (Throwable t) {
+                            java.util.Arrays.fill(copy, (byte) 0);
+                            Reporter.log("[ENSEMBLE] Extra ORT session " + (i + 2) + " failed — pool running at "
+                                    + SESSION_POOL.size() + "/" + SESSION_POOL_SIZE + ": "
+                                    + t.getClass().getSimpleName(), LogLevel.WARN);
+                        }
+                    }
+                }, "ellithium-onnx-pool-expand");
+                poolExpander.setDaemon(true);
+                poolExpander.start();
+            } else {
+                java.util.Arrays.fill(modelBytes, (byte) 0);
+            }
             initTokenizer(tokenizerBytes);
             available = true;
             // Warmup inference: forces ORT JIT compilation so the first real heal
@@ -465,19 +483,36 @@ public class EnsembleHealer {
         return null;
     }
 
+    // DOM mutation detection — generation counter approach.
+    //
+    // The JS side stores a monotonically incrementing integer (__ellHealGen) on window.
+    // Each Java thread records the generation it last saw (threadLastGen) and invalidates
+    // its per-thread vector cache only when the counter has advanced since its last check.
+    // This is race-free: two threads reading the same counter value both see the mutation
+    // and both invalidate independently, with no shared boolean to clobber.
     private static final String MUTATION_PROBE_SCRIPT =
-            "if(!window.__ellHealMO){ window.__ellHealMutated=false;"
-            + " try{ window.__ellHealMO=new MutationObserver(function(){window.__ellHealMutated=true;});"
-            + "   window.__ellHealMO.observe(document.documentElement,{childList:true,subtree:true,attributes:true}); }catch(e){}"
-            + " return false; }"
-            + " var m=window.__ellHealMutated===true; window.__ellHealMutated=false; return m;";
+            "if(window.__ellHealGen===undefined){"
+            + "  window.__ellHealGen=0;"
+            + "  try{ new MutationObserver(function(){window.__ellHealGen=(window.__ellHealGen+1)|0;})"
+            + "    .observe(document.documentElement,{childList:true,subtree:true,attributes:true});"
+            + "  }catch(e){}"
+            + "}"
+            + "return window.__ellHealGen;";
+
+    // Per-thread generation stamp: the value of __ellHealGen the last time this thread checked.
+    private static final ThreadLocal<Long> threadLastGen = ThreadLocal.withInitial(() -> 0L);
 
     private static void invalidateCacheOnDomMutation(WebDriver driver) {
         if (!(driver instanceof org.openqa.selenium.JavascriptExecutor js)) return;
         try {
-            Object changed = js.executeScript(MUTATION_PROBE_SCRIPT);
-            if (Boolean.TRUE.equals(changed)) {
-                ElementVectorCache.getInstance().invalidate();
+            Object result = js.executeScript(MUTATION_PROBE_SCRIPT);
+            if (result instanceof Number n) {
+                long currentGen = n.longValue();
+                long lastGen    = threadLastGen.get();
+                if (currentGen != lastGen) {
+                    threadLastGen.set(currentGen);
+                    ElementVectorCache.getInstance().invalidate();
+                }
             }
         } catch (Exception ignored) {}
     }
