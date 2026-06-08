@@ -57,16 +57,14 @@ public class LocatorMutationEngine {
                     WebElement found = driver.findElement(mutation);
                     if (baseline != null && !mutationCrossValidates(driver, baseline, found)) continue;
                     Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-                    Reporter.log("[MUTATION] Healed via locator mutation: "
-                            + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
+                    Reporter.log("[TIER 1] mutation: " + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
                     return found;
                 } catch (org.openqa.selenium.StaleElementReferenceException e) {
                     try {
                         WebElement retried = driver.findElement(mutation);
                         if (baseline == null || mutationCrossValidates(driver, baseline, retried)) {
                             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-                            Reporter.log("[MUTATION] Healed via locator mutation (stale-retry): "
-                                    + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
+                            Reporter.log("[TIER 1] mutation (stale-retry): " + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
                             return retried;
                         }
                     } catch (Exception ignored) {}

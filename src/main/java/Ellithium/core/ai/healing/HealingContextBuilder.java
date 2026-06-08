@@ -128,8 +128,7 @@ class HealingContextBuilder {
         try {
             ctx.screenshot = shotF.get();
             if (ctx.screenshot != null) {
-                Reporter.log("Screenshot captured for visual healing ("
-                        + ctx.screenshot.length + " bytes)", LogLevel.INFO_BLUE);
+                Reporter.log("[TIER 3] screenshot captured for visual context", LogLevel.DEBUG);
             }
         } catch (Exception ignored) {}
 
@@ -205,9 +204,8 @@ class HealingContextBuilder {
 
             String fieldName = resolveFieldNameFromSource(resolvedPath, callSiteLine);
 
-            Reporter.log("AI Healer: Located source at " + resolvedPath
-                    + ":" + callSiteLine
-                    + (fieldName != null ? " → field '" + fieldName + "'" : " (inline locator)"), LogLevel.INFO_BLUE);
+            Reporter.log("[TIER 3] source located: " + resolvedPath + ":" + callSiteLine
+                    + (fieldName != null ? " field='" + fieldName + "'" : ""), LogLevel.DEBUG);
             return new SourceLocation(resolvedPath, fieldName, className, frame.getMethodName(), callSiteLine);
         }
         return null;

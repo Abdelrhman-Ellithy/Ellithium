@@ -172,9 +172,6 @@ public class AISelfHealer {
         globalProvider = provider;
         globalStrategy = strategy;
         confidenceThreshold = threshold;
-        Reporter.log("AI Self-Healing initialized | Strategy: " + strategy.name()
-                + " | Model: " + provider.getModelName()
-                + " | Confidence Threshold: " + threshold, LogLevel.INFO_YELLOW);
     }
 
     public static void initialize(LLMProvider provider, HealingStrategy strategy) {
@@ -204,15 +201,14 @@ public class AISelfHealer {
         }
         LAST_HEAL_CONFIDENCE.set(0.0);
 
-        Reporter.log("[TIER 3] AI Self-Healing triggered for locator: " + brokenLocator.toString(), LogLevel.INFO_YELLOW);
+        Reporter.log("[TIER 3] triggered: " + brokenLocator, LogLevel.INFO_YELLOW);
 
         By newLocator = healLocator(driver, brokenLocator, stackTrace);
 
         if (newLocator != null) {
             CachedLocator cached = globalHealedCache.get(cacheKey(driver, brokenLocator));
             if (cached != null) {
-                Reporter.log("AI Self-Healing (cached): reusing healed locator " + cached.newLocator
-                        + " for field '" + cached.originalField + "' (original: " + brokenLocator + ")", LogLevel.INFO_YELLOW);
+                Reporter.log("[TIER 3] cached heal: " + brokenLocator + " → " + cached.newLocator, LogLevel.INFO_YELLOW);
             }
             try {
                 WebElement found = driver.findElement(newLocator);
@@ -304,15 +300,14 @@ public class AISelfHealer {
 
         for (HealingResult candidate : candidates) {
             if (!candidate.isConfidentEnough(confidenceThreshold)) {
-                Reporter.log("AI Candidate skipped (confidence " + String.format("%.2f", candidate.getConfidence())
-                        + " < " + confidenceThreshold + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                Reporter.log("[TIER 3] candidate skipped (conf=" + String.format("%.2f", candidate.getConfidence())
+                        + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
                 continue;
             }
 
             if (strategy == HealingStrategy.SUGGEST_ONLY) {
-                Reporter.log("[AI Suggestion] " + candidate.getNewLocatorExpression()
-                        + " | Confidence: " + String.format("%.2f", candidate.getConfidence())
-                        + " | Reason: " + candidate.getReasoning(), LogLevel.INFO_BLUE);
+                Reporter.log("[TIER 3] suggestion: " + candidate.getNewLocatorExpression()
+                        + " (conf=" + String.format("%.2f", candidate.getConfidence()) + ")", LogLevel.INFO_BLUE);
                 continue;
             }
 
@@ -323,7 +318,7 @@ public class AISelfHealer {
             try {
                 foundEl = driver.findElement(candidateLocator);
             } catch (Exception e) {
-                Reporter.log("AI Candidate validation failed (not found): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                Reporter.log("[TIER 3] candidate not found in DOM: " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
                 continue;
             }
 
@@ -332,12 +327,11 @@ public class AISelfHealer {
                 if (matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
                     if (matchScore == 0.0 && candidate.getConfidence() >= AIConfigLoader.getTier3StaleBaselineConfidenceFloor()
                             && HealingResponseParser.isStableLocatorStrategy(candidateLocator)) {
-                        Reporter.log("[TIER 3] Stale baseline (score=0.0); accepting stable-strategy LLM heal "
-                                + "(confidence=" + String.format("%.2f", candidate.getConfidence()) + "): "
-                                + candidate.getNewLocatorExpression(), LogLevel.WARN);
+                        Reporter.log("[TIER 3] stale baseline — accepting stable-strategy heal: "
+                                + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
                     } else {
-                        Reporter.log("AI Candidate rejected (baseline mismatch, score=" + String.format("%.2f", matchScore)
-                                + "): " + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                        Reporter.log("[TIER 3] candidate rejected (baseline mismatch score=" + String.format("%.2f", matchScore)
+                                + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
                         continue;
                     }
                 } else {
@@ -346,9 +340,9 @@ public class AISelfHealer {
                         try {
                             String candidateTag = foundEl.getTagName();
                             if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
-                                Reporter.log("AI Candidate rejected (tag mismatch: expected <" + baselineTag
-                                        + "> but found <" + candidateTag + ">): "
-                                        + candidate.getNewLocatorExpression(), LogLevel.INFO_BLUE);
+                                Reporter.log("[TIER 3] candidate rejected (tag mismatch <" + baselineTag
+                                        + "> ≠ <" + candidateTag + ">): "
+                                        + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
                                 continue;
                             }
                         } catch (Exception ignored) {}
@@ -367,7 +361,6 @@ public class AISelfHealer {
             return null;
         }
 
-        Reporter.log("AI Healing Accepted: " + acceptedResult.toString(), LogLevel.INFO_GREEN);
 
         LAST_HEAL_CONFIDENCE.set(acceptedResult.getConfidence());
 
@@ -391,11 +384,9 @@ public class AISelfHealer {
                     acceptedResult.getNewLocatorExpression(), acceptedResult.getConfidence(), 3));
         }
 
-        if (strategy == HealingStrategy.HEAL_AND_NOTIFY) {
-            Reporter.log("[AI HEALED & NOTIFIED] Locator healed: " + brokenLocator
-                    + " → " + acceptedResult.getNewLocatorExpression()
-                    + " | File: " + (ctx.filePath != null ? ctx.filePath : "unknown"), LogLevel.INFO_YELLOW);
-        }
+        Reporter.log("[TIER 3] healed: " + brokenLocator + " → "
+                + acceptedResult.getNewLocatorExpression()
+                + " (conf=" + String.format("%.2f", acceptedResult.getConfidence()) + ")", LogLevel.INFO_GREEN);
 
         return acceptedLocator;
     }

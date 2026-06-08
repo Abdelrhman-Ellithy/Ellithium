@@ -617,26 +617,23 @@ public class BaselineStore {
                             baselines.put(fp.getLocatorKey(), List.of(fp));
                         }
                     }
-                    Reporter.log("BaselineStore: Loaded " + list.size()
-                            + " baselines (legacy format) from disk", LogLevel.INFO_BLUE);
+                    Reporter.log("BaselineStore: Loaded " + list.size() + " baselines", LogLevel.DEBUG);
                 }
             } else if (root.isJsonObject()) {
                 // ── Current format: Map<String, List<ElementFingerprint>> ──
                 Type mapType = new TypeToken<Map<String, List<ElementFingerprint>>>() {}.getType();
                 Map<String, List<ElementFingerprint>> map = GSON.fromJson(root, mapType);
                 if (map != null) {
-                    int total = 0, evicted = 0;
+                    int evicted = 0;
                     for (Map.Entry<String, List<ElementFingerprint>> entry : map.entrySet()) {
                         if (entry.getKey() == null || entry.getValue() == null) continue;
                         List<ElementFingerprint> fresh = pruneStale(entry.getValue());
                         evicted += entry.getValue().size() - fresh.size();
-                        if (fresh.isEmpty()) continue;   // all fingerprints expired — drop the locator
+                        if (fresh.isEmpty()) continue;
                         baselines.put(entry.getKey(), List.copyOf(fresh));
-                        total += fresh.size();
                     }
-                    Reporter.log("BaselineStore: Loaded " + baselines.size()
-                            + " locators (" + total + " fingerprints, " + evicted + " expired) from disk",
-                            LogLevel.INFO_BLUE);
+                    Reporter.log("BaselineStore: " + baselines.size() + " locators loaded"
+                            + (evicted > 0 ? " (" + evicted + " expired pruned)" : ""), LogLevel.INFO_BLUE);
                 }
             }
         } catch (Exception e) {
@@ -707,9 +704,7 @@ public class BaselineStore {
         synchronized (LOCK) {
             try {
                 persist(new LinkedHashMap<>(baselines));
-                int total = baselines.values().stream().mapToInt(List::size).sum();
-                Reporter.log("BaselineStore: Flushed " + baselines.size()
-                        + " locators (" + total + " fingerprints) to disk", LogLevel.INFO_GREEN);
+                Reporter.log("BaselineStore: flushed " + baselines.size() + " locators", LogLevel.DEBUG);
             } catch (Exception e) {
                 Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }

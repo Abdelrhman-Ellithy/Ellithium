@@ -178,8 +178,7 @@ public class HealingTelemetryStore {
             } finally {
                 java.nio.file.Files.deleteIfExists(tmp);
             }
-            Reporter.log("HealingTelemetryStore: Flushed " + snapshot.size()
-                    + " telemetry records to " + OUTPUT_FILE, LogLevel.INFO_GREEN);
+            Reporter.log("HealingTelemetryStore: flushed " + snapshot.size() + " records", LogLevel.DEBUG);
         } catch (IOException e) {
             Reporter.log("HealingTelemetryStore: Failed to flush telemetry (non-fatal): "
                     + e.getMessage(), LogLevel.WARN);
@@ -247,7 +246,7 @@ public class HealingTelemetryStore {
         }
     }
 
-    /** Wrapper that includes a summary header alongside the records array. */
+    @SuppressWarnings("unused")
     private static class TelemetryOutput {
         final String generatedAt = Instant.now().toString();
         final int totalRecords;
@@ -273,6 +272,7 @@ public class HealingTelemetryStore {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class TierSummary {
         final int tier;
         final long attempts;

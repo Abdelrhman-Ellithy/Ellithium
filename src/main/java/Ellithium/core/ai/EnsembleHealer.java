@@ -102,7 +102,6 @@ public class EnsembleHealer {
                 return;
             }
 
-            int modelKb = modelBytes.length / 1024;
             initOrtSession(modelBytes);
             byte[] modelBytes2 = java.util.Arrays.copyOf(modelBytes, modelBytes.length);
             java.util.Arrays.fill(modelBytes, (byte) 0);
@@ -116,8 +115,10 @@ public class EnsembleHealer {
                             .invoke(ortEnvironment, modelBytes2, opts2);
                     java.util.Arrays.fill(modelBytes2, (byte) 0);
                     SESSION_POOL.offer(sess2);
-                } catch (Throwable ignored) {
+                } catch (Throwable t) {
                     java.util.Arrays.fill(modelBytes2, (byte) 0);
+                    Reporter.log("[ENSEMBLE] Second ORT session failed — running single-session (halved parallel throughput): "
+                            + t.getClass().getSimpleName(), LogLevel.WARN);
                 }
             }, "ellithium-onnx-pool-expand");
             poolExpander.setDaemon(true);
@@ -127,8 +128,7 @@ public class EnsembleHealer {
             // Warmup inference: forces ORT JIT compilation so the first real heal
             // doesn't pay a 2-5× latency penalty.
             try { embed("warmup click button input", false); } catch (Exception ignored) {}
-            Reporter.log("[ENSEMBLE] ONNX session active — " + modelKb
-                    + " KB INT8 model loaded | pooling=cls", LogLevel.INFO_GREEN);
+            Reporter.log("[ENSEMBLE] Tier 2 ready", LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
             Reporter.log("[ENSEMBLE] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
@@ -191,8 +191,7 @@ public class EnsembleHealer {
 
         boolean switchedFrame = (baseline != null) && baseline.enterIframeContext(driver);
         if (switchedFrame) {
-            Reporter.log("[ENSEMBLE] element is inside iframe — switched frame context for Tier 2 heal",
-                    LogLevel.DEBUG);
+            Reporter.log("[TIER 2] iframe context switched", LogLevel.DEBUG);
         }
         try {
             String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
@@ -224,7 +223,7 @@ public class EnsembleHealer {
         if (!available || ortEnvironment == null || tokenizer == null) return null;
         Object session;
         try {
-            session = SESSION_POOL.poll(30, java.util.concurrent.TimeUnit.SECONDS);
+            session = SESSION_POOL.poll(8, java.util.concurrent.TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -356,7 +355,7 @@ public class EnsembleHealer {
         // DOM collection done — now join the query embedding started concurrently above.
         float[] queryVector;
         try {
-            queryVector = queryFuture.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            queryVector = queryFuture.get(8, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             return null;
@@ -456,13 +455,12 @@ public class EnsembleHealer {
         GateResult gate = decideGate(bestCombined, threshold, bestF2,
                 AIConfigLoader.isStrategyRescueEnabled(), bestCosine);
         if (gate.accept) {
-            Reporter.log(String.format("[ENSEMBLE] heal via %s combined=%.3f (f1=%.2f f2=%.2f f3=%.3f)",
-                    gate.via, gate.score, bestF1, bestF2, bestCosine), LogLevel.INFO_GREEN);
+            Reporter.log(String.format("[TIER 2] healed via %s (combined=%.3f f2=%.2f f3=%.3f)",
+                    gate.via, gate.score, bestF2, bestCosine), LogLevel.INFO_GREEN);
             HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
             return HealOutcome.of(bestElement, gate.score, 2);
         }
-        Reporter.log(String.format("[ENSEMBLE] no heal — combined=%.3f < threshold=%.3f (f1=%.2f f2=%.2f f3=%.3f)",
-                bestCombined, threshold, bestF1, bestF2, bestCosine), LogLevel.DEBUG);
+        Reporter.log(String.format("[TIER 2] no heal — combined=%.3f < threshold=%.3f", bestCombined, threshold), LogLevel.DEBUG);
         HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category);
         return null;
     }

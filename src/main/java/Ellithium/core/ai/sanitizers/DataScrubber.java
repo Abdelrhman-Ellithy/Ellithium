@@ -159,7 +159,7 @@ public class DataScrubber {
         }
 
         if (maskedCount > 0) {
-            Reporter.log("DataScrubber: masked " + maskedCount + " categories of sensitive data", LogLevel.INFO_BLUE);
+            Reporter.log("DataScrubber: masked " + maskedCount + " sensitive data categories", LogLevel.DEBUG);
         }
 
         return result;

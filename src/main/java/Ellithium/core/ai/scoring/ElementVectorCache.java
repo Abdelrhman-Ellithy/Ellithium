@@ -91,9 +91,4 @@ public class ElementVectorCache {
         domMutated.set(false);
     }
 
-    /** Returns the number of cached element vectors. */
-    int size() { return vectors.size(); }
-
-    /** Returns {@code true} when the cache is empty. */
-    boolean isEmpty() { return vectors.isEmpty(); }
 }

@@ -142,10 +142,7 @@ public class DOMMinimizer {
             result = result.substring(0, MAX_OUTPUT_LENGTH) + "\n<!-- DOM truncated -->";
         }
 
-        Reporter.log("DOM minimized: " + originalLength + " \u2192 " + result.length() + " chars ("
-                + String.format("%.1f", (1.0 - (double) result.length() / originalLength) * 100)
-                + "% reduction)",
-                LogLevel.INFO_BLUE);
+        Reporter.log("DOM minimized: " + originalLength + " \u2192 " + result.length() + " chars", LogLevel.DEBUG);
 
         return result;
     }

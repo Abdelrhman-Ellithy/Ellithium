@@ -32,14 +32,6 @@ public class AIHealingReporter {
                                    String pageClassName, String methodName, String actionType, int lineNumber) {
         queuedChanges.add(new HealedLocatorEntry(filePath, brokenLocator, result,
                 pageClassName, methodName, actionType, lineNumber));
-        Reporter.log("Healing queued for report: " + brokenLocator + " → " + result.getNewLocatorExpression(), LogLevel.INFO_YELLOW);
-    }
-
-    /**
-     * Backward-compatible overload (legacy callers).
-     */
-    public static void queueChange(String filePath, String brokenLocator, HealingResult result) {
-        queueChange(filePath, brokenLocator, result, null, null, null, 0);
     }
 
     /**

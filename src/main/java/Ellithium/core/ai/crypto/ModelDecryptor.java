@@ -37,7 +37,6 @@ public class ModelDecryptor {
                 Reporter.log("[TIER 2] ModelDecryptor: native decrypt returned no data", LogLevel.ERROR);
                 return null;
             }
-            Reporter.log("[TIER 2] ModelDecryptor: model decrypted (" + plaintext.length + " bytes)", LogLevel.INFO_GREEN);
             return plaintext;
         } catch (Throwable t) {
             Reporter.log("[TIER 2] ModelDecryptor: native decrypt failed: " + t.getMessage(), LogLevel.ERROR);
@@ -118,7 +117,7 @@ public class ModelDecryptor {
         try {
             System.load(libFile.getAbsolutePath());
             nativeLoaded = true;
-            Reporter.log("[TIER 2] ModelDecryptor: native library loaded from " + libFile.getAbsolutePath(), LogLevel.INFO_GREEN);
+            Reporter.log("[TIER 2] ModelDecryptor: native library loaded", LogLevel.DEBUG);
             return true;
         } catch (Throwable t) {
             Reporter.log("[TIER 2] ModelDecryptor: System.load failed: " + t.getMessage(), LogLevel.WARN);

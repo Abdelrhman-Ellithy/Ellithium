@@ -290,7 +290,6 @@ public class SemanticLocatorResolver {
             WebElement el = mutationHits.get(0).element;
             By loc = ElementFingerprint.reconstructLocator(el);
             String locStr = loc != null ? loc.toString() : "";
-            Reporter.log("Tier 2 (semantic): MATCH via mutation | locator=" + locStr, LogLevel.INFO_GREEN);
             AIHealingReporter.queueChange("semantic-strategy", locStr,
                     new HealingResult(locStr, 0.95, "[TIER 2 - Semantic] mutation"), null, methodName, actionType, 0);
             HealingTelemetryStore.record(2, locatorValue, locStr, 0.95, true);
@@ -355,8 +354,7 @@ public class SemanticLocatorResolver {
                     By cleanLocator = ElementFingerprint.reconstructLocator(el);
                     String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
                     String desc = candidateDesc.getOrDefault(el, "strategy");
-                    Reporter.log("Tier 2 (semantic): MATCH via " + desc + " | locator=" + cleanLocatorStr,
-                            LogLevel.INFO_GREEN);
+                    Reporter.log("[TIER 2] healed via " + desc + ": " + cleanLocatorStr, LogLevel.INFO_GREEN);
                     AIHealingReporter.queueChange("semantic-strategy", cleanLocatorStr,
                             new HealingResult(cleanLocatorStr, 0.85, "[TIER 2 - Semantic] " + desc),
                             null, methodName, actionType, 0);
@@ -872,7 +870,6 @@ public class SemanticLocatorResolver {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     private static void collectHitsBatched(WebDriver driver,
                                             List<LocatorAttempt> gold, double goldW,
                                             List<LocatorAttempt> silver, double silverW,

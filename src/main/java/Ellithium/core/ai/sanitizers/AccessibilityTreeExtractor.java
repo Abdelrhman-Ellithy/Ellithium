@@ -245,7 +245,7 @@ public class AccessibilityTreeExtractor {
                 axTree = axTree.substring(0, MAX_OUTPUT_LENGTH) + "\n<!-- AX tree truncated at " + MAX_OUTPUT_LENGTH + " chars -->";
             }
 
-            Reporter.log("AccessibilityTreeExtractor: Captured " + axTree.length() + " chars", LogLevel.INFO_BLUE);
+            Reporter.log("AccessibilityTreeExtractor: Captured " + axTree.length() + " chars", LogLevel.DEBUG);
             return axTree;
 
         } catch (Exception e) {
