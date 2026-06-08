@@ -193,9 +193,19 @@ public class JavaSourceModifier {
             } else {
                 // AST search failed (can happen after JavaParser reformats the file).
                 // Fallback: direct text-based search and replace on the raw file content.
+                // Only applies when exactly ONE occurrence exists — multiple occurrences risk
+                // corrupting unrelated methods that share the same locator string.
                 String rawContent = Files.readString(Paths.get(filePath));
                 String oldPattern = "By." + oldByMethod + "(\"" + oldByValue + "\")";
-                if (rawContent.contains(oldPattern)) {
+                int firstIdx = rawContent.indexOf(oldPattern);
+                if (firstIdx >= 0) {
+                    int secondIdx = rawContent.indexOf(oldPattern, firstIdx + 1);
+                    if (secondIdx >= 0) {
+                        Reporter.log("Text fallback skipped: multiple occurrences of " + oldPattern
+                                + " found in " + filePath
+                                + " — cannot safely replace without corrupting other usages", LogLevel.WARN);
+                        return false;
+                    }
                     String updatedContent = rawContent.replace(oldPattern, newByString);
                     Files.writeString(Paths.get(filePath), updatedContent);
                     Reporter.log("Successfully healed inline locator (text fallback) " + oldPattern

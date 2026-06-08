@@ -43,6 +43,7 @@ public class AIConfigLoader {
     private static int     baselineTtlDays = 30;
     private static boolean strategyRescueEnabled = true;
     private static double  gateFingerprintFloor = 0.70;
+    private static double  semanticFallbackScore = 0.65;
     private static boolean visionAllowMobile = true;
     private static boolean visionAllowWeb = true;
     private static int     llmHealMaxWaitMs = 15_000;
@@ -111,6 +112,7 @@ public class AIConfigLoader {
             telemetryMaxRecords      = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
             strategyRescueEnabled    = parseBool(p, "ai.healing.strategyRescueEnabled", strategyRescueEnabled);
             gateFingerprintFloor     = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
+            semanticFallbackScore    = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -222,6 +224,8 @@ public class AIConfigLoader {
     public static int    getBaselineTtlDays()             { return baselineTtlDays; }
     public static boolean isStrategyRescueEnabled()       { return strategyRescueEnabled; }
     public static double getGateFingerprintFloor()        { return gateFingerprintFloor; }
+    /** Conservative confidence assigned to a model-absent semantic heal when no baseline exists. */
+    public static double getSemanticFallbackScore()       { return semanticFallbackScore; }
     public static int    getLlmHealMaxWaitMs()            { return llmHealMaxWaitMs; }
     public static int    getLlmRetryInitialBackoffMs()    { return llmRetryInitialBackoffMs; }
     public static int    getLlmRetryMaxBackoffMs()        { return llmRetryMaxBackoffMs; }

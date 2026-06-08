@@ -141,18 +141,35 @@ public final class HealingOrchestrator {
     private static WebElement guardStaleHeal(WebDriver driver, WebElement healed,
                                              ElementFingerprint baseline, By fallback) {
         if (healed == null) return null;
-        By reconstructed = HealedLocatorBuilder.build(driver, healed, baseline);
-        if (reconstructed == null) reconstructed = fallback;
         try {
             healed.isEnabled();
             return healed;
         } catch (org.openqa.selenium.StaleElementReferenceException stale) {
-            if (reconstructed != null) {
+            if (fallback != null) {
                 try {
-                    WebElement refreshed = driver.findElement(reconstructed);
-                    Reporter.log("Healed element went stale before use — re-resolved via "
-                            + reconstructed, LogLevel.INFO_YELLOW);
-                    return refreshed;
+                    List<WebElement> candidates = driver.findElements(fallback);
+                    if (candidates.size() == 1) {
+                        Reporter.log("Healed element went stale — re-resolved uniquely via "
+                                + fallback, LogLevel.INFO_YELLOW);
+                        return candidates.get(0);
+                    }
+                    // Multiple matches: re-score against baseline to pick the right one
+                    if (baseline != null && !candidates.isEmpty()) {
+                        WebElement best = null;
+                        double bestScore = -1;
+                        for (WebElement c : candidates) {
+                            try {
+                                double s = baseline.scoreSimilarity(c);
+                                if (s > bestScore) { bestScore = s; best = c; }
+                            } catch (Exception ignored) {}
+                        }
+                        if (best != null && bestScore >= 0.5) {
+                            Reporter.log("Healed element went stale — re-resolved via fingerprint score "
+                                    + String.format("%.2f", bestScore) + " using " + fallback,
+                                    LogLevel.INFO_YELLOW);
+                            return best;
+                        }
+                    }
                 } catch (Exception ignored) {}
             }
             return healed;

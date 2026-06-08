@@ -41,6 +41,12 @@ public class AISelfHealer {
     private static final ConcurrentHashMap<String, java.util.concurrent.CompletableFuture<By>> inFlight =
             new ConcurrentHashMap<>();
 
+    // Negative-result cache: locators confirmed unhealable within the TTL window.
+    // Prevents repeated full LLM invocations (latency + token cost) for permanently-broken
+    // locators in looping or parallel suites.
+    private static final long UNHEALABLE_TTL_MS = 5 * 60 * 1_000L;
+    private static final ConcurrentHashMap<String, Long> knownUnhealable = new ConcurrentHashMap<>();
+
     private static String cacheKey(WebDriver driver, By brokenLocator) {
         return pageContext(driver) + "##" + brokenLocator.toString();
     }
@@ -71,6 +77,7 @@ public class AISelfHealer {
         globalHealedCache.clear();
         inFlight.clear();
         pendingPatches.clear();
+        knownUnhealable.clear();
     }
 
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();
@@ -228,6 +235,16 @@ public class AISelfHealer {
         CachedLocator cached = globalHealedCache.get(cacheKey);
         if (cached != null) return cached.newLocator;
 
+        Long failedAt = knownUnhealable.get(cacheKey);
+        if (failedAt != null) {
+            if (System.currentTimeMillis() - failedAt < UNHEALABLE_TTL_MS) {
+                Reporter.log("[TIER 3] Skipping LLM — locator known unhealable (negative cache, TTL not expired)",
+                        LogLevel.DEBUG);
+                return null;
+            }
+            knownUnhealable.remove(cacheKey);
+        }
+
         java.util.concurrent.CompletableFuture<By> mine = new java.util.concurrent.CompletableFuture<>();
         java.util.concurrent.CompletableFuture<By> existing = inFlight.putIfAbsent(cacheKey, mine);
         if (existing != null) {
@@ -240,12 +257,14 @@ public class AISelfHealer {
         }
         try {
             By result = healLocatorInternal(driver, brokenLocator, stackTrace, strategy, provider);
+            if (result == null) knownUnhealable.put(cacheKey, System.currentTimeMillis());
             mine.complete(result);
             return result;
-        } catch (RuntimeException re) {
+        } catch (Throwable t) {
             mine.complete(null);
-            Reporter.log("AI Self-Healing: Tier 4 heal aborted by unexpected error — falling through: "
-                    + re.getMessage(), LogLevel.WARN);
+            if (t instanceof InterruptedException) Thread.currentThread().interrupt();
+            Reporter.log("AI Self-Healing: Tier 3 heal aborted by unexpected error — falling through: "
+                    + t.getMessage(), LogLevel.WARN);
             return null;
         } finally {
             inFlight.remove(cacheKey, mine);

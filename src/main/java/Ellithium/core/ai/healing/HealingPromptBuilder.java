@@ -68,7 +68,7 @@ class HealingPromptBuilder {
         }
 
         if (ctx.callSiteSource != null) {
-            sb.append("- Source code at call site:\n").append(ctx.callSiteSource).append("\n");
+            sb.append("- Source code at call site:\n").append(DataScrubber.scrub(ctx.callSiteSource)).append("\n");
         }
 
         if (ctx.baseline != null) {

@@ -21,6 +21,8 @@ public class ElementFingerprint {
 
     /** Max characters of element text retained in a fingerprint (was 100; raised for richer signal). */
     private static final int TEXT_CAP = 240;
+    /** Max length of either side for the partial-contains text bonus to apply. */
+    private static final int TEXT_PARTIAL_CAP = 50;
 
     // ── Identity ──
     private String locatorKey;           // Original By.toString(), e.g. "By.id: user" (the broken one)
@@ -42,6 +44,8 @@ public class ElementFingerprint {
     private String dataTest;         // element.getAttribute("data-test")   (Cypress alternative)
     private String dataCy;           // element.getAttribute("data-cy")     (Cypress convention)
     private String dataQa;           // element.getAttribute("data-qa")     (QA convention)
+    private String title;            // element.getAttribute("title")
+    private String label;            // element.getAttribute("label")
 
     // ── Mobile primaries (Appium-only; null on web) ──
     private String resourceId;       // Android resource-id (e.g. "com.app:id/loginBtn")
@@ -118,6 +122,7 @@ public class ElementFingerprint {
         fp.dataTest   = safeGetAttribute(element, "data-test");
         fp.dataCy     = safeGetAttribute(element, "data-cy");
         fp.dataQa     = safeGetAttribute(element, "data-qa");
+        // title and label are captured inside the structural JS call below (0 extra RTs)
         fp.resourceId      = safeGetAttribute(element, "resource-id");
         fp.accessibilityId = safeGetAttribute(element, "accessibility-id");
         fp.contentDesc     = safeGetAttribute(element, "content-desc");
@@ -170,7 +175,8 @@ public class ElementFingerprint {
                         + " p?Array.prototype.indexOf.call(p.children,el):-1,"
                         + " prev?prev.tagName.toLowerCase():null,"
                         + " next?next.tagName.toLowerCase():null,"
-                        + " dm, ifc];",
+                        + " dm, ifc,"
+                        + " el.getAttribute('title'), el.getAttribute('label')];",
                         element);
                 if (result instanceof java.util.List<?> r && r.size() >= 4) {
                     if (r.get(0) != null) fp.parentTag = r.get(0).toString();
@@ -195,6 +201,9 @@ public class ElementFingerprint {
                         for (Object item : ifc) if (item != null) chain.add(item.toString());
                         if (!chain.isEmpty()) fp.iframeChain = java.util.List.copyOf(chain);
                     }
+                    // title and label piggyback on this single JS call — 0 extra WebDriver RTs
+                    if (r.size() >= 7 && r.get(6) instanceof String t && !t.isBlank()) fp.title = t;
+                    if (r.size() >= 8 && r.get(7) instanceof String l && !l.isBlank()) fp.label = l;
                 }
             } catch (Exception ignored) {
                 // JS not supported (some Appium contexts) — skip gracefully
@@ -359,14 +368,15 @@ public class ElementFingerprint {
             }
         }
 
-        // text: 12 pts exact, 7 pts partial
+        // text: 12 pts exact, 7 pts partial (short strings only)
         if (isNonBlank(this.text)) {
             dynamicMax += 12;
             String ct = safeGetText(candidate);
             if (isNonBlank(ct)) {
                 if (this.text.equals(ct)) {
                     score += 12;
-                } else if (ct.contains(this.text) || this.text.contains(ct)) {
+                } else if (this.text.length() <= TEXT_PARTIAL_CAP && ct.length() <= TEXT_PARTIAL_CAP
+                        && (ct.contains(this.text) || this.text.contains(ct))) {
                     score += 7;
                 }
             }
@@ -402,7 +412,7 @@ public class ElementFingerprint {
         if (isNonBlank(this.className)) {
             dynamicMax += 5;
             String ccls = safeGetAttribute(candidate, "class");
-            if (isNonBlank(ccls) && classJaccard(this.className, ccls) >= 0.40) {
+            if (isNonBlank(ccls) && classJaccard(this.classTokens(), ccls) >= 0.40) {
                 score += 5;
             }
         }
@@ -534,7 +544,8 @@ public class ElementFingerprint {
             if (isNonBlank(ct)) {
                 if (this.text.equals(ct)) {
                     score += 12;
-                } else if (ct.contains(this.text) || this.text.contains(ct)) {
+                } else if (this.text.length() <= TEXT_PARTIAL_CAP && ct.length() <= TEXT_PARTIAL_CAP
+                        && (ct.contains(this.text) || this.text.contains(ct))) {
                     score += 7;
                 }
             }
@@ -561,7 +572,7 @@ public class ElementFingerprint {
         if (isNonBlank(this.className)) {
             dynamicMax += 5;
             String ccls = asStr(attrs.get("class"));
-            if (isNonBlank(ccls) && classJaccard(this.className, ccls) >= 0.40) {
+            if (isNonBlank(ccls) && classJaccard(this.classTokens(), ccls) >= 0.40) {
                 score += 5;
             }
         }
@@ -636,10 +647,11 @@ public class ElementFingerprint {
             java.util.regex.Pattern.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_\\s]+");
     private static final java.util.regex.Pattern WS_SPLIT = java.util.regex.Pattern.compile("\\s+");
 
-    // Cached token sets for THIS baseline's id/name — constant across all candidates, so they are
-    // computed once instead of N(candidates)×D(history) times. Transient: never serialized by Gson.
+    // Cached token sets for THIS baseline's id/name/class — constant across all candidates, so they
+    // are computed once instead of N(candidates)×D(history) times. Transient: never serialized by Gson.
     private transient java.util.Set<String> idTokensCache;
     private transient java.util.Set<String> nameTokensCache;
+    private transient java.util.Set<String> classTokensCache;
 
     private java.util.Set<String> idTokens() {
         if (idTokensCache == null) idTokensCache = tokenSet(this.id);
@@ -649,6 +661,19 @@ public class ElementFingerprint {
     private java.util.Set<String> nameTokens() {
         if (nameTokensCache == null) nameTokensCache = tokenSet(this.name);
         return nameTokensCache;
+    }
+
+    private java.util.Set<String> classTokens() {
+        if (classTokensCache == null) {
+            classTokensCache = new java.util.HashSet<>();
+            if (this.className != null) {
+                for (String p : WS_SPLIT.split(this.className)) {
+                    String t = p.strip();
+                    if (!t.isEmpty()) classTokensCache.add(t);
+                }
+            }
+        }
+        return classTokensCache;
     }
 
     /**
@@ -675,17 +700,17 @@ public class ElementFingerprint {
     }
 
     /**
-     * CSS class set Jaccard similarity. Splits both class strings on whitespace.
+     * CSS class set Jaccard similarity. Baseline token set is pre-cached; only one HashSet is
+     * allocated per call (for the candidate string), eliminating the 2-alloc hot-path cost.
      */
-    private static double classJaccard(String a, String b) {
-        java.util.Set<String> sa = new java.util.HashSet<>(java.util.Arrays.asList(WS_SPLIT.split(a)));
-        java.util.Set<String> sb = new java.util.HashSet<>(java.util.Arrays.asList(WS_SPLIT.split(b)));
-        sa.remove(""); sb.remove("");
-        if (sa.isEmpty() && sb.isEmpty()) return 1.0;
-        if (sa.isEmpty() || sb.isEmpty()) return 0.0;
+    private static double classJaccard(java.util.Set<String> baseline, String candidateClass) {
+        java.util.Set<String> sb = new java.util.HashSet<>();
+        for (String p : WS_SPLIT.split(candidateClass)) { String t = p.strip(); if (!t.isEmpty()) sb.add(t); }
+        if (baseline.isEmpty() && sb.isEmpty()) return 1.0;
+        if (baseline.isEmpty() || sb.isEmpty()) return 0.0;
         int inter = 0;
-        for (String t : sa) if (sb.contains(t)) inter++;
-        return inter / (double) (sa.size() + sb.size() - inter);
+        for (String t : baseline) if (sb.contains(t)) inter++;
+        return inter / (double) (baseline.size() + sb.size() - inter);
     }
 
     // ──────────────────── Utility Methods ────────────────────
@@ -813,6 +838,8 @@ public class ElementFingerprint {
     public String getDataTest()   { return dataTest; }
     public String getDataCy()     { return dataCy; }
     public String getDataQa()     { return dataQa; }
+    public String getTitle()      { return title; }
+    public String getLabel()      { return label; }
     public java.util.Map<String, String> getCustomDataAttrs() { return customDataAttrs; }
     public String getResourceId() { return resourceId; }
     public String getAccessibilityId() { return accessibilityId; }

@@ -28,6 +28,7 @@ public final class CandidateAttributeBatcher {
 
     private static final String BATCH_SCRIPT =
             "return arguments[0].map(function(el){"
+            + " try{"
             + " if(!el) return null;"
             + " function a(n){ return el.getAttribute(n); }"
             + " var r = el.getBoundingClientRect();"
@@ -54,12 +55,14 @@ public final class CandidateAttributeBatcher {
             + "  'accessibility-id':a('accessibility-id'),"
             + "  'content-desc':a('content-desc'),'data-test':a('data-test'),"
             + "  'title':a('title'),'label':a('label'),"
+            + "  'href':a('href'),'value':a('value'),'data-cy':a('data-cy'),'data-qa':a('data-qa'),"
             + "  'type':a('type'),"
             + "  'allattrs':allv.toLowerCase(),"
             + "  'dataAttrs':dm,"
             + "  'text':txt,"
             + "  'visible':visible,"
             + "  'tag':el.tagName?el.tagName.toLowerCase():null};"
+            + "} catch(e){ return null; }"
             + "});";
 
     @SuppressWarnings("unchecked")

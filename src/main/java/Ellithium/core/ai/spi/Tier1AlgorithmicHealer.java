@@ -18,7 +18,7 @@ public final class Tier1AlgorithmicHealer implements HealingTier {
 
     @Override
     public boolean persistsOwnHeal() {
-        return false;
+        return true;
     }
 
     @Override

@@ -7,56 +7,72 @@ import static Ellithium.core.ai.EnsembleHealer.GateResult;
 import static Ellithium.core.ai.EnsembleHealer.decideGate;
 
 /**
- * Behaviour spec for the ensemble accept gate (the strategy-rescue fix). Path A = calibrated anchor
- * cosine clears the threshold; Path B = gold-tier Tier-2 (f2≥0.95) corroborated by the baseline
- * fingerprint (f1≥floor) rescues a heal the weak bi-encoder rejected — two independent high-precision
- * signals, precision-first. Cold start (no fingerprint) must never rescue.
+ * Behaviour spec for the ensemble accept gate.
+ * Path A = fused combined score clears the calibrated threshold.
+ * Path B (strategy-rescue) = gold-tier f2 (≥0.95) corroborated by bi-encoder cosine f3 (≥0.35) —
+ * two genuinely independent signals. Cold start (no baseline) can rescue when cosine ≥ floor.
  */
 public class GateDecisionTest {
 
     private static final double THRESHOLD = 0.40;
-    private static final double FLOOR = 0.50;
 
     @Test
     public void combinedPath_acceptsWhenScoreClearsThreshold() {
-        GateResult g = decideGate(0.55, THRESHOLD, 0.20, Double.NaN, true, FLOOR);
+        GateResult g = decideGate(0.55, THRESHOLD, Double.NaN, true, 0.55);
         Assert.assertTrue(g.accept);
         Assert.assertEquals(g.via, "ensemble");
         Assert.assertEquals(g.score, 0.55, 1e-9);
     }
 
     @Test
-    public void rescuePath_goldStrategyPlusFingerprint_healsDespiteWeakCosine() {
-        // cosine 0.30 < 0.40, but gold f2=1.0 + fingerprint f1=0.60 ≥ floor → rescue.
-        GateResult g = decideGate(0.30, THRESHOLD, 0.60, 1.0, true, FLOOR);
-        Assert.assertTrue(g.accept, "gold strategy + fingerprint must rescue a weak-cosine heal");
+    public void rescuePath_goldStrategyCosineCorroboration_heals() {
+        // combined=0.30 < threshold; gold f2=1.0 + cosine f3=0.40 ≥ 0.35 → rescue
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.40);
+        Assert.assertTrue(g.accept, "gold strategy + cosine ≥ 0.35 must rescue a weak-combined heal");
         Assert.assertEquals(g.via, "strategy-rescue");
-        Assert.assertEquals(g.score, 0.80, 1e-9, "rescue confidence = mean(f1, f2)");
+        Assert.assertEquals(g.score, (1.0 + 0.40) / 2.0, 1e-9, "rescue confidence = mean(f2, f3)");
     }
 
     @Test
     public void rescuePath_disabled_fallsThrough() {
-        GateResult g = decideGate(0.30, THRESHOLD, 0.60, 1.0, false, FLOOR);
-        Assert.assertFalse(g.accept, "rescue disabled → weak cosine must not heal");
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, false, 0.40);
+        Assert.assertFalse(g.accept, "rescue disabled → weak combined must not heal");
     }
 
     @Test
-    public void coldStart_noFingerprint_doesNotRescueOnStrategyAlone() {
-        // f1 NaN (no baseline) → a lone gold strategy match could be the wrong element → no rescue.
-        GateResult g = decideGate(0.30, THRESHOLD, Double.NaN, 1.0, true, FLOOR);
-        Assert.assertFalse(g.accept, "a strategy match with no fingerprint corroboration must not heal");
+    public void coldStart_cosineAboveFloor_canRescue() {
+        // No baseline (f1 is no longer a gate) — cosine is the independent corroboration signal
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.36);
+        Assert.assertTrue(g.accept, "cold start with cosine ≥ 0.35 and gold strategy may rescue");
+        Assert.assertEquals(g.via, "strategy-rescue");
     }
 
     @Test
     public void weakStrategy_belowGold_doesNotRescue() {
-        // f2=0.50 (bronze) is not high-precision enough to rescue even with a strong fingerprint.
-        GateResult g = decideGate(0.30, THRESHOLD, 0.90, 0.50, true, FLOOR);
+        // f2=0.50 (bronze) — not high-precision enough for rescue regardless of cosine
+        GateResult g = decideGate(0.30, THRESHOLD, 0.50, true, 0.80);
         Assert.assertFalse(g.accept, "only gold-tier (f2≥0.95) strategy matches may rescue");
     }
 
     @Test
-    public void fingerprintBelowFloor_doesNotRescue() {
-        GateResult g = decideGate(0.30, THRESHOLD, 0.30, 1.0, true, FLOOR);
-        Assert.assertFalse(g.accept, "fingerprint below floor → insufficient corroboration");
+    public void cosineBelowFloor_doesNotRescue() {
+        // f3=0.30 < 0.35 — cosine too weak to serve as independent corroboration
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.30);
+        Assert.assertFalse(g.accept, "cosine below 0.35 floor → insufficient independent corroboration");
+    }
+
+    @Test
+    public void cosineExactlyAtFloor_rescues() {
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.35);
+        Assert.assertTrue(g.accept, "cosine exactly at 0.35 floor must rescue");
+        Assert.assertEquals(g.score, (1.0 + 0.35) / 2.0, 1e-9);
+    }
+
+    @Test
+    public void combinedPath_takesPreferenceOverRescue() {
+        // combined already clears threshold — Path A wins, rescue path never evaluated
+        GateResult g = decideGate(0.45, THRESHOLD, 0.20, true, 0.10);
+        Assert.assertTrue(g.accept);
+        Assert.assertEquals(g.via, "ensemble");
     }
 }

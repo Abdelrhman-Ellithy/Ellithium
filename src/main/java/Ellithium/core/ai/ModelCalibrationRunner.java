@@ -62,6 +62,11 @@ public class ModelCalibrationRunner {
                     + "Run a test suite first to capture baselines.");
             return;
         }
+        if (baselines.size() < 50) {
+            System.err.println("[CALIBRATION] WARNING: only " + baselines.size() + " baselines loaded. "
+                    + "The negative-P99 estimate is unreliable below 50 samples — "
+                    + "run more tests before trusting the calibrated storeThreshold.");
+        }
         System.out.println("[CALIBRATION] Loaded " + baselines.size() + " locator keys.");
 
         // 1. Pre-embed one representative document per baseline (the positive document pool).

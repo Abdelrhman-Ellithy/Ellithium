@@ -27,9 +27,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ElementVectorCache {
 
-    private static final ElementVectorCache INSTANCE = new ElementVectorCache();
+    private static final ThreadLocal<ElementVectorCache> THREAD_LOCAL =
+            ThreadLocal.withInitial(ElementVectorCache::new);
 
-    private static final int MAX_ENTRIES = 5_000;
+    private static final int MAX_ENTRIES = 2_000;
 
     private final Map<String, float[]> vectors = Collections.synchronizedMap(
             new LinkedHashMap<>(1024, 0.75f, true) {
@@ -42,7 +43,7 @@ public class ElementVectorCache {
 
     private ElementVectorCache() {}
 
-    public static ElementVectorCache getInstance() { return INSTANCE; }
+    public static ElementVectorCache getInstance() { return THREAD_LOCAL.get(); }
 
     // ──────────────────────── Cache Operations ────────────────────────
 

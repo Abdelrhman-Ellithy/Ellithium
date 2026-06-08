@@ -14,13 +14,6 @@ src/test/resources/TestData/MobileApps/browserstack.json
 Test-Output/*
 !Test-Output/.gitkeep
 
-# Test Data Files
-src/test/resources/TestData/DB-Info.json
-src/test/resources/TestData/Items and Prices.xlsx
-kaggle-finetune
-src/main/resources/Ellithium-ai-model
-src/main/resources/native
-native-crypto
 
 # Preserve specific Test-Output structure
 !Test-Output/Logs/
@@ -88,5 +81,12 @@ build/
 
 .allure/
 
-# AI session context (local memory for resuming chats — not committed)
 ai-context/
+ellithium-locator-picker
+# Test Data Files
+src/test/resources/TestData/DB-Info.json
+src/test/resources/TestData/Items and Prices.xlsx
+kaggle-finetune
+src/main/resources/Ellithium-ai-model
+src/main/resources/native
+native-crypto

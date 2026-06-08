@@ -36,6 +36,12 @@ public class HealingTelemetryStore {
             new ConcurrentLinkedQueue<>();
     private static final AtomicInteger recordCount = new AtomicInteger(0);
 
+    // Secondary index: testId → records for that test. Enables O(heals-in-test) markTestFailed
+    // instead of O(all-records). CopyOnWriteArrayList is safe for concurrent add + iteration.
+    private static final java.util.concurrent.ConcurrentHashMap<String,
+            java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord>> byTestId =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
 
     /** Sets the test identifier for the current thread so subsequent heals are attributed to it. */
@@ -71,8 +77,13 @@ public class HealingTelemetryStore {
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
         int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
-        records.add(new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
-                query, category, CURRENT_TEST.get()));
+        TelemetryRecord rec = new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
+                query, category, CURRENT_TEST.get());
+        records.add(rec);
+        if (rec.testId != null) {
+            byTestId.computeIfAbsent(rec.testId,
+                    k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(rec);
+        }
         int n = recordCount.incrementAndGet();
         if (max > 0 && n > max) {
             boolean dropped = false;
@@ -98,8 +109,10 @@ public class HealingTelemetryStore {
     public static int markTestFailed(String testId) {
         if (testId == null) return 0;
         int flagged = 0;
-        for (TelemetryRecord r : records) {
-            if (r.success && testId.equals(r.testId) && !r.suspectWrongHeal) {
+        java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> testRecords = byTestId.get(testId);
+        if (testRecords == null) return 0;
+        for (TelemetryRecord r : testRecords) {
+            if (r.success && !r.suspectWrongHeal) {
                 r.suspectWrongHeal = true;
                 flagged++;
             }

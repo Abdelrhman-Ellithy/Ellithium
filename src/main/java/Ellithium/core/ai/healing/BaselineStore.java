@@ -282,7 +282,31 @@ public class BaselineStore {
             List<WebElement> results = driver.findElements(locator);
             if (results.size() == 1) {
                 WebElement candidate = results.get(0);
-                if (candidate.isDisplayed() && scoreBestHistory(candidate, history) >= threshold) {
+                // Batch-fetch all attributes in ONE executeScript (was D×~17 per-element RTs).
+                // Falls back to live getAttribute chain only when JS is unavailable (Appium native).
+                java.util.List<java.util.Map<String, Object>> batch =
+                        Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, java.util.List.of(candidate));
+                if (batch != null && !batch.isEmpty() && batch.get(0) != null) {
+                    java.util.Map<String, Object> attrs = batch.get(0);
+                    if (Boolean.FALSE.equals(attrs.get("visible"))) return null;
+                    if (scoreBestHistory(attrs, structuralFrom(attrs), history) >= threshold) return candidate;
+                } else if (batch != null) {
+                    // batch ran but element[0] was stale — retry the locator once for a fresh reference
+                    List<WebElement> retried = driver.findElements(locator);
+                    if (retried.size() == 1) {
+                        WebElement fresh = retried.get(0);
+                        java.util.List<java.util.Map<String, Object>> rb =
+                                Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, java.util.List.of(fresh));
+                        if (rb != null && !rb.isEmpty() && rb.get(0) != null) {
+                            java.util.Map<String, Object> ra = rb.get(0);
+                            if (!Boolean.FALSE.equals(ra.get("visible"))
+                                    && scoreBestHistory(ra, structuralFrom(ra), history) >= threshold)
+                                return fresh;
+                        } else if (fresh.isDisplayed() && scoreBestHistory(fresh, history) >= threshold) {
+                            return fresh;
+                        }
+                    }
+                } else if (candidate.isDisplayed() && scoreBestHistory(candidate, history) >= threshold) {
                     return candidate;
                 }
             }
@@ -321,6 +345,8 @@ public class BaselineStore {
             WebElement candidate = candidates.get(i);
             try {
                 Map<String, Object> attrs = (attrsBatch != null && i < attrsBatch.size()) ? attrsBatch.get(i) : null;
+                // Element was stale when the batch JS ran — skip; don't cascade to isDisplayed().
+                if (attrsBatch != null && attrs == null) continue;
                 if (attrs != null) {
                     if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
                 } else {
@@ -384,7 +410,7 @@ public class BaselineStore {
      * falling back to the broad interactive-elements selector.
      */
     private static final int T1_HARD_CANDIDATE_LIMIT = 500;
-    private static final int T1_FALLBACK_SCAN_LIMIT = 50;
+    private static final int T1_FALLBACK_SCAN_LIMIT = 15;
 
     private static final String SHADOW_CANDIDATE_SELECTOR =
             "input,button,select,textarea,a,label,[role='button'],[role='link'],[role='textbox'],"
@@ -482,7 +508,9 @@ public class BaselineStore {
         // so a low-confidence Tier 1 match cannot persist a wrong fingerprint for future runs.
         try {
             if (bestLocator != null && score >= AIConfigLoader.getHealingStoreThreshold()) {
-                ElementFingerprint updatedFp = ElementFingerprint.capture(driver, bestLocator, healed);
+                // Key the fingerprint by the BROKEN locator (the lookup key) so fp.locatorKey
+                // matches the map key — previously captured under bestLocator causing key mismatch.
+                ElementFingerprint updatedFp = ElementFingerprint.capture(driver, brokenLocator, healed);
                 baselines.compute(brokenLocator.toString(), (k, existing) -> {
                     List<ElementFingerprint> updated = new ArrayList<>();
                     if (existing != null && !existing.isEmpty()) {
@@ -675,6 +703,7 @@ public class BaselineStore {
     }
 
     public static void flush() {
+        SAVE_EXECUTOR.shutdown();
         synchronized (LOCK) {
             try {
                 persist(new LinkedHashMap<>(baselines));
@@ -698,9 +727,30 @@ public class BaselineStore {
         return s != null && !s.isBlank();
     }
 
-    private static String escapeAttr(String value) {
+    /**
+     * Escapes a value for use inside a CSS attribute selector (e.g. {@code [attr='value']}).
+     * Handles {@code '}, {@code "}, {@code \}, {@code ]}, and control characters — preventing
+     * selector structure alteration when attribute values come from live (potentially
+     * attacker-influenced) DOM content.
+     */
+    static String escapeAttr(String value) {
         if (value == null) return "";
-        return value.replace("'", "\\'");
+        StringBuilder sb = new StringBuilder(value.length() + 4);
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\'' -> sb.append("\\'");
+                case '"'  -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case ']'  -> sb.append("\\]");
+                default   -> { if (c >= 0x20) sb.append(c); } // strip control chars
+            }
+        }
+        return sb.toString();
+    }
+
+    public static void shutdownExecutor() {
+        SAVE_EXECUTOR.shutdownNow();
     }
 }
   

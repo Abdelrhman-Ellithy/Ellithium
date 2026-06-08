@@ -55,19 +55,22 @@ public class LocatorMutationEngine {
             for (By mutation : mutations) {
                 try {
                     WebElement found = driver.findElement(mutation);
-                    // Cross-validate against baseline. A mutation accepted without a baseline (cold
-                    // start) is a pure guess — only allow it when there is NO baseline to check against;
-                    // when a baseline exists, demand real proof so a same-convention but DIFFERENT
-                    // element (e.g. "loginBtn"→By.id("login") matching the login LINK, not the button)
-                    // is rejected. Floor raised 0.30→0.55; a tag mismatch (button↔link) demands ≥0.75.
-                    if (baseline != null && !mutationCrossValidates(baseline, found)) continue;
+                    if (baseline != null && !mutationCrossValidates(driver, baseline, found)) continue;
                     Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                     Reporter.log("[MUTATION] Healed via locator mutation: "
                             + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
                     return found;
-                } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException ignored) {
-                    // Mutation didn't match — try next
-                }
+                } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                    try {
+                        WebElement retried = driver.findElement(mutation);
+                        if (baseline == null || mutationCrossValidates(driver, baseline, retried)) {
+                            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                            Reporter.log("[MUTATION] Healed via locator mutation (stale-retry): "
+                                    + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
+                            return retried;
+                        }
+                    } catch (Exception ignored) {}
+                } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException ignored) {}
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
@@ -83,15 +86,25 @@ public class LocatorMutationEngine {
     private static final double MUTATION_ACCEPT_MIN = 0.55;
     private static final double MUTATION_ACCEPT_TAG_MISMATCH = 0.75;
 
-    private static boolean mutationCrossValidates(ElementFingerprint baseline, WebElement found) {
-        double score = baseline.scoreSimilarity(found);
+    private static boolean mutationCrossValidates(WebDriver driver,
+                                                   ElementFingerprint baseline,
+                                                   WebElement found) {
+        java.util.List<java.util.Map<String, Object>> batch =
+                Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, java.util.List.of(found));
+        double score;
+        String foundTag = null;
+        if (batch != null && !batch.isEmpty() && batch.get(0) != null) {
+            java.util.Map<String, Object> attrs = batch.get(0);
+            score = baseline.scoreSimilarity(attrs, null);
+            Object t = attrs.get("tag");
+            if (t != null) foundTag = t.toString();
+        } else {
+            score = baseline.scoreSimilarity(found);
+            try { foundTag = found.getTagName(); } catch (Exception ignored) {}
+        }
         String baseTag = baseline.getTagName();
-        if (baseTag != null && !baseTag.isBlank()) {
-            String foundTag;
-            try { foundTag = found.getTagName(); } catch (Exception e) { foundTag = null; }
-            if (foundTag != null && !baseTag.equalsIgnoreCase(foundTag)) {
-                return score >= MUTATION_ACCEPT_TAG_MISMATCH;
-            }
+        if (baseTag != null && !baseTag.isBlank() && foundTag != null && !baseTag.equalsIgnoreCase(foundTag)) {
+            return score >= MUTATION_ACCEPT_TAG_MISMATCH;
         }
         return score >= MUTATION_ACCEPT_MIN;
     }
@@ -112,7 +125,7 @@ public class LocatorMutationEngine {
                         }
                     });
 
-    static List<By> generateMutations(By brokenLocator) {
+    public static List<By> generateMutations(By brokenLocator) {
         String key = brokenLocator.toString();
         List<By> cached = MUTATION_CACHE.get(key);
         if (cached != null) return cached;

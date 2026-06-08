@@ -87,40 +87,18 @@ public class SemanticLocatorResolver {
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             java.util.IdentityHashMap<WebElement, Double> best = new java.util.IdentityHashMap<>();
-            collectHits(driver, tiered.gold, F2_GOLD, best);
-            if (best.isEmpty()) collectHits(driver, tiered.silver, F2_SILVER, best);
-            if (best.isEmpty()) collectHits(driver, tiered.bronze, F2_BRONZE, best);
-            if (best.isEmpty()) collectHits(driver, tiered.iron,   F2_IRON,   best);
+            // Always run gold AND silver. Batch all CSS-batchable strategies into 1 JS call;
+            // XPath/RelativeLocator/Appium strategies fall back to individual findElements.
+            if (driver instanceof JavascriptExecutor) {
+                collectHitsBatched(driver, tiered.gold, F2_GOLD, tiered.silver, F2_SILVER, best);
+            } else {
+                collectHits(driver, tiered.gold,   F2_GOLD,   best);
+                collectHits(driver, tiered.silver, F2_SILVER, best);
+            }
+            if (best.isEmpty()) collectHitsBatchedXPath(driver, tiered.bronze, F2_BRONZE, best);
+            if (best.isEmpty()) collectHitsBatchedXPath(driver, tiered.iron,   F2_IRON,   best);
             for (java.util.Map.Entry<WebElement, Double> e : best.entrySet()) {
                 hits.add(new Ellithium.core.ai.models.SemanticHit(e.getKey(), e.getValue(), "strategy"));
-            }
-        } finally {
-            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-        }
-        return hits;
-    }
-
-    public static List<Ellithium.core.ai.models.SemanticHit> findExactHits(WebDriver driver,
-                                                                           String methodName, String fieldName,
-                                                                           String actionType, String locatorValue,
-                                                                           ElementFingerprint baseline) {
-        List<Ellithium.core.ai.models.SemanticHit> hits = new ArrayList<>();
-        collectMutationHits(hits, locatorValue, driver, baseline);
-
-        ElementCategory category = categorizeAction(actionType);
-        boolean isMobile = driver instanceof AppiumDriver;
-        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
-        List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
-        if (semanticNames.isEmpty()) return hits;
-
-        TieredAttempts tiered = buildTieredStrategies(semanticNames, category, isMobile, driver, baseline);
-        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
-        try {
-            java.util.IdentityHashMap<WebElement, Double> best = new java.util.IdentityHashMap<>();
-            collectHits(driver, tiered.gold, F2_GOLD, best);
-            if (best.isEmpty()) collectHits(driver, tiered.silver, F2_SILVER, best);
-            for (java.util.Map.Entry<WebElement, Double> e : best.entrySet()) {
-                hits.add(new Ellithium.core.ai.models.SemanticHit(e.getKey(), e.getValue(), "exact"));
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
@@ -143,9 +121,10 @@ public class SemanticLocatorResolver {
         }
     }
 
-    /** Clears the strategy cache. Call between suites to avoid stale strategies from a different app. */
+    /** Clears the strategy caches. Call between suites to avoid stale strategies from a different app. */
     public static void resetCache() {
         STRATEGY_CACHE.clear();
+        FLAT_STRATEGY_CACHE.clear();
     }
 
     private static void collectHits(WebDriver driver, List<LocatorAttempt> attempts, double weight,
@@ -157,9 +136,68 @@ public class SemanticLocatorResolver {
                     Double prev = best.get(el);
                     if (prev == null || prev < weight) best.put(el, weight);
                 }
-                if (!best.isEmpty()) return;   // first productive strategy in this tier wins (priority order)
             } catch (Exception ignored) {}
         }
+    }
+
+    private static final String XPATH_BATCH_SCRIPT =
+            "return arguments[0].map(function(expr){"
+            + " try{"
+            + "  var r=[], snap=document.evaluate(expr,document,null,5,null);"
+            + "  var n; while((n=snap.iterateNext())!=null) r.push(n);"
+            + "  return r;"
+            + " } catch(e){ return []; }"
+            + "});";
+
+    private static void collectHitsBatchedXPath(WebDriver driver, List<LocatorAttempt> attempts,
+                                                double weight,
+                                                java.util.IdentityHashMap<WebElement, Double> best) {
+        if (attempts.isEmpty()) return;
+        List<String> xpaths = new ArrayList<>();
+        List<LocatorAttempt> nonXpath = new ArrayList<>();
+        for (LocatorAttempt a : attempts) {
+            String s = a.locator.toString();
+            if (s.startsWith("By.xpath: ")) xpaths.add(s.substring(10));
+            else nonXpath.add(a);
+        }
+        if (!xpaths.isEmpty() && driver instanceof JavascriptExecutor js) {
+            boolean batched = false;
+            try {
+                Object res = js.executeScript(XPATH_BATCH_SCRIPT, (Object) xpaths.toArray(new String[0]));
+                if (res instanceof List<?> rows) {
+                    batched = true;
+                    for (Object row : rows) {
+                        if (!(row instanceof List<?> els)) continue;
+                        for (Object o : els) {
+                            if (o instanceof WebElement el) {
+                                Double prev = best.get(el);
+                                if (prev == null || prev < weight) best.put(el, weight);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+            if (!batched) {
+                for (String xpath : xpaths) {
+                    try {
+                        for (WebElement el : driver.findElements(By.xpath(xpath))) {
+                            Double prev = best.get(el);
+                            if (prev == null || prev < weight) best.put(el, weight);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        } else {
+            for (String xpath : xpaths) {
+                try {
+                    for (WebElement el : driver.findElements(By.xpath(xpath))) {
+                        Double prev = best.get(el);
+                        if (prev == null || prev < weight) best.put(el, weight);
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        if (!nonXpath.isEmpty()) collectHits(driver, nonXpath, weight, best);
     }
 
     public static double strategyWeightForAttrs(java.util.Map<String, Object> attrs, List<String> names) {
@@ -173,15 +211,40 @@ public class SemanticLocatorResolver {
         for (String raw : names) {
             if (raw == null || raw.isBlank()) continue;
             String n = raw.toLowerCase();
-            if (eq(id, n) || eq(nm, n) || eq(testid, n) || eq(aria, n)
-                    || eq(accId, n) || eq(cdesc, n) || suffixEq(resId, n) || eq(text, n)) {
+            // Gold: stable attribute exact match, but only when the value is not auto-generated.
+            if ((eq(id, n) && !looksDynamic(id))
+                    || (eq(nm, n) && !looksDynamic(nm))
+                    || (eq(testid, n) && !looksDynamic(testid))
+                    || eq(aria, n)
+                    || eq(accId, n)
+                    || eq(cdesc, n)
+                    || suffixEq(resId, n)) {
                 return F2_GOLD;
             }
-            if (has(text, n) || has(allattrs, n)) {
+            // Auto-generated values matched exactly are capped at silver.
+            if (eq(id, n) || eq(nm, n) || eq(testid, n)) {
+                best = nanMax(best, F2_SILVER);
+            }
+            if (eq(text, n) || has(text, n) || has(allattrs, n)) {
                 best = nanMax(best, F2_SILVER);
             }
         }
         return best;
+    }
+
+    /**
+     * Returns true when an attribute value looks auto-generated (UUID, pure numeric, framework
+     * auto-id, short random hex, or numeric-suffix pattern) and is therefore unreliable as a
+     * gold-confidence locator signal.
+     */
+    static boolean looksDynamic(String value) {
+        if (value == null || value.isBlank()) return false;
+        if (value.matches("\\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\}?")) return true;
+        if (value.matches("[0-9]+")) return true;
+        if (value.matches(":[a-zA-Z][a-zA-Z0-9]{0,4}:")) return true;
+        if (value.length() <= 12 && value.matches("[0-9a-f]{4,12}")) return true;
+        if (value.matches(".*[-_][0-9]+")) return true;
+        return false;
     }
 
     private static String lc(Object o) { return o == null ? null : o.toString().toLowerCase(); }
@@ -195,40 +258,128 @@ public class SemanticLocatorResolver {
     private static double nanMax(double a, double b) { return Double.isNaN(a) ? b : Math.max(a, b); }
 
     /**
-     * Standalone Tier-2 heal — picks the highest-tier match, cross-validates against the baseline,
-     * commits telemetry. Used as a fallback path when the ensemble is disabled.
+     * Standalone Tier-2 heal — used as a fallback path when the ensemble model is unavailable.
+     *
+     * <p>Iterates the full flat strategy list (gold → silver → bronze → iron) and cross-validates
+     * each candidate against the baseline fingerprint as it goes. Unlike {@link #findSemanticHits}
+     * which stops at the first productive tier, this continues past a tier whose DOM hits all fail
+     * the similarity gate — so a silver or bronze match is still reachable even when gold strategies
+     * find elements that don't resemble the stored baseline.
      */
     public static WebElement trySemanticHeal(WebDriver driver,
                                              String methodName, String fieldName,
                                              String actionType, String locatorValue,
                                              ElementFingerprint baseline) {
-        List<Ellithium.core.ai.models.SemanticHit> hits = findSemanticHits(driver, methodName, fieldName, actionType, locatorValue, baseline);
-        if (hits.isEmpty()) {
+        boolean switchedFrame = (baseline != null) && baseline.enterIframeContext(driver);
+        try {
+        return trySemanticHealInContext(driver, methodName, fieldName, actionType, locatorValue, baseline);
+        } finally {
+            if (switchedFrame) {
+                try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    private static WebElement trySemanticHealInContext(WebDriver driver,
+                                                       String methodName, String fieldName,
+                                                       String actionType, String locatorValue,
+                                                       ElementFingerprint baseline) {
+        List<Ellithium.core.ai.models.SemanticHit> mutationHits = new ArrayList<>();
+        collectMutationHits(mutationHits, locatorValue, driver, baseline);
+        if (!mutationHits.isEmpty()) {
+            WebElement el = mutationHits.get(0).element;
+            By loc = ElementFingerprint.reconstructLocator(el);
+            String locStr = loc != null ? loc.toString() : "";
+            Reporter.log("Tier 2 (semantic): MATCH via mutation | locator=" + locStr, LogLevel.INFO_GREEN);
+            AIHealingReporter.queueChange("semantic-strategy", locStr,
+                    new HealingResult(locStr, 0.95, "[TIER 2 - Semantic] mutation"), null, methodName, actionType, 0);
+            HealingTelemetryStore.record(2, locatorValue, locStr, 0.95, true);
+            return el;
+        }
+
+        ElementCategory category = categorizeAction(actionType);
+        boolean isMobile = driver instanceof AppiumDriver;
+        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
+        List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
+        if (semanticNames.isEmpty()) {
             HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
             return null;
         }
+
         double cvThreshold;
         if (baseline == null) cvThreshold = 0.0;
-        else if (baseline.getId() != null || baseline.getDataTestId() != null) cvThreshold = 0.35;
-        else cvThreshold = 0.25;
+        else if (baseline.hasStrongIdentity()) cvThreshold = 0.35;
+        else cvThreshold = 0.55;
 
-        hits.sort((a, b) -> Double.compare(b.tierWeight, a.tierWeight));
-        for (Ellithium.core.ai.models.SemanticHit hit : hits) {
-            try {
-                if (baseline != null && baseline.scoreSimilarity(hit.element) < cvThreshold) continue;
-                By cleanLocator = ElementFingerprint.reconstructLocator(hit.element);
-                String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
-                Reporter.log("Tier 2: MATCH via " + hit.strategyDescription
-                        + " | locator=" + cleanLocatorStr, LogLevel.INFO_GREEN);
-                AIHealingReporter.queueChange("semantic-strategy", cleanLocatorStr,
-                        new HealingResult(cleanLocatorStr, 0.85, "[TIER 2 - Semantic] " + hit.strategyDescription),
-                        null, methodName, actionType, 0);
-                HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.85, true);
-                return hit.element;
-            } catch (Exception ignored) {}
+        List<LocatorAttempt> strategies = buildStrategies(semanticNames, category, isMobile, driver, baseline);
+
+        // Phase 1: collect all candidates from all strategies (deduped, DOM order preserved)
+        java.util.LinkedHashMap<WebElement, String> candidateDesc = new java.util.LinkedHashMap<>();
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            for (LocatorAttempt attempt : strategies) {
+                try {
+                    for (WebElement el : driver.findElements(attempt.locator)) {
+                        candidateDesc.putIfAbsent(el, attempt.description);
+                    }
+                } catch (Exception ignored) {}
+            }
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+        }
+
+        if (candidateDesc.isEmpty()) {
+            HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
+            return null;
+        }
+
+        // Phase 2: ONE batch attribute read for all candidates (0 extra RTs vs N×13)
+        List<WebElement> candidateList = new ArrayList<>(candidateDesc.keySet());
+        java.util.List<java.util.Map<String, Object>> batch =
+                Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidateList);
+
+        // Phase 3: score from maps — 0 per-element WebDriver round-trips
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            for (int i = 0; i < candidateList.size(); i++) {
+                WebElement el = candidateList.get(i);
+                java.util.Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
+                try {
+                    if (attrs != null && Boolean.FALSE.equals(attrs.get("visible"))) continue;
+                    if (baseline != null && cvThreshold > 0.0) {
+                        double score = (attrs != null)
+                                ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
+                                : baseline.scoreSimilarity(el);
+                        if (score < cvThreshold) continue;
+                    }
+                    By cleanLocator = ElementFingerprint.reconstructLocator(el);
+                    String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
+                    String desc = candidateDesc.getOrDefault(el, "strategy");
+                    Reporter.log("Tier 2 (semantic): MATCH via " + desc + " | locator=" + cleanLocatorStr,
+                            LogLevel.INFO_GREEN);
+                    AIHealingReporter.queueChange("semantic-strategy", cleanLocatorStr,
+                            new HealingResult(cleanLocatorStr, 0.85, "[TIER 2 - Semantic] " + desc),
+                            null, methodName, actionType, 0);
+                    HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.85, true);
+                    return el;
+                } catch (Exception ignored) {}
+            }
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
         HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
         return null;
+    }
+
+    private static ElementFingerprint.StructuralContext structuralFrom(java.util.Map<String, Object> attrs) {
+        Object pt = attrs.get("parent-tag");
+        Object ci = attrs.get("child-index");
+        if (pt == null && ci == null) return null;
+        int childIdx = ci instanceof Number n ? n.intValue() : -1;
+        String prevSib = attrs.get("prev-sib") instanceof String s ? s : null;
+        String nextSib = attrs.get("next-sib") instanceof String s ? s : null;
+        return new ElementFingerprint.StructuralContext(
+                pt != null ? pt.toString() : null, childIdx, prevSib, nextSib);
     }
 
     /**
@@ -256,6 +407,15 @@ public class SemanticLocatorResolver {
                         }
                     });
 
+    private static final java.util.Map<String, List<LocatorAttempt>> FLAT_STRATEGY_CACHE =
+            java.util.Collections.synchronizedMap(
+                    new java.util.LinkedHashMap<>(STRATEGY_CACHE_MAX, 0.75f, true) {
+                        @Override
+                        protected boolean removeEldestEntry(java.util.Map.Entry<String, List<LocatorAttempt>> e) {
+                            return size() > STRATEGY_CACHE_MAX;
+                        }
+                    });
+
     private static TieredAttempts buildTieredStrategies(List<String> names,
                                                         ElementCategory category,
                                                         boolean isMobile,
@@ -274,14 +434,21 @@ public class SemanticLocatorResolver {
 
     /**
      * Flattens the tiered strategies into ONE ordered, deduplicated list (gold → silver → bronze
-     * → iron), preserving priority. Kept as a primitive for callers that want a single ranked
-     * list to iterate (the ensemble uses the tiered form directly for graded f2 weights).
+     * → iron), preserving priority. Used by {@link #trySemanticHeal} for sequential
+     * try-and-cross-validate iteration: unlike the tiered pass in {@link #findSemanticHits} which
+     * stops at the first productive tier, iterating this flat list allows cross-validation to
+     * continue past a tier whose DOM hits all fail the fingerprint similarity gate.
      */
     static List<LocatorAttempt> buildStrategies(List<String> names,
                                                 ElementCategory category,
                                                 boolean isMobile,
                                                 WebDriver driver,
                                                 ElementFingerprint baseline) {
+        String parentTag = (baseline != null) ? baseline.getParentTag() : null;
+        String cacheKey = String.join(",", names) + "|" + category + "|" + isMobile + "|" + parentTag;
+        List<LocatorAttempt> cached = FLAT_STRATEGY_CACHE.get(cacheKey);
+        if (cached != null) return cached;
+
         TieredAttempts t = buildTieredStrategies(names, category, isMobile, driver, baseline);
         List<LocatorAttempt> ordered = new ArrayList<>(
                 t.gold.size() + t.silver.size() + t.bronze.size() + t.iron.size());
@@ -294,7 +461,9 @@ public class SemanticLocatorResolver {
         for (LocatorAttempt a : ordered) {
             if (seen.add(a.locator.toString())) deduped.add(a);
         }
-        return deduped;
+        List<LocatorAttempt> result = java.util.Collections.unmodifiableList(deduped);
+        FLAT_STRATEGY_CACHE.put(cacheKey, result);
+        return result;
     }
 
     private static TieredAttempts buildTieredUncached(List<String> names,
@@ -681,6 +850,88 @@ public class SemanticLocatorResolver {
 
             default -> ElementCategory.ANY;
         };
+    }
+
+    private static final String CSS_BATCH_FIND_SCRIPT =
+            "return arguments[0].map(function(sel){"
+            + " try{ return Array.from(document.querySelectorAll(sel)); }"
+            + " catch(e){ return []; }"
+            + "});";
+
+    private static String toCssSelector(By by) {
+        String s = by.toString();
+        if (s.startsWith("By.cssSelector: ")) return s.substring(16);
+        if (s.startsWith("By.id: ")) {
+            String v = s.substring(7);
+            return "[id='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
+        }
+        if (s.startsWith("By.name: ")) {
+            String v = s.substring(9);
+            return "[name='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void collectHitsBatched(WebDriver driver,
+                                            List<LocatorAttempt> gold, double goldW,
+                                            List<LocatorAttempt> silver, double silverW,
+                                            java.util.IdentityHashMap<WebElement, Double> best) {
+        List<String> cssSels   = new ArrayList<>();
+        List<Double>  cssWts   = new ArrayList<>();
+        List<LocatorAttempt> nonCssGold   = new ArrayList<>();
+        List<LocatorAttempt> nonCssSilver = new ArrayList<>();
+
+        for (LocatorAttempt a : gold) {
+            String sel = toCssSelector(a.locator);
+            if (sel != null) { cssSels.add(sel); cssWts.add(goldW); }
+            else nonCssGold.add(a);
+        }
+        for (LocatorAttempt a : silver) {
+            String sel = toCssSelector(a.locator);
+            if (sel != null) { cssSels.add(sel); cssWts.add(silverW); }
+            else nonCssSilver.add(a);
+        }
+
+        if (!cssSels.isEmpty()) {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            boolean batchSucceeded = false;
+            try {
+                Object res = js.executeScript(CSS_BATCH_FIND_SCRIPT,
+                        (Object) cssSels.toArray(new String[0]));
+                if (res instanceof List<?> rows) {
+                    batchSucceeded = true;
+                    for (int i = 0; i < rows.size() && i < cssWts.size(); i++) {
+                        Object row = rows.get(i);
+                        if (!(row instanceof List<?> els)) continue;
+                        double w = cssWts.get(i);
+                        for (Object o : els) {
+                            if (o instanceof WebElement el) {
+                                Double prev = best.get(el);
+                                if (prev == null || prev < w) best.put(el, w);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            if (!batchSucceeded) {
+                for (int i = 0; i < cssSels.size(); i++) {
+                    try {
+                        List<WebElement> found = driver.findElements(
+                                By.cssSelector(cssSels.get(i)));
+                        double w = cssWts.get(i);
+                        for (WebElement el : found) {
+                            Double prev = best.get(el);
+                            if (prev == null || prev < w) best.put(el, w);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        if (!nonCssGold.isEmpty())   collectHits(driver, nonCssGold,   goldW,   best);
+        if (!nonCssSilver.isEmpty()) collectHits(driver, nonCssSilver, silverW, best);
     }
 
     private static LocatorAttempt attempt(By locator, String description) {

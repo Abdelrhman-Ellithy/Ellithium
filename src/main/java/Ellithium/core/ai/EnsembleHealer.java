@@ -31,14 +31,21 @@ public class EnsembleHealer {
     private static final int MAX_SEQ_LEN     = 256;
     private static final int MAX_TEXT_CHARS  = 240;
     private static final int MAX_CLASS_CHARS = 200;
-    private static final double EARLY_EXIT_COSINE = 0.95;
+    private static final double EARLY_EXIT_COMBINED          = 0.95;
+    private static final double COSINE_CORROBORATION_FLOOR   = 0.55;
 
     private static volatile boolean initialized = false;
     private static volatile boolean available   = false;
+    private static final java.util.concurrent.atomic.AtomicInteger EMBED_IN_FLIGHT =
+            new java.util.concurrent.atomic.AtomicInteger(0);
 
     private static Object ortEnvironment = null;
-    private static Object ortSession     = null;
     private static Object tokenizer      = null;
+
+    // Pool of 2 OrtSession objects — lets 2 threads embed concurrently without locking.
+    // Size-bounded to 2: each session costs ~34 MB native heap; 2 sessions = 68 MB total.
+    private static final java.util.concurrent.LinkedBlockingQueue<Object> SESSION_POOL =
+            new java.util.concurrent.LinkedBlockingQueue<>(2);
 
     private static volatile java.util.concurrent.CompletableFuture<Void> INIT_FUTURE;
 
@@ -55,10 +62,15 @@ public class EnsembleHealer {
 
     static void awaitInit() {
         java.util.concurrent.CompletableFuture<Void> f = INIT_FUTURE;
+        if (f == null && !initialized) {
+            // Suite startup hook was skipped — kick off async init now and return unavailable
+            // for this heal rather than paying model-load cost on the test thread.
+            initializeAsync();
+            return;
+        }
         if (f != null && !f.isDone()) {
             try { f.get(30, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}
         }
-        if (!initialized) initialize();
     }
 
     private static Method mEncode, mGetIds, mGetMask, mGetTypes, mCreateTensor, mSessionRun, mOnnxGetValue;
@@ -92,7 +104,24 @@ public class EnsembleHealer {
 
             int modelKb = modelBytes.length / 1024;
             initOrtSession(modelBytes);
+            byte[] modelBytes2 = java.util.Arrays.copyOf(modelBytes, modelBytes.length);
             java.util.Arrays.fill(modelBytes, (byte) 0);
+            Thread poolExpander = new Thread(() -> {
+                try {
+                    Class<?> optClass2 = Class.forName("ai.onnxruntime.OrtSession$SessionOptions");
+                    Object opts2 = optClass2.getDeclaredConstructor().newInstance();
+                    capOrtThreads(optClass2, opts2);
+                    Object sess2 = ortEnvironment.getClass()
+                            .getMethod("createSession", byte[].class, optClass2)
+                            .invoke(ortEnvironment, modelBytes2, opts2);
+                    java.util.Arrays.fill(modelBytes2, (byte) 0);
+                    SESSION_POOL.offer(sess2);
+                } catch (Throwable ignored) {
+                    java.util.Arrays.fill(modelBytes2, (byte) 0);
+                }
+            }, "ellithium-onnx-pool-expand");
+            poolExpander.setDaemon(true);
+            poolExpander.start();
             initTokenizer(tokenizerBytes);
             available = true;
             // Warmup inference: forces ORT JIT compilation so the first real heal
@@ -119,9 +148,15 @@ public class EnsembleHealer {
      */
     public static synchronized void shutdown() {
         available = false;
-        closeQuietly(ortSession);
+        // Drain in-flight embeds before closing the ORT session (max 2 s) to prevent
+        // a native crash when shutdown races a concurrent heal on another thread.
+        long deadline = System.currentTimeMillis() + 2_000;
+        while (EMBED_IN_FLIGHT.get() > 0 && System.currentTimeMillis() < deadline) {
+            try { Thread.sleep(5); } catch (InterruptedException ignored) { break; }
+        }
+        Object sess;
+        while ((sess = SESSION_POOL.poll()) != null) closeQuietly(sess);
         closeQuietly(ortEnvironment);
-        ortSession     = null;
         ortEnvironment = null;
         tokenizer      = null;
         initialized    = false;
@@ -163,11 +198,14 @@ public class EnsembleHealer {
             String query = SemanticQueryBuilder.buildFromContext(actionType, locatorValue, callerMethod, baseline);
             if (query.isBlank()) return null;
 
-            float[] queryVector = embed(query, true);
-            if (queryVector == null) return null;
+            // Overlap query embedding (ONNX, ~20ms) with DOM candidate collection (WebDriver, ~30ms).
+            // DOM calls stay on this thread; embed runs on a pool thread — no WebDriver sharing.
+            java.util.concurrent.CompletableFuture<float[]> queryFuture =
+                    java.util.concurrent.CompletableFuture.supplyAsync(() -> embed(query, true));
 
-            return scoreAndSelectCandidate(driver, queryVector, baseline, locator, actionType, query,
-                    callerMethod, fieldName, locatorValue);
+            HealOutcome outcome = scoreAndSelectCandidate(driver, queryFuture, baseline, locator,
+                    actionType, query, callerMethod, fieldName, locatorValue);
+            return outcome;
         } finally {
             if (switchedFrame) {
                 try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
@@ -183,8 +221,17 @@ public class EnsembleHealer {
      * @return L2-normalised float[384], or null on any failure
      */
     static float[] embed(String text, boolean isQuery) {
-        Object session = ortSession, env = ortEnvironment, tok = tokenizer;
-        if (!available || session == null || env == null || tok == null) return null;
+        if (!available || ortEnvironment == null || tokenizer == null) return null;
+        Object session;
+        try {
+            session = SESSION_POOL.poll(30, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+        if (session == null) return null;
+        EMBED_IN_FLIGHT.incrementAndGet();
+        Object env = ortEnvironment, tok = tokenizer;
         String input = isQuery ? BGE_QUERY_PREFIX + text : text;
         Object tIds = null, tMask = null, tType = null, result = null;
         try {
@@ -209,14 +256,34 @@ public class EnsembleHealer {
             inputs.put("attention_mask", tMask);
             inputs.put("token_type_ids", tType);
 
-            result = mSessionRun.invoke(session, inputs);
-
-            Iterator<?> it    = ((Iterable<?>) result).iterator();
-            Map.Entry<?, ?> e = (Map.Entry<?, ?>) it.next();
-            Object onnxValue  = e.getValue();
-            float[][][] tokenEmbeddings = (float[][][]) mOnnxGetValue.invoke(onnxValue);
-
-            float[] pooled = clsPool(tokenEmbeddings[0]);
+            // Each thread holds its own session from the pool — no lock needed.
+            float[] pooled;
+            {
+                try {
+                    result = mSessionRun.invoke(session, inputs);
+                    Object onnxValue = null;
+                    for (Object entry : (Iterable<?>) result) {
+                        Map.Entry<?, ?> e = (Map.Entry<?, ?>) entry;
+                        String name = e.getKey() != null ? e.getKey().toString() : "";
+                        if ("last_hidden_state".equals(name) || "token_embeddings".equals(name)) {
+                            onnxValue = e.getValue(); break;
+                        }
+                        if (onnxValue == null) onnxValue = e.getValue();
+                    }
+                    if (onnxValue == null) return null;
+                    Object rawTensor = mOnnxGetValue.invoke(onnxValue);
+                    if (rawTensor instanceof float[][][]) {
+                        pooled = clsPool(((float[][][]) rawTensor)[0]);
+                    } else if (rawTensor instanceof float[][]) {
+                        pooled = ((float[][]) rawTensor)[0].clone();
+                    } else {
+                        return null;
+                    }
+                } finally {
+                    closeQuietly(result);
+                    result = null;
+                }
+            }
 
             return l2Normalize(pooled);
 
@@ -224,6 +291,8 @@ public class EnsembleHealer {
             Reporter.log("[ENSEMBLE] embed failed: " + ex.getMessage(), LogLevel.WARN);
             return null;
         } finally {
+            EMBED_IN_FLIGHT.decrementAndGet();
+            SESSION_POOL.offer(session);
             closeQuietly(result);
             closeQuietly(tIds);
             closeQuietly(tMask);
@@ -248,7 +317,8 @@ public class EnsembleHealer {
         "p, li, td, th, dt, dd, article, section, aside, span, div",
     };
 
-    private static HealOutcome scoreAndSelectCandidate(WebDriver driver, float[] queryVector,
+    private static HealOutcome scoreAndSelectCandidate(WebDriver driver,
+                                                       java.util.concurrent.CompletableFuture<float[]> queryFuture,
                                                        ElementFingerprint baseline,
                                                        By brokenLocator, String actionType,
                                                        String query,
@@ -265,13 +335,13 @@ public class EnsembleHealer {
         List<String> semanticNames =
                 SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
 
-        java.util.IdentityHashMap<WebElement, Double> resolverWeights = new java.util.IdentityHashMap<>();
+        java.util.HashMap<WebElement, Double> resolverWeights = new java.util.HashMap<>();
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         List<WebElement> candidates;
         List<Map<String, Object>> batch;
         try {
             List<WebElement> resolverEls = new ArrayList<>();
-            for (Ellithium.core.ai.models.SemanticHit hit : SemanticLocatorResolver.findExactHits(
+            for (Ellithium.core.ai.models.SemanticHit hit : SemanticLocatorResolver.findSemanticHits(
                     driver, callerMethod, fieldName, actionType, locatorValue, baseline)) {
                 resolverEls.add(hit.element);
                 Double prev = resolverWeights.get(hit.element);
@@ -283,24 +353,63 @@ public class EnsembleHealer {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
+        // DOM collection done — now join the query embedding started concurrently above.
+        float[] queryVector;
+        try {
+            queryVector = queryFuture.get(30, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return null;
+        }
+        if (queryVector == null) return null;
+
+        record CandidateSlot(WebElement el, Map<String, Object> attrs, boolean isResolver, double f2pre) {}
+
+        final int maxResolverCandidates = Math.min(resolverWeights.size(), 8);
+
+        List<CandidateSlot> slots = new ArrayList<>(Math.min(candidates.size(), maxCandidates + maxResolverCandidates));
+        for (int i = 0; i < candidates.size(); i++) {
+            WebElement candidate = candidates.get(i);
+            Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
+            if (batch != null && attrs == null) continue;
+            if (attrs != null) {
+                if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
+            }
+            boolean isResolver = resolverWeights.containsKey(candidate);
+            double rawAttrW = (attrs != null)
+                    ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
+                    : Double.NaN;
+            double attrW = (rawAttrW <= 0.0) ? Double.NaN : rawAttrW;
+            Double hitW  = resolverWeights.get(candidate);
+            double f2pre = maxScore(attrW, hitW == null ? Double.NaN : hitW);
+            slots.add(new CandidateSlot(candidate, attrs, isResolver, f2pre));
+        }
+        slots.sort((a, b) -> {
+            if (a.isResolver != b.isResolver) return a.isResolver ? -1 : 1;
+            boolean aNaN = Double.isNaN(a.f2pre), bNaN = Double.isNaN(b.f2pre);
+            if (aNaN && bNaN) return 0;
+            if (aNaN) return 1;
+            if (bNaN) return -1;
+            return Double.compare(b.f2pre, a.f2pre);
+        });
+
         WebElement bestElement = null;
         String     bestDoc     = null;
+        Map<String, Object> bestAttrs = null;
         double bestCombined = -1.0, bestCosine = 0.0, bestF1 = Double.NaN, bestF2 = Double.NaN;
-        int scored = 0;
+        int poolScored = 0;
+        int resolverScored = 0;
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
-            for (int i = 0; i < candidates.size(); i++) {
-                if (scored >= maxCandidates) break;
-                WebElement candidate = candidates.get(i);
+            for (CandidateSlot slot : slots) {
+                if (slot.isResolver && resolverScored >= maxResolverCandidates) continue;
+                if (!slot.isResolver && poolScored    >= maxCandidates)         break;
                 try {
-                    Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
-                    if (attrs != null) {
-                        if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
-                    } else if (!candidate.isDisplayed()) {
-                        continue;
-                    }
-                    scored++;
+                    Map<String, Object> attrs = slot.attrs;
+                    WebElement candidate = slot.el;
+                    if (attrs == null && !candidate.isDisplayed()) continue;
+                    if (slot.isResolver) resolverScored++; else poolScored++;
                     String  cacheKey  = (attrs != null) ? buildCacheKey(attrs) : buildCacheKey(candidate);
                     float[] docVector = ElementVectorCache.getInstance().get(cacheKey);
                     String  doc       = null;
@@ -318,21 +427,19 @@ public class EnsembleHealer {
                     double cosine = dotProduct(queryVector, docVector);
                     double f1     = (attrs != null) ? baselineProximity(baseline, attrs)
                                                     : baselineProximity(baseline, candidate);
-                    double rawAttrW = (attrs != null)
-                            ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
-                            : Double.NaN;
-                    double attrW  = (rawAttrW <= 0.0) ? Double.NaN : rawAttrW;
-                    Double hitW   = resolverWeights.get(candidate);
-                    double f2     = maxScore(attrW, hitW == null ? Double.NaN : hitW);
+                    double f2     = slot.f2pre;
                     double combined = fuseConfidence(f2, cosine);
+                    if (!Double.isNaN(f1) && f1 > 0.5) {
+                        combined = Math.min(1.0, combined + (f1 - 0.5) * 0.08);
+                    }
 
                     if (bestElement == null || combined > bestCombined
                             || (Math.abs(combined - bestCombined) < 1e-6 && f1 > bestF1)) {
                         bestElement = candidate; bestCombined = combined; bestCosine = cosine;
-                        bestF1 = f1; bestF2 = f2; bestDoc = doc;
+                        bestF1 = f1; bestF2 = f2; bestDoc = doc; bestAttrs = attrs;
                     }
 
-                    if (combined >= EARLY_EXIT_COSINE) break;
+                    if (combined >= EARLY_EXIT_COMBINED && cosine >= COSINE_CORROBORATION_FLOOR) break;
                 } catch (Exception ignored) {}
             }
         } finally {
@@ -340,10 +447,14 @@ public class EnsembleHealer {
         }
 
         if (bestElement == null) return null;
-        if (bestDoc == null) bestDoc = buildElementDocument(bestElement);
+        if (bestDoc == null) bestDoc = "(vector-cache hit)";
 
-        GateResult gate = decideGate(bestCombined, threshold, bestF1, bestF2,
-                AIConfigLoader.isStrategyRescueEnabled(), AIConfigLoader.getGateFingerprintFloor());
+        // Verify winner is still live; the DOM may have re-rendered between batch-read and now.
+        bestElement = ensureLive(driver, bestElement, bestAttrs);
+        if (bestElement == null) return null;
+
+        GateResult gate = decideGate(bestCombined, threshold, bestF2,
+                AIConfigLoader.isStrategyRescueEnabled(), bestCosine);
         if (gate.accept) {
             Reporter.log(String.format("[ENSEMBLE] heal via %s combined=%.3f (f1=%.2f f2=%.2f f3=%.3f)",
                     gate.via, gate.score, bestF1, bestF2, bestCosine), LogLevel.INFO_GREEN);
@@ -391,7 +502,15 @@ public class EnsembleHealer {
         if (Double.isNaN(f2)) return f3;
         double hi = Math.max(f2, f3);
         double lo = Math.min(f2, f3);
-        return hi + (1.0 - hi) * lo * SIGNAL_AGREEMENT;
+        double base = hi + (1.0 - hi) * lo * SIGNAL_AGREEMENT;
+        // Soft cosine floor: when the bi-encoder strongly disagrees with a high f2,
+        // dampen f2's dominance proportionally so cosine disagreement has real weight.
+        // Threshold matches GATE_RESCUE_COSINE_FLOOR so confidence and gate share the same boundary.
+        if (f3 < GATE_RESCUE_COSINE_FLOOR && f2 > f3) {
+            double damp = f3 / GATE_RESCUE_COSINE_FLOOR;   // 0.0 at f3=0 → 1.0 at floor (no dampening)
+            return f3 + (base - f3) * damp;
+        }
+        return base;
     }
 
     static List<WebElement> mergeCandidates(List<WebElement> resolverElements, List<WebElement> poolElements) {
@@ -408,20 +527,24 @@ public class EnsembleHealer {
         }
     }
 
-    private static final double GATE_STRATEGY_MIN = 0.95;
+    private static final double GATE_STRATEGY_MIN       = 0.75;
+    private static final double GATE_RESCUE_COSINE_FLOOR = 0.35;
 
     /**
-     * Accept decision (pure, unit-testable). Path A: the calibrated anchor cosine clears the
-     * threshold. Path B (strategy-rescue): a gold-tier Tier-2 match (f2 ≥ 0.95: exact data-testid /
-     * AppiumBy / cross-validated mutation) corroborated by the baseline fingerprint (f1 ≥ floor) —
-     * two independent high-precision signals, so the heal is trusted even when the bi-encoder cosine
-     * is weak. Path-B confidence = mean(f1, f2). Cold start (f1 NaN) never rescues.
+     * Accept decision (pure, unit-testable). Path A: the fused combined score clears the calibrated
+     * threshold. Path B (strategy-rescue): a gold-tier match (f2 ≥ 0.95: exact data-testid /
+     * AppiumBy / cross-validated mutation) corroborated by the bi-encoder cosine (f3 ≥ 0.35) —
+     * two genuinely independent signals (algorithmic strategy vs. learned embedding) so the heal is
+     * trusted even when combined hasn't cleared the threshold. Using cosine as the second gate instead
+     * of the baseline fingerprint means cold-start elements (no stored baseline) can still be rescued,
+     * and avoids the correlated-id-read-twice issue that occurs when f1 and f2 both key off the same
+     * attribute. Path-B confidence = mean(f2, f3).
      */
-    static GateResult decideGate(double combined, double threshold, double f1, double f2,
-                                 boolean rescueEnabled, double fingerprintFloor) {
+    static GateResult decideGate(double combined, double threshold, double f2,
+                                 boolean rescueEnabled, double f3) {
         if (combined >= threshold) return new GateResult(true, combined, "ensemble");
-        if (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f1 >= fingerprintFloor) {
-            return new GateResult(true, (f1 + f2) / 2.0, "strategy-rescue");
+        if (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f3 >= GATE_RESCUE_COSINE_FLOOR) {
+            return new GateResult(true, (f2 + f3) / 2.0, "strategy-rescue");
         }
         return new GateResult(false, combined, "none");
     }
@@ -580,6 +703,30 @@ public class EnsembleHealer {
     private static String nz(String s) { return s != null ? s : ""; }
 
     /**
+     * Scores a single element against a baseline fingerprint using one batched JS round-trip.
+     * Returns the actual similarity (floored to 0.60) when a baseline is present, or 0.65 as a
+     * conservative cold-start estimate. Falls back to the live-WebElement overload only when the
+     * driver has no JS (Appium native).
+     */
+    public static double scoreWithBatchedAttrs(Ellithium.core.ai.models.ElementFingerprint baseline,
+                                               WebDriver driver,
+                                               WebElement element) {
+        double fallback = AIConfigLoader.getSemanticFallbackScore();
+        double floor    = AIConfigLoader.getOnnxSimilarityThreshold();
+        if (baseline == null) return fallback;
+        List<Map<String, Object>> batch = Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(
+                driver, List.of(element));
+        if (batch != null && !batch.isEmpty() && batch.get(0) != null) {
+            return Math.max(floor, baselineProximity(baseline, batch.get(0)));
+        }
+        try {
+            return Math.max(floor, baseline.scoreSimilarity(element));
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    /**
      * Tiebreak signal for near-equal cosine scores: how well the candidate matches the stored
      * baseline fingerprint (0.0–1.0). Returns -1 when there is no baseline, so DOM order is kept.
      */
@@ -599,6 +746,42 @@ public class EnsembleHealer {
         } catch (Exception e) {
             return 0.0;
         }
+    }
+
+    private static WebElement ensureLive(WebDriver driver, WebElement el, Map<String, Object> attrs) {
+        try {
+            el.isEnabled();
+            return el;
+        } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            WebElement refreshed = tryRefreshStale(driver, attrs);
+            if (refreshed != null) Reporter.log("[ENSEMBLE] healed element was stale — re-found via stable locator", LogLevel.DEBUG);
+            return refreshed;
+        } catch (Exception e) {
+            return el;
+        }
+    }
+
+    private static WebElement tryRefreshStale(WebDriver driver, Map<String, Object> attrs) {
+        if (attrs == null) return null;
+        String id = strOf(attrs.get("id"));
+        if (id != null && !id.isBlank()) {
+            try { return driver.findElement(By.id(id)); } catch (Exception ignored) {}
+        }
+        String testId = strOf(attrs.get("data-testid"));
+        if (testId != null && !testId.isBlank()) {
+            try { return driver.findElement(By.cssSelector(
+                    "[data-testid='" + testId.replace("'", "\\'") + "']")); } catch (Exception ignored) {}
+        }
+        String name = strOf(attrs.get("name"));
+        if (name != null && !name.isBlank()) {
+            try { return driver.findElement(By.name(name)); } catch (Exception ignored) {}
+        }
+        String ariaLabel = strOf(attrs.get("aria-label"));
+        if (ariaLabel != null && !ariaLabel.isBlank()) {
+            try { return driver.findElement(By.cssSelector(
+                    "[aria-label='" + ariaLabel.replace("'", "\\'") + "']")); } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     private static ElementFingerprint.StructuralContext structuralFrom(Map<String, Object> attrs) {
@@ -657,13 +840,14 @@ public class EnsembleHealer {
         Object   opts     = optClass.getDeclaredConstructor().newInstance();
         capOrtThreads(optClass, opts);
 
-        ortSession = ortEnvironment.getClass()
+        Object newSession = ortEnvironment.getClass()
                 .getMethod("createSession", byte[].class, optClass)
                 .invoke(ortEnvironment, modelBytes, opts);
+        SESSION_POOL.offer(newSession);
 
         Class<?> tensorClass = Class.forName("ai.onnxruntime.OnnxTensor");
         mCreateTensor = tensorClass.getMethod("createTensor", envClass, LongBuffer.class, long[].class);
-        mSessionRun   = ortSession.getClass().getMethod("run", Map.class);
+        mSessionRun   = newSession.getClass().getMethod("run", Map.class);
         mOnnxGetValue = Class.forName("ai.onnxruntime.OnnxValue").getMethod("getValue");
     }
 
@@ -756,7 +940,19 @@ public class EnsembleHealer {
         if (attrs == null) return buildElementDocument(element);
         String tag = strOf(attrs.get("tag"));
         String text = strOf(attrs.get("text"));
-        return assembleDocument(name -> strOf(attrs.get(name)), tag, text);
+        String base = assembleDocument(name -> strOf(attrs.get(name)), tag, text);
+        // Append custom data-* values from the batch-collected dataAttrs map
+        Object da = attrs.get("dataAttrs");
+        if (da instanceof java.util.Map<?, ?> dm && !dm.isEmpty()) {
+            java.util.Map<String, String> custom = new java.util.LinkedHashMap<>();
+            for (java.util.Map.Entry<?, ?> e : dm.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null) {
+                    custom.put(e.getKey().toString(), e.getValue().toString());
+                }
+            }
+            return appendCustomDataAttrs(base, custom);
+        }
+        return base;
     }
 
     private static String safeAttr(WebElement el, String name) {
@@ -782,7 +978,7 @@ public class EnsembleHealer {
      */
     public static String buildElementDocument(ElementFingerprint fp) {
         if (fp == null) return "";
-        return assembleDocument(name -> switch (name) {
+        String base = assembleDocument(name -> switch (name) {
             case "id"               -> fp.getId();
             case "name"             -> fp.getName();
             case "resource-id"      -> fp.getResourceId();
@@ -796,9 +992,12 @@ public class EnsembleHealer {
             case "data-test"        -> fp.getDataTest();
             case "data-cy"          -> fp.getDataCy();
             case "data-qa"          -> fp.getDataQa();
+            case "title"            -> fp.getTitle();
             case "type"             -> fp.getType();
+            case "label"            -> fp.getLabel();
             default                 -> null;
         }, fp.getTagName(), fp.getText());
+        return appendCustomDataAttrs(base, fp.getCustomDataAttrs());
     }
 
     /**
@@ -816,6 +1015,16 @@ public class EnsembleHealer {
 
     private static void appendVal(StringBuilder sb, String v) {
         if (v != null && !v.isBlank()) sb.append(" ").append(v.trim());
+    }
+
+    /** Appends custom data-* attribute values (e.g. data-automation-id) to the document tail. */
+    private static String appendCustomDataAttrs(String base, java.util.Map<String, String> custom) {
+        if (custom == null || custom.isEmpty()) return base;
+        StringBuilder sb = new StringBuilder(base);
+        for (String v : custom.values()) {
+            if (v != null && !v.isBlank()) sb.append(" ").append(v.trim().toLowerCase());
+        }
+        return sb.toString().trim();
     }
 
 
