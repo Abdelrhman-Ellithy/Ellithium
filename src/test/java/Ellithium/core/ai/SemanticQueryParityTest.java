@@ -40,11 +40,11 @@ public class SemanticQueryParityTest {
                 // click, By-prefixed locator, cold start (no fingerprint)
                 {"click cold", "clickOnElement", "By.id: loginBtn", "clickLoginButton",
                         null, null, null, null, null, null,
-                        "click press button login btn"},
+                        "click press login btn button"},
                 // click, raw locator, with fingerprint (id+tag)
                 {"click hot", "clickOnElement", "loginBtn", "clickLoginButton",
                         null, "loginBtn", null, null, null, "button",
-                        "click press button login btn"},
+                        "click press login btn button"},
                 // type (serve sendData), id+placeholder+tag, UI-suffix method (Field kept, not stripped)
                 {"type field", "sendData", "By.id: userEmail", "sendUserEmailField",
                         null, "userEmail", null, "Email", null, "input",
@@ -64,7 +64,7 @@ public class SemanticQueryParityTest {
                 // click, css locator with dot+dash, cold start
                 {"click css", "clickOnElement", "By.cssSelector: button.submit-btn", "submitForm",
                         null, null, null, null, null, null,
-                        "click press button button.submit btn form"},
+                        "click press button.submit btn form"},
                 // type, xpath locator, id+aria+tag (id BEFORE aria — field order check)
                 {"type xpath", "sendData", "By.xpath: //input[@id=\"q\"]", "searchProducts",
                         null, "q", "Search", null, null, "input",
@@ -76,7 +76,7 @@ public class SemanticQueryParityTest {
                 // is* method (serve clickOnElement), id+data-testid+tag
                 {"is enabled", "clickOnElement", "By.name: submit", "isCheckoutEnabled",
                         null, "submit", null, null, "checkout-btn", "button",
-                        "click press button submit checkout enabled btn"},
+                        "click press submit checkout enabled btn button"},
                 // READ-family serve skew fix: is*/getAttribute actions categorize READABLE → must
                 // expand to "read text label value" (what training used for the collapsed 'read' key),
                 // NOT the old bespoke "check visible display" / "read attribute property". READABLE
@@ -115,7 +115,7 @@ public class SemanticQueryParityTest {
         return new Object[][]{
                 {"click mobile", "clickOnElement", "By.id: loginBtn", "clickLoginButton",
                         "android.widget.button", "com.app:id/loginBtn", "loginButton", "Login",
-                        "click press button login btn android.widget.button"},
+                        "click press login btn button android.widget.button"},
                 {"input mobile", "sendData", "By.id: userEmail", "setUserEmail",
                         "android.widget.edittext", "com.app:id/userEmail", "emailField", null,
                         "type input enter text user email android.widget.edittext field"},
@@ -155,9 +155,14 @@ public class SemanticQueryParityTest {
                 {"type token absorbed by dedup", "sendData", "By.id: userEmail", "setUserEmail",
                         "userEmail", "input", "textbox", "email",
                         "type input enter text user email textbox"},
-                {"role button absorbed by action expansion", "clickOnElement", "By.id: loginBtn",
+                {"click button via method/tag/role (deduped)", "clickOnElement", "By.id: loginBtn",
                         "clickLoginButton", "loginBtn", "button", "button", null,
-                        "click press button login btn"},
+                        "click press login btn button"},
+                // clickable DIV with role=button: 'button' now comes ONLY from the role slot (the
+                // action expansion no longer injects it), proving non-button clickables stay healable.
+                {"clickable div via role", "clickOnElement", "By.id: addToCart", "clickAddToCart",
+                        "addToCart", "div", "button", null,
+                        "click press add to cart div button"},
                 {"role status kept for readable", "getText", "By.id: message", "getStatusMessage",
                         "message", "div", "status", null,
                         "read text label value message status div"},

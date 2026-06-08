@@ -492,15 +492,18 @@ public class EllithiumAIEngine {
             if (!new java.io.File(pomPath).exists()) {
                 PomClassGenerator.createPomClass(pomPath, pomPackage, pomClass, locatorFields, methodBodies);
             } else {
-                // Inject fields and methods into existing class (allow uneven list lengths).
                 int max = Math.max(locatorFields.size(), methodBodies.size());
+                boolean allInjected = true;
                 for (int i = 0; i < max; i++) {
-                    String locatorField = i < locatorFields.size() ? locatorFields.get(i) : null;
-                    String fullMethod = i < methodBodies.size() ? methodBodies.get(i) : null;
+                    String locatorField    = i < locatorFields.size() ? locatorFields.get(i) : null;
+                    String fullMethod      = i < methodBodies.size()  ? methodBodies.get(i)  : null;
                     String methodSignature = fullMethod != null ? extractMethodSignature(fullMethod) : null;
-                    String methodBody = fullMethod != null ? extractMethodBody(fullMethod) : null;
-                    PomClassGenerator.injectIntoExistingPom(pomPath, locatorField, methodSignature, methodBody);
+                    String methodBody      = fullMethod != null ? extractMethodBody(fullMethod)      : null;
+                    if (!PomClassGenerator.injectIntoExistingPom(pomPath, locatorField, methodSignature, methodBody))
+                        allInjected = false;
                 }
+                if (!allInjected)
+                    Reporter.log("Partial POM injection — some members could not be added to " + pomPath, LogLevel.WARN);
             }
 
             // Generate TestNG test class with PROPER scaffolding.
@@ -590,7 +593,10 @@ public class EllithiumAIEngine {
             // @BeforeMethod — driver init + navigation
             content.append("    @BeforeMethod\n");
             content.append("    public void setUp() {\n");
-            content.append("        driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False);\n");
+            String headless = AIConfigLoader.getExecutionMode() == AIConfigLoader.ExecutionMode.CI
+                    ? "True" : "False";
+            content.append("        driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.")
+                   .append(headless).append(");\n");
             if (targetUrl != null && !targetUrl.isBlank()) {
                 content.append("        driver.get(\"").append(escapeJavaString(targetUrl)).append("\");\n");
             }

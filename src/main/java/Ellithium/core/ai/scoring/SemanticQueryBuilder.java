@@ -19,7 +19,7 @@ public class SemanticQueryBuilder {
 
     static {
         ACTION_EXPANSIONS.put("senddata",          "type input enter text");
-        ACTION_EXPANSIONS.put("clickonelement",     "click press button");
+        ACTION_EXPANSIONS.put("clickonelement",     "click press");
         ACTION_EXPANSIONS.put("tap",                "tap click press");
         ACTION_EXPANSIONS.put("doubletap",          "double tap click");
         ACTION_EXPANSIONS.put("doubleclick",        "double click press");
@@ -47,7 +47,7 @@ public class SemanticQueryBuilder {
         ACTION_EXPANSIONS.put("scroll",             "scroll swipe");
         ACTION_EXPANSIONS.put("movesliderto",       "slider range move");
         ACTION_EXPANSIONS.put("movesliderbyoffset", "slider range offset");
-        ACTION_EXPANSIONS.put("javascriptclick",    "click javascript button");
+        ACTION_EXPANSIONS.put("javascriptclick",    "click javascript");
         ACTION_EXPANSIONS.put("waitforvisibility",  "wait visible appear");
         ACTION_EXPANSIONS.put("waitforelement",     "wait element appear");
     }
@@ -214,7 +214,7 @@ public class SemanticQueryBuilder {
         switch (SemanticLocatorResolver.categorizeAction(actionType)) {
             case READABLE:  return "read text label value";
             case INPUT:     return "type input enter text";
-            case CLICKABLE: return "click press button";
+            case CLICKABLE: return "click press";
             case SELECT:    return "select dropdown option choose";
             default:        break;
         }

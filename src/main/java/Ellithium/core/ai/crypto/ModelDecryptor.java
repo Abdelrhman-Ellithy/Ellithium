@@ -1,20 +1,19 @@
 package Ellithium.core.ai.crypto;
 
-import Ellithium.Utilities.helpers.JarExtractor;
-import Ellithium.core.execution.Internal.Loader.StartUpLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.jar.JarFile;
 
 public class ModelDecryptor {
 
     static final String  MODEL_RESOURCE_PATH     = "/Ellithium-ai-model/model_quantized.onnx.enc";
     private static final String TOKENIZER_RESOURCE_PATH = "/Ellithium-ai-model/tokenizer.json";
     private static final String NATIVE_BASE_NAME        = "ellcrypto";
-    private static final String NATIVE_SUBDIR           = "native";
 
     private static volatile boolean nativeLoaded    = false;
     private static volatile boolean nativeAttempted = false;
@@ -49,15 +48,6 @@ public class ModelDecryptor {
     }
 
     public static boolean isModelResourcePresent() {
-        File jarFile = StartUpLoader.findJarFile();
-        if (jarFile != null && jarFile.exists()) {
-            File extracted = new File(jarFile.getParentFile(),
-                    MODEL_RESOURCE_PATH.substring(1).replace('/', File.separatorChar));
-            if (extracted.exists()) return true;
-            try (JarFile jar = new JarFile(jarFile)) {
-                if (jar.getJarEntry(MODEL_RESOURCE_PATH.substring(1)) != null) return true;
-            } catch (IOException ignored) {}
-        }
         return ModelDecryptor.class.getResourceAsStream(MODEL_RESOURCE_PATH) != null;
     }
 
@@ -73,20 +63,6 @@ public class ModelDecryptor {
             return false;
         }
 
-        String libFileName  = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
-        String jarEntryName = resourcePath.substring(1);
-
-        File jarFile = StartUpLoader.findJarFile();
-        if (jarFile != null && jarFile.exists()) {
-            File libFile = new File(new File(jarFile.getParentFile(), NATIVE_SUBDIR), libFileName);
-            if (!libFile.exists()) {
-                JarExtractor.extractFileFromJar(jarFile, jarEntryName, libFile);
-            }
-            if (libFile.exists()) {
-                return loadLibraryFile(libFile);
-            }
-        }
-
         byte[] libBytes = loadResource(resourcePath);
         if (libBytes == null) {
             Reporter.log("[TIER 2] ModelDecryptor: native library not found: " + resourcePath, LogLevel.WARN);
@@ -95,20 +71,16 @@ public class ModelDecryptor {
         try {
             String suffix = resourcePath.substring(resourcePath.lastIndexOf('.'));
             java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
-            // Register a shutdown hook instead of relying on deleteOnExit(), which is
-            // unreliable on Windows and silently skipped on abnormal JVM exit (SIGKILL, OOM).
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
             }, "ell-native-cleanup"));
-            // Restrict to owner-only before writing, so other processes on a shared
-            // system (e.g., shared Linux CI runner) cannot read the native library.
             try {
                 java.nio.file.attribute.PosixFileAttributeView view =
                         Files.getFileAttributeView(tmp, java.nio.file.attribute.PosixFileAttributeView.class);
                 if (view != null) {
                     view.setPermissions(java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
                 }
-            } catch (Exception ignored) {} // Windows: no POSIX attributes; silently skip
+            } catch (Exception ignored) {}
             Files.write(tmp, libBytes);
             return loadLibraryFile(tmp.toFile());
         } catch (IOException e) {
@@ -148,24 +120,6 @@ public class ModelDecryptor {
     }
 
     private static byte[] loadResource(String path) {
-        String entryName = path.startsWith("/") ? path.substring(1) : path;
-
-        File jarFile = StartUpLoader.findJarFile();
-        if (jarFile != null && jarFile.exists()) {
-            File extracted = new File(jarFile.getParentFile(), entryName.replace('/', File.separatorChar));
-            if (!extracted.exists()) {
-                JarExtractor.extractFileFromJar(jarFile, entryName, extracted);
-            }
-            if (extracted.exists()) {
-                try {
-                    return Files.readAllBytes(extracted.toPath());
-                } catch (IOException e) {
-                    Reporter.log("[TIER 2] ModelDecryptor: failed to read " + extracted.getAbsolutePath()
-                            + ": " + e.getMessage(), LogLevel.WARN);
-                }
-            }
-        }
-
         try (InputStream is = ModelDecryptor.class.getResourceAsStream(path)) {
             if (is == null) return null;
             return readAllBytes(is);

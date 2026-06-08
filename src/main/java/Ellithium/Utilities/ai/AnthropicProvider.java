@@ -36,7 +36,7 @@ public class AnthropicProvider implements LLMProvider {
         try {
             JSONObject payload = new JSONObject();
             payload.put("model", model);
-            payload.put("max_tokens", 1024);
+            payload.put("max_tokens", 8192);
             payload.put("temperature", 0.0);
             payload.put("system", systemPrompt);
 

@@ -11,12 +11,26 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class AISelfHealerTest {
+
+    @BeforeMethod
+    public void resetState() {
+        AISelfHealer.resetForSuite();
+        AISelfHealer.initializeForThread(null, null);
+    }
+
+    @AfterMethod
+    public void cleanupState() {
+        AISelfHealer.initializeForThread(null, null);
+        AISelfHealer.resetForSuite();
+    }
 
     @Test
     public void testAttemptHeal_WithDisabledStrategy_ReturnsNull() {

@@ -18,8 +18,13 @@ public class LLMProviderFactory {
         String model = AIConfigLoader.getLlmModel();
 
         if (apiKey == null || apiKey.isEmpty()) {
-            Reporter.log("AI API Key is missing or default! AI self-healing will be disabled.", LogLevel.WARN);
-            return null;
+            if ("local".equals(providerName)) {
+                Reporter.log("Local LLM: no API key set — using placeholder bearer token", LogLevel.INFO_BLUE);
+                apiKey = "local";
+            } else {
+                Reporter.log("AI API Key is missing! AI self-healing will be disabled.", LogLevel.WARN);
+                return null;
+            }
         }
 
         String providerClass = AIConfigLoader.getLlmProviderClass();

@@ -222,7 +222,6 @@ public class LiveContextGenerator {
      */
     private static void parseAndExecute(WebDriver driver, String llmResponse) {
         try {
-            // Strip markdown fences if present
             String cleaned = llmResponse.trim();
             if (cleaned.startsWith("```")) {
                 cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\n?", "").replaceAll("\\n?```$", "").trim();
@@ -235,40 +234,50 @@ public class LiveContextGenerator {
                 JsonArray steps = json.getAsJsonArray("executionSteps");
                 Reporter.log("LiveContextGenerator: Executing " + steps.size() + " steps on live driver", LogLevel.INFO_YELLOW);
 
+                var driverActions = new Ellithium.Utilities.interactions.DriverActions<>(driver);
                 for (int i = 0; i < steps.size(); i++) {
-                    JsonObject step = steps.get(i).getAsJsonObject();
-                    executeStep(driver, step, i + 1);
+                    executeStep(driver, driverActions, steps.get(i).getAsJsonObject(), i + 1);
                 }
-                Reporter.log("LiveContextGenerator: All " + steps.size() + " steps executed successfully", LogLevel.INFO_GREEN);
+                Reporter.log("LiveContextGenerator: All " + steps.size() + " steps executed", LogLevel.INFO_GREEN);
             }
 
             // 2. Save POM to disk
-            String pomClass = getStringOrNull(json, "pomClass");
+            String pomClass   = getStringOrNull(json, "pomClass");
             String pomPackage = getStringOrNull(json, "pomPackage");
             if (pomClass != null && pomPackage != null) {
                 if (!isValidJavaIdentifier(pomClass) || !isValidJavaPackage(pomPackage)) {
-                    Reporter.log("LiveContextGenerator: LLM returned invalid class/package name"
-                            + " — skipping POM write", LogLevel.ERROR);
+                    Reporter.log("LiveContextGenerator: LLM returned invalid class/package name — skipping POM write", LogLevel.ERROR);
                     return;
                 }
-                List<String> locatorFields = jsonArrayToList(json, "locatorFields");
-                List<String> methodBodies = jsonArrayToList(json, "methodBodies");
 
                 String pomPath = "src/main/java/" + pomPackage.replace('.', '/') + "/" + pomClass + ".java";
+                java.nio.file.Path resolved = java.nio.file.Paths.get(pomPath).toAbsolutePath().normalize();
+                java.nio.file.Path base     = java.nio.file.Paths.get("src/main/java").toAbsolutePath().normalize();
+                if (!resolved.startsWith(base)) {
+                    Reporter.log("LiveContextGenerator: constructed path escapes src/main/java — skipping POM write", LogLevel.ERROR);
+                    return;
+                }
+
+                List<String> locatorFields = jsonArrayToList(json, "locatorFields");
+                List<String> methodBodies  = jsonArrayToList(json, "methodBodies");
+
                 if (!new java.io.File(pomPath).exists()) {
                     PomClassGenerator.createPomClass(pomPath, pomPackage, pomClass, locatorFields, methodBodies);
                     Reporter.log("LiveContextGenerator: POM saved to " + pomPath, LogLevel.INFO_GREEN);
                 } else {
-                    // Inject into existing POM
                     int max = Math.max(locatorFields.size(), methodBodies.size());
+                    boolean allInjected = true;
                     for (int i = 0; i < max; i++) {
-                        String field = i < locatorFields.size() ? locatorFields.get(i) : null;
-                        String method = i < methodBodies.size() ? methodBodies.get(i) : null;
-                        String sig = method != null ? extractMethodSignature(method) : null;
-                        String body = method != null ? extractMethodBody(method) : null;
-                        PomClassGenerator.injectIntoExistingPom(pomPath, field, sig, body);
+                        String field  = i < locatorFields.size() ? locatorFields.get(i) : null;
+                        String method = i < methodBodies.size()  ? methodBodies.get(i)  : null;
+                        String sig    = method != null ? extractMethodSignature(method) : null;
+                        String body   = method != null ? extractMethodBody(method)      : null;
+                        if (!PomClassGenerator.injectIntoExistingPom(pomPath, field, sig, body)) allInjected = false;
                     }
-                    Reporter.log("LiveContextGenerator: Injected into existing POM: " + pomPath, LogLevel.INFO_GREEN);
+                    if (!allInjected)
+                        Reporter.log("LiveContextGenerator: some members could not be injected into " + pomPath, LogLevel.WARN);
+                    else
+                        Reporter.log("LiveContextGenerator: Injected into existing POM: " + pomPath, LogLevel.INFO_GREEN);
                 }
             }
 
@@ -277,15 +286,12 @@ public class LiveContextGenerator {
         }
     }
 
-    /**
-     * Executes a single step on the live driver.
-     *
-     * <p>Supported actions: sendData, click, selectByText, navigate, getText</p>
-     */
-    private static void executeStep(WebDriver driver, JsonObject step, int stepNumber) {
-        String action = getStringOrNull(step, "action");
+    private static void executeStep(WebDriver driver,
+                                    Ellithium.Utilities.interactions.DriverActions<?> driverActions,
+                                    JsonObject step, int stepNumber) {
+        String action      = getStringOrNull(step, "action");
         String locatorExpr = getStringOrNull(step, "locator");
-        String data = getStringOrNull(step, "data");
+        String data        = getStringOrNull(step, "data");
 
         if (action == null) {
             Reporter.log("LiveContextGenerator: Step " + stepNumber + " has no action — skipping", LogLevel.WARN);
@@ -298,7 +304,6 @@ public class LiveContextGenerator {
 
         try {
             By locator = locatorExpr != null ? parseLocator(locatorExpr) : null;
-            var driverActions = new Ellithium.Utilities.interactions.DriverActions<>(driver);
 
             switch (canonicalAction(action)) {
                 case "input" -> {
@@ -308,28 +313,44 @@ public class LiveContextGenerator {
                     }
                 }
                 case "click" -> {
-                    if (locator != null) {
-                        driverActions.elements().clickOnElement(locator);
-                    }
+                    if (locator != null) driverActions.elements().clickOnElement(locator);
                 }
                 case "select" -> {
-                    if (locator != null && data != null) {
+                    if (locator != null && data != null)
                         driverActions.select().selectDropdownByText(locator, data);
-                    }
                 }
                 case "navigate" -> {
-                    if (data != null) {
-                        driverActions.navigation().navigateToUrl(data);
-                    }
+                    if (data != null) driverActions.navigation().navigateToUrl(data);
                 }
                 case "gettext" -> {
                     if (locator != null) {
                         String text = driverActions.elements().getText(locator);
-                        Reporter.log("LiveContextGenerator: getText result = \"" + text + "\"", LogLevel.INFO_GREEN);
+                        Reporter.log("LiveContextGenerator: getText = \"" + text + "\"", LogLevel.INFO_GREEN);
                     }
                 }
+                case "hover" -> {
+                    if (locator != null) driverActions.mouse().hoverOverElement(locator);
+                }
+                case "doubleclick" -> {
+                    if (locator != null) driverActions.mouse().doubleClick(locator);
+                }
+                case "rightclick" -> {
+                    if (locator != null) driverActions.mouse().rightClick(locator);
+                }
+                case "acceptalert"  -> driverActions.alerts().accept();
+                case "dismissalert" -> driverActions.alerts().dismiss();
+                case "getalerttext" -> {
+                    String txt = driverActions.alerts().getText();
+                    Reporter.log("LiveContextGenerator: alert text = \"" + txt + "\"", LogLevel.INFO_GREEN);
+                }
+                case "switchtoframe" -> {
+                    if (locator != null) driverActions.frames().switchToFrameByElement(locator);
+                }
+                case "switchtodefault" -> driverActions.frames().switchToDefaultContent();
+                case "scrollto" -> {
+                    if (locator != null) driverActions.JSActions().scrollToElement(locator);
+                }
                 case "wait" -> {
-                    // Simple wait — allow AI to request a page load wait
                     try {
                         long waitMs = data != null ? Long.parseLong(data) : 2000;
                         Thread.sleep(Math.min(waitMs, 10000));
@@ -337,7 +358,11 @@ public class LiveContextGenerator {
                         Thread.currentThread().interrupt();
                     }
                 }
-                default -> Reporter.log("LiveContextGenerator: Unknown action '" + action + "' — skipping", LogLevel.WARN);
+                default -> Reporter.log("LiveContextGenerator: Step " + stepNumber
+                        + " — unrecognised action '" + action + "'. Supported: input, click, select, "
+                        + "navigate, gettext, hover, doubleClick, rightClick, acceptAlert, dismissAlert, "
+                        + "getAlertText, switchToFrame, switchToDefault, scrollTo, wait. "
+                        + "Add it to executeStep() to support it.", LogLevel.ERROR);
             }
         } catch (Exception e) {
             Reporter.log("LiveContextGenerator: Step " + stepNumber + " failed: " + e.getMessage(), LogLevel.ERROR);
@@ -348,20 +373,42 @@ public class LiveContextGenerator {
     // Canonical action keys match PomCodeEmitter.statementFor() switch labels so that
     // live execution and code generation always agree on which API call to emit.
     private static final java.util.Map<String, String> ACTION_ALIASES = java.util.Map.ofEntries(
-            java.util.Map.entry("senddata", "input"),
-            java.util.Map.entry("type",     "input"),
-            java.util.Map.entry("enter",    "input"),
-            java.util.Map.entry("press",    "click"),
-            java.util.Map.entry("tap",      "click"),
-            java.util.Map.entry("select",   "select"),
-            java.util.Map.entry("selectbytext", "select"),
-            java.util.Map.entry("navigate", "navigate"),
-            java.util.Map.entry("goto",     "navigate"),
-            java.util.Map.entry("open",     "navigate"),
-            java.util.Map.entry("gettext",  "gettext"),
-            java.util.Map.entry("read",     "gettext"),
-            java.util.Map.entry("verify",   "gettext"),
-            java.util.Map.entry("wait",     "wait")
+            java.util.Map.entry("senddata",         "input"),
+            java.util.Map.entry("type",             "input"),
+            java.util.Map.entry("enter",            "input"),
+            java.util.Map.entry("fill",             "input"),
+            java.util.Map.entry("press",            "click"),
+            java.util.Map.entry("tap",              "click"),
+            java.util.Map.entry("select",           "select"),
+            java.util.Map.entry("selectbytext",     "select"),
+            java.util.Map.entry("navigate",         "navigate"),
+            java.util.Map.entry("goto",             "navigate"),
+            java.util.Map.entry("open",             "navigate"),
+            java.util.Map.entry("gettext",          "gettext"),
+            java.util.Map.entry("read",             "gettext"),
+            java.util.Map.entry("verify",           "gettext"),
+            java.util.Map.entry("hover",            "hover"),
+            java.util.Map.entry("hoverover",        "hover"),
+            java.util.Map.entry("mouseover",        "hover"),
+            java.util.Map.entry("doubleclick",      "doubleclick"),
+            java.util.Map.entry("dblclick",         "doubleclick"),
+            java.util.Map.entry("rightclick",       "rightclick"),
+            java.util.Map.entry("contextclick",     "rightclick"),
+            java.util.Map.entry("acceptalert",      "acceptalert"),
+            java.util.Map.entry("accept",           "acceptalert"),
+            java.util.Map.entry("dismissalert",     "dismissalert"),
+            java.util.Map.entry("dismiss",          "dismissalert"),
+            java.util.Map.entry("getalerttext",     "getalerttext"),
+            java.util.Map.entry("switchtoframe",    "switchtoframe"),
+            java.util.Map.entry("frame",            "switchtoframe"),
+            java.util.Map.entry("switchtodefault",  "switchtodefault"),
+            java.util.Map.entry("defaultcontent",   "switchtodefault"),
+            java.util.Map.entry("scrollto",         "scrollto"),
+            java.util.Map.entry("scroll",           "scrollto"),
+            java.util.Map.entry("scrolltoelement",  "scrollto"),
+            java.util.Map.entry("wait",             "wait"),
+            java.util.Map.entry("sleep",            "wait"),
+            java.util.Map.entry("pause",            "wait")
     );
 
     private static String canonicalAction(String raw) {

@@ -109,7 +109,19 @@ public class TraceabilityManager {
     private static boolean sameKey(TraceabilityRecord r, String testId, String sourceFile) {
         if (r == null || r.getSource() == null) return false;
         return java.util.Objects.equals(r.getSource().getTestId(), testId)
-                && java.util.Objects.equals(r.getSource().getSourceFile(), sourceFile);
+                && java.util.Objects.equals(normalizeSourceFile(r.getSource().getSourceFile()),
+                                            normalizeSourceFile(sourceFile));
+    }
+
+    private static String normalizeSourceFile(String path) {
+        if (path == null) return null;
+        try {
+            java.nio.file.Path root = java.nio.file.Paths.get("").toAbsolutePath();
+            java.nio.file.Path abs  = java.nio.file.Paths.get(path).toAbsolutePath().normalize();
+            return root.relativize(abs).toString().replace('\\', '/');
+        } catch (Exception e) {
+            return path;
+        }
     }
 
     /**
