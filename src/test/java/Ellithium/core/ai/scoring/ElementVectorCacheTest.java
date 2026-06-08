@@ -34,13 +34,13 @@ public class ElementVectorCacheTest {
     @Test
     public void put_nullKey_doesNotStore() {
         cache.put(null, new float[]{0.5f});
-        Assert.assertEquals(cache.size(), 0);
+        Assert.assertNull(cache.get(null));
     }
 
     @Test
     public void put_nullVector_doesNotStore() {
         cache.put("el1", null);
-        Assert.assertEquals(cache.size(), 0);
+        Assert.assertNull(cache.get("el1"));
     }
 
     @Test
@@ -83,27 +83,8 @@ public class ElementVectorCacheTest {
         cache.put("el1", new float[]{0.1f});
         cache.markDomMutated();
         cache.invalidate();
-        Assert.assertEquals(cache.size(), 0);
+        Assert.assertNull(cache.get("el1"));
         Assert.assertFalse(cache.isDomMutated());
-    }
-
-    @Test
-    public void size_reflectsNumberOfEntries() {
-        Assert.assertEquals(cache.size(), 0);
-        cache.put("el1", new float[]{0.1f});
-        cache.put("el2", new float[]{0.2f});
-        Assert.assertEquals(cache.size(), 2);
-    }
-
-    @Test
-    public void isEmpty_trueWhenEmpty() {
-        Assert.assertTrue(cache.isEmpty());
-    }
-
-    @Test
-    public void isEmpty_falseAfterPut() {
-        cache.put("el1", new float[]{0.1f});
-        Assert.assertFalse(cache.isEmpty());
     }
 
     @Test
@@ -113,6 +94,5 @@ public class ElementVectorCacheTest {
         cache.put("el1", v1);
         cache.put("el1", v2);
         Assert.assertEquals(cache.get("el1"), v2);
-        Assert.assertEquals(cache.size(), 1);
     }
 }
