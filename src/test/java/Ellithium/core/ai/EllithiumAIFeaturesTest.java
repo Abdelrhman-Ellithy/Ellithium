@@ -1,4 +1,4 @@
-package AI;
+package Ellithium.core.ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
 import Ellithium.Utilities.ai.GeminiProvider;
@@ -54,12 +54,10 @@ public class EllithiumAIFeaturesTest {
         //Assert.assertTrue(message.contains("You logged into a secure area!"), "Message was: " + message);
 
         // 3. Demonstrate Live In-Context Generation
-        // Using the live, authenticated driver to click the Logout button
-        String naturalLanguageSteps = "return to main page which is the same base url without login and then navigate to Dropdown page by clicking on dropdown link text";
+        String naturalLanguageSteps = "navigate to https://the-internet.herokuapp.com/ and then click on the link with text Dropdown to go to the dropdown page";
         EllithiumAIEngine.continueFrom(driver, llmProvider, naturalLanguageSteps);
 
-        // Verify we are back on the login page by checking the URL or title
-        Assert.assertTrue(driver.getCurrentUrl().contains("/login"), "Expected to be back on the login page.");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/dropdown"), "Expected to be on the dropdown page but was: " + driver.getCurrentUrl());
     }
 
     @AfterMethod

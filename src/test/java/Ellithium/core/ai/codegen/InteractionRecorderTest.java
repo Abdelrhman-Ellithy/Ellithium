@@ -3,6 +3,9 @@ package Ellithium.core.ai.codegen;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import Ellithium.core.ai.codegen.InteractionRecorder;
+import Ellithium.core.ai.codegen.LocatorCandidate;
+import Ellithium.core.ai.codegen.RecordedStep;
 
 import org.openqa.selenium.By;
 import org.testng.Assert;

@@ -4,6 +4,9 @@ import org.openqa.selenium.By;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import Ellithium.core.ai.codegen.LocatorCandidate;
+import Ellithium.core.ai.codegen.RecordedStep;
+
 import java.util.List;
 
 public class RecordedStepTest {

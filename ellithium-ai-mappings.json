@@ -1,0 +1,23 @@
+[
+  {
+    "source": {
+      "testId": "TC-LOGIN-02",
+      "sourceFile": "C:\\Users\\lenovo\\IdeaProjects\\Ellithium\\src\\test\\resources\\testcases\\manual-login-test.json",
+      "description": "User logs in with username \u0027tomsmith\u0027 and password \u0027SuperSecretPassword!\u0027 successfully. Create the POM class with the exact name \u0027AILoginPage\u0027.",
+      "targetUrl": "https://the-internet.herokuapp.com/login"
+    },
+    "assets": {
+      "targetPackage": "tests",
+      "testClass": "LoginTest",
+      "testMethod": "testLoginWithValidCredentials",
+      "pomClass": "AILoginPage",
+      "pomMethods": [
+        "enterUsername",
+        "enterPassword",
+        "clickLogin",
+        "login"
+      ]
+    },
+    "generatedAt": "Jun 8, 2026, 6:28:57 PM"
+  }
+]

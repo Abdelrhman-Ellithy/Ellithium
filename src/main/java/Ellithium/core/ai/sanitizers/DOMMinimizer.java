@@ -61,8 +61,16 @@ public class DOMMinimizer {
     private static final Pattern NOSCRIPT_TAG   = Pattern.compile("<noscript[^>]*>[\\s\\S]*?</noscript>", Pattern.CASE_INSENSITIVE);
     private static final Pattern COMMENT        = Pattern.compile("<!--[\\s\\S]*?-->",                  Pattern.CASE_INSENSITIVE);
 
+    // Hidden element removal — strips elements that carry display:none, visibility:hidden, or the hidden attribute
+    private static final Pattern HIDDEN_STYLE_TAG = Pattern.compile(
+            "<[a-zA-Z][^>]*style\\s*=\\s*(?:'[^']*(?:display\\s*:\\s*none|visibility\\s*:\\s*hidden)[^']*'|\"[^\"]*(?:display\\s*:\\s*none|visibility\\s*:\\s*hidden)[^\"]*\")[^>]*>[\\s\\S]*?</[a-zA-Z]+>",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern HIDDEN_ATTR_TAG = Pattern.compile(
+            "<[a-zA-Z][^>]*\\shidden(?:\\s[^>]*)?>.*?</[a-zA-Z]+>",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     // Attribute noise
-    private static final Pattern STYLE_ATTR     = Pattern.compile("\\s+style\\s*=\\s*\"[^\"]*\"",       Pattern.CASE_INSENSITIVE);
+    private static final Pattern STYLE_ATTR     = Pattern.compile("\\s+style\\s*=\\s*(?:\"[^\"]*\"|'[^']*')", Pattern.CASE_INSENSITIVE);
     private static final Pattern EVENT_ATTR     = Pattern.compile("\\s+on\\w+\\s*=\\s*\"[^\"]*\"",      Pattern.CASE_INSENSITIVE);
     private static final Pattern LONG_DATA_ATTR = Pattern.compile("\\s+data-[\\w-]+\\s*=\\s*\"[^\"]{100,}\"", Pattern.CASE_INSENSITIVE);
 
@@ -106,6 +114,10 @@ public class DOMMinimizer {
 
         int originalLength = rawSource.length();
         String cleaned = rawSource;
+
+        // Phase 0: Remove hidden elements before any other processing
+        cleaned = HIDDEN_STYLE_TAG.matcher(cleaned).replaceAll("");
+        cleaned = HIDDEN_ATTR_TAG.matcher(cleaned).replaceAll("");
 
         // Phase 1: Strip completely useless tags
         cleaned = SCRIPT_TAG.matcher(cleaned).replaceAll("");

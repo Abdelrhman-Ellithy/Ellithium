@@ -1,6 +1,5 @@
-package AI;
+package Ellithium.core.ai;
 
-import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.HealingTelemetryStore.TelemetryRecord;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;

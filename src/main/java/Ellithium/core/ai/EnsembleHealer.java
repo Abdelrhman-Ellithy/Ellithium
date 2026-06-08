@@ -540,7 +540,8 @@ public class EnsembleHealer {
         // dampen f2's dominance proportionally so cosine disagreement has real weight.
         // Threshold matches GATE_RESCUE_COSINE_FLOOR so confidence and gate share the same boundary.
         if (f3 < GATE_RESCUE_COSINE_FLOOR && f2 > f3) {
-            double damp = f3 / GATE_RESCUE_COSINE_FLOOR;   // 0.0 at f3=0 → 1.0 at floor (no dampening)
+            if (f2 >= 1.0 - 1e-9) return 1.0;
+            double damp = f3 / GATE_RESCUE_COSINE_FLOOR;
             return f3 + (base - f3) * damp;
         }
         return base;

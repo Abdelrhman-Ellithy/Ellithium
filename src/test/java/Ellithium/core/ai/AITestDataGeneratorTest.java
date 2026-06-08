@@ -1,4 +1,4 @@
-package AI;
+package Ellithium.core.ai;
 
 import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.core.ai.generators.AITestDataGenerator;

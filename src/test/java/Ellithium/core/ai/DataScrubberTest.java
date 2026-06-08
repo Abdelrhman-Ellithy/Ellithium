@@ -1,4 +1,4 @@
-package AI;
+package Ellithium.core.ai;
 
 import Ellithium.core.ai.sanitizers.DataScrubber;
 import org.testng.Assert;

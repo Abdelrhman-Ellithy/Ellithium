@@ -401,9 +401,32 @@ public final class PomCodeEmitter {
         return String.join(", ", typed);
     }
 
+    private static String fallbackName(String tag, String action) {
+        String t = tag != null ? tag.toLowerCase() : "el";
+        if ("click".equals(action) || "doubleClick".equals(action) || "hover".equals(action)) {
+            return switch (t) {
+                case "button" -> "btn";
+                case "input"  -> "input";
+                case "a"      -> "link";
+                case "select" -> "dropdown";
+                case "img"    -> "image";
+                default       -> t + " btn";
+            };
+        }
+        if ("input".equals(action) || "sendData".equals(action)) {
+            return switch (t) {
+                case "textarea" -> "textArea";
+                case "input"    -> "inputField";
+                default         -> t + " input";
+            };
+        }
+        if ("select".equals(action) || "deselectByText".equals(action)) return "dropdown";
+        return t + (action != null ? " " + action : "");
+    }
+
     private static String identifier(String elementName, String tag, String action) {
         String src = (elementName != null && !elementName.isBlank()) ? elementName
-                : ((tag != null ? tag : "el") + " " + (action != null ? action : ""));
+                : fallbackName(tag, action);
         String[] words = src.trim().toLowerCase().split("[^a-z0-9]+");
         StringBuilder sb = new StringBuilder();
         for (String w : words) {

@@ -17,9 +17,10 @@ import Ellithium.core.ai.sanitizers.DOMMinimizer;
 import Ellithium.core.ai.codegen.PomCodeEmitter;
 import Ellithium.core.ai.codegen.RecordedStep;
 import Ellithium.core.ai.generators.LiveContextGenerator;
-import Ellithium.core.driver.DriverFactory;
-import Ellithium.core.driver.HeadlessMode;
-import Ellithium.core.driver.LocalDriverType;
+import org.openqa.selenium.PageLoadStrategy;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import java.util.concurrent.atomic.AtomicReference;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.JsonObject;
@@ -366,50 +367,77 @@ public class EllithiumAIEngine {
 
     // ──────────────────────── Live DOM Capture ────────────────────────
 
-    /**
-     * Opens a headless Chrome browser, navigates to the URL, captures the page source,
-     * minimizes it, and closes the browser. This provides real DOM context to the LLM
-     * so it generates locators that actually exist on the page.
-     *
-     * @param url The target URL to capture
-     * @return Minimized DOM string, or null if capture failed
-     */
+    private static final AtomicReference<WebDriver> DOM_DRIVER = new AtomicReference<>(null);
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            WebDriver d = DOM_DRIVER.getAndSet(null);
+            if (d != null) { try { d.quit(); } catch (Exception ignored) {} }
+        }, "ellithium-dom-capture-shutdown"));
+    }
+
+    private static WebDriver getOrCreateDomDriver() {
+        WebDriver existing = DOM_DRIVER.get();
+        if (existing != null) {
+            try { existing.getCurrentUrl(); return existing; } catch (Exception e) {
+                DOM_DRIVER.compareAndSet(existing, null);
+                try { existing.quit(); } catch (Exception ignored) {}
+            }
+        }
+        ChromeOptions opts = new ChromeOptions();
+        opts.addArguments(
+                "--headless=new", "--no-sandbox", "--disable-dev-shm-usage",
+                "--window-size=1920,1080", "--disable-gpu", "--mute-audio",
+                "--disable-extensions", "--disable-background-networking",
+                "--disable-default-apps"
+        );
+        opts.setPageLoadStrategy(PageLoadStrategy.EAGER);
+        ChromeDriver d = new ChromeDriver(opts);
+        if (!DOM_DRIVER.compareAndSet(null, d)) {
+            try { d.quit(); } catch (Exception ignored) {}
+        }
+        return DOM_DRIVER.get();
+    }
+
     private String captureLiveDom(String url) {
-        WebDriver headlessDriver = null;
         try {
             Reporter.log("Live DOM Grounding: Capturing DOM from " + url, LogLevel.INFO_BLUE);
 
-            // Use Ellithium's DriverFactory for headless Chrome
-            headlessDriver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.True);
-            headlessDriver.get(url);
+            WebDriver live = InteractionRecorder.getRecorderDriver();
+            if (live != null) {
+                try {
+                    String cur = live.getCurrentUrl();
+                    if (cur != null && (cur.equals(url) || cur.startsWith(url))) {
+                        return extractDom(live, url);
+                    }
+                } catch (Exception ignored) {}
+            }
 
-            // Wait for document.readyState == "complete" before capturing DOM.
-            final WebDriver d = headlessDriver;
-            try {
-                new org.openqa.selenium.support.ui.WebDriverWait(d, java.time.Duration.ofSeconds(5),
-                        java.time.Duration.ofMillis(200))
-                        .until(driver2 -> "complete".equals(
-                                ((org.openqa.selenium.JavascriptExecutor) driver2)
-                                        .executeScript("return document.readyState")));
-            } catch (Exception ignored) {}
-
-            // Use AX tree (universal, works on all browsers) with HTML fallback
-            String optimizedDom = DOMMinimizer
-                    .getOptimalDOMRepresentation(headlessDriver);
-            String scrubbed = DataScrubber.scrub(optimizedDom);
-
-            Reporter.log("Live DOM Grounding: Captured " + scrubbed.length() + " chars from " + url, LogLevel.INFO_GREEN);
-            return scrubbed;
+            WebDriver d = getOrCreateDomDriver();
+            if (d == null) return null;
+            d.get(url);
+            return extractDom(d, url);
 
         } catch (Exception e) {
+            WebDriver bad = DOM_DRIVER.getAndSet(null);
+            if (bad != null) { try { bad.quit(); } catch (Exception ignored) {} }
             Reporter.log("Live DOM Grounding failed for " + url + ": " + e.getMessage()
                     + " — proceeding without DOM context", LogLevel.WARN);
             return null;
-        } finally {
-            if (headlessDriver != null) {
-                try { headlessDriver.quit(); } catch (Exception ignored) {}
-            }
         }
+    }
+
+    private String extractDom(WebDriver d, String url) {
+        try {
+            new org.openqa.selenium.support.ui.WebDriverWait(d, java.time.Duration.ofSeconds(2),
+                    java.time.Duration.ofMillis(150))
+                    .until(driver2 -> !"loading".equals(
+                            ((org.openqa.selenium.JavascriptExecutor) driver2)
+                                    .executeScript("return document.readyState")));
+        } catch (Exception ignored) {}
+        String scrubbed = DataScrubber.scrub(DOMMinimizer.getOptimalDOMRepresentation(d));
+        Reporter.log("Live DOM Grounding: Captured " + scrubbed.length() + " chars from " + url, LogLevel.INFO_GREEN);
+        return scrubbed;
     }
 
     // ──────────────────────── Response Parsing & File Generation ────────────────────────

@@ -117,6 +117,10 @@ public final class InteractionRecorder {
         }
     }
 
+    public static WebDriver getRecorderDriver() {
+        return driverAlive() ? driver : null;
+    }
+
     private static boolean driverAlive() {
         WebDriver d = driver;
         if (d == null) return false;
@@ -285,7 +289,8 @@ public final class InteractionRecorder {
                     while (urlHistory.size() > urlIndex + 1) urlHistory.remove(urlHistory.size() - 1);
                     urlHistory.add(url);
                     urlIndex = urlHistory.size() - 1;
-                    if (!actionInduced && !paused) {
+                    boolean autoNav = isProgNav() || (STEPS.isEmpty() && navHintEpoch == 0L);
+                    if (!actionInduced && !paused && !autoNav) {
                         STEPS.add(new RecordedStep("nav-" + ts, "navigate", url, null, null, List.of()));
                     }
                 }
@@ -305,6 +310,16 @@ public final class InteractionRecorder {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static boolean isProgNav() {
+        if (!(driver instanceof JavascriptExecutor js)) return false;
+        try {
+            Object v = js.executeScript(
+                    "var t=window.__ellProgNavTs||0; window.__ellProgNavTs=0;"
+                    + "return t>0&&(Date.now()-t)<3000;");
+            return Boolean.TRUE.equals(v);
+        } catch (Exception e) { return false; }
     }
 
     private static boolean isBlankUrl(String u) {
@@ -482,6 +497,8 @@ public final class InteractionRecorder {
         startUrl = null;
         lastUrl = null;
         navHintEpoch = 0L;
+        urlHistory.clear();
+        urlIndex = -1;
         lastCodeRenderMs = 0L;
         cachedCodePreview = "";
         recording = false;
@@ -493,7 +510,19 @@ public final class InteractionRecorder {
             + " var W=window;"
             + " if(!W.__ellRecInit){ W.__ellRecInit=true; W.__ellMode=pick?'pick':'record'; W.__ellStop=false;"
             + "   W.__ellPaused=(function(){try{return localStorage.getItem('__ellPaused')==='1';}catch(e){return false;}})();"
-            + "   W.__ellLastVal=new WeakMap(); }"
+            + "   W.__ellLastVal=new WeakMap(); W.__ellProgNavTs=0; W.__ellLastClickTs=W.__ellLastClickTs||0;"
+            + "   (function(){"
+            + "     function markProg(){ if((Date.now()-W.__ellLastClickTs)>600) W.__ellProgNavTs=Date.now(); }"
+            + "     try{ var _ph=history.pushState.bind(history),_rh=history.replaceState.bind(history);"
+            + "       history.pushState=function(){markProg();return _ph.apply(history,arguments);};"
+            + "       history.replaceState=function(){markProg();return _rh.apply(history,arguments);};"
+            + "     }catch(e){}"
+            + "     try{ var _ld=Object.getOwnPropertyDescriptor(Location.prototype,'href');"
+            + "       if(_ld&&_ld.set) Object.defineProperty(Location.prototype,'href',{get:_ld.get,"
+            + "         set:function(u){markProg();_ld.set.call(this,u);},configurable:true});"
+            + "     }catch(e){}"
+            + "   })();"
+            + " }"
             + " function LOG(){ try{return JSON.parse(localStorage.getItem('__ellRecLog')||'[]');}catch(e){return [];} }"
             + " function SAVE(a){ try{localStorage.setItem('__ellRecLog',JSON.stringify(a));}catch(e){} }"
             + " function emit(r){ var a=LOG(); a.push(r); SAVE(a); }"
@@ -607,7 +636,7 @@ public final class InteractionRecorder {
             + " function disarm(){ W.__ellMode='record'; var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed'); }"
             + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v); emitEl('input',el,v,frame); }"
             + " function attach(doc,frame){ if(!doc||doc.__ellAttached)return; doc.__ellAttached=true;"
-            + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw))return; var m=W.__ellMode||'record';"
+            + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw)||W.__ellResizing)return; var m=W.__ellMode||'record';"
             + "     if(m==='inspect'){e.preventDefault();e.stopPropagation();emitEl('inspect',raw,null,frame);return;}"
             + "     if(m==='assertVisible'){e.preventDefault();e.stopPropagation();emitEl('assertVisible',raw,null,frame);disarm();return;}"
             + "     if(m==='assertText'){e.preventDefault();e.stopPropagation();emitEl('assertText',raw,((raw.innerText||raw.textContent||'').trim()).slice(0,80),frame);disarm();return;}"
@@ -729,11 +758,19 @@ public final class InteractionRecorder {
             + "font-size:11px;line-height:1.5;color:#c9d1d9\"></pre>'"
             + "  +'</div>';"
             + " document.body.appendChild(bar);"
+            + " bar.addEventListener('mousedown',function(e){"
+            + "   if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'&&e.target.tagName!=='SELECT') e.preventDefault();"
+            + " },true);"
             + " (function(){"
-            + "   var rs=[['ell-rs-left','position:absolute;left:0;top:10px;bottom:10px;width:5px;cursor:ew-resize;z-index:3;border-radius:0 3px 3px 0'],"
-            + "            ['ell-rs-bottom','position:absolute;bottom:0;left:10px;right:10px;height:5px;cursor:ns-resize;z-index:3;border-radius:3px 3px 0 0'],"
-            + "            ['ell-rs-corner','position:absolute;bottom:0;left:0;width:10px;height:10px;cursor:nesw-resize;z-index:4']];"
-            + "   rs.forEach(function(r){ var h=document.createElement('div'); h.className='ell-rs '+r[0]; h.style.cssText=r[1]; bar.appendChild(h); }); })();"
+            + "   var rs=[['ell-rs-left',     'position:absolute;left:0;top:10px;bottom:10px;width:5px;cursor:ew-resize;z-index:3;border-radius:0 3px 3px 0','w'],"
+            + "           ['ell-rs-right',    'position:absolute;right:0;top:10px;bottom:10px;width:5px;cursor:ew-resize;z-index:3;border-radius:3px 0 0 3px','e'],"
+            + "           ['ell-rs-bottom',   'position:absolute;bottom:0;left:10px;right:10px;height:5px;cursor:ns-resize;z-index:3','s'],"
+            + "           ['ell-rs-top',      'position:absolute;top:0;left:10px;right:10px;height:5px;cursor:ns-resize;z-index:3','n'],"
+            + "           ['ell-rs-corner',   'position:absolute;bottom:0;left:0;width:10px;height:10px;cursor:nesw-resize;z-index:4','ws'],"
+            + "           ['ell-rs-corner-br','position:absolute;bottom:0;right:0;width:10px;height:10px;cursor:nwse-resize;z-index:4','se'],"
+            + "           ['ell-rs-corner-tr','position:absolute;top:0;right:0;width:10px;height:10px;cursor:nesw-resize;z-index:4','ne'],"
+            + "           ['ell-rs-corner-tl','position:absolute;top:0;left:0;width:10px;height:10px;cursor:nwse-resize;z-index:4','nw']];"
+            + "   rs.forEach(function(r){ var h=document.createElement('div'); h.className='ell-rs '+r[0]; h.style.cssText=r[1]; h.setAttribute('data-dir',r[2]); bar.appendChild(h); }); })();"
             + " var style=document.createElement('style');"
             + " style.textContent='#ellithium-recorder-toolbar .ell-btn:hover{background:#30363d!important;border-color:#58a6ff!important}'"
             + "  +'#ellithium-recorder-toolbar .ell-armed{background:#1f6feb!important;border-color:#388bfd!important;color:#e6edf3!important}'"
@@ -848,22 +885,24 @@ public final class InteractionRecorder {
             + "   document.addEventListener('keydown',escH); ov.__escClose=escH; }"
             + " document.getElementById('ell-expand').addEventListener('click', expandCode);"
             + " var head=document.getElementById('ell-head'); var drag=false, ox=0, oy=0;"
-            + " var rsz=false, rsDir='', rsRight0=0, rsTop0=0;"
+            + " var rsz=false, rsDir='', rsRight0=0, rsTop0=0, rsLeft0=0, rsBottom0=0;"
             + " head.addEventListener('mousedown', function(e){ if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return;"
             + "   drag=true; var r=bar.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; bar.style.right='auto'; e.preventDefault(); });"
             + " bar.querySelectorAll('.ell-rs').forEach(function(h){"
-            + "   var d=h.classList.contains('ell-rs-left')?'w':h.classList.contains('ell-rs-bottom')?'s':'ws';"
             + "   h.addEventListener('mousedown',function(e){"
-            + "     rsz=true; rsDir=d; var r=bar.getBoundingClientRect();"
-            + "     rsRight0=r.right; rsTop0=r.top;"
+            + "     rsz=true; window.__ellResizing=true; rsDir=h.getAttribute('data-dir'); var r=bar.getBoundingClientRect();"
+            + "     rsRight0=r.right; rsTop0=r.top; rsLeft0=r.left; rsBottom0=r.bottom;"
             + "     bar.style.left=r.left+'px'; bar.style.right='auto';"
-            + "     e.preventDefault(); e.stopPropagation(); }); });"
+            + "     e.preventDefault(); e.stopPropagation(); });"
+            + "   h.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); }); });"
             + " document.addEventListener('mousemove', function(e){"
             + "   if(drag){ bar.style.left=Math.max(0,e.clientX-ox)+'px'; bar.style.top=Math.max(0,e.clientY-oy)+'px'; return; }"
             + "   if(!rsz) return;"
             + "   if(rsDir.indexOf('w')>=0){ var nw=Math.max(280,rsRight0-e.clientX); bar.style.width=nw+'px'; bar.style.left=(rsRight0-nw)+'px'; }"
-            + "   if(rsDir.indexOf('s')>=0) bar.style.maxHeight=Math.max(200,e.clientY-rsTop0)+'px'; });"
-            + " document.addEventListener('mouseup', function(){ drag=false; rsz=false; });"
+            + "   if(rsDir.indexOf('e')>=0) bar.style.width=Math.max(280,e.clientX-rsLeft0)+'px';"
+            + "   if(rsDir.indexOf('s')>=0) bar.style.maxHeight=Math.max(200,e.clientY-rsTop0)+'px';"
+            + "   if(rsDir.indexOf('n')>=0){ var nh=Math.max(200,rsBottom0-e.clientY); bar.style.maxHeight=nh+'px'; bar.style.top=Math.max(0,rsBottom0-nh)+'px'; } });"
+            + " document.addEventListener('mouseup', function(){ drag=false; rsz=false; window.__ellResizing=false; });"
             + " window.__ellOverlayDone=true; return true;"
             + "})();";
 
@@ -899,7 +938,7 @@ public final class InteractionRecorder {
             + "   {g:'Content',m:['getRandomSentence','getRandomParagraph']},"
             + "   {g:'Date',m:['getDayDateStamp','getRandomBirthDate']},"
             + "   {g:'Other',m:['getRandomCreditCardNumber','getRandomColor','getRandomUniversity']}];"
-            + " function tdgOptions(){ var s='<option value=\"\">\\u2014 Use JSON value (manual)</option>'; for(var g=0;g<TDG_METHODS.length;g++){ s+='<optgroup label=\"'+TDG_METHODS[g].g+'\">'; for(var m=0;m<TDG_METHODS[g].m.length;m++) s+='<option value=\"'+TDG_METHODS[g].m[m]+'\">'+TDG_METHODS[g].m[m]+'()</option>'; s+='</optgroup>'; } return s; }"
+            + " function tdgOptions(cur){ var s='<option value=\"\"'+(cur===''?' selected':'')+'>\\u2014 Use JSON value (manual)</option>'; for(var g=0;g<TDG_METHODS.length;g++){ s+='<optgroup label=\"'+TDG_METHODS[g].g+'\">'; for(var m=0;m<TDG_METHODS[g].m.length;m++){ var mv=TDG_METHODS[g].m[m]; s+='<option value=\"'+mv+'\"'+(cur===mv?' selected':'')+'>'+mv+'()</option>'; } s+='</optgroup>'; } return s; }"
             + " var isInput=function(a){ return a==='input'||a==='sendData'; };"
             + " for(var s=0;s<steps.length;s++){ var st=steps[s];"
             + "   var fl=(st.frame&&st.frame.length)?(' <span style=\"color:#8b949e;font-size:10px\">[frame '+st.frame.join('>')+']</span>'):'';"
@@ -908,7 +947,7 @@ public final class InteractionRecorder {
             + "   if(st.action==='assertValue'&&st.assertAttr) genBadge=' <span style=\"color:#d29922\">'+st.assertAttr+'=&quot;'+(st.data||'').slice(0,25)+'&quot;</span>';"
             + "   else if(st.generatorMethod) genBadge=' <span style=\"background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.3);border-radius:4px;padding:1px 5px;font-size:10px\">&#x1F3B2; '+st.generatorMethod+'()</span>';"
             + "   else genBadge=st.data?(' <span style=\"color:#8b949e\">\\u2192 '+(''+st.data).slice(0,40)+'</span>'):'';"
-            + "   var genBtn=isInput(st.action)?('<select class=\"ell-gen\" data-id=\"'+st.id+'\" title=\"Auto-generate test data\" style=\"margin-left:4px;background:#21262d;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;font-size:10px;cursor:pointer\">'+tdgOptions()+'</select>'):'';"
+            + "   var genBtn=isInput(st.action)?('<select class=\"ell-gen\" data-id=\"'+st.id+'\" title=\"Auto-generate test data\" style=\"margin-left:4px;background:#21262d;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;font-size:10px;cursor:pointer\">'+tdgOptions(st.generatorMethod||'')+'</select>'):'';"
             + "   html+='<div style=\"border:1px solid #21262d;border-radius:8px;padding:8px;margin-bottom:6px\">';"
             + "   html+='<div style=\"display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px\">';"
             + "   html+='<span style=\"background:#161b22;color:#8b949e;border-radius:4px;padding:1px 5px;font-size:10px;min-width:18px;text-align:center;flex-shrink:0\">'+(s+1)+'</span>';"
@@ -926,8 +965,7 @@ public final class InteractionRecorder {
             + " function push(o){ var a=JSON.parse(localStorage.getItem('__ellRecLog')||'[]'); a.push(o); localStorage.setItem('__ellRecLog', JSON.stringify(a)); }"
             + " var gens=host.querySelectorAll('.ell-gen');"
             + " for(var gi=0;gi<gens.length;gi++){ (function(sel){ var sid=sel.getAttribute('data-id');"
-            + "   var cur=null; for(var si=0;si<steps.length;si++){ if(steps[si].id===sid){ cur=steps[si].generatorMethod||''; break; } }"
-            + "   sel.value=cur||''; sel.addEventListener('change',function(){ push({type:'autoGenerate',id:sid,method:this.value||null}); }); })(gens[gi]); }"
+            + "   sel.addEventListener('change',function(){ push({type:'autoGenerate',id:sid,method:this.value||null}); }); })(gens[gi]); }"
             + " var radios=host.querySelectorAll('input[type=radio]');"
             + " for(var k=0;k<radios.length;k++){ radios[k].addEventListener('change', function(){"
             + "   push({type:'override', id:this.getAttribute('data-id'), index:parseInt(this.getAttribute('data-idx'))}); }); }"

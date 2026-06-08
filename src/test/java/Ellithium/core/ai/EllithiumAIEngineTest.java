@@ -1,8 +1,7 @@
-package AI;
+package Ellithium.core.ai;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
 import Ellithium.Utilities.ai.LLMProvider;
-import Ellithium.core.ai.TraceabilityManager;
 import Ellithium.core.ai.models.TraceabilityRecord;
 import Ellithium.core.ai.models.TestCaseSource;
 import Ellithium.core.ai.readers.TextTestCaseReader;

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import Ellithium.core.ai.healing.HealedLocatorBuilder;
 import Ellithium.core.ai.healing.HealedLocatorBuilder.Candidate;
 
 public class HealedLocatorBuilderTest {

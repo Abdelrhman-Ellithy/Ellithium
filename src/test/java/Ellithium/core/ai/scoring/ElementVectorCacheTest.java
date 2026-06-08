@@ -4,6 +4,8 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import Ellithium.core.ai.scoring.ElementVectorCache;
+
 public class ElementVectorCacheTest {
 
     private ElementVectorCache cache;
