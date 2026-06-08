@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.ai.scoring.SemanticQueryBuilder;

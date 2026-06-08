@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.Utilities.ai.EllithiumAIEngine;
 import Ellithium.Utilities.ai.GeminiProvider;

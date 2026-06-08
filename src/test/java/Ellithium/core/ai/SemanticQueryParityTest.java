@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.scoring.SemanticQueryBuilder;
 import org.testng.Assert;

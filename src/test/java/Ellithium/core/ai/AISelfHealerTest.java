@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.Utilities.ai.LLMProvider;

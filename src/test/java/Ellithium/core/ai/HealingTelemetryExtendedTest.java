@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.HealingTelemetryStore.TelemetryRecord;

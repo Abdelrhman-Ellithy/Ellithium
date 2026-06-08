@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.ai.healing.AISelfHealer;

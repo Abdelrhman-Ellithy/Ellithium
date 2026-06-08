@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.vision.AIVisionRCA;
 import Ellithium.Utilities.ai.LLMProvider;

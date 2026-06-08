@@ -1,4 +1,4 @@
-package ai;
+package AI;
 
 import Ellithium.core.ai.sanitizers.DOMMinimizer;
 import org.testng.Assert;
