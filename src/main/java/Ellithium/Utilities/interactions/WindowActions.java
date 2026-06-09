@@ -253,7 +253,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
         try {
             List<String> handles = getAllWindowHandles();
             if (!handles.isEmpty()) {
-                driver.switchTo().window(handles.get(handles.size() - 1));
+                driver.switchTo().window(handles.getLast());
                 Reporter.log("Switched to last window", LogLevel.INFO_BLUE);
                 return true;
             }

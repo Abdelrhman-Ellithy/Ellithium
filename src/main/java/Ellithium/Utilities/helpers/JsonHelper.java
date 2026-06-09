@@ -418,7 +418,7 @@ public class JsonHelper {
                 }
             }
 
-            String finalKey = keys.get(keys.size() - 1);
+            String finalKey = keys.getLast();
             current.addProperty(finalKey, newValue);
 
             try (FileWriter writer = new FileWriter(jsonFile)) {
@@ -473,7 +473,7 @@ public class JsonHelper {
                     newArray.add(new JsonPrimitive(value));
                 }
                 // Replace the original array with the new one
-                jsonObject.add(arrayPath.get(arrayPath.size() - 1), newArray);
+                jsonObject.add(arrayPath.getLast(), newArray);
                 return true;
             }
             return false;

@@ -13,7 +13,6 @@ import java.util.Properties;
 public class NotificationConfig {
     
     private static final String NOTIFICATION_FILE = "src/main/resources/properties/notifications.properties";
-    private static NotificationConfig instance;
     private Properties properties;
     private boolean propertiesLoaded = false;
     
@@ -49,14 +48,11 @@ public class NotificationConfig {
      * @return The singleton instance
      */
     public static NotificationConfig getInstance() {
-        if (instance == null) {
-            synchronized (NotificationConfig.class) {
-                if (instance == null) {
-                    instance = new NotificationConfig();
-                }
-            }
-        }
-        return instance;
+        return Holder.INSTANCE;
+    }
+
+    private static final class Holder {
+        private static final NotificationConfig INSTANCE = new NotificationConfig();
     }
     
     /**

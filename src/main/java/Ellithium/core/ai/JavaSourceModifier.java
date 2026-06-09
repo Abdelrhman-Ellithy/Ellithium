@@ -169,11 +169,8 @@ public class JavaSourceModifier {
                 }
 
                 Expression arg = call.getArgument(0);
-                if (arg instanceof StringLiteralExpr) {
-                    String argValue = ((StringLiteralExpr) arg).getValue();
-                    if (argValue.equals(oldByValue)) {
-                        targets.add(call);
-                    }
+                if (arg instanceof StringLiteralExpr literal && literal.getValue().equals(oldByValue)) {
+                    targets.add(call);
                 }
             }
 

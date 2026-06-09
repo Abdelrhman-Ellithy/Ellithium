@@ -72,9 +72,7 @@ public final class InteractionRecorder {
                     + "use UniqueLocatorGenerator on a resolved element instead", LogLevel.WARN);
         }
         clearLog();
-        drainThread = new Thread(InteractionRecorder::drainLoop, "ellithium-codegen-recorder");
-        drainThread.setDaemon(true);
-        drainThread.start();
+        drainThread = Thread.ofVirtual().name("ellithium-codegen-recorder").start(InteractionRecorder::drainLoop);
         Reporter.log("InteractionRecorder: recording started", LogLevel.INFO_YELLOW);
     }
 

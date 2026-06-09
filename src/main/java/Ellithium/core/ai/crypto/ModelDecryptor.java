@@ -71,9 +71,9 @@ public class ModelDecryptor {
         try {
             String suffix = resourcePath.substring(resourcePath.lastIndexOf('.'));
             java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("ell-native-cleanup").unstarted(() -> {
                 try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
-            }, "ell-native-cleanup"));
+            }));
             try {
                 java.nio.file.attribute.PosixFileAttributeView view =
                         Files.getFileAttributeView(tmp, java.nio.file.attribute.PosixFileAttributeView.class);

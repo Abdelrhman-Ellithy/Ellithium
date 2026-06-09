@@ -77,8 +77,10 @@ public class HealingTelemetryStore {
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
         int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
+        String testId = Ellithium.core.execution.context.TestContext.testId();
+        if (testId == null) testId = CURRENT_TEST.get();
         TelemetryRecord rec = new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
-                query, category, CURRENT_TEST.get());
+                query, category, testId);
         records.add(rec);
         if (rec.testId != null) {
             byTestId.computeIfAbsent(rec.testId,

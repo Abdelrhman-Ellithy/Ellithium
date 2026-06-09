@@ -120,7 +120,7 @@ public class BaselineStore {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(locatorKey);
         if (history == null || history.isEmpty()) return null;
-        return history.get(history.size() - 1);
+        return history.getLast();
     }
 
     /**
@@ -149,7 +149,7 @@ public class BaselineStore {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
         ElementFingerprint baseline = (history != null && !history.isEmpty())
-                ? history.get(history.size() - 1) : null;
+                ? history.getLast() : null;
 
         if (baseline == null) {
             Reporter.log("BaselineStore: No baseline for " + brokenLocator
@@ -585,9 +585,7 @@ public class BaselineStore {
 
     public static void preWarmAsync() {
         if (loaded) return;
-        Thread t = new Thread(BaselineStore::ensureLoaded, "ellithium-baseline-prewarm");
-        t.setDaemon(true);
-        t.start();
+        Thread.ofVirtual().name("ellithium-baseline-prewarm").start(BaselineStore::ensureLoaded);
     }
 
     private static List<ElementFingerprint> pruneStale(List<ElementFingerprint> fps) {
@@ -645,9 +643,7 @@ public class BaselineStore {
     // re-serialization across a suite). Captures now schedule one debounced, coalesced write.
     private static final java.util.concurrent.ScheduledExecutorService SAVE_EXECUTOR =
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "baseline-store-save");
-                t.setDaemon(true);
-                return t;
+                return Thread.ofPlatform().daemon(true).name("baseline-store-save").unstarted(r);
             });
     private static final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
             new java.util.concurrent.atomic.AtomicBoolean(false);

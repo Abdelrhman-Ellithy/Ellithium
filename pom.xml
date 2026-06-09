@@ -62,8 +62,8 @@
     </profiles>
     <properties>
         <EllithiumVersion>2.4.0</EllithiumVersion>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <seleniumVersion>4.44.0</seleniumVersion>
         <testNG>7.12.0</testNG>
@@ -543,6 +543,7 @@
                 <version>${mavenSurefirePluginVersion}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
+                    <argLine>--enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+ZGenerational</argLine>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <printSummary>false</printSummary> <!-- Suppresses some output -->
                     <testFailureIgnore>true</testFailureIgnore>
@@ -575,8 +576,19 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>25</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

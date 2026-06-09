@@ -644,22 +644,17 @@ public class DriverFactory {
     }
 
     /**
-     * Removes the current driver instance from thread local storage.
+     * Clears the CURRENT thread's driver and configuration ThreadLocals.
+     * {@link ThreadLocal#remove()} affects only the calling thread; other parallel threads are
+     * untouched. A thread holds at most one driver, so the non-matching {@code remove()} calls are
+     * no-ops — they exist to guarantee cleanup even when config/driverType state is inconsistent,
+     * preventing a stale driver leaking into the next test on a reused carrier thread.
      */
     public static void removeDriver() {
-        var config = driverConfigurationThread.get();
-        if (config == null) return;
-        DriverType driverType = config.getDriverType();
-        if(driverType!=null) {
-            if (driverType.equals(MobileDriverType.Android)) {
-                AndroidDriverThread.remove();
-            } else if (driverType.equals(IOS)) {
-                IOSDriverThread.remove();
-            } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                WebDriverThread.remove();
-            }
-            driverConfigurationThread.remove();
-        }
+        WebDriverThread.remove();
+        AndroidDriverThread.remove();
+        IOSDriverThread.remove();
+        driverConfigurationThread.remove();
     }
 
     /**

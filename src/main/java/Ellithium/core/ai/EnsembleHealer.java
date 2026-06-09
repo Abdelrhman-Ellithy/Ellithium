@@ -50,17 +50,22 @@ public class EnsembleHealer {
     private static final java.util.concurrent.LinkedBlockingQueue<Object> SESSION_POOL =
             new java.util.concurrent.LinkedBlockingQueue<>(SESSION_POOL_SIZE);
 
+    // ONNX inference is CPU-bound — it MUST run on bounded platform threads, never virtual threads
+    // or the shared common ForkJoinPool. Sized to SESSION_POOL_SIZE so the offloaded query-embed
+    // never contends for more sessions than exist.
+    private static final java.util.concurrent.ExecutorService EMBED_POOL =
+            java.util.concurrent.Executors.newFixedThreadPool(SESSION_POOL_SIZE,
+                    Thread.ofPlatform().daemon(true).name("ellithium-onnx-embed", 0).factory());
+
     private static volatile java.util.concurrent.CompletableFuture<Void> INIT_FUTURE;
 
     public static synchronized void initializeAsync() {
         if (INIT_FUTURE != null || initialized) return;
         java.util.concurrent.CompletableFuture<Void> f = new java.util.concurrent.CompletableFuture<>();
         INIT_FUTURE = f;
-        Thread t = new Thread(() -> {
+        Thread.ofPlatform().daemon(true).name("ellithium-onnx-init").start(() -> {
             try { initialize(); } finally { f.complete(null); }
-        }, "ellithium-onnx-init");
-        t.setDaemon(true);
-        t.start();
+        });
     }
 
     static void awaitInit() {
@@ -116,7 +121,7 @@ public class EnsembleHealer {
                     extraCopies[i] = java.util.Arrays.copyOf(modelBytes, modelBytes.length);
                 }
                 java.util.Arrays.fill(modelBytes, (byte) 0);
-                Thread poolExpander = new Thread(() -> {
+                Thread.ofPlatform().daemon(true).name("ellithium-onnx-pool-expand").start(() -> {
                     for (int i = 0; i < extraSessions; i++) {
                         byte[] copy = extraCopies[i];
                         try {
@@ -135,9 +140,7 @@ public class EnsembleHealer {
                                     + t.getClass().getSimpleName(), LogLevel.WARN);
                         }
                     }
-                }, "ellithium-onnx-pool-expand");
-                poolExpander.setDaemon(true);
-                poolExpander.start();
+                });
             } else {
                 java.util.Arrays.fill(modelBytes, (byte) 0);
             }
@@ -168,9 +171,9 @@ public class EnsembleHealer {
         available = false;
         // Drain in-flight embeds before closing the ORT session (max 2 s) to prevent
         // a native crash when shutdown races a concurrent heal on another thread.
-        long deadline = System.currentTimeMillis() + 2_000;
+        long deadline = System.currentTimeMillis() + 5_000;
         while (EMBED_IN_FLIGHT.get() > 0 && System.currentTimeMillis() < deadline) {
-            try { Thread.sleep(5); } catch (InterruptedException ignored) { break; }
+            try { Thread.sleep(5); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
         }
         Object sess;
         while ((sess = SESSION_POOL.poll()) != null) closeQuietly(sess);
@@ -218,7 +221,7 @@ public class EnsembleHealer {
             // Overlap query embedding (ONNX, ~20ms) with DOM candidate collection (WebDriver, ~30ms).
             // DOM calls stay on this thread; embed runs on a pool thread — no WebDriver sharing.
             java.util.concurrent.CompletableFuture<float[]> queryFuture =
-                    java.util.concurrent.CompletableFuture.supplyAsync(() -> embed(query, true));
+                    java.util.concurrent.CompletableFuture.supplyAsync(() -> embed(query, true), EMBED_POOL);
 
             HealOutcome outcome = scoreAndSelectCandidate(driver, queryFuture, baseline, locator,
                     actionType, query, callerMethod, fieldName, locatorValue);
@@ -796,7 +799,7 @@ public class EnsembleHealer {
         String testId = strOf(attrs.get("data-testid"));
         if (testId != null && !testId.isBlank()) {
             try { return driver.findElement(By.cssSelector(
-                    "[data-testid='" + testId.replace("'", "\\'") + "']")); } catch (Exception ignored) {}
+                    "[data-testid='" + testId.replace("\\", "\\\\").replace("'", "\\'") + "']")); } catch (Exception ignored) {}
         }
         String name = strOf(attrs.get("name"));
         if (name != null && !name.isBlank()) {
@@ -805,7 +808,7 @@ public class EnsembleHealer {
         String ariaLabel = strOf(attrs.get("aria-label"));
         if (ariaLabel != null && !ariaLabel.isBlank()) {
             try { return driver.findElement(By.cssSelector(
-                    "[aria-label='" + ariaLabel.replace("'", "\\'") + "']")); } catch (Exception ignored) {}
+                    "[aria-label='" + ariaLabel.replace("\\", "\\\\").replace("'", "\\'") + "']")); } catch (Exception ignored) {}
         }
         return null;
     }

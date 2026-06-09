@@ -1,5 +1,6 @@
 package Ellithium.core.execution.listener;
 import Ellithium.core.ai.EnsembleHealer;
+import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -10,6 +11,8 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.execution.context.TestContext;
+import Ellithium.core.execution.context.TestContextData;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.config.managment.ConfigContext;
 import Ellithium.config.managment.GeneralHandler;
@@ -31,7 +34,8 @@ import static org.testng.ITestResult.*;
 
 @Listeners({AllureTestNg.class})
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
-        IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
+        IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener,
+        IHookable {
     private long timeStartMills;
     private TestResultCollector testResultCollector;
 
@@ -49,6 +53,22 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         this.testResultCollector = TestResultCollectorManager.getInstance().getTestResultCollector();
     }
     
+    @Override
+    public void run(IHookCallBack callBack, ITestResult testResult) {
+        TestContextData data = new TestContextData(
+                getTestIdentifier(testResult), testResult.getName(), resolveBrowser());
+        ScopedValue.where(TestContext.CURRENT, data)
+                .run(() -> callBack.runTestMethod(testResult));
+    }
+
+    private String resolveBrowser() {
+        try {
+            DriverConfiguration cfg = DriverFactory.getCurrentDriverConfiguration();
+            if (cfg != null && cfg.getDriverType() != null) return cfg.getDriverType().getName();
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     @Override
     public void onTestStart(ITestResult result) {
         // Attribute every heal on this thread to this test, so the false-heal detector (R9) can flag a
@@ -125,7 +145,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
-        testResultCollector.collectTestResults(context);
+        try {
+            testResultCollector.collectTestResults(context);
+        } catch (Throwable t) {
+            Logger.info("Notification result collection skipped: " + t.getClass().getSimpleName());
+        }
         testResultToRecordingId.clear();
     }
     
@@ -181,6 +205,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.logException(e);
         }
         finally {
+            AISelfHealer.cleanup();
             EnsembleHealer.shutdown();
             AIHealingReporter.generateReport();
             AllureHelper.allureOpen();

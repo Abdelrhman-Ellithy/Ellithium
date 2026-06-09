@@ -43,7 +43,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         try {
             // Quick check without full initialization
             return NotificationConfig.isNotificationEnabledQuick();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // If we can't check, assume disabled for safety
             return false;
         }

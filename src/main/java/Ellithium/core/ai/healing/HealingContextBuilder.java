@@ -22,11 +22,8 @@ import java.util.regex.Pattern;
 class HealingContextBuilder {
 
     static final ExecutorService TIER4_PREP_POOL =
-            Executors.newFixedThreadPool(2, r -> {
-                Thread t = new Thread(r, "ellithium-tier4-prep");
-                t.setDaemon(true);
-                return t;
-            });
+            Executors.newThreadPerTaskExecutor(
+                    Thread.ofVirtual().name("ellithium-tier4-prep-", 0).factory());
 
     static class HealingContext {
         String brokenLocatorStr;

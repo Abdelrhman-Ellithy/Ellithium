@@ -47,6 +47,7 @@ public class AISelfHealer {
     private static final long UNHEALABLE_TTL_MS = 5 * 60 * 1_000L;
     private static final ConcurrentHashMap<String, Long> knownUnhealable = new ConcurrentHashMap<>();
 
+
     private static String cacheKey(WebDriver driver, By brokenLocator) {
         return pageContext(driver) + "##" + brokenLocator.toString();
     }
@@ -380,8 +381,10 @@ public class AISelfHealer {
         LAST_HEAL_CONFIDENCE.set(acceptedResult.getConfidence());
 
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
-        globalHealedCache.put(cacheKey(driver, brokenLocator),
-                new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown"));
+        if (acceptedResult.getConfidence() >= AIConfigLoader.getHealingStoreThreshold()) {
+            globalHealedCache.put(cacheKey(driver, brokenLocator),
+                    new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown"));
+        }
 
         AIHealingReporter.queueChange(
                 ctx.filePath != null ? ctx.filePath : "unknown",

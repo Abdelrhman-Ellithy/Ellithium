@@ -370,10 +370,10 @@ public class EllithiumAIEngine {
     private static final AtomicReference<WebDriver> DOM_DRIVER = new AtomicReference<>(null);
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("ellithium-dom-capture-shutdown").unstarted(() -> {
             WebDriver d = DOM_DRIVER.getAndSet(null);
             if (d != null) { try { d.quit(); } catch (Exception ignored) {} }
-        }, "ellithium-dom-capture-shutdown"));
+        }));
     }
 
     private static WebDriver getOrCreateDomDriver() {

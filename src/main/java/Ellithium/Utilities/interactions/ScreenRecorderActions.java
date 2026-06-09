@@ -582,9 +582,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         final TakesScreenshot screenshotDriver = (TakesScreenshot) rawDriver;
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "SnapshotRecorder-" + name);
-            thread.setDaemon(true);
-            return thread;
+            return Thread.ofPlatform().daemon(true).name("SnapshotRecorder-" + name).unstarted(r);
         });
         backgroundCapturer.set(executor);
 
@@ -1031,19 +1029,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     public static final ExecutorService videoCompilationExecutor =
             Executors.newFixedThreadPool(
                     Math.max(2, Runtime.getRuntime().availableProcessors() - 1), // Leave 1 core for OS/tests
-                    r -> {
-                        Thread t = new Thread(r, "VideoCompiler-" + r.hashCode());
-                        t.setDaemon(true);
-                        t.setPriority(Thread.NORM_PRIORITY); // Normal priority for speed
-                        return t;
-                    }
+                    Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory()
             );
 
         static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("VideoCompilationShutdownHook").unstarted(() -> {
             int active = activeCompilations.get();
             if (active > 0) {
-                System.out.println("[Ellithium] Waiting for " + active + 
+                System.out.println("[Ellithium] Waiting for " + active +
                                  " video(s) to finish compiling...");
                 try {
                     videoCompilationExecutor.shutdown();
@@ -1052,7 +1045,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     if (completed) {
                         System.out.println("[Ellithium] ✓ All videos compiled successfully");
                     } else {
-                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() + 
+                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() +
                                          " video(s) may be incomplete");
                         videoCompilationExecutor.shutdownNow();
                     }
@@ -1064,7 +1057,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else {
                 System.out.println("[Ellithium] All videos already compiled");
             }
-        }, "VideoCompilationShutdownHook"));
+        }));
         
         System.out.println("[Ellithium] Video compilation shutdown hook registered");
     }
