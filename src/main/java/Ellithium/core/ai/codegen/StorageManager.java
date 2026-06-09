@@ -77,6 +77,12 @@ public final class StorageManager {
             }
             StorageState state = GSON.fromJson(Files.readString(src), StorageState.class);
             if (state == null) return;
+            String cur = null;
+            try { cur = driver.getCurrentUrl(); } catch (Exception ignored) {}
+            if (cur == null || cur.isBlank() || cur.startsWith("about:") || cur.startsWith("data:")) {
+                Reporter.log("StorageManager: driver is on a blank page (" + cur + ") — cookies and localStorage "
+                        + "cannot be applied until you navigate to the target site first", LogLevel.WARN);
+            }
             int cookies = 0;
             if (state.cookies != null) {
                 for (CookieDto d : state.cookies) {

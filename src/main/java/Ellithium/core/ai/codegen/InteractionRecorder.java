@@ -199,6 +199,7 @@ public final class InteractionRecorder {
             lastPicked = candidates;
             return true;
         }
+        if (BY_ID.containsKey(id)) return false;
         if ("doubleClick".equals(type)) {
             dropTrailingClicks(candidates.isEmpty() ? null : candidates.get(0).javaExpression());
         }
@@ -213,6 +214,7 @@ public final class InteractionRecorder {
         if (frame.isEmpty()) seedOne(candidates);
         STEPS.add(step);
         BY_ID.put(id, step);
+        lastPicked = List.of();
         if ("click".equals(type) || "select".equals(type) || "input".equals(type)
                 || "pressEnter".equals(type) || "doubleClick".equals(type)
                 || "dragAndDrop".equals(type)) {

@@ -336,8 +336,9 @@ public final class PomCodeEmitter {
                                -> "driverActions.select().selectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
             case "selectByValue"
                                -> "driverActions.select().selectDropdownByValue(" + byRef + ", \"" + esc(data) + "\");";
-            case "selectByIndex"
-                               -> "driverActions.select().selectDropdownByIndex(" + byRef + ", " + esc(data) + ");";
+            case "selectByIndex" -> (data != null && data.trim().matches("\\d+"))
+                               ? "driverActions.select().selectDropdownByIndex(" + byRef + ", " + data.trim() + ");"
+                               : null;
             case "deselectAll" -> "driverActions.select().deselectAll(" + byRef + ");";
             case "deselectByText"
                                -> "driverActions.select().deselectDropdownByText(" + byRef + ", \"" + esc(data) + "\");";
@@ -386,11 +387,12 @@ public final class PomCodeEmitter {
     }
 
     private static String templateDynamic(String content) {
-        Matcher quoted = Pattern.compile("'(\\d+)'").matcher(content);
+        String safe = content.replace("%", "%%");
+        Matcher quoted = Pattern.compile("'(\\d+)'").matcher(safe);
         if (quoted.find()) return quoted.replaceFirst("'%s'");
-        Matcher trailing = Pattern.compile("_(\\d+)").matcher(content);
+        Matcher trailing = Pattern.compile("_(\\d+)").matcher(safe);
         if (trailing.find()) return trailing.replaceFirst("_%s");
-        Matcher digits = Pattern.compile("(\\d+)").matcher(content);
+        Matcher digits = Pattern.compile("(\\d+)").matcher(safe);
         if (digits.find()) return digits.replaceFirst("%s");
         return null;
     }
@@ -437,7 +439,7 @@ public final class PomCodeEmitter {
         String id = sb.toString();
         if (id.isEmpty()) id = "element";
         if (Character.isDigit(id.charAt(0))) id = "el" + id;
-        if (RESERVED_NAMES.contains(id)) id = id + "Field";
+        if (RESERVED_NAMES.contains(id) || id.matches("value\\d+")) id = id + "Field";
         return id;
     }
 

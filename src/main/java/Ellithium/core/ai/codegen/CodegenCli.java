@@ -96,10 +96,12 @@ public final class CodegenCli {
             if (a.equals("codegen")) continue;
             if (a.startsWith("--")) {
                 String key = a.substring(2);
-                if (!BOOLEAN_FLAGS.contains(key) && i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                if (BOOLEAN_FLAGS.contains(key)) {
+                    flags.put(key, "true");
+                } else if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
                     flags.put(key, args[++i]);
                 } else {
-                    flags.put(key, "true");
+                    System.out.println("Ignoring flag --" + key + ": expected a value (e.g. --" + key + " <value>)");
                 }
             } else if (url == null) {
                 url = a;

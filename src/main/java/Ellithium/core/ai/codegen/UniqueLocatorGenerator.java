@@ -228,7 +228,7 @@ public final class UniqueLocatorGenerator {
                                       String attr, String tier, double weight) {
         String v = str(attrs.get(attr));
         if (!isPresent(v)) return;
-        String css = "[" + attr + "='" + v.replace("'", "\\'") + "']";
+        String css = "[" + attr + "='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
         out.add(new Draft(By.cssSelector(css), "By.cssSelector(\"" + esc(css) + "\")", tier, weight, looksDynamic(v)));
     }
 
@@ -262,7 +262,7 @@ public final class UniqueLocatorGenerator {
             if (n == null || v == null || v.isBlank() || SKIP_GENERIC.contains(n)) continue;
             boolean eligible = n.startsWith("data-") || n.equals("placeholder") || n.equals("title") || n.equals("type");
             if (!eligible) continue;
-            String css = "[" + n + "='" + v.replace("'", "\\'") + "']";
+            String css = "[" + n + "='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
             out.add(new Draft(By.cssSelector(css), "By.cssSelector(\"" + esc(css) + "\")",
                     n, W_DATA, looksDynamic(v)));
         }
