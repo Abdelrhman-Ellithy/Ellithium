@@ -685,10 +685,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     activeCompilations.incrementAndGet();
                     try {
                         compileFramesToMP4(framesCopy, videoFile, capturedDuration);
-                        Reporter.log("Video compiled asynchronously: " + videoFile.getName() +
-                                " (" + frameCount + " frames)", LogLevel.INFO_GREEN);
+                        Logger.info("Video compiled asynchronously: " + videoFile.getName() +
+                                " (" + frameCount + " frames)");
                     } catch (Exception e) {
-                        Reporter.log("Async video compilation failed: " + e.getMessage(), LogLevel.ERROR);
+                        Logger.error("Async video compilation failed: " + e.getMessage());
                     }
                     finally {
                         activeCompilations.decrementAndGet();
