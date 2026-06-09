@@ -28,7 +28,10 @@ public final class CodegenCli {
             return;
         }
 
-        AIConfigLoader.initialize();
+        boolean needsAi = flags.containsKey("llm-polish");
+        if (needsAi) {
+            AIConfigLoader.initialize();
+        }
 
         LocalDriverType browser = browserOf(flags.getOrDefault("browser", "chrome"));
         HeadlessMode headless = flags.containsKey("headless") ? HeadlessMode.True : HeadlessMode.False;
@@ -67,23 +70,27 @@ public final class CodegenCli {
             String startUrl = InteractionRecorder.getStartUrl();
             if (steps.isEmpty()) {
                 System.out.println("No interactions recorded — nothing to generate.");
-                return;
+            } else {
+                RecorderOptions effective = InteractionRecorder.getOptions();
+                String className = flags.containsKey("class")
+                        ? sanitizeClassName(flags.get("class"))
+                        : deriveClassName(url != null ? url : startUrl);
+                String path = effective.isTest()
+                        ? PomCodeEmitter.emitTest(steps, className, effective, startUrl)
+                        : PomCodeEmitter.emit(steps, className, effective);
+                System.out.println(path != null
+                        ? "Generated " + (effective.isTest() ? "test" : "POM") + " (" + effective.assertMode()
+                        + " asserts): " + path + " (" + steps.size() + " steps)"
+                        : "Code generation failed — see logs.");
             }
-            RecorderOptions effective = InteractionRecorder.getOptions();
-            String className = flags.containsKey("class")
-                    ? sanitizeClassName(flags.get("class"))
-                    : deriveClassName(url != null ? url : startUrl);
-            String path = effective.isTest()
-                    ? PomCodeEmitter.emitTest(steps, className, effective, startUrl)
-                    : PomCodeEmitter.emit(steps, className, effective);
-            System.out.println(path != null
-                    ? "Generated " + (effective.isTest() ? "test" : "POM") + " (" + effective.assertMode()
-                    + " asserts): " + path + " (" + steps.size() + " steps)"
-                    : "Code generation failed — see logs.");
         } catch (Exception e) {
             System.out.println("Codegen session failed: " + e.getMessage());
         } finally {
+            try { InteractionRecorder.stop(); } catch (Exception ignored) {}
             try { DriverFactory.quitDriver(); } catch (Exception ignored) {}
+            if (needsAi) {
+                try { Ellithium.core.ai.EnsembleHealer.shutdown(); } catch (Exception ignored) {}
+            }
         }
     }
 

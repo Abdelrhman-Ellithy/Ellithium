@@ -133,7 +133,11 @@ public final class InteractionRecorder {
     private static boolean drainOnce() {
         boolean changed = false;
         for (Map<String, Object> ev : readLog()) {
-            if (processEvent(ev)) changed = true;
+            try {
+                if (processEvent(ev)) changed = true;
+            } catch (Exception e) {
+                Reporter.log("InteractionRecorder: skipped malformed event: " + e.getMessage(), LogLevel.DEBUG);
+            }
         }
         return changed;
     }
@@ -156,7 +160,9 @@ public final class InteractionRecorder {
         String type = str(ev.get("type"));
         if (type == null) return false;
         if ("override".equals(type)) {
-            RecordedStep step = BY_ID.get(str(ev.get("id")));
+            String oid = str(ev.get("id"));
+            if (oid == null) return false;
+            RecordedStep step = BY_ID.get(oid);
             if (step != null) { step.choose((int) asLong(ev.get("index"))); return true; }
             return false;
         }
@@ -636,7 +642,7 @@ public final class InteractionRecorder {
             + " function disarm(){ W.__ellMode='record'; var a=document.querySelectorAll('.ell-armed'); for(var i=0;i<a.length;i++)a[i].classList.remove('ell-armed'); }"
             + " function inp(el,frame){ var v=el.value; if(W.__ellLastVal.get(el)===v)return; W.__ellLastVal.set(el,v); emitEl('input',el,v,frame); }"
             + " function attach(doc,frame){ if(!doc||doc.__ellAttached)return; doc.__ellAttached=true;"
-            + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw)||W.__ellResizing)return; var m=W.__ellMode||'record';"
+            + "   doc.addEventListener('click',function(e){ var raw=tgt(e); if(inBar(raw))return; if(W.__ellResizing||(W.__ellGestureTs&&(Date.now()-W.__ellGestureTs)<300)){e.stopPropagation();return;} var m=W.__ellMode||'record';"
             + "     if(m==='inspect'){e.preventDefault();e.stopPropagation();emitEl('inspect',raw,null,frame);return;}"
             + "     if(m==='assertVisible'){e.preventDefault();e.stopPropagation();emitEl('assertVisible',raw,null,frame);disarm();return;}"
             + "     if(m==='assertText'){e.preventDefault();e.stopPropagation();emitEl('assertText',raw,((raw.innerText||raw.textContent||'').trim()).slice(0,80),frame);disarm();return;}"
@@ -746,15 +752,17 @@ public final class InteractionRecorder {
             + "background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 8px;font-size:11px\">'"
             + "  +'<div id=\"ell-eval-count\" style=\"color:#8b949e;margin-top:4px;font-size:11px\">&nbsp;</div>'"
             + "  +'</div>'"
-            + "  +'<div style=\"overflow:auto;flex:1;padding:8px 12px\">'"
+            + "  +'<div style=\"flex:1;overflow:auto;padding:8px 12px;min-height:0\">'"
             + "  +'<div id=\"ell-picked\"></div><div id=\"ell-steps\"></div>'"
-            + "  +'<div style=\"display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #21262d\">'"
+            + "  +'</div>'"
+            + "  +'<div style=\"display:flex;flex-direction:column;flex:2;min-height:0;border-top:1px solid #21262d;padding:0 12px 8px\">'"
+            + "  +'<div style=\"display:flex;align-items:center;gap:6px;padding:6px 0\">'"
             + "  +'<span style=\"font-size:10px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.6px;flex:1\">Code Preview</span>'"
             + "  +btn('ell-copy','&#x1F4CB; Copy','Copy code')"
             + "  +btn('ell-expand','&#x29C9; Expand','Open code in separate window')"
             + "  +'</div>'"
             + "  +'<pre id=\"ell-code\" style=\"background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px;"
-            + "white-space:pre-wrap;word-break:break-word;max-height:26vh;overflow:auto;margin:6px 0 0;"
+            + "white-space:pre-wrap;word-break:break-word;flex:1;min-height:0;overflow:auto;margin:0;"
             + "font-size:11px;line-height:1.5;color:#c9d1d9\"></pre>'"
             + "  +'</div>';"
             + " document.body.appendChild(bar);"
@@ -893,6 +901,7 @@ public final class InteractionRecorder {
             + "     rsz=true; window.__ellResizing=true; rsDir=h.getAttribute('data-dir'); var r=bar.getBoundingClientRect();"
             + "     rsRight0=r.right; rsTop0=r.top; rsLeft0=r.left; rsBottom0=r.bottom;"
             + "     bar.style.left=r.left+'px'; bar.style.right='auto';"
+            + "     bar.style.height=(r.bottom-r.top)+'px'; bar.style.maxHeight='none';"
             + "     e.preventDefault(); e.stopPropagation(); });"
             + "   h.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); }); });"
             + " document.addEventListener('mousemove', function(e){"
@@ -900,9 +909,18 @@ public final class InteractionRecorder {
             + "   if(!rsz) return;"
             + "   if(rsDir.indexOf('w')>=0){ var nw=Math.max(280,rsRight0-e.clientX); bar.style.width=nw+'px'; bar.style.left=(rsRight0-nw)+'px'; }"
             + "   if(rsDir.indexOf('e')>=0) bar.style.width=Math.max(280,e.clientX-rsLeft0)+'px';"
-            + "   if(rsDir.indexOf('s')>=0) bar.style.maxHeight=Math.max(200,e.clientY-rsTop0)+'px';"
-            + "   if(rsDir.indexOf('n')>=0){ var nh=Math.max(200,rsBottom0-e.clientY); bar.style.maxHeight=nh+'px'; bar.style.top=Math.max(0,rsBottom0-nh)+'px'; } });"
-            + " document.addEventListener('mouseup', function(){ drag=false; rsz=false; window.__ellResizing=false; });"
+            + "   if(rsDir.indexOf('s')>=0) bar.style.height=Math.max(200,e.clientY-rsTop0)+'px';"
+            + "   if(rsDir.indexOf('n')>=0){ var nh=Math.max(200,rsBottom0-e.clientY); bar.style.height=nh+'px'; bar.style.top=Math.max(0,rsBottom0-nh)+'px'; } });"
+            + " document.addEventListener('mouseup', function(){ if(drag||rsz){ window.__ellGestureTs=Date.now();"
+            + "   try{ var r=bar.getBoundingClientRect();"
+            + "     localStorage.setItem('__ellToolbarGeom',JSON.stringify({w:r.width/window.innerWidth,h:r.height/window.innerHeight,l:r.left/window.innerWidth,t:r.top/window.innerHeight})); }catch(e){} }"
+            + "   drag=false; rsz=false; window.__ellResizing=false; });"
+            + " (function(){ var g=null; try{ g=JSON.parse(localStorage.getItem('__ellToolbarGeom')); }catch(e){}"
+            + "   if(g&&g.w&&g.h){ bar.style.width=Math.max(280,Math.round(g.w*window.innerWidth))+'px';"
+            + "     bar.style.height=Math.max(200,Math.round(g.h*window.innerHeight))+'px'; bar.style.maxHeight='none';"
+            + "     bar.style.left=Math.max(0,Math.round(g.l*window.innerWidth))+'px';"
+            + "     bar.style.top=Math.max(0,Math.round(g.t*window.innerHeight))+'px'; bar.style.right='auto'; }"
+            + "   else { bar.style.height=Math.max(400,Math.min(600,Math.floor(window.innerHeight*.55)))+'px'; } })();"
             + " window.__ellOverlayDone=true; return true;"
             + "})();";
 
