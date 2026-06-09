@@ -4,7 +4,6 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.slack.api.Slack;
 import com.slack.api.webhook.WebhookResponse;
-import org.jetbrains.annotations.NotNull;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -87,7 +86,6 @@ public class NotificationSender {
         }
     }
 
-    @NotNull
     private Properties getProperties() {
         Properties mailProps = new Properties();
         mailProps.put("mail.smtp.auth", "true");

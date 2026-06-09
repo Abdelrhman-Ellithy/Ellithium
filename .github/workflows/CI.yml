@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run Helper Tests
         run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -Dparallel=classes -DthreadCount=4
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run Database Tests
         run: mvn test -Dtest="DB.**.*"
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run API Tests
         run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -Dmaven.test.failure.ignore=true
@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
         run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes
@@ -107,7 +107,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI BDD Tests
         run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods
