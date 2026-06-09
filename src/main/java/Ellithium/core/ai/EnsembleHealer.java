@@ -523,28 +523,20 @@ public class EnsembleHealer {
         return Math.max(a, b);
     }
 
-    private static final double SIGNAL_AGREEMENT = 0.5;
+    private static final double SIGNAL_AGREEMENT = 0.35;
 
     /**
      * Fuses the resolver/strategy signal (f2) and the bi-encoder cosine (f3) into one confidence.
-     * The strongest signal sets the floor — a cosine degraded by a broken/typo'd query can never
-     * drag a gold resolver hit below its own value — and agreement between the two adds a damped
-     * bonus over the remaining headroom. NaN f2 (no resolver signal) → cosine alone.
+     * f3 is the primary signal — it is calibrated and semantically grounded. f2 (strategy heuristic)
+     * adds a proportional bonus over the remaining headroom to 1.0, capped by SIGNAL_AGREEMENT so
+     * f2 can never dominate. Max f2 boost = SIGNAL_AGREEMENT * (1 - f3): shrinks as f3 rises.
+     * Hard cosine floor: f3 below GATE_RESCUE_COSINE_FLOOR returns f3 unchanged — wrong-type
+     * attribute matches cannot override a disagreeing bi-encoder regardless of how high f2 is.
      */
     static double fuseConfidence(double f2, double f3) {
         if (Double.isNaN(f2)) return f3;
-        double hi = Math.max(f2, f3);
-        double lo = Math.min(f2, f3);
-        double base = hi + (1.0 - hi) * lo * SIGNAL_AGREEMENT;
-        // Soft cosine floor: when the bi-encoder strongly disagrees with a high f2,
-        // dampen f2's dominance proportionally so cosine disagreement has real weight.
-        // Threshold matches GATE_RESCUE_COSINE_FLOOR so confidence and gate share the same boundary.
-        if (f3 < GATE_RESCUE_COSINE_FLOOR && f2 > f3) {
-            if (f2 >= 1.0 - 1e-9) return 1.0;
-            double damp = f3 / GATE_RESCUE_COSINE_FLOOR;
-            return f3 + (base - f3) * damp;
-        }
-        return base;
+        if (f3 < GATE_RESCUE_COSINE_FLOOR && f2 > f3) return f3;
+        return Math.min(1.0, f3 + (1.0 - f3) * f2 * SIGNAL_AGREEMENT);
     }
 
     static List<WebElement> mergeCandidates(List<WebElement> resolverElements, List<WebElement> poolElements) {
@@ -562,7 +554,7 @@ public class EnsembleHealer {
     }
 
     private static final double GATE_STRATEGY_MIN       = 0.75;
-    private static final double GATE_RESCUE_COSINE_FLOOR = 0.35;
+    private static final double GATE_RESCUE_COSINE_FLOOR = 0.45;
 
     /**
      * Accept decision (pure, unit-testable). Path A: the fused combined score clears the calibrated

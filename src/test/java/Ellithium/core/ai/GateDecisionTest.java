@@ -9,8 +9,10 @@ import static Ellithium.core.ai.EnsembleHealer.decideGate;
 /**
  * Behaviour spec for the ensemble accept gate.
  * Path A = fused combined score clears the calibrated threshold.
- * Path B (strategy-rescue) = gold-tier f2 (≥0.95) corroborated by bi-encoder cosine f3 (≥0.35) —
+ * Path B (strategy-rescue) = gold-tier f2 (≥0.95) corroborated by bi-encoder cosine f3 (≥0.45) —
  * two genuinely independent signals. Cold start (no baseline) can rescue when cosine ≥ floor.
+ * Floor raised 0.35→0.45: neg-P95=0.347 proved 0.35 admitted wrong-type elements (invalid-element
+ * state errors where strategy matched attributes of a non-interactable element).
  */
 public class GateDecisionTest {
 
@@ -26,24 +28,24 @@ public class GateDecisionTest {
 
     @Test
     public void rescuePath_goldStrategyCosineCorroboration_heals() {
-        // combined=0.30 < threshold; gold f2=1.0 + cosine f3=0.40 ≥ 0.35 → rescue
-        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.40);
-        Assert.assertTrue(g.accept, "gold strategy + cosine ≥ 0.35 must rescue a weak-combined heal");
+        // combined=0.30 < threshold; gold f2=1.0 + cosine f3=0.50 ≥ 0.45 → rescue
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.50);
+        Assert.assertTrue(g.accept, "gold strategy + cosine ≥ 0.45 must rescue a weak-combined heal");
         Assert.assertEquals(g.via, "strategy-rescue");
-        Assert.assertEquals(g.score, (1.0 + 0.40) / 2.0, 1e-9, "rescue confidence = mean(f2, f3)");
+        Assert.assertEquals(g.score, (1.0 + 0.50) / 2.0, 1e-9, "rescue confidence = mean(f2, f3)");
     }
 
     @Test
     public void rescuePath_disabled_fallsThrough() {
-        GateResult g = decideGate(0.30, THRESHOLD, 1.0, false, 0.40);
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, false, 0.50);
         Assert.assertFalse(g.accept, "rescue disabled → weak combined must not heal");
     }
 
     @Test
     public void coldStart_cosineAboveFloor_canRescue() {
         // No baseline (f1 is no longer a gate) — cosine is the independent corroboration signal
-        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.36);
-        Assert.assertTrue(g.accept, "cold start with cosine ≥ 0.35 and gold strategy may rescue");
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.46);
+        Assert.assertTrue(g.accept, "cold start with cosine ≥ 0.45 and gold strategy may rescue");
         Assert.assertEquals(g.via, "strategy-rescue");
     }
 
@@ -56,16 +58,16 @@ public class GateDecisionTest {
 
     @Test
     public void cosineBelowFloor_doesNotRescue() {
-        // f3=0.30 < 0.35 — cosine too weak to serve as independent corroboration
-        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.30);
-        Assert.assertFalse(g.accept, "cosine below 0.35 floor → insufficient independent corroboration");
+        // f3=0.355 < 0.45 — this was the real-world case that caused invalid-element errors
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.355);
+        Assert.assertFalse(g.accept, "cosine below 0.45 floor → insufficient independent corroboration");
     }
 
     @Test
     public void cosineExactlyAtFloor_rescues() {
-        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.35);
-        Assert.assertTrue(g.accept, "cosine exactly at 0.35 floor must rescue");
-        Assert.assertEquals(g.score, (1.0 + 0.35) / 2.0, 1e-9);
+        GateResult g = decideGate(0.30, THRESHOLD, 1.0, true, 0.45);
+        Assert.assertTrue(g.accept, "cosine exactly at 0.45 floor must rescue");
+        Assert.assertEquals(g.score, (1.0 + 0.45) / 2.0, 1e-9);
     }
 
     @Test

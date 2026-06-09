@@ -38,7 +38,7 @@ public final class HealedLocatorBuilder {
 
     private HealedLocatorBuilder() {}
 
-    private static final int    MAX_CANDIDATES = 10;
+    private static final int    MAX_CANDIDATES = 15;
     private static final int    MOBILE_PROBE_CAP = 4;
     private static final int    MAX_TEXT_LEN = 80;
 
