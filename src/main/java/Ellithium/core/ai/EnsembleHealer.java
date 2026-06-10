@@ -244,7 +244,7 @@ public class EnsembleHealer {
         if (!available || ortEnvironment == null || tokenizer == null) return null;
         Object session;
         try {
-            session = SESSION_POOL.poll(8, java.util.concurrent.TimeUnit.SECONDS);
+            session = SESSION_POOL.poll(3000, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
