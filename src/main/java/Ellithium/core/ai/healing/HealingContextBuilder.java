@@ -201,7 +201,7 @@ class HealingContextBuilder {
 
             String fieldName = resolveFieldNameFromSource(resolvedPath, callSiteLine);
 
-            Reporter.log("[TIER 3] source located: " + resolvedPath + ":" + callSiteLine
+            Reporter.log("[HEALING] source located: " + resolvedPath + ":" + callSiteLine
                     + (fieldName != null ? " field='" + fieldName + "'" : ""), LogLevel.DEBUG);
             return new SourceLocation(resolvedPath, fieldName, className, frame.getMethodName(), callSiteLine);
         }

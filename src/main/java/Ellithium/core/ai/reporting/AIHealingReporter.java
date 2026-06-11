@@ -41,8 +41,7 @@ public class AIHealingReporter {
     public static void generateReport() {
         HealingTelemetryStore.logConsoleSummary();   // CI-visible, runs even when nothing was patched
         if (queuedChanges.isEmpty()) {
-            // No heals this run, but baselines are captured on every successful find (debounced writes
-            // may still be pending) and telemetry may hold fall-through records — always persist both.
+            AISelfHealer.applyDeferredPatches();
             HealingTelemetryStore.flush();
             BaselineStore.flush();
             return;
