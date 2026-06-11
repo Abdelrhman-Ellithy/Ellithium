@@ -16,6 +16,6 @@ public class SecureAreaPage {
     }
 
     public String getSecureAreaMessage() {
-        return driverActions.elements().getText(By.cssSelector("content"));
+        return driverActions.elements().getText(By.id("flash"));
     }
 }

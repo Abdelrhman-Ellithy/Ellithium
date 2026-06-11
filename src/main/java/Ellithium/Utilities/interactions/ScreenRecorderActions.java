@@ -866,12 +866,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
                                 BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
                                 Graphics2D g2d = resized.createGraphics();
-                                if (needsScaling) {
-                                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                                try {
+                                    if (needsScaling) {
+                                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                                    }
+                                    g2d.drawImage(original, 0, 0, evenW, evenH, null);
+                                } finally {
+                                    g2d.dispose();
                                 }
-                                g2d.drawImage(original, 0, 0, evenW, evenH, null);
-                                g2d.dispose();
-
                                 return resized;
                             } catch (Exception e) {
                                 return null;
@@ -893,9 +895,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 rawBatch.clear();
             }
 
-            encoder.finish();
-
-            // ... (Remaining logging logic same as before)
             if (successfulFrames == 0) {
                 Reporter.log("No valid frames encoded", LogLevel.ERROR);
                 if (outputFile.exists()) outputFile.delete();

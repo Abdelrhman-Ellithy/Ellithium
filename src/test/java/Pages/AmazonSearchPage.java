@@ -12,9 +12,9 @@ public class AmazonSearchPage {
 
     private DriverActions driverActions;
 
-    private final By searchBar = By.id("twotabsearchtextbox");
+    private final By searchBar = By.id("search");
 
-    private final By searchBtn = By.id("nav-search-submit-button");
+    private final By searchBtn = By.tagName("searchbutton");
 
     private final By searchItemName = By.cssSelector("h2 span");
 

@@ -308,7 +308,39 @@ public class SemanticLocatorResolver {
 
         List<LocatorAttempt> strategies = buildStrategies(semanticNames, category, isMobile, driver, baseline);
 
-        // Phase 1: collect all candidates from all strategies (deduped, DOM order preserved)
+        // Light DOM first (the common case): collect candidates and pick the BEST scorer, not the
+        // first above threshold — first-match heals to the wrong cell on grids/tables/card lists.
+        java.util.LinkedHashMap<WebElement, String> candidateDesc = collectFromStrategies(driver, strategies);
+        Scored best = candidateDesc.isEmpty() ? null : pickBest(driver, candidateDesc, baseline, cvThreshold);
+
+        // Shadow-DOM fallthrough only: web components hide their internals behind shadow roots that
+        // plain findElements cannot pierce. We pay the extra JS round-trip ONLY when the light DOM
+        // produced no acceptable match, so the happy path keeps its original cost.
+        if (best == null) {
+            java.util.LinkedHashMap<WebElement, String> shadow = new java.util.LinkedHashMap<>();
+            collectShadowCandidates(driver, strategies, shadow);
+            if (!shadow.isEmpty()) best = pickBest(driver, shadow, baseline, cvThreshold);
+        }
+
+        if (best == null) {
+            HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
+            return null;
+        }
+
+        By cleanLocator = ElementFingerprint.reconstructLocator(best.element);
+        String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
+        Reporter.log(String.format("[TIER 2] healed via %s: %s (score %.2f)",
+                best.desc, cleanLocatorStr, best.score), LogLevel.INFO_GREEN);
+        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, best.score, true);
+        return best.element;
+    }
+
+    /** Result of cross-validating a candidate pool: the winning element, its score, and its source description. */
+    private record Scored(WebElement element, double score, String desc) {}
+
+    /** Collects candidates from every strategy in the current browsing context (deduped, DOM order preserved). */
+    private static java.util.LinkedHashMap<WebElement, String> collectFromStrategies(
+            WebDriver driver, List<LocatorAttempt> strategies) {
         java.util.LinkedHashMap<WebElement, String> candidateDesc = new java.util.LinkedHashMap<>();
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
@@ -322,44 +354,155 @@ public class SemanticLocatorResolver {
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
+        return candidateDesc;
+    }
 
-        if (candidateDesc.isEmpty()) {
-            HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
-            return null;
-        }
+    /**
+     * Cross-validates a candidate pool with ONE batched attribute read (0 extra WebDriver round-trips)
+     * and returns the HIGHEST-scoring candidate above {@code cvThreshold}, early-exiting at a
+     * near-perfect 0.90 (same bar as Tier 1). When no baseline is available to rank against, falls
+     * back to the original first-visible-match short-circuit.
+     */
+    private static final String VISIBILITY_BATCH_SCRIPT =
+            "return arguments[0].map(function(el){"
+            + "try{var r=el.getBoundingClientRect(),cs=getComputedStyle(el);"
+            + "return !!(el.offsetParent!==null&&r.width>0&&r.height>0"
+            + "&&cs.visibility!=='hidden'&&cs.display!=='none');}catch(e){return false;}"
+            + "});";
 
-        // Phase 2: ONE batch attribute read for all candidates (0 extra RTs vs N×13)
+    private static boolean[] fetchVisibilityFallback(WebDriver driver, List<WebElement> candidates) {
+        if (!(driver instanceof JavascriptExecutor js)) return null;
+        try {
+            Object res = js.executeScript(VISIBILITY_BATCH_SCRIPT, candidates);
+            if (res instanceof List<?> rows) {
+                boolean[] out = new boolean[candidates.size()];
+                for (int i = 0; i < rows.size() && i < out.length; i++)
+                    out[i] = Boolean.TRUE.equals(rows.get(i));
+                return out;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private static Scored pickBest(WebDriver driver,
+                                   java.util.LinkedHashMap<WebElement, String> candidateDesc,
+                                   ElementFingerprint baseline, double cvThreshold) {
         List<WebElement> candidateList = new ArrayList<>(candidateDesc.keySet());
         java.util.List<java.util.Map<String, Object>> batch =
                 Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidateList);
+        boolean scoring = (baseline != null && cvThreshold > 0.0);
 
-        // Phase 3: score from maps — 0 per-element WebDriver round-trips
+        // When the full attribute batch failed, try a lightweight visibility-only JS batch (1 round-trip
+        // for all candidates). Falls back to per-element isDisplayed() only when JS is unavailable
+        // (Appium native context, non-JS driver).
+        boolean[] visFallback = (batch == null) ? fetchVisibilityFallback(driver, candidateList) : null;
+
+        WebElement bestEl = null;
+        String bestDesc = null;
+        double bestScore = -1.0;
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             for (int i = 0; i < candidateList.size(); i++) {
                 WebElement el = candidateList.get(i);
                 java.util.Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
                 try {
-                    if (attrs != null && Boolean.FALSE.equals(attrs.get("visible"))) continue;
-                    if (baseline != null && cvThreshold > 0.0) {
-                        double score = (attrs != null)
-                                ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
-                                : baseline.scoreSimilarity(el);
-                        if (score < cvThreshold) continue;
+                    if (attrs != null) {
+                        if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
+                    } else if (visFallback != null) {
+                        if (!visFallback[i]) continue;
+                    } else if (!el.isDisplayed()) {
+                        continue;
                     }
-                    By cleanLocator = ElementFingerprint.reconstructLocator(el);
-                    String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
-                    String desc = candidateDesc.getOrDefault(el, "strategy");
-                    Reporter.log("[TIER 2] healed via " + desc + ": " + cleanLocatorStr, LogLevel.INFO_GREEN);
-                    HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.85, true);
-                    return el;
+                    if (!scoring) {
+                        // No baseline to rank by — preserve the original first-match behavior.
+                        return new Scored(el, 0.85, candidateDesc.getOrDefault(el, "strategy"));
+                    }
+                    double score = (attrs != null)
+                            ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
+                            : baseline.scoreSimilarity(el);
+                    if (score < cvThreshold) continue;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestEl = el;
+                        bestDesc = candidateDesc.getOrDefault(el, "strategy");
+                        if (score >= 0.90) break;   // near-perfect: stop scanning (pure-Java early exit)
+                    }
                 } catch (Exception ignored) {}
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
-        HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
-        return null;
+        return bestEl == null ? null : new Scored(bestEl, bestScore, bestDesc);
+    }
+
+    // Walks the document + every open shadow root once, collecting matches for a (comma-joined)
+    // selector. ONE executeScript serves all CSS strategies — no per-strategy round-trip.
+    private static final String SHADOW_QUERY_SCRIPT =
+            "var sel=arguments[0],lim=arguments[1],out=[];"
+            + "function walk(root){"
+            + " if(out.length>=lim)return;"
+            + " try{var m=root.querySelectorAll(sel);"
+            + "  for(var i=0;i<m.length&&out.length<lim;i++) out.push(m[i]);}catch(e){}"
+            + " var all=root.querySelectorAll('*');"
+            + " for(var j=0;j<all.length&&out.length<lim;j++) if(all[j].shadowRoot) walk(all[j].shadowRoot);"
+            + "}"
+            + "walk(document); return out;";
+
+    private static final int SHADOW_MATCH_LIMIT = 50;
+
+    /**
+     * Pierces open shadow roots for the CSS-expressible strategies. All selectors are comma-joined
+     * into a single {@code querySelectorAll} run inside every shadow root, so this costs exactly ONE
+     * WebDriver round-trip regardless of strategy count. XPath / relative / link-text strategies are
+     * skipped — CSS is the only selector form that can cross a shadow boundary.
+     */
+    private static void collectShadowCandidates(WebDriver driver, List<LocatorAttempt> strategies,
+                                                java.util.LinkedHashMap<WebElement, String> candidateDesc) {
+        if (!(driver instanceof JavascriptExecutor js)) return;
+        java.util.LinkedHashSet<String> selectors = new java.util.LinkedHashSet<>();
+        for (LocatorAttempt attempt : strategies) {
+            String css = toCssSelector(attempt.locator);
+            if (css != null) selectors.add(css);
+        }
+        if (selectors.isEmpty()) return;
+        String combined = String.join(",", selectors);
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            Object res = js.executeScript(SHADOW_QUERY_SCRIPT, combined, SHADOW_MATCH_LIMIT);
+            if (res instanceof List<?> rows) {
+                for (Object o : rows) {
+                    if (o instanceof WebElement w) candidateDesc.putIfAbsent(w, "shadow-DOM strategy");
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+        }
+    }
+
+    /**
+     * Renders a {@link By} as a CSS selector for shadow-root querying, or {@code null} when the
+     * strategy cannot cross a shadow boundary (XPath, relative, link-text). Id/class/name are emitted
+     * as attribute selectors to sidestep CSS identifier escaping.
+     */
+    private static String toCssSelector(By by) {
+        String s = by.toString();
+        int idx = s.indexOf(": ");
+        if (idx < 0) return null;
+        String prefix = s.substring(0, idx);
+        String value = s.substring(idx + 2);
+        return switch (prefix) {
+            case "By.cssSelector" -> value;
+            case "By.tagName" -> value;
+            case "By.id" -> "[id='" + cssAttrValue(value) + "']";
+            case "By.className" -> "[class~='" + cssAttrValue(value) + "']";
+            case "By.name" -> "[name='" + cssAttrValue(value) + "']";
+            default -> null;
+        };
+    }
+
+    private static String cssAttrValue(String v) {
+        return v.replace("\\", "\\\\").replace("'", "\\'");
     }
 
     private static ElementFingerprint.StructuralContext structuralFrom(java.util.Map<String, Object> attrs) {
@@ -848,20 +991,6 @@ public class SemanticLocatorResolver {
             + " try{ return Array.from(document.querySelectorAll(sel)); }"
             + " catch(e){ return []; }"
             + "});";
-
-    private static String toCssSelector(By by) {
-        String s = by.toString();
-        if (s.startsWith("By.cssSelector: ")) return s.substring(16);
-        if (s.startsWith("By.id: ")) {
-            String v = s.substring(7);
-            return "[id='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
-        }
-        if (s.startsWith("By.name: ")) {
-            String v = s.substring(9);
-            return "[name='" + v.replace("\\", "\\\\").replace("'", "\\'") + "']";
-        }
-        return null;
-    }
 
     private static void collectHitsBatched(WebDriver driver,
                                             List<LocatorAttempt> gold, double goldW,
