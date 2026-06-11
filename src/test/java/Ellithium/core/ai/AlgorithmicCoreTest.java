@@ -154,4 +154,40 @@ public class AlgorithmicCoreTest {
         Assert.assertEquals(SemanticQueryBuilder.deCamelCase("data-testid"), "data testid");
         Assert.assertEquals(SemanticQueryBuilder.deCamelCase("user_name"), "user name");
     }
+
+    // ── title/label field scoring (regression guard for the fix that added these two fields) ──
+
+    @Test
+    public void scoreSimilarity_titleField_scoredAsOnlyField() {
+        ElementFingerprint fp = GSON.fromJson("{\"title\":\"Submit form\"}", ElementFingerprint.class);
+        WebElement match = mock(WebElement.class);
+        when(match.getAttribute("title")).thenReturn("Submit form");
+        Assert.assertEquals(fp.scoreSimilarity(match), 1.0, 1e-9,
+                "title-only fingerprint with exact match must score 1.0");
+    }
+
+    @Test
+    public void scoreSimilarity_labelField_scoredAsOnlyField() {
+        ElementFingerprint fp = GSON.fromJson("{\"label\":\"Continue\"}", ElementFingerprint.class);
+        WebElement match = mock(WebElement.class);
+        when(match.getAttribute("label")).thenReturn("Continue");
+        Assert.assertEquals(fp.scoreSimilarity(match), 1.0, 1e-9,
+                "label-only fingerprint with exact match must score 1.0");
+    }
+
+    @Test
+    public void scoreSimilarity_titleAndLabel_bothContributeToScore() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"title\":\"Save\",\"label\":\"Save button\"}", ElementFingerprint.class);
+
+        WebElement fullMatch = mock(WebElement.class);
+        when(fullMatch.getAttribute("title")).thenReturn("Save");
+        when(fullMatch.getAttribute("label")).thenReturn("Save button");
+        Assert.assertEquals(fp.scoreSimilarity(fullMatch), 1.0, 1e-9,
+                "title+label fingerprint with both fields matching must score 1.0");
+
+        WebElement noMatch = mock(WebElement.class);
+        Assert.assertEquals(fp.scoreSimilarity(noMatch), 0.0, 1e-9,
+                "title+label fingerprint with neither field matching must score 0.0");
+    }
 }

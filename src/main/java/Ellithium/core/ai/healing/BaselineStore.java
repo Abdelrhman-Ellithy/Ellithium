@@ -54,6 +54,10 @@ public class BaselineStore {
     private static final Object LOCK = new Object();
     static final int MAX_HISTORY = 3;
 
+    private static final double PRE_SEARCH_EXACT_THRESHOLD  = 0.85;
+    private static final double PRE_SEARCH_FUZZY_THRESHOLD  = 0.80;
+    private static final double PRE_SEARCH_NAME_THRESHOLD   = 0.75;
+
     /**
      * In-memory store: locatorKey → immutable ordered list of up to MAX_HISTORY fingerprints.
      * Newest fingerprint is always LAST in the list.
@@ -153,6 +157,7 @@ public class BaselineStore {
         if (baseline == null) {
             Reporter.log("BaselineStore: No baseline for " + brokenLocator
                     + " — skipping Tier 1", LogLevel.DEBUG);
+            HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false);
             return null;
         }
 
@@ -225,12 +230,14 @@ public class BaselineStore {
         // Priority 1: stable test attributes — named + any custom data-* attrs the app uses
         for (String[] pair : namedTestAttrs(baseline)) {
             WebElement found = tryDirectLookup(driver,
-                    By.cssSelector("[" + pair[0] + "='" + escapeAttr(pair[1]) + "']"), history, 0.85);
+                    By.cssSelector("[" + pair[0] + "='" + escapeAttr(pair[1]) + "']"), history, PRE_SEARCH_EXACT_THRESHOLD);
             if (found != null) return found;
         }
         if (baseline.getDataTestId() != null) {
+            // contains-match (*=) is intentional: tolerates value-suffix drift (e.g. "submit" still
+            // matches "submit-v2") without falling through to a full DOM scan.
             WebElement found = tryDirectLookup(driver,
-                    By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']"), history, 0.80);
+                    By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']"), history, PRE_SEARCH_FUZZY_THRESHOLD);
             if (found != null) return found;
         }
 
@@ -240,7 +247,7 @@ public class BaselineStore {
             for (java.util.Map.Entry<String, String> e : custom.entrySet()) {
                 WebElement found = tryDirectLookup(driver,
                         By.cssSelector("[" + e.getKey() + "='" + escapeAttr(e.getValue()) + "']"),
-                        history, 0.85);
+                        history, PRE_SEARCH_EXACT_THRESHOLD);
                 if (found != null) return found;
             }
         }
@@ -249,20 +256,20 @@ public class BaselineStore {
         WebElement found = tryDirectLookup(driver,
                 baseline.getAriaLabel() != null
                         ? By.cssSelector("[aria-label='" + escapeAttr(baseline.getAriaLabel()) + "']") : null,
-                history, 0.80);
+                history, PRE_SEARCH_FUZZY_THRESHOLD);
         if (found != null) return found;
 
         // Priority 3: placeholder
         found = tryDirectLookup(driver,
                 baseline.getPlaceholder() != null
                         ? By.cssSelector("[placeholder='" + escapeAttr(baseline.getPlaceholder()) + "']") : null,
-                history, 0.80);
+                history, PRE_SEARCH_FUZZY_THRESHOLD);
         if (found != null) return found;
 
         // Priority 4: name
         return tryDirectLookup(driver,
                 baseline.getName() != null ? By.name(baseline.getName()) : null,
-                history, 0.75);
+                history, PRE_SEARCH_NAME_THRESHOLD);
     }
 
     private static java.util.List<String[]> namedTestAttrs(ElementFingerprint b) {
@@ -392,7 +399,7 @@ public class BaselineStore {
         double max = 0.0;
         for (ElementFingerprint fp : history) {
             try {
-                double s = fp.scoreSimilarity(attrs);
+                double s = fp.scoreSimilarity(attrs, sc);
                 if (s > max) max = s;
             } catch (Exception ignored) {}
         }

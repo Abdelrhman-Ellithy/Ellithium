@@ -634,6 +634,9 @@ public class DriverFactory {
                 } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
                     var localDriver = WebDriverThread.get();
                     if (localDriver != null) {
+                        seleniumListener.suppressLogging();
+                        try { localDriver.navigate().to("about:blank"); } catch (Exception ignored) {
+                        } finally { seleniumListener.resumeLogging(); }
                         localDriver.quit();
                     }
                 }

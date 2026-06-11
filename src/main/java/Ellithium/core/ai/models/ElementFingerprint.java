@@ -423,6 +423,18 @@ public class ElementFingerprint {
             }
         }
 
+        // title: 10 pts (HTML tooltip; stable discriminator for web elements)
+        if (isNonBlank(this.title)) {
+            dynamicMax += 10;
+            if (this.title.equals(safeGetAttribute(candidate, "title"))) score += 10;
+        }
+
+        // label: 20 pts (iOS Appium accessibility label — primary identity attribute on XCUITest)
+        if (isNonBlank(this.label)) {
+            dynamicMax += 20;
+            if (this.label.equals(safeGetAttribute(candidate, "label"))) score += 20;
+        }
+
         // ── Structural scoring (only when the caller supplied a StructuralContext) ──
 
         if (sc != null) {
@@ -588,6 +600,16 @@ public class ElementFingerprint {
             if (isNonBlank(ccls) && classJaccard(this.classTokens(), ccls) >= 0.40) {
                 score += 5;
             }
+        }
+
+        if (isNonBlank(this.title)) {
+            dynamicMax += 10;
+            if (this.title.equals(asStr(attrs.get("title")))) score += 10;
+        }
+
+        if (isNonBlank(this.label)) {
+            dynamicMax += 20;
+            if (this.label.equals(asStr(attrs.get("label")))) score += 20;
         }
 
         if (sc != null) {

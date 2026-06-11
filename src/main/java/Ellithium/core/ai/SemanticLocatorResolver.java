@@ -1,9 +1,7 @@
 package Ellithium.core.ai;
 
-import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.ai.scoring.SemanticNameExtractor;
 import Ellithium.core.ai.models.ElementFingerprint;
-import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -290,8 +288,6 @@ public class SemanticLocatorResolver {
             WebElement el = mutationHits.get(0).element;
             By loc = ElementFingerprint.reconstructLocator(el);
             String locStr = loc != null ? loc.toString() : "";
-            AIHealingReporter.queueChange("semantic-strategy", locStr,
-                    new HealingResult(locStr, 0.95, "[TIER 2 - Semantic] mutation"), null, methodName, actionType, 0);
             HealingTelemetryStore.record(2, locatorValue, locStr, 0.95, true);
             return el;
         }
@@ -355,9 +351,6 @@ public class SemanticLocatorResolver {
                     String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
                     String desc = candidateDesc.getOrDefault(el, "strategy");
                     Reporter.log("[TIER 2] healed via " + desc + ": " + cleanLocatorStr, LogLevel.INFO_GREEN);
-                    AIHealingReporter.queueChange("semantic-strategy", cleanLocatorStr,
-                            new HealingResult(cleanLocatorStr, 0.85, "[TIER 2 - Semantic] " + desc),
-                            null, methodName, actionType, 0);
                     HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, 0.85, true);
                     return el;
                 } catch (Exception ignored) {}

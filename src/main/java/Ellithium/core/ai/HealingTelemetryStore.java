@@ -217,6 +217,7 @@ public class HealingTelemetryStore {
     public static void clear() {
         records.clear();
         recordCount.set(0);
+        byTestId.clear();
     }
 
     public static class TelemetryRecord {

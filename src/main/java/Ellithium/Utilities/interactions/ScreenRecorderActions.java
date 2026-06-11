@@ -799,8 +799,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        final int MAX_WIDTH = 1280;
-        final int MAX_HEIGHT = 720;
+        final int MAX_WIDTH = 854;
+        final int MAX_HEIGHT = 480;
         int batchSize = 50;
         try {
             // Peek at the first frame to calculate accurate memory requirements
@@ -1040,8 +1040,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                  " video(s) to finish compiling...");
                 try {
                     videoCompilationExecutor.shutdown();
-                    // Wait up to 3 minutes for videos to finish
-                    boolean completed = videoCompilationExecutor.awaitTermination(180, TimeUnit.SECONDS);
+                    // Wait up to 45 seconds for videos to finish
+                    boolean completed = videoCompilationExecutor.awaitTermination(45, TimeUnit.SECONDS);
                     if (completed) {
                         System.out.println("[Ellithium] ✓ All videos compiled successfully");
                     } else {

@@ -74,6 +74,9 @@ public final class HealingOrchestrator {
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
 
+            AISelfHealer.cacheHealedLocator(request.driver(), request.brokenLocator(),
+                    locator, raw.score(), request.fieldName());
+
             if (!tier.persistsOwnHeal()) {
                 BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
                         raw.score(), tier.order());

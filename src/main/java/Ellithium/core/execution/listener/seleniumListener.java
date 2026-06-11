@@ -294,6 +294,7 @@ public class seleniumListener implements WebDriverListener {
 
    @Override
    public void afterTo(WebDriver.Navigation navigation, String url) {
+       if (isSuppressed()) return;
        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
        if (RECORDING) {
            RECORDED.add(new RecordedInteraction("navigate", null, url, null, null));
@@ -493,6 +494,7 @@ public class seleniumListener implements WebDriverListener {
 
     @Override
     public void afterTo(WebDriver.Navigation navigation, URL url) {
+        if (isSuppressed()) return;
         Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
     }
     private String nameOf(WebElement element) {

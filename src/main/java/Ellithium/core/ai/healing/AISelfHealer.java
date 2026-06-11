@@ -94,6 +94,15 @@ public class AISelfHealer {
         return cached.newLocator;
     }
 
+    public static void cacheHealedLocator(WebDriver driver, By brokenLocator,
+                                           By healedLocator, double score, String fieldLabel) {
+        if (healedLocator == null) return;
+        if (score < AIConfigLoader.getHealingStoreThreshold()) return;
+        String key = cacheKey(driver, brokenLocator);
+        globalHealedCache.putIfAbsent(key,
+                new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed"));
+    }
+
     public static void resetForSuite() {
         globalHealedCache.clear();
         inFlight.clear();

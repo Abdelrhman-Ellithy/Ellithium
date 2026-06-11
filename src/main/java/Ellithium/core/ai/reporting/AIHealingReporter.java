@@ -57,9 +57,9 @@ public class AIHealingReporter {
         }
 
         File reportFile = new File(reportDir, "healing-report.md");
-        try (FileWriter writer = new FileWriter(reportFile)) {
-            writer.write("# Ellithium AI Healing Report\n\n");
-            writer.write("Generated at: " + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n\n");
+        try (FileWriter writer = new FileWriter(reportFile, true)) {
+            writer.write("\n---\n\n## Run: "
+                    + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n\n");
             writer.write("The following locators failed during execution and were healed by the AI Engine.\n\n");
             writer.write("| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |\n");
             writer.write("|---|------|--------|--------|----------------|----------------|------------|\n");

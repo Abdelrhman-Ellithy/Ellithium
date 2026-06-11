@@ -8,7 +8,7 @@ public class ProductTest extends Base.BaseTests {
     @Test
     public void testProducts() {
         ProductPage productPage = new ProductPage(driver);
-        productPage.setProducts();
+        productPage.navigateToProducts();
     }
 
 }

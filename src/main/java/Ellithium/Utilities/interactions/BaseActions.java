@@ -75,11 +75,11 @@ class BaseActions<T extends WebDriver> {
      * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
     protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
+        By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
+        if (effective == null) effective = locator;
         try {
-            // W1 fix: use the WebElement returned directly by the condition — avoids a
-            // second findElement() call that races with page changes after the wait resolves.
             WebElement element = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                    .until(ExpectedConditions.visibilityOfElementLocated(effective));
             return element;
         } catch (org.openqa.selenium.TimeoutException | org.openqa.selenium.InvalidSelectorException e) {
             return findWebElement(locator);
@@ -91,10 +91,12 @@ class BaseActions<T extends WebDriver> {
      * If a TimeoutException occurs, attempts to heal the locator before querying again.
      */
     protected List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
+        By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
+        if (effective == null) effective = locator;
         try {
             getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-            return driver.findElements(locator);
+                    .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(effective));
+            return driver.findElements(effective);
         } catch (org.openqa.selenium.TimeoutException e) {
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HealingOrchestrator.get().heal(buildHealingRequest(locator, stack));
