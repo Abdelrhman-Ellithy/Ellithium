@@ -147,7 +147,9 @@ class HealingContextBuilder {
                 String method = frame.getMethodName();
                 if (!method.equals("findWebElement") && !method.equals("waitForVisibilityAndFindElement")
                         && !method.equals("getFluentWait") && !method.equals("findWebElements")
-                        && !method.equals("waitForVisibilityAndFindElements")) {
+                        && !method.equals("waitForVisibilityAndFindElements")
+                        && !method.equals("performWithStaleRetry")
+                        && !method.equals("performAndGet")) {
                     return method;
                 }
             }

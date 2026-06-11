@@ -3,6 +3,8 @@ package Ellithium.core.ai.healing;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.models.HealingRequest;
+import Ellithium.core.ai.models.HealingResult;
+import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.ai.spi.HealingTier;
 import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
@@ -75,10 +77,26 @@ public final class HealingOrchestrator {
             if (!tier.persistsOwnHeal()) {
                 BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
                         raw.score(), tier.order());
+
+                HealingContextBuilder.SourceLocation srcLoc =
+                        HealingContextBuilder.resolveSourceLocation(request.stackTrace());
+
                 if (locator != null) {
                     AISelfHealer.queueSourcePatch(request.brokenLocator(), locator,
-                            request.stackTrace(), raw.score(), tier.order());
+                            srcLoc, raw.score(), tier.order());
                 }
+
+                String expr = locator != null ? AISelfHealer.byToJavaExpression(locator) : null;
+                if (expr == null && locator != null) expr = locator.toString();
+                AIHealingReporter.queueChange(
+                        srcLoc != null && srcLoc.filePath != null ? srcLoc.filePath : "unknown",
+                        request.brokenLocator().toString(),
+                        new HealingResult(expr != null ? expr : "unknown",
+                                raw.score(), "[TIER " + tier.order() + "]"),
+                        srcLoc != null ? srcLoc.className : null,
+                        srcLoc != null ? srcLoc.methodName : null,
+                        request.actionType(),
+                        srcLoc != null ? srcLoc.lineNumber : 0);
             }
             WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
             return new HealOutcome(guarded, locator, raw.score(), tier.order());

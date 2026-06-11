@@ -203,6 +203,32 @@ public class AISelfHealer {
         }
     }
 
+    static void queueSourcePatch(By brokenLocator, By healedBy,
+                                 HealingContextBuilder.SourceLocation srcLoc,
+                                 double confidence, int tier) {
+        try {
+            if (getEffectiveStrategy() != HealingStrategy.HEAL_AND_NOTIFY) return;
+            if (confidence < AIConfigLoader.getHealingStoreThreshold()) return;
+            if (srcLoc == null || srcLoc.filePath == null) return;
+
+            HealingContextBuilder.HealingContext tempCtx = new HealingContextBuilder.HealingContext();
+            HealingContextBuilder.parseByLocator(brokenLocator.toString(), tempCtx);
+            if (tempCtx.byMethod == null) return;
+
+            String javaExpression = byToJavaExpression(healedBy);
+            if (javaExpression == null) return;
+
+            sourcePatchQueue.queue(new SourcePatch(
+                    srcLoc.filePath, srcLoc.fieldName,
+                    tempCtx.byMethod, tempCtx.byValue, javaExpression, confidence, tier));
+            Reporter.log("Source patch queued: By." + tempCtx.byMethod + "(\"" + tempCtx.byValue + "\") → "
+                    + javaExpression + " in " + srcLoc.filePath
+                    + " (tier " + tier + ", conf " + String.format("%.2f", confidence) + ")", LogLevel.DEBUG);
+        } catch (Exception e) {
+            // Source patching must never crash the test
+        }
+    }
+
     public static String byToJavaExpression(By locator) {
         String str = locator.toString();
         boolean appium = locator instanceof AppiumBy || str.startsWith("AppiumBy.");

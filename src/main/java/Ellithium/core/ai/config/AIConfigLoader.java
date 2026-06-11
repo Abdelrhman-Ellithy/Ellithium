@@ -50,6 +50,7 @@ public class AIConfigLoader {
     private static int     llmRetryInitialBackoffMs = 500;
     private static int     llmRetryMaxBackoffMs = 4_000;
     private static int     telemetryMaxRecords = 100_000;
+    private static boolean tier3Enabled = true;
 
     private static volatile boolean initialized = false;
 
@@ -113,6 +114,7 @@ public class AIConfigLoader {
             strategyRescueEnabled    = parseBool(p, "ai.healing.strategyRescueEnabled", strategyRescueEnabled);
             gateFingerprintFloor     = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
             semanticFallbackScore    = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
+            tier3Enabled             = parseBool(p, "ai.tier3.enabled", tier3Enabled);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -232,4 +234,5 @@ public class AIConfigLoader {
     public static int    getTelemetryMaxRecords()         { return telemetryMaxRecords; }
     public static double getTier3BaselineMatchFloor()            { return tier3BaselineMatchFloor; }
     public static double getTier3StaleBaselineConfidenceFloor()  { return tier3StaleBaselineConfidenceFloor; }
+    public static boolean isTier3Enabled()                       { return tier3Enabled; }
 }
