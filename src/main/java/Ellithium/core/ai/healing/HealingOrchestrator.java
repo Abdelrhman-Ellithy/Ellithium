@@ -7,6 +7,7 @@ import Ellithium.core.ai.spi.HealingTier;
 import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
 import Ellithium.core.ai.spi.Tier3LLMHealer;
+import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -42,6 +43,7 @@ public final class HealingOrchestrator {
         if (Files.exists(KILL_SWITCH_PATH)) {
             Reporter.log("[AI] Kill switch active (~/.ellithium/ai-disable exists) — all healing disabled",
                     LogLevel.WARN);
+            HealingTelemetryStore.record(0, request.brokenLocator().toString(), null, 0.0, false);
             return null;
         }
         for (HealingTier tier : tiers) {
@@ -66,16 +68,18 @@ public final class HealingOrchestrator {
                     raw.element(), request.actionType(), "TIER " + tier.order());
             if (resolved == null) continue;
 
-            if (!tier.persistsOwnHeal()) {
-                BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
-                        raw.score(), tier.order());
-                AISelfHealer.queueSourcePatch(request.brokenLocator(), resolved,
-                        request.stackTrace(), raw.score(), tier.order());
-            }
-
             By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
+
+            if (!tier.persistsOwnHeal()) {
+                BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
+                        raw.score(), tier.order());
+                if (locator != null) {
+                    AISelfHealer.queueSourcePatch(request.brokenLocator(), locator,
+                            request.stackTrace(), raw.score(), tier.order());
+                }
+            }
             WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }

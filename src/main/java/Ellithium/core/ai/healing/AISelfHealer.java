@@ -28,12 +28,19 @@ public class AISelfHealer {
     private static volatile HealingStrategy globalStrategy = HealingStrategy.DISABLED;
     private static volatile double confidenceThreshold = 0.85;
 
+    static final long HEALED_CACHE_TTL_MS = 30 * 60 * 1_000L;
+
     public static class CachedLocator {
         public final By newLocator;
         public final String originalField;
+        public final long cachedAt;
         public CachedLocator(By newLocator, String originalField) {
             this.newLocator = newLocator;
             this.originalField = originalField;
+            this.cachedAt = System.currentTimeMillis();
+        }
+        public boolean isExpired() {
+            return System.currentTimeMillis() - cachedAt > HEALED_CACHE_TTL_MS;
         }
     }
     private static final ConcurrentHashMap<String, CachedLocator> globalHealedCache = new ConcurrentHashMap<>();
@@ -80,8 +87,11 @@ public class AISelfHealer {
     }
 
     public static By getCachedHealedLocator(WebDriver driver, By brokenLocator) {
-        CachedLocator cached = globalHealedCache.get(cacheKey(driver, brokenLocator));
-        return cached != null ? cached.newLocator : null;
+        String key = cacheKey(driver, brokenLocator);
+        CachedLocator cached = globalHealedCache.get(key);
+        if (cached == null) return null;
+        if (cached.isExpired()) { globalHealedCache.remove(key); return null; }
+        return cached.newLocator;
     }
 
     public static void resetForSuite() {
@@ -149,6 +159,35 @@ public class AISelfHealer {
 
             By healedBy = ElementFingerprint.reconstructLocator(healedElement);
             if (healedBy == null) return;
+            String javaExpression = byToJavaExpression(healedBy);
+            if (javaExpression == null) return;
+
+            sourcePatchQueue.queue(new SourcePatch(
+                    srcLoc.filePath, srcLoc.fieldName,
+                    tempCtx.byMethod, tempCtx.byValue, javaExpression, confidence, tier));
+
+            Reporter.log("Source patch queued: By." + tempCtx.byMethod + "(\"" + tempCtx.byValue + "\") → "
+                    + javaExpression + " in " + srcLoc.filePath
+                    + " (tier " + tier + ", conf " + String.format("%.2f", confidence) + ")", LogLevel.DEBUG);
+        } catch (Exception e) {
+            // Source patching must never crash the test
+        }
+    }
+
+    public static void queueSourcePatch(By brokenLocator, By healedBy,
+                                        StackTraceElement[] stackTrace, double confidence, int tier) {
+        try {
+            HealingStrategy strategy = getEffectiveStrategy();
+            if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
+            if (confidence < AIConfigLoader.getHealingStoreThreshold()) return;
+
+            HealingContextBuilder.SourceLocation srcLoc = HealingContextBuilder.resolveSourceLocation(stackTrace);
+            if (srcLoc == null || srcLoc.filePath == null) return;
+
+            HealingContextBuilder.HealingContext tempCtx = new HealingContextBuilder.HealingContext();
+            HealingContextBuilder.parseByLocator(brokenLocator.toString(), tempCtx);
+            if (tempCtx.byMethod == null) return;
+
             String javaExpression = byToJavaExpression(healedBy);
             if (javaExpression == null) return;
 
@@ -245,7 +284,10 @@ public class AISelfHealer {
 
         String cacheKey = cacheKey(driver, brokenLocator);
         CachedLocator cached = globalHealedCache.get(cacheKey);
-        if (cached != null) return cached.newLocator;
+        if (cached != null) {
+            if (!cached.isExpired()) return cached.newLocator;
+            globalHealedCache.remove(cacheKey);
+        }
 
         Long failedAt = knownUnhealable.get(cacheKey);
         if (failedAt != null) {
@@ -400,6 +442,10 @@ public class AISelfHealer {
             sourcePatchQueue.queue(new SourcePatch(
                     ctx.filePath, ctx.fieldName, ctx.byMethod, ctx.byValue,
                     acceptedResult.getNewLocatorExpression(), acceptedResult.getConfidence(), 3));
+            Reporter.log("Source patch queued: By." + ctx.byMethod + "(\"" + ctx.byValue + "\") → "
+                    + acceptedResult.getNewLocatorExpression() + " in " + ctx.filePath
+                    + " (tier 3, conf " + String.format("%.2f", acceptedResult.getConfidence()) + ")",
+                    LogLevel.DEBUG);
         }
 
         Reporter.log("[TIER 3] healed: " + brokenLocator + " → "

@@ -21,9 +21,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        element.clear();
-        element.sendKeys(data);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
     /**
@@ -34,9 +32,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        element.clear();
-        element.sendKeys(data);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
     /**
@@ -46,8 +42,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnElement(By locator, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        element.click();
+        performWithStaleRetry(locator, timeout, pollingEvery, WebElement::click);
     }
 
     /**
@@ -58,8 +53,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return Text content of the element
      */
     public String getText(By locator, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        return element.getText();
+        return performAndGet(locator, timeout, pollingEvery, WebElement::getText);
     }
 
     /**
@@ -125,8 +119,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        return element.getDomAttribute(attribute);
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute));
     }
 
     /**
@@ -139,8 +132,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        return element.getDomProperty(property);
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property));
     }
 
     /**

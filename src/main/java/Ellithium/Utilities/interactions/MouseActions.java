@@ -21,9 +21,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void hoverOverElement(By locator, int timeout) {
         Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, WaitManager.getDefaultPollingTime());
-        Actions action = new Actions(driver);
-        action.moveToElement(element).perform();
+        performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
+                el -> new Actions(driver).moveToElement(el).perform());
     }
 
     /**
@@ -35,12 +34,19 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void hoverAndClick(By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
-        WebElement elementToHover = waitForVisibilityAndFindElement(locatorToHover, timeout, pollingEvery);
-
-        Reporter.log("Waiting for element to click: " + locatorToClick.toString(), LogLevel.INFO_BLUE);
-        WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
-        Actions action = new Actions(driver);
-        action.moveToElement(elementToHover).click(elementToClick).perform();
+        for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
+            try {
+                WebElement elementToHover = waitForVisibilityAndFindElement(locatorToHover, timeout, pollingEvery);
+                WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
+                new Actions(driver).moveToElement(elementToHover).click(elementToClick).perform();
+                break;
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                if (attempt == STALE_MAX_RETRIES) throw e;
+                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); throw e;
+                }
+            }
+        }
         Reporter.log("Hovered over " + locatorToHover + " and clicked " + locatorToClick, LogLevel.INFO_BLUE);
     }
 
@@ -86,10 +92,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void rightClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to right-click: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        Actions action = new Actions(driver);
-        action.contextClick(element).perform();
-
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> new Actions(driver).contextClick(el).perform());
         Reporter.log("Right-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
 
@@ -101,9 +105,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void doubleClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        Actions action = new Actions(driver);
-        action.doubleClick(element).perform();
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> new Actions(driver).doubleClick(el).perform());
         Reporter.log("Double-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
 

@@ -36,6 +36,8 @@ class SourcePatchQueue {
     void apply() {
         if (queue.isEmpty()) return;
         if (AIConfigLoader.isCI()) {
+            Reporter.log("[SOURCE-PATCH] CI environment detected — " + queue.size()
+                    + " queued patch(es) discarded (source modification disabled in CI)", LogLevel.WARN);
             queue.clear();
             return;
         }

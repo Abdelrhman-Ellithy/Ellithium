@@ -53,8 +53,6 @@ public class BaselineStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
     static final int MAX_HISTORY = 3;
-    private static final double T1_ACCEPT_STRONG = 0.70;   // baseline has a strong-identity anchor
-    private static final double T1_ACCEPT_WEAK   = 0.80;   // thin evidence (tag/class only)
 
     /**
      * In-memory store: locatorKey → immutable ordered list of up to MAX_HISTORY fingerprints.
@@ -145,7 +143,8 @@ public class BaselineStore {
      *   <li>Tag-narrowed, visibility-filtered full DOM scan</li>
      * </ol>
      */
-    public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator) {
+    public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator,
+                                                  StackTraceElement[] stackTrace, String actionType) {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
         ElementFingerprint baseline = (history != null && !history.isEmpty())
@@ -170,7 +169,7 @@ public class BaselineStore {
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
             if (mutationMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null);
+                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace);
                 return HealOutcome.of(mutationMatch, 0.92, 1);
             }
 
@@ -178,7 +177,7 @@ public class BaselineStore {
             if (attrMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 double score = scoreBestHistory(attrMatch, history);
-                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null);
+                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null, stackTrace);
                 return HealOutcome.of(attrMatch, score, 1);
             }
 
@@ -192,13 +191,13 @@ public class BaselineStore {
                 return null;
             }
 
-            double acceptBar = baseline.hasStrongIdentity() ? T1_ACCEPT_STRONG : T1_ACCEPT_WEAK;
+            double acceptBar = AIConfigLoader.getHealingStoreThreshold();
             if (best.score >= acceptBar) {
                 Reporter.log("BaselineStore: Tier 1 MATCH — score=" + String.format("%.2f", best.score)
                         + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
                         LogLevel.INFO_GREEN);
                 acceptHeal(driver, brokenLocator, best.element, best.score,
-                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator);
+                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator, stackTrace);
                 return HealOutcome.of(best.element, best.reconstructedLocator, best.score, 1);
             } else {
                 Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
@@ -498,10 +497,12 @@ public class BaselineStore {
     // ──────────────────────── Accept Heal Helper ────────────────────────
 
     private static void acceptHeal(WebDriver driver, By brokenLocator, WebElement healed,
-                                    double score, String tierLabel, By reconstructedLocator) {
-        By bestLocator = reconstructedLocator != null
-                ? reconstructedLocator
-                : ElementFingerprint.reconstructLocator(healed);
+                                    double score, String tierLabel, By reconstructedLocator,
+                                    StackTraceElement[] stackTrace) {
+        By built = HealedLocatorBuilder.build(driver, healed, null);
+        By bestLocator = built != null ? built
+                : (reconstructedLocator != null ? reconstructedLocator
+                        : ElementFingerprint.reconstructLocator(healed));
         String locatorStr = bestLocator != null ? bestLocator.toString() : brokenLocator.toString();
 
         // Update baseline with fresh fingerprint — only when the heal clears the store threshold,
@@ -530,6 +531,10 @@ public class BaselineStore {
                 null, null, null, 0);
 
         HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true);
+
+        if (stackTrace != null && bestLocator != null) {
+            AISelfHealer.queueSourcePatch(brokenLocator, bestLocator, stackTrace, score, 1);
+        }
     }
 
     // ──────────────────────── Reasoning ────────────────────────

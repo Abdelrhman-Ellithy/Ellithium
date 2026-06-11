@@ -327,7 +327,9 @@ class BaseActions<T extends WebDriver> {
                 if (!method.equals("findWebElement") && !method.equals("waitForVisibilityAndFindElement")
                         && !method.equals("getFluentWait") && !method.equals("findWebElements")
                         && !method.equals("waitForVisibilityAndFindElements")
-                        && !method.equals("extractActionFromStack")) {
+                        && !method.equals("extractActionFromStack")
+                        && !method.equals("performWithStaleRetry")
+                        && !method.equals("performAndGet")) {
                     return method;
                 }
             }
@@ -405,6 +407,43 @@ class BaseActions<T extends WebDriver> {
         int colonIdx = str.indexOf(':');
         if (colonIdx >= 0 && colonIdx < str.length() - 1) {
             return str.substring(colonIdx + 1).trim();
+        }
+        return null;
+    }
+
+    // ──────────────────────── Stale-element retry helpers ────────────────────────
+
+    protected static final int  STALE_MAX_RETRIES  = 2;
+    protected static final long STALE_RETRY_WAIT_MS = 300L;
+
+    protected void performWithStaleRetry(By locator, int timeout, int polling,
+                                         Consumer<WebElement> action) {
+        for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
+            try {
+                WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
+                action.accept(el);
+                return;
+            } catch (StaleElementReferenceException e) {
+                if (attempt == STALE_MAX_RETRIES) throw e;
+                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); throw e;
+                }
+            }
+        }
+    }
+
+    protected <R> R performAndGet(By locator, int timeout, int polling,
+                                   Function<WebElement, R> action) {
+        for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
+            try {
+                WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
+                return action.apply(el);
+            } catch (StaleElementReferenceException e) {
+                if (attempt == STALE_MAX_RETRIES) throw e;
+                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); throw e;
+                }
+            }
         }
         return null;
     }
