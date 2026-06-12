@@ -442,6 +442,6 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      */
     @Override
     public DriverType getDriverType() {
-        return null;
+        return localDriverType;
     }
 }

@@ -254,6 +254,7 @@ public class DriverFactory {
                 remoteDriverConfig.getWebSecurityMode()
                 ,remoteDriverConfig.getCapabilities(),
                 false);
+        driverConfiguration.setRemoteAddress(remoteDriverConfig.getRemoteAddress());
         driverConfigurationThread.set(driverConfiguration);
         webSetUp();
         return (T)WebDriverThread.get();
@@ -487,8 +488,7 @@ public class DriverFactory {
         Reporter.logReportOnly("Capabilities: "+cloudMobileConfig.getCapabilities().asMap().toString(),LogLevel.INFO_BLUE);
         Reporter.log("Creating driver: "+ ((MobileDriverType)cloudMobileConfig.getDriverType()).getPlatformName()+ " for " + cloudMobileConfig.getCloudProvider() +
                 " cloud provider", LogLevel.INFO_BLUE);
-        checkMobileHeadless(cloudMobileConfig.getCapabilities());
-         return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
+        return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
     }
 
     /**
@@ -636,8 +636,10 @@ public class DriverFactory {
                     if (localDriver != null) {
                         seleniumListener.suppressLogging();
                         try { localDriver.navigate().to("about:blank"); } catch (Exception ignored) {
-                        } finally { seleniumListener.resumeLogging(); }
-                        localDriver.quit();
+                        } finally {
+                            try { seleniumListener.resumeLogging(); } catch (Exception ignored) {}
+                            localDriver.quit();
+                        }
                     }
                 }
             } finally {

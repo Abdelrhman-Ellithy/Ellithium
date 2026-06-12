@@ -46,9 +46,7 @@ public class BrowserSetUp {
                 if (capabilities != null) safariOptions=safariOptions.merge(capabilities);
                 return new SafariDriver(safariOptions);
             }
-            default -> {
-                return null;
-            }
+            default -> throw new IllegalStateException("Unsupported local driver type: " + driverType);
         }
     }
     static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
@@ -67,16 +65,14 @@ public class BrowserSetUp {
             case REMOTE_Edge -> {
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
                 capabilities.merge(edgeOptions);
-                driver = new RemoteWebDriver(remoteAddress, edgeOptions);
+                driver = new RemoteWebDriver(remoteAddress, capabilities);
             }
             case REMOTE_Safari -> {
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
                 capabilities.merge(safariOptions);
-                driver = new RemoteWebDriver(remoteAddress, safariOptions);
+                driver = new RemoteWebDriver(remoteAddress, capabilities);
             }
-            default -> {
-                return null;
-            }
+            default -> throw new IllegalStateException("Unsupported remote driver type: " + driverType);
         }
         driver.setFileDetector(new LocalFileDetector());
         return driver;
