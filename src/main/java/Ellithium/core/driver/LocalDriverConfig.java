@@ -304,8 +304,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param privateMode The private mode to set
      */
-    public void setPrivateMode(PrivateMode privateMode) {
+    public LocalDriverConfig setPrivateMode(PrivateMode privateMode) {
         this.privateMode = privateMode;
+        return this;
     }
 
     /**
@@ -323,8 +324,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param sandboxMode The sandbox mode to set
      */
-    public void setSandboxMode(SandboxMode sandboxMode) {
+    public LocalDriverConfig setSandboxMode(SandboxMode sandboxMode) {
         this.sandboxMode = sandboxMode;
+        return this;
     }
 
     /**
@@ -342,8 +344,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param webSecurityMode The web security mode to set
      */
-    public void setWebSecurityMode(WebSecurityMode webSecurityMode) {
+    public LocalDriverConfig setWebSecurityMode(WebSecurityMode webSecurityMode) {
         this.webSecurityMode = webSecurityMode;
+        return this;
     }
 
     /**
@@ -361,8 +364,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param pageLoadStrategyMode The page load strategy to set
      */
-    public void setPageLoadStrategy( PageLoadStrategyMode pageLoadStrategyMode) {
+    public LocalDriverConfig setPageLoadStrategy(PageLoadStrategyMode pageLoadStrategyMode) {
         this.pageLoadStrategyMode = pageLoadStrategyMode;
+        return this;
     }
 
     /**
@@ -380,8 +384,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param headlessMode The headless mode to set
      */
-    public void setHeadlessMode(HeadlessMode headlessMode) {
+    public LocalDriverConfig setHeadlessMode(HeadlessMode headlessMode) {
         this.headlessMode = headlessMode;
+        return this;
     }
 
     /**
@@ -399,8 +404,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      *
      * @param localDriverType The local driver type to set
      */
-    public void setLocalDriverType(LocalDriverType localDriverType) {
+    public LocalDriverConfig setLocalDriverType(LocalDriverType localDriverType) {
         this.localDriverType = localDriverType;
+        return this;
     }
 
     /**

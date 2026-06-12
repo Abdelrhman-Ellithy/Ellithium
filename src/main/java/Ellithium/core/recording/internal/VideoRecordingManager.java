@@ -106,10 +106,6 @@ public class VideoRecordingManager {
             Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
             return false;
         }
-        if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
-            Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
-            return false;
-        }
         String isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
         String isReportGenerated = PropertyHelper.getDataFromProperties(ConfigContext.getAllureFilePath(), GENERATE_REPORT_KEY);
         return Boolean.parseBoolean(isAttachmentEnabled) && Boolean.parseBoolean(isReportGenerated);
@@ -164,14 +160,14 @@ public class VideoRecordingManager {
         try {
             String recordingId = UUID.randomUUID().toString();
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
-            String recordingName = sanitizeFileName(testName) + "_" + "_"+
+            String recordingName = sanitizeFileName(testName) + "_" +
                     TestDataGenerator.getTimeStamp();
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);
             testToRecordingMap.put(testIdentifier, recordingId);
             recorder.startRecording(recordingName);
-            Reporter.log("Started video recording [] for: " + testName + " on thread: " + threadId, LogLevel.INFO_BLUE);
+            Reporter.log("Started video recording for: " + testName + " on thread: " + threadId, LogLevel.INFO_BLUE);
             return recordingId;
         } catch (Exception e) {
             Reporter.log("Failed to start video recording: " + e.getMessage(), LogLevel.ERROR);
@@ -384,6 +380,7 @@ public class VideoRecordingManager {
         }
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_")
                 .replaceAll("\\s+", "_")
+                .replaceAll("_{2,}", "_")
                 .trim();
     }
     /**

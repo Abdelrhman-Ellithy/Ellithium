@@ -22,9 +22,9 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      */
     public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery) {
+        Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
         getFluentWait(timeout,pollingEvery)
                 .until(ExpectedConditions.invisibilityOfElementLocated(locator));
-        Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
     }
 
     /**
@@ -37,13 +37,11 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery) {
         Reporter.log("Wait For Element To Be Clickable: ",LogLevel.INFO_BLUE,locator.toString());
         try {
-            getFluentWait(timeout,pollingEvery)
+            return getFluentWait(timeout,pollingEvery)
                     .until(ExpectedConditions.elementToBeClickable(locator));
-            return findWebElement(locator);
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            getFluentWait(timeout,pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
-            return element;
+            return getFluentWait(timeout,pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
         }
     }
 
@@ -69,11 +67,10 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Presence: " + locator.toString(), LogLevel.INFO_BLUE);
         try {
-            getFluentWait(timeout,pollingEvery)
+            return getFluentWait(timeout,pollingEvery)
                     .until(ExpectedConditions.presenceOfElementLocated(locator));
-            return findWebElement( locator);
         } catch (org.openqa.selenium.TimeoutException e) {
-            return findWebElement(locator); // Triggers healing
+            return findWebElement(locator);
         }
     }
 
@@ -261,8 +258,11 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locator)).isEnabled();
+        try {
+            return waitForVisibilityAndFindElement(locator, timeout, pollingEvery).isEnabled();
+        } catch (org.openqa.selenium.TimeoutException e) {
+            return false;
+        }
     }
 
     /**

@@ -193,7 +193,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
-        int active = ScreenRecorderActions.activeCompilations.get();
+        int active = ScreenRecorderActions.pendingCompilations();
         try {
             if (active > 0) {
             Logger.info("Background video compilation in progress (" + active + " videos)");

@@ -74,6 +74,7 @@ public class DriverFactory {
      * @throws IllegalArgumentException if unknown config type is provided
      */
     public static <T> T getNewDriver(DriverConfigBuilder driverConfigBuilder) {
+        driverConfigBuilder.validate();
         return switch (driverConfigBuilder) {
             case LocalDriverConfig localDriverConfig -> getNewDriver(localDriverConfig);
             case RemoteDriverConfig remoteDriverConfig -> getNewDriver(remoteDriverConfig);
@@ -414,6 +415,7 @@ public class DriverFactory {
      * @return Configured mobile driver instance
      */
     public static <T> T getNewDriver(MobileDriverConfig mobileDriverConfig) {
+        mobileDriverConfig.validate();
         HeadlessMode mode=checkMobileHeadless(mobileDriverConfig.getCapabilities());
         DriverConfiguration driverConfiguration=new DriverConfiguration(
                 mobileDriverConfig.getDriverType(),
@@ -487,7 +489,7 @@ public class DriverFactory {
         driverConfigurationThread.set(driverConfiguration);
         Reporter.logReportOnly("Capabilities: "+cloudMobileConfig.getCapabilities().asMap().toString(),LogLevel.INFO_BLUE);
         Reporter.log("Creating driver: "+ ((MobileDriverType)cloudMobileConfig.getDriverType()).getPlatformName()+ " for " + cloudMobileConfig.getCloudProvider() +
-                " cloud provider", LogLevel.INFO_BLUE);
+                " cloud provider at " + sanitizeHubUrl(cloudMobileConfig.getRemoteAddress()), LogLevel.INFO_BLUE);
         return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
     }
 
@@ -676,7 +678,7 @@ public class DriverFactory {
      * Automatically managed don't call it
      *
      */
-    public static void removeCurrentDriverConfiguration(){
+    static void removeCurrentDriverConfiguration(){
         driverConfigurationThread.remove();
     }
 
@@ -732,18 +734,18 @@ public class DriverFactory {
         switch (driverType){
             case IOS -> {
                 IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
-                IOSDriverThread.set(localDriver);
-                if(IOSDriverThread.get()!=null){
+                if(localDriver!=null){
+                    IOSDriverThread.set(localDriver);
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)IOSDriverThread.get();
+                    return (T)localDriver;
                 }
             }
             case Android -> {
                 AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
-                AndroidDriverThread.set(localDriver);
-                if(AndroidDriverThread.get()!=null){
+                if(localDriver!=null){
+                    AndroidDriverThread.set(localDriver);
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)AndroidDriverThread.get();
+                    return (T)localDriver;
                 }
             }
             default -> throw new IllegalArgumentException("Wrong Driver Initialization: " + getCurrentDriverConfiguration().getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
@@ -793,6 +795,12 @@ public class DriverFactory {
                 new appiumListener()
         );
     }
+    private static String sanitizeHubUrl(java.net.URL url) {
+        if (url == null) return "unknown";
+        String s = url.toString();
+        return s.replaceAll("(?<=://)[^:]+:[^@]+@", "***:***@");
+    }
+
     private static HeadlessMode checkMobileHeadless(Capabilities capabilities){
         Object isHeadless=capabilities.getCapability("appium:isHeadless");
         if (isHeadless!=null){

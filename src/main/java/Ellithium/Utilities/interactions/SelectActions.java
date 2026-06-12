@@ -114,9 +114,9 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of selected options' texts
      */
     public List<String> getDropdownSelectedOptions(By locator, int timeout, int pollingEvery) {
-        Reporter.log("Getting Dropdown Options Texts: ", LogLevel.INFO_BLUE, locator.toString());
-        waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        return mapSelectOptionsSafely(locator, WebElement::getText);
+        Reporter.log("Getting Dropdown Selected Options: ", LogLevel.INFO_BLUE, locator.toString());
+        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        return new Select(element).getAllSelectedOptions().stream().map(WebElement::getText).toList();
     }
 
     /**

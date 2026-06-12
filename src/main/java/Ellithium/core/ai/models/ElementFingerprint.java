@@ -748,11 +748,13 @@ public class ElementFingerprint {
     /**
      * Token-level Jaccard between this baseline's cached token set and a candidate string.
      * "login-btn" vs "loginBtn" → {"login","btn"} vs {"login","btn"} → 1.0
+     * Null/blank guard is in callers. Empty-input guard keeps divide-by-zero safe.
      */
     private static double jaccard(java.util.Set<String> ta, String b) {
+        if (ta.isEmpty()) return 0.0;
         java.util.Set<String> tb = tokenSet(b);
-        if (ta.isEmpty() && tb.isEmpty()) return 1.0;
-        if (ta.isEmpty() || tb.isEmpty()) return 0.0;
+        if (tb.isEmpty()) return 0.0;
+        if (ta.size() == tb.size() && ta.containsAll(tb)) return 1.0;
         int inter = 0;
         for (String t : ta) if (tb.contains(t)) inter++;
         return inter / (double) (ta.size() + tb.size() - inter);   // |∩| / |∪| without extra sets
@@ -771,12 +773,14 @@ public class ElementFingerprint {
     /**
      * CSS class set Jaccard similarity. Baseline token set is pre-cached; only one HashSet is
      * allocated per call (for the candidate string), eliminating the 2-alloc hot-path cost.
+     * Exact-string equality short-circuits before any allocation — the common stable-class case.
      */
     private static double classJaccard(java.util.Set<String> baseline, String candidateClass) {
         java.util.Set<String> sb = new java.util.HashSet<>();
         for (String p : WS_SPLIT.split(candidateClass)) { String t = p.strip(); if (!t.isEmpty()) sb.add(t); }
         if (baseline.isEmpty() && sb.isEmpty()) return 1.0;
         if (baseline.isEmpty() || sb.isEmpty()) return 0.0;
+        if (baseline.size() == sb.size() && baseline.containsAll(sb)) return 1.0;
         int inter = 0;
         for (String t : baseline) if (sb.contains(t)) inter++;
         return inter / (double) (baseline.size() + sb.size() - inter);

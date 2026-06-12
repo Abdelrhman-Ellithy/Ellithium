@@ -39,9 +39,8 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingTime Polling interval in milliseconds
      */
     public void switchToFrameByElement(By locator, int timeout, int pollingTime) {
-        org.openqa.selenium.WebElement frameElement = waitForVisibilityAndFindElement(locator, timeout, pollingTime);
         getFluentWait(timeout, pollingTime)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(frameElement));
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
     }
 
     /**
@@ -59,9 +58,8 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @return The WebDriver instance switched to the frame
      */
     public WebDriver waitForFrameToBeAvailableAndSwitchToIt(By locator, int timeout, int pollingEvery) {
-        org.openqa.selenium.WebElement frameElement = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
         return getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(frameElement));
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
     }
 
     /**

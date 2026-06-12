@@ -777,7 +777,10 @@ public class BaselineStore {
             } catch (Exception e) {
                 Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }
-            SAVE_EXECUTOR.shutdown();
+            // Do NOT shut down SAVE_EXECUTOR here. Multi-suite JVM runs (Surefire fork-count=0)
+            // call flush() between suites; shutting down the executor drops all post-flush saves
+            // with a silent RejectedExecutionException. The JVM shutdown hook (static initializer)
+            // owns the true terminal close.
             saveScheduled.set(false);
         }
     }

@@ -345,9 +345,9 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void switchToParentWindow() {
         try {
-            driver.switchTo().defaultContent();
+            driver.switchTo().parentFrame();
         } catch (Exception e) {
-            Reporter.log("Failed to switch to parent window: " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Failed to switch to parent frame: " + e.getMessage(), LogLevel.ERROR);
             throw e;
         }
     }
@@ -357,8 +357,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getCurrentWindowTitle() {
         try {
-            String title = driver.getTitle();
-            return title;
+            return driver.getTitle();
         } catch (Exception e) {
             Reporter.log("Failed to get window title: " + e.getMessage(), LogLevel.ERROR);
             throw e;

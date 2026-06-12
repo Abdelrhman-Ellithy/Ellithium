@@ -20,7 +20,6 @@ import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
-import static Ellithium.core.recording.internal.VideoRecordingManager.isRecordingEnabled;
 
 public class BrowserSetUp {
 
@@ -54,23 +53,23 @@ public class BrowserSetUp {
         switch (driverType) {
             case REMOTE_Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(chromeOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) chromeOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, chromeOptions);
             }
             case REMOTE_FireFox -> {
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(firefoxOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) firefoxOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, firefoxOptions);
             }
             case REMOTE_Edge -> {
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(edgeOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) edgeOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, edgeOptions);
             }
             case REMOTE_Safari -> {
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-                capabilities.merge(safariOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) safariOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, safariOptions);
             }
             default -> throw new IllegalStateException("Unsupported remote driver type: " + driverType);
         }
@@ -158,7 +157,6 @@ public class BrowserSetUp {
 
         // Miscellaneous
         options.addArguments("--metrics-recording-only");
-        options.addArguments("--host-resolver-rules");
         options.addArguments("--disable-device-discovery-notifications");
         options.addArguments("--ash-disable-system-sounds");
         options.addArguments("--disable-plugins");
@@ -171,18 +169,10 @@ public class BrowserSetUp {
         options.addArguments("--enable-use-zoom-for-dsf");
         options.setCapability("unhandledPromptBehavior", "ignore");
         options.setCapability("webSocketUrl", true);
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-component-extensions-with-background-pages");
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
-        boolean isRecordingEnabled = isRecordingEnabled();
-
-        if (!isRecordingEnabled) {
-            // These can interfere with CDP but are safe when not recording
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--enable-logging");
-            options.addArguments("--log-net-log");
-            options.addArguments("--net-log-capture-mode");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--disable-component-extensions-with-background-pages");
-        }
         addCapabilitiesToParam(options);
         return options;
     }
@@ -353,19 +343,9 @@ public class BrowserSetUp {
         options.setCapability("webSocketUrl", true);
         options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
 
-        // =========================================================
-        // CONDITIONAL (NOT recording)
-        // =========================================================
-        boolean isRecordingEnabled = isRecordingEnabled();
-        if (!isRecordingEnabled) {
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--enable-logging");
-            options.addArguments("--log-net-log");
-            options.addArguments("--net-log-capture-mode");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--disable-component-extensions-with-background-pages");
-        }
-
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-component-extensions-with-background-pages");
         Reporter.log("Edge Options Configured", LogLevel.INFO_GREEN);
         addCapabilitiesToParam(options);
         return options;

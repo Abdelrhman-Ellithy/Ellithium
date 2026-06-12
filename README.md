@@ -147,7 +147,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>3.0.0</Ellithiumversion>
+    <Ellithiumversion>3.0.0-beta</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>

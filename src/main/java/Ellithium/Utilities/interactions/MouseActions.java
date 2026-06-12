@@ -34,19 +34,10 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void hoverAndClick(By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
-        for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
-            try {
-                WebElement elementToHover = waitForVisibilityAndFindElement(locatorToHover, timeout, pollingEvery);
-                WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
-                new Actions(driver).moveToElement(elementToHover).click(elementToClick).perform();
-                break;
-            } catch (org.openqa.selenium.StaleElementReferenceException e) {
-                if (attempt == STALE_MAX_RETRIES) throw e;
-                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt(); throw e;
-                }
-            }
-        }
+        performWithStaleRetry(locatorToHover, timeout, pollingEvery, elementToHover -> {
+            WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
+            new Actions(driver).moveToElement(elementToHover).click(elementToClick).perform();
+        });
         Reporter.log("Hovered over " + locatorToHover + " and clicked " + locatorToClick, LogLevel.INFO_BLUE);
     }
 
@@ -118,20 +109,42 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @return The final value of the slider
      */
     public float moveSliderTo(By sliderLocator, By rangeLocator, float targetValue) {
-        // Re-locate elements on each iteration to prevent stale element exceptions
-        float currentValue = Float.parseFloat(findWebElement(rangeLocator).getText());
-        int timeout = 0;
-        while((Float.valueOf(findWebElement(rangeLocator).getText()) != 0) && (timeout < 5000)) {
-            findWebElement(sliderLocator).sendKeys(Keys.ARROW_LEFT);
-            timeout++;
+        final float EPSILON = 0.01f;
+        // Cache element references; only re-locate on StaleElementReferenceException.
+        // Previous implementation re-called findWebElement (= driver.findElement + capture JS)
+        // on every step — up to 6 CDP round-trips per iteration × 10,000 steps = 60,000 calls.
+        // Now: 2 CDP calls per step (getText + sendKeys) regardless of slider range.
+        WebElement slider = waitForVisibilityAndFindElement(sliderLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        WebElement range  = waitForVisibilityAndFindElement(rangeLocator,  WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        int steps = 0;
+        while (steps++ < 5000) {
+            try {
+                if (Math.abs(Float.parseFloat(range.getText())) <= EPSILON) break;
+                slider.sendKeys(Keys.ARROW_LEFT);
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                slider = findWebElement(sliderLocator);
+                range  = findWebElement(rangeLocator);
+            }
         }
-        timeout = 0;
-        while((Float.valueOf(findWebElement(rangeLocator).getText()) != targetValue) && (timeout < 5000)) {
-            findWebElement(sliderLocator).sendKeys(Keys.ARROW_RIGHT);
-            timeout++;
+        steps = 0;
+        while (steps++ < 5000) {
+            try {
+                if (Math.abs(Float.parseFloat(range.getText()) - targetValue) <= EPSILON) break;
+                slider.sendKeys(Keys.ARROW_RIGHT);
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                slider = findWebElement(sliderLocator);
+                range  = findWebElement(rangeLocator);
+            }
         }
-        Reporter.log("Slider moved to: " + currentValue, LogLevel.INFO_BLUE);
-        return currentValue;
+        try {
+            float finalValue = Float.parseFloat(range.getText());
+            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+            return finalValue;
+        } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
+            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+            return finalValue;
+        }
     }
 
     /**
