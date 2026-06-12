@@ -667,6 +667,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             // Get deque reference BEFORE stopping executor
             java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> frames = videoFrames.get();
 
+            // Capture final screenshot before tearing down recorders so the last visible
+            // state is always included — CDP and snapshot both stop emitting frames the
+            // moment recording is flagged false, leaving a gap at the end.
+            if (driver instanceof TakesScreenshot) {
+                try {
+                    byte[] lastFrame = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+                    if (lastFrame != null && lastFrame.length > 0) {
+                        frames.addLast(new FrameEntry(lastFrame));
+                    }
+                } catch (Exception ignored) {}
+            }
+
             // Stop CDP if active
             if (devToolsSession.get() != null) {
                 stopCDPScreencast();
@@ -678,21 +690,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (frames.isEmpty()) {
-                // CDP emits no frames while a native browser dialog (alert/confirm/prompt) is shown.
-                // Capture one fallback screenshot so the recording is not silently lost.
-                if (driver instanceof TakesScreenshot) {
-                    try {
-                        byte[] snap = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-                        if (snap != null && snap.length > 0) {
-                            frames.addLast(new FrameEntry(snap));
-                            Reporter.log("No screencast frames received; using fallback screenshot", LogLevel.DEBUG);
-                        }
-                    } catch (Exception ignored) {}
-                }
-                if (frames.isEmpty()) {
-                    Reporter.log("No frames captured during recording", LogLevel.WARN);
-                    return null;
-                }
+                Reporter.log("No frames captured during recording", LogLevel.WARN);
+                return null;
             }
 
             // CAPTURE DURATION HERE (before async, in main thread)

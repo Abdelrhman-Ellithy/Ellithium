@@ -416,7 +416,9 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      */
     @Override
     public LocalDriverConfig setCapabilities(Capabilities capabilities) {
-        this.capabilities = (capabilities != null) ? (MutableCapabilities) capabilities : new MutableCapabilities();
+        this.capabilities = capabilities == null ? new MutableCapabilities()
+            : capabilities instanceof MutableCapabilities mc ? mc
+            : new MutableCapabilities(capabilities.asMap());
         return this;
     }
 

@@ -23,6 +23,8 @@ import static Ellithium.core.driver.RemoteDriverType.*;
 
 public class BrowserSetUp {
 
+    private BrowserSetUp() {}
+
     static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         switch (driverType) {
             case Chrome -> {
@@ -164,9 +166,7 @@ public class BrowserSetUp {
         // ====================================================================
         // REQUIRED FOR CDP
         // ====================================================================
-        options.addArguments("--enable-features=NetworkService");
-        options.addArguments("--enable-features=NetworkServiceInProcess");
-        options.addArguments("--enable-use-zoom-for-dsf");
+        options.addArguments("--enable-features=NetworkService,NetworkServiceInProcess");
         options.setCapability("unhandledPromptBehavior", "ignore");
         options.setCapability("webSocketUrl", true);
         options.addArguments("--disable-dev-shm-usage");
@@ -196,10 +196,6 @@ public class BrowserSetUp {
             options.addPreference("browser.privatebrowsing.autostart", true);
         }
 
-        if (sandboxMode == SandboxMode.NoSandboxMode) {
-            // Firefox doesn't have a single --no-sandbox flag like Chromium; only use if you know what you're doing
-            // (left intentionally blank or use environment-specific service config)
-        }
         if (webSecurityMode == WebSecurityMode.AllowUnsecure) {
             options.addPreference("security.mixed_content.block_active_content", false);
             options.addPreference("security.mixed_content.block_display_content", false);
@@ -337,9 +333,7 @@ public class BrowserSetUp {
         // =========================================================
         // REQUIRED FOR CDP / BiDi
         // =========================================================
-        options.addArguments("--enable-features=NetworkService");
-        options.addArguments("--enable-features=NetworkServiceInProcess");
-        options.addArguments("--enable-use-zoom-for-dsf");
+        options.addArguments("--enable-features=NetworkService,NetworkServiceInProcess");
         options.setCapability("webSocketUrl", true);
         options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
 
