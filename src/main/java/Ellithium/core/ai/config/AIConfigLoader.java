@@ -36,6 +36,7 @@ public class AIConfigLoader {
     private static int     telemetryMaxRecords        = 100_000;
     private static boolean tier3Enabled               = true;
     private static int     ciHealAlertThreshold       = -1;
+    private static int     baselineMaxLocators        = 0;
 
     private static volatile boolean initialized = false;
 
@@ -87,6 +88,7 @@ public class AIConfigLoader {
             telemetryMaxRecords         = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
             tier3Enabled                = parseBool(p, "ai.tier3.enabled", tier3Enabled);
             ciHealAlertThreshold        = parseInt(p, "ai.healing.ciAlertThreshold", ciHealAlertThreshold);
+            baselineMaxLocators         = parseInt(p, "ai.healing.baselineMaxLocators", baselineMaxLocators);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -191,4 +193,5 @@ public class AIConfigLoader {
     public static double getTier3BaselineMatchFloor()           { return tier3BaselineMatchFloor; }
     public static boolean isTier3Enabled()                      { return tier3Enabled; }
     public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
+    public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }
 }

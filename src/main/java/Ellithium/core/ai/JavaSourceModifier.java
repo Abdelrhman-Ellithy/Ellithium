@@ -69,6 +69,7 @@ public class JavaSourceModifier {
                 Reporter.log("Java file not found for AST modification: " + filePath, LogLevel.ERROR);
                 return false;
             }
+            if (!prepareForPatch(javaFile)) return false;
 
             // Parse the Java file into an Abstract Syntax Tree (AST)
             CompilationUnit cu = StaticJavaParser.parse(javaFile);
@@ -143,6 +144,7 @@ public class JavaSourceModifier {
                 Reporter.log("Java file not found for AST modification: " + filePath, LogLevel.ERROR);
                 return false;
             }
+            if (!prepareForPatch(javaFile)) return false;
 
             CompilationUnit cu = StaticJavaParser.parse(javaFile);
 
@@ -226,5 +228,30 @@ public class JavaSourceModifier {
         } finally {
             lock.unlock();
         }
+    }
+
+    private static boolean prepareForPatch(File javaFile) {
+        String path = javaFile.getAbsolutePath();
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain", path);
+            pb.redirectErrorStream(true);
+            Process proc = pb.start();
+            String out = new String(proc.getInputStream().readAllBytes()).trim();
+            proc.waitFor();
+            if (!out.isEmpty()) {
+                Reporter.log("AI source-patch aborted: file has uncommitted changes — " + path, LogLevel.WARN);
+                return false;
+            }
+        } catch (Exception e) {
+            Reporter.log("AI source-patch: git check skipped (" + e.getMessage() + "), proceeding without guard", LogLevel.DEBUG);
+        }
+        try {
+            java.nio.file.Path src = javaFile.toPath();
+            java.nio.file.Path bak = src.getParent().resolve(javaFile.getName() + ".bak." + System.currentTimeMillis());
+            Files.copy(src, bak);
+        } catch (IOException e) {
+            Reporter.log("AI source-patch: backup failed for " + path + " — " + e.getMessage(), LogLevel.WARN);
+        }
+        return true;
     }
 }

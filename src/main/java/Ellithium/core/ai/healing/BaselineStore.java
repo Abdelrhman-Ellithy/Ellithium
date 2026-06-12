@@ -671,6 +671,23 @@ public class BaselineStore {
         } catch (Exception e) {
             Reporter.log("BaselineStore: Failed to load baselines (non-fatal): " + e.getMessage(), LogLevel.WARN);
         }
+        pruneByCount();
+    }
+
+    private static void pruneByCount() {
+        int max = AIConfigLoader.getBaselineMaxLocators();
+        if (max <= 0 || baselines.size() <= max) return;
+        int toEvict = baselines.size() - max;
+        baselines.entrySet().stream()
+                .sorted(java.util.Comparator.comparingLong(e ->
+                        e.getValue().stream()
+                                .mapToLong(ElementFingerprint::getLastSeenEpoch)
+                                .max().orElse(0L)))
+                .limit(toEvict)
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(baselines::remove);
+        Reporter.log("BaselineStore: count-pruned " + toEvict + " oldest locators (max=" + max + ")", LogLevel.DEBUG);
     }
 
     // Single shared daemon writer (was: a NEW Thread per capture → hundreds of threads + O(N^2)
@@ -731,19 +748,24 @@ public class BaselineStore {
     private static void persist(Map<String, List<ElementFingerprint>> out) throws IOException {
         Path path = Paths.get(BASELINE_FILE);
         Files.createDirectories(path.getParent());
-        Path tmp = Files.createTempFile(path.getParent(), "healing-baselines", ".tmp");
-        try {
-            try (Writer writer = new FileWriter(tmp.toFile())) {
-                GSON.toJson(out, writer);
-            }
+        Path lockPath = path.getParent().resolve("healing-baselines.lock");
+        try (java.nio.channels.FileChannel lockChannel = java.nio.channels.FileChannel.open(lockPath,
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE)) {
+            lockChannel.lock();
+            Path tmp = Files.createTempFile(path.getParent(), "healing-baselines", ".tmp");
             try {
-                Files.move(tmp, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                Files.move(tmp, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                try (Writer writer = new FileWriter(tmp.toFile())) {
+                    GSON.toJson(out, writer);
+                }
+                try {
+                    Files.move(tmp, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                    Files.move(tmp, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(tmp);
             }
-        } finally {
-            Files.deleteIfExists(tmp);
         }
     }
 
@@ -755,9 +777,9 @@ public class BaselineStore {
             } catch (Exception e) {
                 Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }
+            SAVE_EXECUTOR.shutdown();
+            saveScheduled.set(false);
         }
-        SAVE_EXECUTOR.shutdown();
-        saveScheduled.set(false);
     }
 
     public static void clear() {

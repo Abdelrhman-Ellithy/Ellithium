@@ -10,6 +10,7 @@ import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
 import Ellithium.core.ai.spi.Tier3LLMHealer;
 import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -203,7 +204,7 @@ public final class HealingOrchestrator {
                                 if (s > bestScore) { bestScore = s; best = c; }
                             } catch (Exception ignored) {}
                         }
-                        if (best != null && bestScore >= 0.5) {
+                        if (best != null && bestScore >= AIConfigLoader.getOnnxSimilarityThreshold()) {
                             Reporter.log("Healed element went stale — re-resolved via fingerprint score "
                                     + String.format("%.2f", bestScore) + " using " + fallback,
                                     LogLevel.INFO_YELLOW);

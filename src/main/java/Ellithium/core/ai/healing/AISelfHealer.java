@@ -362,7 +362,7 @@ public class AISelfHealer {
 
     private static By healLocatorInternal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace,
                                            HealingStrategy strategy, LLMProvider provider) {
-
+        LAST_HEAL_CONFIDENCE.set(0.0);
         HealingContextBuilder.HealingContext ctx =
                 HealingContextBuilder.build(driver, brokenLocator, stackTrace, provider, strategy);
 
@@ -489,10 +489,45 @@ public class AISelfHealer {
     // ──────────────────────── LLM Retry Logic ────────────────────────
 
     private static String queryLLMWithRetry(LLMProvider provider, String systemPrompt, String userPrompt, int maxRetries) {
+        long totalMs = (long) AIConfigLoader.getLlmHealMaxWaitMs() * maxRetries + 5_000L;
+        java.util.concurrent.CompletableFuture<String> future =
+                java.util.concurrent.CompletableFuture.supplyAsync(
+                        () -> attemptWithRetries(provider, systemPrompt, userPrompt, maxRetries, false, null),
+                        HealingContextBuilder.TIER3_PREP_POOL);
+        try {
+            return future.get(totalMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            Reporter.log("AI Self-Healing: LLM retry chain timed out after " + totalMs + "ms.", LogLevel.ERROR);
+            future.cancel(true);
+            return null;
+        } catch (java.util.concurrent.ExecutionException e) {
+            Reporter.log("AI Self-Healing: LLM retry chain failed: " + e.getCause().getMessage(), LogLevel.ERROR);
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            return null;
+        }
+    }
+
+    private static long backoffMs(int attempt) {
+        return 300L * (1L << (attempt - 1))
+                + java.util.concurrent.ThreadLocalRandom.current().nextLong(100);
+    }
+
+    private static String attemptWithRetries(LLMProvider provider, String systemPrompt, String userPrompt,
+                                             int maxRetries, boolean vision, byte[] screenshot) {
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                String response = provider.ask(systemPrompt, userPrompt);
+                String response = vision
+                        ? provider.askWithVision(systemPrompt + "\n\n" + userPrompt, screenshot)
+                        : provider.ask(systemPrompt, userPrompt);
                 if (response != null && !response.isBlank()) return response;
+            } catch (UnsupportedOperationException e) {
+                if (vision) {
+                    Reporter.log("AI Self-Healing: Vision not supported at runtime, falling back to text-only", LogLevel.WARN);
+                    return attemptWithRetries(provider, systemPrompt, userPrompt, maxRetries, false, null);
+                }
             } catch (Exception e) {
                 if (attempt == maxRetries) {
                     Reporter.log("AI Self-Healing: LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
@@ -506,29 +541,26 @@ public class AISelfHealer {
         return null;
     }
 
-    private static long backoffMs(int attempt) {
-        return 300L;
-    }
-
     private static String queryLLMWithVisionRetry(LLMProvider provider, String prompt, byte[] screenshot, int maxRetries) {
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                String response = provider.askWithVision(prompt, screenshot);
-                if (response != null && !response.isBlank()) return response;
-            } catch (UnsupportedOperationException e) {
-                Reporter.log("AI Self-Healing: Vision not supported at runtime, falling back to text-only", LogLevel.WARN);
-                return queryLLMWithRetry(provider, "", prompt, maxRetries);
-            } catch (Exception e) {
-                if (attempt == maxRetries) {
-                    Reporter.log("AI Self-Healing: Vision LLM failed after " + maxRetries + " attempts: " + e.getMessage(), LogLevel.ERROR);
-                    return null;
-                }
-                long waitMs = backoffMs(attempt);
-                Reporter.log("AI Self-Healing: Vision LLM attempt " + attempt + " failed, retrying in " + waitMs + "ms...", LogLevel.WARN);
-                try { Thread.sleep(waitMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
-            }
+        long totalMs = (long) AIConfigLoader.getLlmHealMaxWaitMs() * maxRetries + 5_000L;
+        java.util.concurrent.CompletableFuture<String> future =
+                java.util.concurrent.CompletableFuture.supplyAsync(
+                        () -> attemptWithRetries(provider, "", prompt, maxRetries, true, screenshot),
+                        HealingContextBuilder.TIER3_PREP_POOL);
+        try {
+            return future.get(totalMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            Reporter.log("AI Self-Healing: Vision LLM retry chain timed out after " + totalMs + "ms.", LogLevel.ERROR);
+            future.cancel(true);
+            return null;
+        } catch (java.util.concurrent.ExecutionException e) {
+            Reporter.log("AI Self-Healing: Vision LLM retry chain failed: " + e.getCause().getMessage(), LogLevel.ERROR);
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            return null;
         }
-        return null;
     }
 
     // ──────────────────────── Deferred Patch Application ────────────────────────
@@ -546,8 +578,8 @@ public class AISelfHealer {
     public static void cleanup() {
         llmProviderThread.remove();
         strategyThread.remove();
-        if (!HealingContextBuilder.TIER4_PREP_POOL.isShutdown()) {
-            HealingContextBuilder.TIER4_PREP_POOL.shutdown();
+        if (!HealingContextBuilder.TIER3_PREP_POOL.isShutdown()) {
+            HealingContextBuilder.TIER3_PREP_POOL.shutdown();
         }
     }
 

@@ -108,7 +108,7 @@ public class StartUpLoader {
         if (versionDirs != null && versionDirs.length > 0) {
             Arrays.sort(versionDirs, (dir1, dir2) -> compareVersions(dir1.getName(), dir2.getName()));
             File highestVersionDir = versionDirs[versionDirs.length - 1];
-            Pattern jarPattern = Pattern.compile("^ellithium-\\d+(\\.\\d+)*\\.jar$");
+            Pattern jarPattern = Pattern.compile("^ellithium-\\d+(\\.\\d+)*(-[A-Za-z0-9._]+)?\\.jar$");
             File[] jarFiles = highestVersionDir.listFiles((dir, name) -> jarPattern.matcher(name).matches());
             if (jarFiles != null && jarFiles.length > 0) {
                 return jarFiles[0];
@@ -122,20 +122,15 @@ public class StartUpLoader {
      * if the first version is less than, equal to, or greater than the second version, respectively.
      */
     private static int compareVersions(String version1, String version2) {
-        String[] parts1 = version1.split("\\.");
-        String[] parts2 = version2.split("\\.");
-
-        // Normalize length (compare as many digits as possible)
+        String[] parts1 = version1.replaceAll("-.*$", "").split("\\.");
+        String[] parts2 = version2.replaceAll("-.*$", "").split("\\.");
         int length = Math.max(parts1.length, parts2.length);
-
         for (int i = 0; i < length; i++) {
             int v1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
             int v2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (v1 != v2) {
-                return Integer.compare(v1, v2);
-            }
+            if (v1 != v2) return Integer.compare(v1, v2);
         }
-        return 0; // Versions are equal
+        return 0;
     }
     private static void TestOutputSolver(){
         boolean result;

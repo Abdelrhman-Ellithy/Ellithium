@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
 
 class HealingContextBuilder {
 
-    static final ExecutorService TIER4_PREP_POOL =
+    static final ExecutorService TIER3_PREP_POOL =
             Executors.newThreadPerTaskExecutor(
-                    Thread.ofVirtual().name("ellithium-tier4-prep-", 0).factory());
+                    Thread.ofVirtual().name("ellithium-tier3-prep-", 0).factory());
 
     static class HealingContext {
         String brokenLocatorStr;
@@ -106,7 +106,7 @@ class HealingContextBuilder {
             domF = java.util.concurrent.CompletableFuture.completedFuture("");
         } else {
             domF = java.util.concurrent.CompletableFuture.supplyAsync(
-                    () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER4_PREP_POOL);
+                    () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER3_PREP_POOL);
         }
         java.util.concurrent.CompletableFuture<byte[]> shotF = wantScreenshot
                 ? java.util.concurrent.CompletableFuture.supplyAsync(() -> {
@@ -118,7 +118,7 @@ class HealingContextBuilder {
                                     + e.getMessage(), LogLevel.WARN);
                             return null;
                         }
-                    }, TIER4_PREP_POOL)
+                    }, TIER3_PREP_POOL)
                 : java.util.concurrent.CompletableFuture.completedFuture(null);
 
         try {

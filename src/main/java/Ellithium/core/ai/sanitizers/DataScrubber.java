@@ -145,6 +145,18 @@ public class DataScrubber {
             maskedCount++;
         }
 
+        // Mask phone numbers before CC — phone digit runs overlap CC patterns
+        if (PHONE.matcher(result).find()) {
+            result = PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
+            maskedCount++;
+        }
+
+        // Mask international phone numbers (E.164 / +CC format)
+        if (INTL_PHONE.matcher(result).find()) {
+            result = INTL_PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
+            maskedCount++;
+        }
+
         // Mask credit-card numbers
         if (CREDIT_CARD.matcher(result).find()) {
             result = CREDIT_CARD.matcher(result).replaceAll("[MASKED_CC]");
@@ -154,18 +166,6 @@ public class DataScrubber {
         // Mask SSNs
         if (SSN.matcher(result).find()) {
             result = SSN.matcher(result).replaceAll("[MASKED_SSN]");
-            maskedCount++;
-        }
-
-        // Mask phone numbers (US-style)
-        if (PHONE.matcher(result).find()) {
-            result = PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
-            maskedCount++;
-        }
-
-        // Mask international phone numbers (E.164 / +CC format)
-        if (INTL_PHONE.matcher(result).find()) {
-            result = INTL_PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
             maskedCount++;
         }
 

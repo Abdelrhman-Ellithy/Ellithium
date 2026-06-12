@@ -78,10 +78,10 @@ class HealingPromptBuilder {
             if (ctx.baseline.getName() != null)         sb.append("- name: ").append(DataScrubber.scrub(ctx.baseline.getName())).append("\n");
             if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(DataScrubber.scrub(ctx.baseline.getAriaLabel())).append("\n");
             if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(DataScrubber.scrub(ctx.baseline.getPlaceholder())).append("\n");
-            if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(ctx.baseline.getDataTestId()).append("\n");
-            if (ctx.baseline.getDataTest() != null)     sb.append("- data-test: ").append(ctx.baseline.getDataTest()).append("\n");
-            if (ctx.baseline.getDataCy() != null)       sb.append("- data-cy: ").append(ctx.baseline.getDataCy()).append("\n");
-            if (ctx.baseline.getDataQa() != null)       sb.append("- data-qa: ").append(ctx.baseline.getDataQa()).append("\n");
+            if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(DataScrubber.scrub(ctx.baseline.getDataTestId())).append("\n");
+            if (ctx.baseline.getDataTest() != null)     sb.append("- data-test: ").append(DataScrubber.scrub(ctx.baseline.getDataTest())).append("\n");
+            if (ctx.baseline.getDataCy() != null)       sb.append("- data-cy: ").append(DataScrubber.scrub(ctx.baseline.getDataCy())).append("\n");
+            if (ctx.baseline.getDataQa() != null)       sb.append("- data-qa: ").append(DataScrubber.scrub(ctx.baseline.getDataQa())).append("\n");
             if (ctx.baseline.getText() != null && !ctx.baseline.getText().isBlank())
                 sb.append("- text: ").append(DataScrubber.scrub(ctx.baseline.getText())).append("\n");
             if (ctx.baseline.getRole() != null)         sb.append("- role: ").append(ctx.baseline.getRole()).append("\n");
