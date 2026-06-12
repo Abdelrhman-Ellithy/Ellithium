@@ -60,7 +60,7 @@ public class NotificationConfig {
      * This method provides early exit for performance optimization.
      * @return true if notifications are enabled, false otherwise
      */
-    public static boolean isNotificationEnabledQuick() {
+    static boolean isNotificationEnabledQuick() {
         try {
             // Use PropertyHelper to get just the notification.enabled property
             String enabled = Ellithium.Utilities.helpers.PropertyHelper.getAllProperties("src/main/resources/properties/config.properties").getProperty("notification.enabled");

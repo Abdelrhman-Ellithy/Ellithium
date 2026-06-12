@@ -1,5 +1,6 @@
 package Ellithium.core.ai.codegen;
 
+import Ellithium.Utilities.codegen.RecorderOptions;
 import Ellithium.core.ai.healing.BaselineStore;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;

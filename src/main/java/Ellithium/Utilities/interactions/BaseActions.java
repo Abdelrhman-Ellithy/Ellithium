@@ -30,7 +30,7 @@ class BaseActions<T extends WebDriver> {
      * @param pollingEveryInMillis Polling interval in milliseconds
      * @return FluentWait instance
      */
-    protected FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
+    FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
         return WaitManager.getFluentWait(driver, timeoutInSeconds, pollingEveryInMillis);
     }
     /**
@@ -74,7 +74,7 @@ class BaseActions<T extends WebDriver> {
      * If a TimeoutException or InvalidSelectorException occurs, it falls back to findWebElement()
      * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
-    protected WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
+    WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
         By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
         if (effective == null) effective = locator;
         try {
@@ -90,7 +90,7 @@ class BaseActions<T extends WebDriver> {
      * Waits for all elements to be visible, returning them.
      * If a TimeoutException occurs, attempts to heal the locator before querying again.
      */
-    protected List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
+    List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
         By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
         if (effective == null) effective = locator;
         try {
@@ -113,7 +113,7 @@ class BaseActions<T extends WebDriver> {
      * @param locator Element locator
      * @return List of found WebElements
      */
-    public List<WebElement> findWebElements(By locator) {
+    List<WebElement> findWebElements(By locator) {
         By healed = AISelfHealer.getCachedHealedLocator(driver, locator);
         if (healed != null) {
             return driver.findElements(healed);
@@ -129,7 +129,7 @@ class BaseActions<T extends WebDriver> {
      * @param locator Element locator
      * @param action Consumer function to apply to each element
      */
-    protected void forEachElementSafely(By locator, Consumer<WebElement> action) {
+    void forEachElementSafely(By locator, Consumer<WebElement> action) {
         int currentIndex = 0;
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
@@ -171,7 +171,7 @@ class BaseActions<T extends WebDriver> {
      * @param mapper Function to transform each element to a result
      * @return List of results from applying the mapper function
      */
-    protected <R> List<R> mapElementsSafely(By locator, Function<WebElement, R> mapper) {
+    <R> List<R> mapElementsSafely(By locator, Function<WebElement, R> mapper) {
         List<R> results = new ArrayList<>();
         int currentIndex = 0;
         int consecutiveFailures = 0;
@@ -214,7 +214,7 @@ class BaseActions<T extends WebDriver> {
      * @return The WebElement at the specified index
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
-    protected WebElement findElementByIndexSafely(By locator, int index) {
+    WebElement findElementByIndexSafely(By locator, int index) {
         List<WebElement> elements = findWebElements(locator);
         if (index < 0 || index >= elements.size()) {
             throw new IndexOutOfBoundsException("Index " + index + " is out of bounds for list of size " + elements.size());
@@ -229,7 +229,7 @@ class BaseActions<T extends WebDriver> {
      * @param locator Element locator
      * @return Current number of elements matching the locator
      */
-    protected int getElementCount(By locator) {
+    int getElementCount(By locator) {
         return findWebElements(locator).size();
     }
 
@@ -243,7 +243,7 @@ class BaseActions<T extends WebDriver> {
      * @param mapper Function to transform each option element to a result
      * @return List of results from applying the mapper function
      */
-    protected <R> List<R> mapSelectOptionsSafely(By locator, Function<WebElement, R> mapper) {
+    <R> List<R> mapSelectOptionsSafely(By locator, Function<WebElement, R> mapper) {
         List<R> results = new ArrayList<>();
         int currentIndex = 0;
         int consecutiveFailures = 0;
@@ -283,7 +283,7 @@ class BaseActions<T extends WebDriver> {
      * @param locator Dropdown element locator
      * @param action Consumer function to apply to each dropdown element
      */
-    protected void forEachSelectElementSafely(By locator, Consumer<org.openqa.selenium.support.ui.Select> action) {
+    void forEachSelectElementSafely(By locator, Consumer<org.openqa.selenium.support.ui.Select> action) {
         int currentIndex = 0;
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
@@ -418,7 +418,7 @@ class BaseActions<T extends WebDriver> {
     protected static final int  STALE_MAX_RETRIES  = 2;
     protected static final long STALE_RETRY_WAIT_MS = 300L;
 
-    protected void performWithStaleRetry(By locator, int timeout, int polling,
+    void performWithStaleRetry(By locator, int timeout, int polling,
                                          Consumer<WebElement> action) {
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
             try {
@@ -434,7 +434,7 @@ class BaseActions<T extends WebDriver> {
         }
     }
 
-    protected <R> R performAndGet(By locator, int timeout, int polling,
+    <R> R performAndGet(By locator, int timeout, int polling,
                                    Function<WebElement, R> action) {
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
             try {

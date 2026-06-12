@@ -10,7 +10,7 @@ import static Ellithium.core.reporting.internal.Colors.*;
 import static io.restassured.RestAssured.given;
 
 public class VersionChecker {
-    public static String getLatestVersion(){
+    private static String getLatestVersion(){
         var response= given().
                 baseUri("https://api.github.com").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
                     .accept(ContentType.JSON)

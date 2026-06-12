@@ -24,7 +24,7 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isRecordin
 
 public class BrowserSetUp {
 
-    public static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+    static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         switch (driverType) {
             case Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
@@ -51,7 +51,7 @@ public class BrowserSetUp {
             }
         }
     }
-    public static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+    static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         RemoteWebDriver driver;
         switch (driverType) {
             case REMOTE_Chrome -> {

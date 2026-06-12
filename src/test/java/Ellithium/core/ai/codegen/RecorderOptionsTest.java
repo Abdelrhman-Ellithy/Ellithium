@@ -3,7 +3,7 @@ package Ellithium.core.ai.codegen;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import Ellithium.core.ai.codegen.RecorderOptions;
+import Ellithium.Utilities.codegen.RecorderOptions;
 
 
 public class RecorderOptionsTest {

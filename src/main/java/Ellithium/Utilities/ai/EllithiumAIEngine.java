@@ -1,7 +1,7 @@
 package Ellithium.Utilities.ai;
 
 import Ellithium.core.ai.codegen.InteractionRecorder;
-import Ellithium.core.ai.codegen.RecorderOptions;
+import Ellithium.Utilities.codegen.RecorderOptions;
 import Ellithium.core.ai.TraceabilityManager;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.generators.FeatureFileModifier;

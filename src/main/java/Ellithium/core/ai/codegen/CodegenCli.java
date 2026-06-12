@@ -1,5 +1,6 @@
 package Ellithium.core.ai.codegen;
 
+import Ellithium.Utilities.codegen.RecorderOptions;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;

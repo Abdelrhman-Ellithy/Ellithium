@@ -19,7 +19,7 @@ public final class EmailObfuscator {
      * @param email The email address to obfuscate
      * @return Obfuscated email address (e.g., "a***@gmail.com")
      */
-    public static String obfuscate(String email) {
+    static String obfuscate(String email) {
         if (email == null || email.isEmpty()) {
             return "NULL/EMPTY";
         }

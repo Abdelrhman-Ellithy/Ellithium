@@ -1,4 +1,4 @@
-package Ellithium.core.ai.codegen;
+package Ellithium.Utilities.codegen;
 
 /**
  * Configuration for the codegen recorder session.

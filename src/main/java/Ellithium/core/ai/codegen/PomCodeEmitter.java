@@ -1,5 +1,6 @@
 package Ellithium.core.ai.codegen;
 
+import Ellithium.Utilities.codegen.RecorderOptions;
 import Ellithium.core.ai.generators.PomClassGenerator;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
