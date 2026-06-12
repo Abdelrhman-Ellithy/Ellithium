@@ -146,16 +146,16 @@ class BaseActions<T extends WebDriver> {
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
             } catch (StaleElementReferenceException e) {
-                // Element became stale, re-query and retry same index
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    // Too many consecutive failures, move to next index
+                    Ellithium.core.reporting.Reporter.log(
+                            "Skipping element at index " + currentIndex + " after "
+                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
                     currentIndex++;
                     consecutiveFailures = 0;
                 }
-                // Continue to retry same index
             } catch (IndexOutOfBoundsException e) {
-                // List shrunk during iteration, exit gracefully
                 break;
             }
         }
@@ -190,14 +190,15 @@ class BaseActions<T extends WebDriver> {
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
             } catch (StaleElementReferenceException e) {
-                // Re-query and retry same index
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    // Too many consecutive failures, skip this index
+                    Ellithium.core.reporting.Reporter.log(
+                            "Skipping element at index " + currentIndex + " after "
+                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
                     currentIndex++;
                     consecutiveFailures = 0;
                 }
-                // Continue to retry same index
             } catch (IndexOutOfBoundsException e) {
                 break;
             }
@@ -245,31 +246,31 @@ class BaseActions<T extends WebDriver> {
      */
     <R> List<R> mapSelectOptionsSafely(By locator, Function<WebElement, R> mapper) {
         List<R> results = new ArrayList<>();
-        int currentIndex = 0;
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
-        
-        while (true) {
+        org.openqa.selenium.support.ui.Select dropDown =
+                new org.openqa.selenium.support.ui.Select(findWebElement(locator));
+        List<WebElement> options = dropDown.getOptions();
+        int i = 0;
+        while (i < options.size()) {
             try {
-                org.openqa.selenium.support.ui.Select dropDown = new org.openqa.selenium.support.ui.Select(findWebElement(locator));
-                List<WebElement> currentOptions = dropDown.getAllSelectedOptions();
-                if (currentIndex >= currentOptions.size()) {
-                    break;
-                }
-                WebElement option = currentOptions.get(currentIndex);
-                R result = mapper.apply(option);
+                R result = mapper.apply(options.get(i));
                 results.add(result);
-                currentIndex++;
-                consecutiveFailures = 0; // Reset on success
+                i++;
+                consecutiveFailures = 0;
             } catch (StaleElementReferenceException | IndexOutOfBoundsException e) {
-                // Re-query and retry same index
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    // Too many consecutive failures, skip this index
-                    currentIndex++;
+                    Ellithium.core.reporting.Reporter.log(
+                            "Skipping select option at index " + i + " after "
+                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
+                    i++;
                     consecutiveFailures = 0;
+                } else {
+                    dropDown = new org.openqa.selenium.support.ui.Select(findWebElement(locator));
+                    options = dropDown.getOptions();
                 }
-                // Continue to retry same index
             }
         }
         return results;
@@ -301,16 +302,16 @@ class BaseActions<T extends WebDriver> {
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
             } catch (StaleElementReferenceException e) {
-                // Element became stale, re-query and retry same index
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    // Too many consecutive failures, move to next index
+                    Ellithium.core.reporting.Reporter.log(
+                            "Skipping select element at index " + currentIndex + " after "
+                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
                     currentIndex++;
                     consecutiveFailures = 0;
                 }
-                // Continue to retry same index
             } catch (IndexOutOfBoundsException e) {
-                // List shrunk during iteration, exit gracefully
                 break;
             }
         }
@@ -359,6 +360,9 @@ class BaseActions<T extends WebDriver> {
     /**
      * Attempts to extract the By field name from source code at the call site.
      */
+    private static final java.util.concurrent.ConcurrentHashMap<String, java.util.List<String>> SOURCE_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private static String extractFieldNameFromStack(StackTraceElement[] stack, By locator) {
         for (StackTraceElement frame : stack) {
             String cls = frame.getClassName();
@@ -372,8 +376,11 @@ class BaseActions<T extends WebDriver> {
                 String path = root + classFilePart;
                 if (new java.io.File(path).exists()) {
                     try {
-                        java.util.List<String> lines = java.nio.file.Files.readAllLines(
-                                java.nio.file.Paths.get(path));
+                        java.util.List<String> lines = SOURCE_CACHE.get(path);
+                        if (lines == null) {
+                            lines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path));
+                            SOURCE_CACHE.putIfAbsent(path, lines);
+                        }
                         int lineNum = frame.getLineNumber();
                         if (lineNum >= 1 && lineNum <= lines.size()) {
                             // Look for By field variable used at call site
@@ -447,6 +454,6 @@ class BaseActions<T extends WebDriver> {
                 }
             }
         }
-        return null;
+        throw new IllegalStateException("performAndGet: retry loop exited without result or exception");
     }
 }
