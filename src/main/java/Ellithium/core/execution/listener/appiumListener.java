@@ -83,8 +83,9 @@ public class appiumListener implements MethodCallListener {
                     if (scriptParams instanceof List && !((List<?>) scriptParams).isEmpty()) {
                         Object param = ((List<?>) scriptParams).get(0);
                         if (param instanceof Map<?, ?> keyMap) {
-                            if (keyMap.containsKey("keycode")) {
-                                int keyCode = ((Number) keyMap.get("keycode")).intValue();
+                            Object raw = keyMap.get("keycode");
+                            if (raw instanceof Number n) {
+                                int keyCode = n.intValue();
                                 return KEYCODE_MAP.getOrDefault(keyCode, "KEY_" + keyCode);
                             }
                         }

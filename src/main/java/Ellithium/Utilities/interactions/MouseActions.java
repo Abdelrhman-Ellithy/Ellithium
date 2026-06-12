@@ -119,22 +119,26 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
         int steps = 0;
         while (steps++ < 5000) {
             try {
-                if (Math.abs(Float.parseFloat(range.getText())) <= EPSILON) break;
+                String raw = range.getText();
+                if (raw == null || raw.isBlank()) continue;
+                if (Math.abs(Float.parseFloat(raw)) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_LEFT);
             } catch (org.openqa.selenium.StaleElementReferenceException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
-            }
+            } catch (NumberFormatException ignored) {}
         }
         steps = 0;
         while (steps++ < 5000) {
             try {
-                if (Math.abs(Float.parseFloat(range.getText()) - targetValue) <= EPSILON) break;
+                String raw = range.getText();
+                if (raw == null || raw.isBlank()) continue;
+                if (Math.abs(Float.parseFloat(raw) - targetValue) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_RIGHT);
             } catch (org.openqa.selenium.StaleElementReferenceException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
-            }
+            } catch (NumberFormatException ignored) {}
         }
         try {
             float finalValue = Float.parseFloat(range.getText());

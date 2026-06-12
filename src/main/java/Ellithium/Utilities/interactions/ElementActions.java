@@ -369,6 +369,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if any file does not exist
      */
     public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
+        if (filePaths == null || filePaths.length == 0) {
+            Reporter.log("uploadMultipleFiles: filePaths must not be null or empty", LogLevel.ERROR);
+            throw new IllegalArgumentException("filePaths must not be null or empty");
+        }
         try {
             String pathsString = buildFilePathsString(filePaths);
             
