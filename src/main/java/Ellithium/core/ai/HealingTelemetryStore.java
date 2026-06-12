@@ -213,6 +213,23 @@ public class HealingTelemetryStore {
         Reporter.log(sb.toString(), suspect > 0 ? LogLevel.WARN : LogLevel.INFO_GREEN);
     }
 
+    /**
+     * Derives a coarse element category from the originating action type.
+     * Returns one of "CLICKABLE", "INPUT", "READABLE", or null when unknown.
+     */
+    public static String categoryForAction(String actionType) {
+        if (actionType == null) return null;
+        String a = actionType.toLowerCase();
+        if (a.contains("click") || a.contains("tap") || a.contains("press")
+                || a.contains("hover") || a.contains("submit") || a.contains("toggle")) return "CLICKABLE";
+        if (a.contains("send") || a.contains("type") || a.contains("input") || a.contains("settext")
+                || a.contains("set") || a.contains("clear") || a.contains("select")
+                || a.contains("upload") || a.contains("fill") || a.contains("enter")) return "INPUT";
+        if (a.contains("get") || a.contains("read") || a.contains("text") || a.contains("extract")
+                || a.contains("verify") || a.contains("check") || a.contains("assert")) return "READABLE";
+        return null;
+    }
+
     /** Clears all in-memory records (for testing/reset). */
     public static void clear() {
         records.clear();

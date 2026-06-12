@@ -103,6 +103,25 @@ public class AIHealingReporter {
 
         // Flush baseline fingerprints to disk
         BaselineStore.flush();
+
+        checkCiHealThreshold();
+    }
+
+    private static void checkCiHealThreshold() {
+        int threshold = Ellithium.core.ai.config.AIConfigLoader.getCiHealAlertThreshold();
+        if (threshold < 0) return;
+        long usedHeals = HealingTelemetryStore.getAllRecords().stream()
+                .filter(r -> r.success).count();
+        if (usedHeals >= threshold) {
+            Reporter.log("[CI-HEAL-ALERT] " + usedHeals + " heal(s) used this run — threshold="
+                    + threshold + ". Review healing-telemetry.json and update locators.", LogLevel.ERROR);
+            try {
+                java.nio.file.Path statusPath = java.nio.file.Paths.get("Test-Output", ".healstatus");
+                java.nio.file.Files.createDirectories(statusPath.getParent());
+                java.nio.file.Files.writeString(statusPath,
+                        "used=" + usedHeals + "\nthreshold=" + threshold + "\nalert=true\n");
+            } catch (Exception ignored) {}
+        }
     }
 
     private static class HealedLocatorEntry {

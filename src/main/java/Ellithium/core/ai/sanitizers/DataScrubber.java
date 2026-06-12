@@ -65,14 +65,25 @@ public class DataScrubber {
             "((?:session|sid|token|auth)[a-zA-Z0-9_-]*\\s*=\\s*)([^;\\s\"]{8,})",
             Pattern.CASE_INSENSITIVE);
 
+    // IBAN — 2-letter country code + 2 check digits + up to 30 alphanumeric chars (optional spaces)
+    private static final Pattern IBAN = Pattern.compile(
+            "\\b[A-Z]{2}\\d{2}(?:\\s?[A-Z0-9]{4}){2,7}\\b");
+
+    // International phone — E.164 (+CC up to 15 digits) and common national formats
+    private static final Pattern INTL_PHONE = Pattern.compile(
+            "\\+(?:[1-9]\\d{0,2})[\\s.\\-]?\\(?\\d{1,4}\\)?[\\s.\\-]?\\d{1,4}[\\s.\\-]?\\d{1,9}");
+
     // Prompt-injection control phrases embedded in DOM content
     private static final Pattern PROMPT_INJECTION = Pattern.compile(
             "(?i)\\b(?:ignore\\s+(?:all\\s+)?(?:previous|prior|above)\\s+instructions?" +
             "|forget\\s+(?:your\\s+)?(?:context|instructions?|training)" +
-            "|you\\s+are\\s+now\\s+a" +
-            "|act\\s+as\\s+(?:a|an|if)" +
-            "|disregard\\s+(?:all\\s+)?(?:previous|prior)" +
-            "|new\\s+system\\s+prompt)\\b");
+            "|you\\s+are\\s+now\\s+(?:a|an)" +
+            "|act\\s+as\\s+(?:a|an|if|though)" +
+            "|disregard\\s+(?:all\\s+)?(?:previous|prior|the\\s+above)" +
+            "|new\\s+(?:system\\s+)?prompt" +
+            "|print\\s+(?:your\\s+)?(?:system\\s+)?(?:prompt|instructions)" +
+            "|reveal\\s+(?:your\\s+)?(?:system\\s+)?(?:prompt|instructions)" +
+            "|jailbreak|dan\\s+mode|do\\s+anything\\s+now)\\b");
 
     /**
      * Scrubs sensitive data from the given text content.
@@ -146,9 +157,21 @@ public class DataScrubber {
             maskedCount++;
         }
 
-        // Mask phone numbers
+        // Mask phone numbers (US-style)
         if (PHONE.matcher(result).find()) {
             result = PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
+            maskedCount++;
+        }
+
+        // Mask international phone numbers (E.164 / +CC format)
+        if (INTL_PHONE.matcher(result).find()) {
+            result = INTL_PHONE.matcher(result).replaceAll("[MASKED_PHONE]");
+            maskedCount++;
+        }
+
+        // Mask IBAN bank account numbers
+        if (IBAN.matcher(result).find()) {
+            result = IBAN.matcher(result).replaceAll("[MASKED_IBAN]");
             maskedCount++;
         }
 

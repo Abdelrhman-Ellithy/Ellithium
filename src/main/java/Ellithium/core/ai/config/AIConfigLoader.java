@@ -9,65 +9,42 @@ import Ellithium.core.reporting.Reporter;
 
 /**
  * Reads AI-related configuration from Ellithium's standard {@code ai-config.properties} file.
- * Follows the same pattern as {@code WaitManager.initializeTimeoutAndPolling()}.
- *
- * <p>Expected properties:</p>
- * <pre>
- * ai.healing.strategy=HEAL_AND_NOTIFY
- * ai.healing.confidenceThreshold=0.85
- * ai.llm.provider=openai
- * ai.llm.apiKey=${AI_API_KEY}
- * ai.llm.model=gpt-4o
- * ai.llm.baseUrl=https://api.openai.com/v1
- * ai.execution.mode=LOCAL
- * </pre>
  */
 public class AIConfigLoader {
 
-    private static HealingStrategy healingStrategy = HealingStrategy.DISABLED;
-    private static double confidenceThreshold = 0.70;
-    private static double healingStoreThreshold = 0.85;
-    private static int maxCandidates = 3;
-    private static String llmProviderName = "";
-    private static String llmApiKey = "";
-    private static String llmModel = "";
-    private static String llmBaseUrl = "";
-    private static String llmProviderClass = "";
-    private static ExecutionMode executionMode = ExecutionMode.LOCAL;
-    private static boolean visionRcaEnabled = false;
-    private static double onnxSimilarityThreshold = 0.60;
-    private static int onnxMaxCandidates         = 15;
-    private static double tier3BaselineMatchFloor          = 0.40;
-    private static double tier3StaleBaselineConfidenceFloor = 0.90;
-    private static int     onnxHardCandidateLimit = 300;
-    private static int     baselineTtlDays = 30;
-    private static boolean strategyRescueEnabled = true;
-    private static double  gateFingerprintFloor = 0.70;
-    private static double  semanticFallbackScore = 0.65;
-    private static boolean visionAllowMobile = false;
-    private static boolean visionAllowWeb = false;
-    private static int     llmHealMaxWaitMs = 15_000;
-    private static int     llmRetryInitialBackoffMs = 500;
-    private static int     llmRetryMaxBackoffMs = 4_000;
-    private static int     telemetryMaxRecords = 100_000;
-    private static boolean tier3Enabled = true;
+    private static HealingStrategy healingStrategy    = HealingStrategy.DISABLED;
+    private static double confidenceThreshold         = 0.70;
+    private static double healingStoreThreshold       = 0.85;
+    private static int    maxCandidates               = 3;
+    private static String llmProviderName             = "";
+    private static String llmApiKey                   = "";
+    private static String llmModel                    = "";
+    private static String llmBaseUrl                  = "";
+    private static String llmProviderClass            = "";
+    private static ExecutionMode executionMode        = ExecutionMode.LOCAL;
+    private static boolean visionRcaEnabled           = false;
+    private static double  onnxSimilarityThreshold    = 0.60;
+    private static int     onnxMaxCandidates          = 15;
+    private static double  tier3BaselineMatchFloor    = 0.40;
+    private static int     onnxHardCandidateLimit     = 300;
+    private static int     baselineTtlDays            = 30;
+    private static double  gateFingerprintFloor       = 0.70;
+    private static double  semanticFallbackScore      = 0.65;
+    private static boolean visionAllowMobile          = false;
+    private static boolean visionAllowWeb             = false;
+    private static int     llmHealMaxWaitMs           = 15_000;
+    private static int     llmMaxRetries              = 3;
+    private static int     telemetryMaxRecords        = 100_000;
+    private static boolean tier3Enabled               = true;
+    private static int     ciHealAlertThreshold       = -1;
 
     private static volatile boolean initialized = false;
 
-    /**
-     * Execution mode controls whether AI writes files directly or queues changes for review.
-     */
     public enum ExecutionMode {
-        /** Write healed files directly to disk (for local development) */
         LOCAL,
-        /** Queue changes in memory and generate a report at suite end (for CI/CD) */
         CI
     }
 
-    /**
-     * Loads AI configuration from config.properties.
-     * Safe to call multiple times — will only initialize once.
-     */
     public static synchronized void initialize() {
         if (initialized) return;
         try {
@@ -90,7 +67,7 @@ public class AIConfigLoader {
                         + "' — set the corresponding environment variable. LLM healing disabled.");
                 rawKey = "";
             }
-            llmApiKey = rawKey;
+            llmApiKey        = rawKey;
             llmModel         = getPropertyOrDefault(p, "ai.llm.model", "");
             llmBaseUrl       = getPropertyOrDefault(p, "ai.llm.baseUrl", "");
             llmProviderClass = getPropertyOrDefault(p, "ai.llm.providerClass", "");
@@ -98,23 +75,20 @@ public class AIConfigLoader {
             executionMode    = parseEnum(p, "ai.execution.mode", ExecutionMode.class, executionMode);
             visionRcaEnabled = parseBool(p, "ai.vision.rca.enabled", visionRcaEnabled);
 
-            onnxSimilarityThreshold   = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
-            onnxMaxCandidates         = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
-            onnxHardCandidateLimit    = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
-            tier3BaselineMatchFloor          = parseDouble(p, "ai.healing.tier3BaselineMatchFloor", tier3BaselineMatchFloor);
-            tier3StaleBaselineConfidenceFloor = parseDouble(p, "ai.healing.tier3StaleBaselineConfidenceFloor", tier3StaleBaselineConfidenceFloor);
-
-            visionAllowMobile        = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
-            visionAllowWeb           = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
-            baselineTtlDays          = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
-            llmHealMaxWaitMs         = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
-            llmRetryInitialBackoffMs = parseInt(p, "ai.llm.retryInitialBackoffMs", llmRetryInitialBackoffMs);
-            llmRetryMaxBackoffMs     = parseInt(p, "ai.llm.retryMaxBackoffMs", llmRetryMaxBackoffMs);
-            telemetryMaxRecords      = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
-            strategyRescueEnabled    = parseBool(p, "ai.healing.strategyRescueEnabled", strategyRescueEnabled);
-            gateFingerprintFloor     = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
-            semanticFallbackScore    = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
-            tier3Enabled             = parseBool(p, "ai.tier3.enabled", tier3Enabled);
+            onnxSimilarityThreshold     = parseDouble(p, "ai.onnx.similarityThreshold", onnxSimilarityThreshold);
+            onnxMaxCandidates           = parseInt(p, "ai.onnx.maxCandidates", onnxMaxCandidates);
+            onnxHardCandidateLimit      = parseInt(p, "ai.onnx.hardCandidateLimit", onnxHardCandidateLimit);
+            tier3BaselineMatchFloor     = parseDouble(p, "ai.healing.tier3BaselineMatchFloor", tier3BaselineMatchFloor);
+            visionAllowMobile           = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
+            visionAllowWeb              = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
+            baselineTtlDays             = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
+            gateFingerprintFloor        = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
+            semanticFallbackScore       = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
+            llmHealMaxWaitMs            = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
+            llmMaxRetries               = parseInt(p, "ai.llm.maxRetries", llmMaxRetries);
+            telemetryMaxRecords         = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
+            tier3Enabled                = parseBool(p, "ai.tier3.enabled", tier3Enabled);
+            ciHealAlertThreshold        = parseInt(p, "ai.healing.ciAlertThreshold", ciHealAlertThreshold);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -171,31 +145,21 @@ public class AIConfigLoader {
         catch (IllegalArgumentException e) { Logger.warn("Invalid " + key + ": " + v + ". Using " + def + "."); return def; }
     }
 
-    /**
-     * Resolves environment variables in a property value.
-     * Replaces ${ENV_VAR} with actual environment variable values.
-     */
     private static String resolveEnvironmentVariables(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-
+        if (value == null || value.isEmpty()) return value;
         if (value.contains("${") && value.contains("}")) {
             String resolvedValue = value;
             int startIndex = 0;
             while ((startIndex = resolvedValue.indexOf("${", startIndex)) != -1) {
                 int endIndex = resolvedValue.indexOf("}", startIndex);
                 if (endIndex == -1) break;
-
                 String placeholder = resolvedValue.substring(startIndex, endIndex + 1);
-                String envVarName = resolvedValue.substring(startIndex + 2, endIndex);
-
+                String envVarName  = resolvedValue.substring(startIndex + 2, endIndex);
                 String envVarValue = System.getenv(envVarName);
                 if (envVarValue == null) {
                     Logger.warn("Environment variable '" + envVarName + "' not found. Using placeholder as-is.");
                     envVarValue = placeholder;
                 }
-
                 resolvedValue = resolvedValue.replace(placeholder, envVarValue);
                 startIndex += envVarValue.length();
             }
@@ -204,35 +168,30 @@ public class AIConfigLoader {
         return value;
     }
 
-    public static HealingStrategy getHealingStrategy() { return healingStrategy; }
-    public static double getConfidenceThreshold() { return confidenceThreshold; }
-    /** High-confidence bar a heal must clear to be persisted as a baseline / source patch. */
-    public static double getHealingStoreThreshold() { return healingStoreThreshold; }
-    public static String getLlmProviderName() { return llmProviderName; }
-    public static String getLlmApiKey() { return llmApiKey; }
-    public static String getLlmModel() { return llmModel; }
-    public static String getLlmBaseUrl() { return llmBaseUrl; }
-    public static String getLlmProviderClass() { return llmProviderClass; }
-    public static ExecutionMode getExecutionMode() { return executionMode; }
-    public static boolean isCI() { return executionMode == ExecutionMode.CI; }
-    public static boolean isVisionRcaEnabled() { return visionRcaEnabled; }
-    public static int getMaxCandidates() { return maxCandidates; }
-
-    public static double getOnnxSimilarityThreshold()     { return onnxSimilarityThreshold; }
-    public static int    getOnnxMaxCandidates()           { return onnxMaxCandidates; }
-    public static int    getOnnxHardCandidateLimit()      { return onnxHardCandidateLimit; }
-    public static boolean isVisionAllowedOnMobile()       { return visionAllowMobile; }
-    public static boolean isVisionAllowedOnWeb()          { return visionAllowWeb; }
-    public static int    getBaselineTtlDays()             { return baselineTtlDays; }
-    public static boolean isStrategyRescueEnabled()       { return strategyRescueEnabled; }
-    public static double getGateFingerprintFloor()        { return gateFingerprintFloor; }
-    /** Conservative confidence assigned to a model-absent semantic heal when no baseline exists. */
-    public static double getSemanticFallbackScore()       { return semanticFallbackScore; }
-    public static int    getLlmHealMaxWaitMs()            { return llmHealMaxWaitMs; }
-    public static int    getLlmRetryInitialBackoffMs()    { return llmRetryInitialBackoffMs; }
-    public static int    getLlmRetryMaxBackoffMs()        { return llmRetryMaxBackoffMs; }
-    public static int    getTelemetryMaxRecords()         { return telemetryMaxRecords; }
-    public static double getTier3BaselineMatchFloor()            { return tier3BaselineMatchFloor; }
-    public static double getTier3StaleBaselineConfidenceFloor()  { return tier3StaleBaselineConfidenceFloor; }
-    public static boolean isTier3Enabled()                       { return tier3Enabled; }
+    public static HealingStrategy getHealingStrategy()          { return healingStrategy; }
+    public static double getConfidenceThreshold()               { return confidenceThreshold; }
+    public static double getHealingStoreThreshold()             { return healingStoreThreshold; }
+    public static String getLlmProviderName()                   { return llmProviderName; }
+    public static String getLlmApiKey()                         { return llmApiKey; }
+    public static String getLlmModel()                          { return llmModel; }
+    public static String getLlmBaseUrl()                        { return llmBaseUrl; }
+    public static String getLlmProviderClass()                  { return llmProviderClass; }
+    public static ExecutionMode getExecutionMode()              { return executionMode; }
+    public static boolean isCI()                                { return executionMode == ExecutionMode.CI; }
+    public static boolean isVisionRcaEnabled()                  { return visionRcaEnabled; }
+    public static int    getMaxCandidates()                     { return maxCandidates; }
+    public static double getOnnxSimilarityThreshold()           { return onnxSimilarityThreshold; }
+    public static int    getOnnxMaxCandidates()                 { return onnxMaxCandidates; }
+    public static int    getOnnxHardCandidateLimit()            { return onnxHardCandidateLimit; }
+    public static boolean isVisionAllowedOnMobile()             { return visionAllowMobile; }
+    public static boolean isVisionAllowedOnWeb()                { return visionAllowWeb; }
+    public static int    getBaselineTtlDays()                   { return baselineTtlDays; }
+    public static double getGateFingerprintFloor()              { return gateFingerprintFloor; }
+    public static double getSemanticFallbackScore()             { return semanticFallbackScore; }
+    public static int    getLlmHealMaxWaitMs()                  { return llmHealMaxWaitMs; }
+    public static int    getLlmMaxRetries()                     { return llmMaxRetries; }
+    public static int    getTelemetryMaxRecords()               { return telemetryMaxRecords; }
+    public static double getTier3BaselineMatchFloor()           { return tier3BaselineMatchFloor; }
+    public static boolean isTier3Enabled()                      { return tier3Enabled; }
+    public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
 }

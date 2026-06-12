@@ -125,6 +125,8 @@ class HealingContextBuilder {
             ctx.minimizedDom = DataScrubber.scrub(domF.get());
         } catch (Exception e) {
             ctx.minimizedDom = "";
+            Reporter.log("AI Self-Healing: DOM minimization failed — LLM will heal without DOM context: "
+                    + e.getMessage(), LogLevel.WARN);
         }
         try {
             ctx.screenshot = shotF.get();

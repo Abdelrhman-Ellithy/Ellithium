@@ -190,4 +190,34 @@ public class AlgorithmicCoreTest {
         Assert.assertEquals(fp.scoreSimilarity(noMatch), 0.0, 1e-9,
                 "title+label fingerprint with neither field matching must score 0.0");
     }
+
+    @Test
+    public void scoreSimilarity_name_exactMatch_isOne() {
+        ElementFingerprint fp = GSON.fromJson("{\"name\":\"email\"}", ElementFingerprint.class);
+        WebElement match = elem(null, null, "email", null, null, null);
+        Assert.assertEquals(fp.scoreSimilarity(match), 1.0, 1e-9,
+                "name-only fingerprint exact match must score 1.0 (20 pts / 20 dynamicMax)");
+    }
+
+    @Test
+    public void scoreSimilarity_placeholder_exactMatch_isOne() {
+        ElementFingerprint fp = GSON.fromJson("{\"placeholder\":\"Enter email\"}", ElementFingerprint.class);
+        WebElement match = mock(WebElement.class);
+        when(match.getAttribute("placeholder")).thenReturn("Enter email");
+        Assert.assertEquals(fp.scoreSimilarity(match), 1.0, 1e-9,
+                "placeholder-only fingerprint exact match must score 1.0 (15 pts / 15 dynamicMax)");
+    }
+
+    @Test
+    public void scoreSimilarity_type_partialMatch_givesExpectedScore() {
+        // fp has id(25pts) + type(8pts) = 33 dynamicMax; candidate matches only type
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"id\":\"email-input\",\"type\":\"email\"}", ElementFingerprint.class);
+        WebElement typeOnly = elem(null, null, null, "email", null, null);
+        double score = fp.scoreSimilarity(typeOnly);
+        Assert.assertTrue(score > 0.0 && score < 1.0,
+                "type-only match should earn partial credit, not 0 or 1. Got " + score);
+        Assert.assertEquals(score, 8.0 / 33.0, 1e-9,
+                "type match = 8pts, dynamicMax = 25(id) + 8(type) = 33 → 8/33");
+    }
 }

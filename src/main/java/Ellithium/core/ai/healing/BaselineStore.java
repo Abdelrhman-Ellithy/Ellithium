@@ -141,6 +141,18 @@ public class BaselineStore {
         return history != null ? history : List.of();
     }
 
+    /**
+     * Removes a stored baseline entry by its locator key and schedules a disk flush.
+     * Use this to prune a stale or deliberately changed locator so it stops being healed
+     * to the old element. Returns true if an entry was found and removed.
+     */
+    public static boolean removeKey(String locatorKey) {
+        ensureLoaded();
+        boolean removed = baselines.remove(locatorKey) != null;
+        if (removed) saveToDiskAsync();
+        return removed;
+    }
+
     // ──────────────────────── Tier 1 Algorithmic Healing ────────────────────────
 
     /**
@@ -160,10 +172,12 @@ public class BaselineStore {
         ElementFingerprint baseline = (history != null && !history.isEmpty())
                 ? history.getLast() : null;
 
+        String category = Ellithium.core.ai.HealingTelemetryStore.categoryForAction(actionType);
+
         if (baseline == null) {
             Reporter.log("BaselineStore: No baseline for " + brokenLocator
                     + " — skipping Tier 1", LogLevel.DEBUG);
-            HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false);
+            HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false, null, category);
             return null;
         }
 
@@ -180,7 +194,7 @@ public class BaselineStore {
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
             if (mutationMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace);
+                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace, category);
                 return HealOutcome.of(mutationMatch, 0.92, 1);
             }
 
@@ -188,7 +202,7 @@ public class BaselineStore {
             if (attrMatch != null) {
                 Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 double score = scoreBestHistory(attrMatch, history);
-                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null, stackTrace);
+                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null, stackTrace, category);
                 return HealOutcome.of(attrMatch, score, 1);
             }
 
@@ -198,7 +212,7 @@ public class BaselineStore {
 
             if (best == null) {
                 Reporter.log("BaselineStore: Tier 1 found no candidates in DOM", LogLevel.DEBUG);
-                HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false);
+                HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false, null, category);
                 return null;
             }
 
@@ -208,12 +222,12 @@ public class BaselineStore {
                         + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
                         LogLevel.INFO_GREEN);
                 acceptHeal(driver, brokenLocator, best.element, best.score,
-                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator, stackTrace);
+                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator, stackTrace, category);
                 return HealOutcome.of(best.element, best.reconstructedLocator, best.score, 1);
             } else {
                 Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
                         + " (below " + String.format("%.2f", acceptBar) + ") — falling through", LogLevel.DEBUG);
-                HealingTelemetryStore.record(1, brokenLocator.toString(), null, best.score, false);
+                HealingTelemetryStore.record(1, brokenLocator.toString(), null, best.score, false, null, category);
                 return null;
             }
         } finally {
@@ -511,7 +525,7 @@ public class BaselineStore {
 
     private static void acceptHeal(WebDriver driver, By brokenLocator, WebElement healed,
                                     double score, String tierLabel, By reconstructedLocator,
-                                    StackTraceElement[] stackTrace) {
+                                    StackTraceElement[] stackTrace, String category) {
         By built = HealedLocatorBuilder.build(driver, healed, null);
         By bestLocator = built != null ? built
                 : (reconstructedLocator != null ? reconstructedLocator
@@ -545,7 +559,7 @@ public class BaselineStore {
                 new HealingResult(locatorStr, score, tierLabel),
                 null, null, null, 0);
 
-        HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true);
+        HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true, null, category);
 
         if (stackTrace != null && bestLocator != null) {
             AISelfHealer.queueSourcePatch(brokenLocator, bestLocator, stackTrace, score, 1);

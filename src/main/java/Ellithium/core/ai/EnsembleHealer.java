@@ -42,11 +42,17 @@ public class EnsembleHealer {
     private static Object ortEnvironment = null;
     private static Object tokenizer      = null;
 
-    // ORT session pool — sized to min(availableProcessors, 4) so parallel suites don't queue.
-    // Each session costs ~34 MB native heap; 4 sessions = 136 MB worst-case, acceptable for
-    // CI agents with ≥ 512 MB heap. The old fixed-2 size caused 6/8 threads to wait 8 s each.
-    private static final int SESSION_POOL_SIZE =
-            Math.min(Runtime.getRuntime().availableProcessors(), 4);
+    // ORT session pool. Auto-computes from heap/CPU unless -Dellithium.ai.onnxSessionPoolSize=N is set.
+    // Each session ~34 MB native heap. Memory bound prevents OOM on constrained CI agents.
+    private static final int SESSION_POOL_SIZE = resolveSessionPoolSize();
+
+    private static int resolveSessionPoolSize() {
+        int prop = Integer.getInteger("ellithium.ai.onnxSessionPoolSize", -1);
+        if (prop > 0) return prop;
+        long maxHeap = Runtime.getRuntime().maxMemory();
+        int memBound = (int) Math.max(1, maxHeap / (34L * 1024 * 1024));
+        return Math.min(Runtime.getRuntime().availableProcessors(), Math.min(memBound, 8));
+    }
     private static final java.util.concurrent.LinkedBlockingQueue<Object> SESSION_POOL =
             new java.util.concurrent.LinkedBlockingQueue<>(SESSION_POOL_SIZE);
 
@@ -474,7 +480,7 @@ public class EnsembleHealer {
         if (bestElement == null) return null;
 
         GateResult gate = decideGate(bestCombined, threshold, bestF2,
-                AIConfigLoader.isStrategyRescueEnabled(), bestCosine);
+                true, bestCosine);
         if (gate.accept) {
             Reporter.log(String.format("[TIER 2] healed via %s (combined=%.3f f2=%.2f f3=%.3f)",
                     gate.via, gate.score, bestF2, bestCosine), LogLevel.INFO_GREEN);

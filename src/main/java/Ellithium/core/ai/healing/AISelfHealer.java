@@ -369,12 +369,13 @@ public class AISelfHealer {
         String systemPrompt = HealingPromptBuilder.buildSystemPrompt(ctx.isMobile);
         String userPrompt = HealingPromptBuilder.buildUserPrompt(ctx);
 
+        int maxRetries = AIConfigLoader.isCI() ? 1 : AIConfigLoader.getLlmMaxRetries();
         String llmResponse;
         if (ctx.screenshot != null && provider.supportsVision()) {
             String combinedPrompt = systemPrompt + "\n\n" + userPrompt;
-            llmResponse = queryLLMWithVisionRetry(provider, combinedPrompt, ctx.screenshot, 3);
+            llmResponse = queryLLMWithVisionRetry(provider, combinedPrompt, ctx.screenshot, maxRetries);
         } else {
-            llmResponse = queryLLMWithRetry(provider, systemPrompt, userPrompt, 3);
+            llmResponse = queryLLMWithRetry(provider, systemPrompt, userPrompt, maxRetries);
         }
         if (llmResponse == null || llmResponse.isBlank()) {
             Reporter.log("AI Self-Healing: LLM returned no response after retries", LogLevel.ERROR);
@@ -417,17 +418,12 @@ public class AISelfHealer {
 
             if (baseline != null) {
                 double matchScore = baseline.scoreSimilarity(foundEl);
-                if (matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
-                    if (matchScore == 0.0 && candidate.getConfidence() >= AIConfigLoader.getTier3StaleBaselineConfidenceFloor()
-                            && HealingResponseParser.isStableLocatorStrategy(candidateLocator)) {
-                        Reporter.log("[TIER 3] stale baseline — accepting stable-strategy heal: "
-                                + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
-                    } else {
-                        Reporter.log("[TIER 3] candidate rejected (baseline mismatch score=" + String.format("%.2f", matchScore)
-                                + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
-                        continue;
-                    }
-                } else {
+                if (matchScore > 0.0 && matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
+                    Reporter.log("[TIER 3] candidate rejected (baseline mismatch score=" + String.format("%.2f", matchScore)
+                            + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
+                    continue;
+                }
+                if (matchScore >= AIConfigLoader.getTier3BaselineMatchFloor()) {
                     String baselineTag = baseline.getTagName();
                     if (baselineTag != null && !baselineTag.isBlank()) {
                         try {
@@ -511,10 +507,7 @@ public class AISelfHealer {
     }
 
     private static long backoffMs(int attempt) {
-        long base = AIConfigLoader.getLlmRetryInitialBackoffMs();
-        long max  = AIConfigLoader.getLlmRetryMaxBackoffMs();
-        long mult = 1L << Math.min(attempt - 1, 16);
-        return Math.min(max, base * mult);
+        return 300L;
     }
 
     private static String queryLLMWithVisionRetry(LLMProvider provider, String prompt, byte[] screenshot, int maxRetries) {

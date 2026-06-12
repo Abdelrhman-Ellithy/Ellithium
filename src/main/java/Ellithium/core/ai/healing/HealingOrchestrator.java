@@ -28,8 +28,18 @@ public final class HealingOrchestrator {
     private static final java.nio.file.Path KILL_SWITCH_PATH =
             Paths.get(System.getProperty("user.home"), ".ellithium", "ai-disable");
 
-    private static final HealingOrchestrator INSTANCE = new HealingOrchestrator(List.of(
-            new Tier1AlgorithmicHealer(), new Tier2EnsembleHealer(), new Tier3LLMHealer()));
+    private static final HealingOrchestrator INSTANCE = new HealingOrchestrator(loadTiers());
+
+    private static List<HealingTier> loadTiers() {
+        List<HealingTier> tiers = new java.util.ArrayList<>(List.of(
+                new Tier1AlgorithmicHealer(), new Tier2EnsembleHealer(), new Tier3LLMHealer()));
+        try {
+            for (HealingTier ext : java.util.ServiceLoader.load(HealingTier.class)) {
+                tiers.add(ext);
+            }
+        } catch (Exception ignored) {}
+        return tiers;
+    }
 
     private final List<HealingTier> tiers;
 
