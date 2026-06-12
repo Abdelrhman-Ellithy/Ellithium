@@ -30,16 +30,16 @@ public class AISelfHealer {
 
     static final long HEALED_CACHE_TTL_MS = 30 * 60 * 1_000L;
 
-    public static class CachedLocator {
-        public final By newLocator;
-        public final String originalField;
-        public final long cachedAt;
-        public CachedLocator(By newLocator, String originalField) {
+    static class CachedLocator {
+        final By newLocator;
+        final String originalField;
+        final long cachedAt;
+        CachedLocator(By newLocator, String originalField) {
             this.newLocator = newLocator;
             this.originalField = originalField;
             this.cachedAt = System.currentTimeMillis();
         }
-        public boolean isExpired() {
+        boolean isExpired() {
             return System.currentTimeMillis() - cachedAt > HEALED_CACHE_TTL_MS;
         }
     }
@@ -146,8 +146,8 @@ public class AISelfHealer {
 
     // ──────────────────────── Public Source Patching API ────────────────────────
 
-    public static void queueSourcePatch(By brokenLocator, WebElement healedElement,
-                                        StackTraceElement[] stackTrace, double confidence, int tier) {
+    static void queueSourcePatch(By brokenLocator, WebElement healedElement,
+                                 StackTraceElement[] stackTrace, double confidence, int tier) {
         try {
             HealingStrategy strategy = getEffectiveStrategy();
             if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
@@ -183,8 +183,8 @@ public class AISelfHealer {
         }
     }
 
-    public static void queueSourcePatch(By brokenLocator, By healedBy,
-                                        StackTraceElement[] stackTrace, double confidence, int tier) {
+    static void queueSourcePatch(By brokenLocator, By healedBy,
+                                 StackTraceElement[] stackTrace, double confidence, int tier) {
         try {
             HealingStrategy strategy = getEffectiveStrategy();
             if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
@@ -312,7 +312,7 @@ public class AISelfHealer {
         return null;
     }
 
-    public static By healLocator(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace) {
+    static By healLocator(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace) {
         HealingStrategy strategy = getEffectiveStrategy();
         LLMProvider provider = getEffectiveProvider();
         if (strategy == HealingStrategy.DISABLED || provider == null) return null;

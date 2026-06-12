@@ -28,7 +28,6 @@ public class AIConfigLoader {
     private static double  tier3BaselineMatchFloor    = 0.40;
     private static int     onnxHardCandidateLimit     = 300;
     private static int     baselineTtlDays            = 30;
-    private static double  gateFingerprintFloor       = 0.70;
     private static double  semanticFallbackScore      = 0.65;
     private static boolean visionAllowMobile          = false;
     private static boolean visionAllowWeb             = false;
@@ -82,7 +81,6 @@ public class AIConfigLoader {
             visionAllowMobile           = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
             visionAllowWeb              = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
             baselineTtlDays             = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
-            gateFingerprintFloor        = parseDouble(p, "ai.healing.gateFingerprintFloor", gateFingerprintFloor);
             semanticFallbackScore       = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
             llmHealMaxWaitMs            = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
             llmMaxRetries               = parseInt(p, "ai.llm.maxRetries", llmMaxRetries);
@@ -186,7 +184,6 @@ public class AIConfigLoader {
     public static boolean isVisionAllowedOnMobile()             { return visionAllowMobile; }
     public static boolean isVisionAllowedOnWeb()                { return visionAllowWeb; }
     public static int    getBaselineTtlDays()                   { return baselineTtlDays; }
-    public static double getGateFingerprintFloor()              { return gateFingerprintFloor; }
     public static double getSemanticFallbackScore()             { return semanticFallbackScore; }
     public static int    getLlmHealMaxWaitMs()                  { return llmHealMaxWaitMs; }
     public static int    getLlmMaxRetries()                     { return llmMaxRetries; }

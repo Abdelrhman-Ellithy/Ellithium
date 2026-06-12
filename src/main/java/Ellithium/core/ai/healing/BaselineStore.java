@@ -135,7 +135,7 @@ public class BaselineStore {
      * Returns the full fingerprint history (up to MAX_HISTORY entries) for a locator key.
      * Newest last. Returns an empty list if no baseline exists.
      */
-    public static List<ElementFingerprint> getAllBaselines(String locatorKey) {
+    static List<ElementFingerprint> getAllBaselines(String locatorKey) {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(locatorKey);
         return history != null ? history : List.of();
@@ -146,7 +146,7 @@ public class BaselineStore {
      * Use this to prune a stale or deliberately changed locator so it stops being healed
      * to the old element. Returns true if an entry was found and removed.
      */
-    public static boolean removeKey(String locatorKey) {
+    static boolean removeKey(String locatorKey) {
         ensureLoaded();
         boolean removed = baselines.remove(locatorKey) != null;
         if (removed) saveToDiskAsync();
@@ -349,8 +349,8 @@ public class BaselineStore {
      * (when tagName is known), visibility filter, and early termination at score >= 0.90.
      * Scores each candidate against ALL history fingerprints and takes the maximum.
      */
-    public static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline,
-                                                List<ElementFingerprint> history) {
+    static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline,
+                                         List<ElementFingerprint> history) {
         List<WebElement> candidates = collectCandidates(driver, baseline);
         if (candidates.isEmpty()) return null;
 
@@ -427,7 +427,7 @@ public class BaselineStore {
     }
 
     // Backward-compatible overload for callers that only have a single baseline
-    public static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline) {
+    static ScoredCandidate findBestMatch(WebDriver driver, ElementFingerprint baseline) {
         return findBestMatch(driver, baseline, List.of(baseline));
     }
 
@@ -592,13 +592,13 @@ public class BaselineStore {
 
     // ──────────────────────── Result Model ────────────────────────
 
-    public static class ScoredCandidate {
-        public final WebElement element;
-        public final By reconstructedLocator;
-        public final double score;
-        public final String reasoning;
+    static class ScoredCandidate {
+        final WebElement element;
+        final By reconstructedLocator;
+        final double score;
+        final String reasoning;
 
-        public ScoredCandidate(WebElement element, By reconstructedLocator, double score, String reasoning) {
+        ScoredCandidate(WebElement element, By reconstructedLocator, double score, String reasoning) {
             this.element = element;
             this.reconstructedLocator = reconstructedLocator;
             this.score = score;
@@ -675,18 +675,21 @@ public class BaselineStore {
 
     // Single shared daemon writer (was: a NEW Thread per capture → hundreds of threads + O(N^2)
     // re-serialization across a suite). Captures now schedule one debounced, coalesced write.
-    private static final java.util.concurrent.ScheduledExecutorService SAVE_EXECUTOR =
-            java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
-                return Thread.ofPlatform().daemon(true).name("baseline-store-save").unstarted(r);
-            });
+    private static volatile java.util.concurrent.ScheduledExecutorService SAVE_EXECUTOR =
+            newSaveExecutor();
     private static final java.util.concurrent.atomic.AtomicBoolean saveScheduled =
             new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final long SAVE_DEBOUNCE_MS = 1000;
 
+    private static java.util.concurrent.ScheduledExecutorService newSaveExecutor() {
+        return java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r ->
+                Thread.ofPlatform().daemon(true).name("baseline-store-save").unstarted(r));
+    }
+
     static {
         Runtime.getRuntime().addShutdownHook(
                 Thread.ofPlatform().daemon(false).name("baseline-store-shutdown").unstarted(
-                        SAVE_EXECUTOR::shutdown));
+                        () -> SAVE_EXECUTOR.shutdown()));
     }
 
     /**
@@ -697,12 +700,21 @@ public class BaselineStore {
     private static void saveToDiskAsync() {
         if (saveScheduled.compareAndSet(false, true)) {
             try {
-                SAVE_EXECUTOR.schedule(() -> {
+                java.util.concurrent.ScheduledExecutorService exec = SAVE_EXECUTOR;
+                if (exec.isShutdown()) {
+                    synchronized (LOCK) {
+                        if (SAVE_EXECUTOR.isShutdown()) {
+                            SAVE_EXECUTOR = newSaveExecutor();
+                        }
+                        exec = SAVE_EXECUTOR;
+                    }
+                }
+                exec.schedule(() -> {
                     saveScheduled.set(false);
                     writeToDisk();
                 }, SAVE_DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {
-                saveScheduled.set(false);   // executor rejected (shutdown) — leave to flush()
+                saveScheduled.set(false);
             }
         }
     }
@@ -744,6 +756,8 @@ public class BaselineStore {
                 Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }
         }
+        SAVE_EXECUTOR.shutdown();
+        saveScheduled.set(false);
     }
 
     public static void clear() {
@@ -779,8 +793,5 @@ public class BaselineStore {
         return sb.toString();
     }
 
-    public static void shutdownExecutor() {
-        SAVE_EXECUTOR.shutdownNow();
-    }
 }
   

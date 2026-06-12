@@ -858,7 +858,7 @@ public class EnsembleHealer {
      * Cosine similarity between two vectors (handles non-normalised input).
      * Already-normalised vectors can use dotProduct() directly.
      */
-    public static double cosineSimilarity(float[] a, float[] b) {
+    static double cosineSimilarity(float[] a, float[] b) {
         if (a == null || b == null || a.length != b.length) return 0.0;
         double dot = 0.0, normA = 0.0, normB = 0.0;
         for (int i = 0; i < a.length; i++) {
@@ -957,7 +957,7 @@ public class EnsembleHealer {
      * round-trip per attribute). Used for single-element callers and as the fallback when the
      * batched read is unavailable.
      */
-    public static String buildElementDocument(WebElement element) {
+    private static String buildElementDocument(WebElement element) {
         if (element == null) return "";
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
@@ -1014,7 +1014,7 @@ public class EnsembleHealer {
      * (e.g. Appium resource-id, accessibility-id) are added to ElementFingerprint. Null fields are
      * silently skipped, matching the behaviour of the live builder when an attribute is absent.
      */
-    public static String buildElementDocument(ElementFingerprint fp) {
+    static String buildElementDocument(ElementFingerprint fp) {
         if (fp == null) return "";
         String base = assembleDocument(name -> switch (name) {
             case "id"               -> fp.getId();
@@ -1046,7 +1046,7 @@ public class EnsembleHealer {
      * role, placeholder, data-testid, data-test, title, type, label, class) plus {@code tag} and
      * {@code text}. Missing keys are skipped.
      */
-    public static String buildElementDocument(Map<String, String> attrs) {
+    static String buildElementDocument(Map<String, String> attrs) {
         if (attrs == null || attrs.isEmpty()) return "";
         return assembleDocument(attrs::get, attrs.get("tag"), attrs.get("text"));
     }
