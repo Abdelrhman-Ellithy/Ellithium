@@ -137,6 +137,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     private static final ThreadLocal<Long> recordingStartTime = new ThreadLocal<>();
 
+    private static volatile String cdpVersionCache = null;
+    private static final String CDP_NOT_FOUND = "";
+
     private static final AtomicInteger activeCompilations = new AtomicInteger(0);
 
     public static int pendingCompilations() { return activeCompilations.get(); }
@@ -510,15 +513,21 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * Scans for org.openqa.selenium.devtools.v* packages.
      */
     private String detectCDPVersion() {
-        // Try to find the highest available version
-        for (int version = 150; version >= 85; version--) {
-            String versionStr = "v" + version;
-            try {
-                Class.forName("org.openqa.selenium.devtools." + versionStr + ".page.Page");
-                return versionStr;
-            } catch (ClassNotFoundException ignored) {}
+        String cached = cdpVersionCache;
+        if (cached != null) return cached.isEmpty() ? null : cached;
+        synchronized (ScreenRecorderActions.class) {
+            cached = cdpVersionCache;
+            if (cached != null) return cached.isEmpty() ? null : cached;
+            for (int version = 150; version >= 85; version--) {
+                try {
+                    Class.forName("org.openqa.selenium.devtools.v" + version + ".page.Page");
+                    cdpVersionCache = "v" + version;
+                    return cdpVersionCache;
+                } catch (ClassNotFoundException ignored) {}
+            }
+            cdpVersionCache = CDP_NOT_FOUND;
+            return null;
         }
-        return null;
     }
 
     /**

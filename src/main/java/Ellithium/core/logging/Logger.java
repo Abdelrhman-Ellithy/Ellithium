@@ -4,13 +4,16 @@ import Ellithium.config.managment.ConfigContext;
 import org.apache.logging.log4j.LogManager;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import static Ellithium.core.logging.LogLevel.*;
 import static Ellithium.core.logging.LogLevel.DEBUG;
 
 public class Logger {
     private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger(Logger.class);
-    private static final List<String> logs= Collections.synchronizedList(new ArrayList<>());
+    private static final ThreadLocal<List<String>> logs = ThreadLocal.withInitial(ArrayList::new);
     private static final Map<LogLevel, String> LEVEL_STRING_MAP = Map.ofEntries(
             Map.entry(INFO_BLUE, "INFO"),
             Map.entry(ERROR, "ERROR"),
@@ -67,15 +70,15 @@ public class Logger {
         }
     }
     public static String getCurrentExecutionLogs() {
-        return String.join("\n", logs);
+        return String.join("\n", logs.get());
     }
     public static void clearCurrentExecutionLogs() {
-        logs.clear();
+        logs.remove();
     }
     private static void logToCurrentExecution(LogLevel level,String message){
         if (ConfigContext.isLoggingOn()) {
             String timestamp = new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
-            logs.add("[" + LEVEL_STRING_MAP.getOrDefault(level, "EXCEPTION") + "] - [" + timestamp + "] - " + message);
+            logs.get().add("[" + LEVEL_STRING_MAP.getOrDefault(level, "EXCEPTION") + "] - [" + timestamp + "] - " + message);
         }
     }
 }

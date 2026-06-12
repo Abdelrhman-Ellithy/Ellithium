@@ -14,10 +14,10 @@ import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.events.WebDriverListener;
 public class seleniumListener implements WebDriverListener {
 
-    private static volatile boolean RECORDING = false;
-    private static volatile WebDriver RECORDING_DRIVER = null;
-    private static final List<RecordedInteraction> RECORDED =
-            Collections.synchronizedList(new ArrayList<>());
+    private static final ThreadLocal<Boolean> RECORDING = ThreadLocal.withInitial(() -> false);
+    private static final ThreadLocal<WebDriver> RECORDING_DRIVER = new ThreadLocal<>();
+    private static final ThreadLocal<List<RecordedInteraction>> RECORDED =
+            ThreadLocal.withInitial(ArrayList::new);
 
     private static final String TOOLBAR_INJECT_SCRIPT =
             "(function() {"
@@ -47,22 +47,23 @@ public class seleniumListener implements WebDriverListener {
 
     /**
      * Starts capturing user-driven WebDriver interactions for Playwright-style codegen.
-     * Toggles a process-wide flag that the existing after-callbacks check; no decorator wrap.
+     * State is per-thread so parallel tests can record independently.
      */
     public static void startRecording(WebDriver driver) {
-        RECORDED.clear();
-        RECORDING_DRIVER = driver;
-        RECORDING = true;
+        RECORDED.get().clear();
+        RECORDING_DRIVER.set(driver);
+        RECORDING.set(true);
         injectRecordingToolbar(driver);
         Reporter.log("seleniumListener: Recording started", LogLevel.INFO_YELLOW);
     }
 
     /** Stops capturing, removes the toolbar, returns the captured interactions. */
     public static List<RecordedInteraction> stopRecording() {
-        RECORDING = false;
+        RECORDING.set(false);
         removeRecordingToolbar();
-        List<RecordedInteraction> snapshot = new ArrayList<>(RECORDED);
-        RECORDING_DRIVER = null;
+        List<RecordedInteraction> snapshot = new ArrayList<>(RECORDED.get());
+        RECORDING_DRIVER.remove();
+        RECORDED.get().clear();
         Reporter.log("seleniumListener: Recording stopped — " + snapshot.size() + " interactions captured",
                 LogLevel.INFO_GREEN);
         return snapshot;
@@ -70,20 +71,21 @@ public class seleniumListener implements WebDriverListener {
 
     /** Hands the recorded interactions to the codegen pipeline. */
     public static void generateCode(LLMProvider llmProvider) {
-        if (RECORDED.isEmpty()) {
+        List<RecordedInteraction> recorded = RECORDED.get();
+        if (recorded.isEmpty()) {
             Reporter.log("seleniumListener: No interactions recorded — nothing to generate", LogLevel.WARN);
             return;
         }
-        WebDriver driver = RECORDING_DRIVER;
+        WebDriver driver = RECORDING_DRIVER.get();
         if (driver == null) {
             Reporter.log("seleniumListener: generateCode called with no active driver", LogLevel.WARN);
             return;
         }
-        LiveContextGenerator.generateFromRecording(driver, llmProvider, new ArrayList<>(RECORDED));
+        LiveContextGenerator.generateFromRecording(driver, llmProvider, new ArrayList<>(recorded));
     }
 
-    public static List<RecordedInteraction> getInteractions() { return new ArrayList<>(RECORDED); }
-    public static boolean isRecording() { return RECORDING; }
+    public static List<RecordedInteraction> getInteractions() { return new ArrayList<>(RECORDED.get()); }
+    public static boolean isRecording() { return RECORDING.get(); }
 
     private static void injectRecordingToolbar(WebDriver driver) {
         try {
@@ -95,16 +97,16 @@ public class seleniumListener implements WebDriverListener {
 
     private static void updateRecordingToolbar() {
         try {
-            WebDriver d = RECORDING_DRIVER;
+            WebDriver d = RECORDING_DRIVER.get();
             if (d instanceof JavascriptExecutor js) {
-                js.executeScript(TOOLBAR_UPDATE_SCRIPT, String.valueOf(RECORDED.size()));
+                js.executeScript(TOOLBAR_UPDATE_SCRIPT, String.valueOf(RECORDED.get().size()));
             }
         } catch (Exception ignored) {}
     }
 
     private static void removeRecordingToolbar() {
         try {
-            WebDriver d = RECORDING_DRIVER;
+            WebDriver d = RECORDING_DRIVER.get();
             if (d instanceof JavascriptExecutor js) js.executeScript(TOOLBAR_REMOVE_SCRIPT);
         } catch (Exception ignored) {}
     }
@@ -169,13 +171,13 @@ public class seleniumListener implements WebDriverListener {
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         String sentData = buildSentDataString(keysToSend);
         Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
-        if (RECORDING) {
-            RECORDED.add(new RecordedInteraction("sendData", reconstructLocatorExpression(element),
+        if (RECORDING.get()) {
+            RECORDED.get().add(new RecordedInteraction("sendData", reconstructLocatorExpression(element),
                     sentData, recordedElementName(element), recordedTag(element)));
             updateRecordingToolbar();
         }
     }
-    
+
     private String buildSentDataString(CharSequence... keysToSend) {
         StringBuilder stringBuilder = new StringBuilder();
         for (CharSequence charSequence : keysToSend) {
@@ -242,8 +244,8 @@ public class seleniumListener implements WebDriverListener {
    @Override
    public void afterClick(WebElement element) {
        Reporter.log("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE);
-       if (RECORDING) {
-           RECORDED.add(new RecordedInteraction("click", reconstructLocatorExpression(element),
+       if (RECORDING.get()) {
+           RECORDED.get().add(new RecordedInteraction("click", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
            updateRecordingToolbar();
        }
@@ -251,8 +253,8 @@ public class seleniumListener implements WebDriverListener {
    @Override
    public void afterSubmit(WebElement element) {
        Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE);
-       if (RECORDING) {
-           RECORDED.add(new RecordedInteraction("submit", reconstructLocatorExpression(element),
+       if (RECORDING.get()) {
+           RECORDED.get().add(new RecordedInteraction("submit", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
            updateRecordingToolbar();
        }
@@ -296,8 +298,8 @@ public class seleniumListener implements WebDriverListener {
    public void afterTo(WebDriver.Navigation navigation, String url) {
        if (isSuppressed()) return;
        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
-       if (RECORDING) {
-           RECORDED.add(new RecordedInteraction("navigate", null, url, null, null));
+       if (RECORDING.get()) {
+           RECORDED.get().add(new RecordedInteraction("navigate", null, url, null, null));
            updateRecordingToolbar();
        }
    }

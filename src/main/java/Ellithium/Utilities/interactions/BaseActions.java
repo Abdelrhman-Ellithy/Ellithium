@@ -354,7 +354,7 @@ class BaseActions<T extends WebDriver> {
             }
             return frame.getMethodName();
         }
-        return null;
+        return "unknown";
     }
 
     /**
