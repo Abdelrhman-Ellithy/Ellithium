@@ -464,6 +464,40 @@ public class ElementFingerprint {
     }
 
     /**
+     * Returns the maximum possible score denominator for this fingerprint — the sum of all
+     * non-null attribute point values, mirroring the scoring weights in {@link #scoreSimilarity}.
+     * Used by {@link Ellithium.core.ai.healing.BaselineStore} to skip persisting healed elements
+     * that have no stable identity attributes (dynamicMax {@literal <} 15 means tag-only signal,
+     * which scores 1.0 on any same-tag element and is meaningless for baseline discrimination).
+     */
+    public int computeDynamicMax() {
+        int dynamicMax = 0;
+        if (isNonBlank(resourceId))      dynamicMax += 30;
+        if (isNonBlank(accessibilityId)) dynamicMax += 28;
+        if (isNonBlank(contentDesc))     dynamicMax += 18;
+        if (isNonBlank(dataTestId))      dynamicMax += 30;
+        if (isNonBlank(dataTest))        dynamicMax += 30;
+        if (isNonBlank(dataCy))          dynamicMax += 30;
+        if (isNonBlank(dataQa))          dynamicMax += 30;
+        if (customDataAttrs != null) {
+            dynamicMax += Math.min(customDataAttrs.size(), 5) * 30;
+        }
+        if (isNonBlank(id))          dynamicMax += 25;
+        if (isNonBlank(name))        dynamicMax += 20;
+        if (isNonBlank(ariaLabel))   dynamicMax += 15;
+        if (isNonBlank(placeholder)) dynamicMax += 15;
+        if (isNonBlank(text))        dynamicMax += 12;
+        if (isNonBlank(href))        dynamicMax += 20;
+        if (isNonBlank(type))        dynamicMax += 8;
+        if (isNonBlank(role))        dynamicMax += 5;
+        if (isNonBlank(tagName))     dynamicMax += 5;
+        if (isNonBlank(className))   dynamicMax += 5;
+        if (isNonBlank(title))       dynamicMax += 10;
+        if (isNonBlank(label))       dynamicMax += 20;
+        return dynamicMax;
+    }
+
+    /**
      * Map-based similarity scoring — zero WebDriver round-trips. The {@code attrs} map is the
      * pre-fetched, batched per-candidate projection produced once by EnsembleHealer's
      * fetchCandidateAttributes JS. Uses the same field weights as {@link #scoreSimilarity(WebElement)};

@@ -44,8 +44,8 @@ public class AIConfigLoader {
     private static boolean strategyRescueEnabled = true;
     private static double  gateFingerprintFloor = 0.70;
     private static double  semanticFallbackScore = 0.65;
-    private static boolean visionAllowMobile = true;
-    private static boolean visionAllowWeb = true;
+    private static boolean visionAllowMobile = false;
+    private static boolean visionAllowWeb = false;
     private static int     llmHealMaxWaitMs = 15_000;
     private static int     llmRetryInitialBackoffMs = 500;
     private static int     llmRetryMaxBackoffMs = 4_000;

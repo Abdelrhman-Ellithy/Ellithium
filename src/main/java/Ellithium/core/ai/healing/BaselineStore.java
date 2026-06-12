@@ -98,6 +98,12 @@ public class BaselineStore {
                 return;
             }
             ElementFingerprint fp = ElementFingerprint.capture(driver, locator, element);
+            if (tier > 0 && fp.computeDynamicMax() < 15) {
+                Reporter.log(String.format(
+                        "BaselineStore: Tier %d heal has tag-only signal (dynamicMax<15) — skipping persist",
+                        tier), LogLevel.DEBUG);
+                return;
+            }
             baselines.compute(fp.getLocatorKey(), (k, existing) -> {
                 List<ElementFingerprint> updated = new ArrayList<>();
                 if (existing != null && !existing.isEmpty()) {
@@ -519,16 +525,18 @@ public class BaselineStore {
                 // Key the fingerprint by the BROKEN locator (the lookup key) so fp.locatorKey
                 // matches the map key — previously captured under bestLocator causing key mismatch.
                 ElementFingerprint updatedFp = ElementFingerprint.capture(driver, brokenLocator, healed);
-                baselines.compute(brokenLocator.toString(), (k, existing) -> {
-                    List<ElementFingerprint> updated = new ArrayList<>();
-                    if (existing != null && !existing.isEmpty()) {
-                        int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
-                        updated.addAll(existing.subList(start, existing.size()));
-                    }
-                    updated.add(updatedFp);
-                    return List.copyOf(updated);
-                });
-                saveToDiskAsync();
+                if (updatedFp.computeDynamicMax() >= 15) {
+                    baselines.compute(brokenLocator.toString(), (k, existing) -> {
+                        List<ElementFingerprint> updated = new ArrayList<>();
+                        if (existing != null && !existing.isEmpty()) {
+                            int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
+                            updated.addAll(existing.subList(start, existing.size()));
+                        }
+                        updated.add(updatedFp);
+                        return List.copyOf(updated);
+                    });
+                    saveToDiskAsync();
+                }
             }
         } catch (Exception ignored) {}
 
@@ -661,6 +669,12 @@ public class BaselineStore {
             new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final long SAVE_DEBOUNCE_MS = 1000;
 
+    static {
+        Runtime.getRuntime().addShutdownHook(
+                Thread.ofPlatform().daemon(false).name("baseline-store-shutdown").unstarted(
+                        SAVE_EXECUTOR::shutdown));
+    }
+
     /**
      * Schedules a single coalesced disk write. Many capture() calls within the debounce window
      * collapse into ONE serialization on a shared daemon thread (final state is always persisted by
@@ -708,7 +722,6 @@ public class BaselineStore {
     }
 
     public static void flush() {
-        SAVE_EXECUTOR.shutdown();
         synchronized (LOCK) {
             try {
                 persist(new LinkedHashMap<>(baselines));

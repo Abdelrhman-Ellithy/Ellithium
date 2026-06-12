@@ -101,9 +101,13 @@ class HealingContextBuilder {
                     + "— set it true to enable visual healing (PII consideration)", LogLevel.DEBUG);
         }
 
-        java.util.concurrent.CompletableFuture<String> domF =
-                java.util.concurrent.CompletableFuture.supplyAsync(
-                        () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER4_PREP_POOL);
+        java.util.concurrent.CompletableFuture<String> domF;
+        if (strategy == HealingStrategy.SUGGEST_ONLY) {
+            domF = java.util.concurrent.CompletableFuture.completedFuture("");
+        } else {
+            domF = java.util.concurrent.CompletableFuture.supplyAsync(
+                    () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER4_PREP_POOL);
+        }
         java.util.concurrent.CompletableFuture<byte[]> shotF = wantScreenshot
                 ? java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                         try {

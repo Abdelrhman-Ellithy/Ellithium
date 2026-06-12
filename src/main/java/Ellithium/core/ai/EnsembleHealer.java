@@ -557,7 +557,10 @@ public class EnsembleHealer {
     }
 
     private static final double GATE_STRATEGY_MIN       = 0.75;
-    private static final double GATE_RESCUE_COSINE_FLOOR = 0.45;
+    private static final double GATE_RESCUE_COSINE_FLOOR = 0.50;
+
+    /** Bump when the ONNX model is updated — invalidates all stale per-element vector cache entries. */
+    static final String MODEL_VERSION = "v1";
 
     /**
      * Accept decision (pure, unit-testable). Path A: the fused combined score clears the calibrated
@@ -714,7 +717,7 @@ public class EnsembleHealer {
         // text-hash: a re-rendered element that keeps its id but changes its text yields a new key,
         // so an SPA mutation is a natural cache miss (re-embed) rather than a stale-vector hit.
         String textHash = (text == null || text.isBlank()) ? "" : Integer.toHexString(text.hashCode());
-        return nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid)
+        return MODEL_VERSION + "|" + nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid)
                 + "|" + nz(resId) + "|" + nz(accId) + "|" + nz(contentDesc) + "|" + textHash;
     }
 
