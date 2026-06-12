@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.abdelrhman-ellithy</groupId>
     <artifactId>ellithium</artifactId>
-    <version>2.4.0</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
     <description>
         Ellithium is a Unified powerful, flexible, and scalable test automation framework for
@@ -61,7 +61,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>2.4.0</EllithiumVersion>
+        <EllithiumVersion>3.0.0</EllithiumVersion>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -102,10 +102,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-2.3.3.jar
-            gpg -ab target/ellithium-2.3.3-javadoc.jar
-            gpg -ab target/ellithium-2.3.3-sources.jar
-            gpg -ab target/ellithium-2.3.3.pom
+            gpg -ab target/ellithium-3.0.0.jar
+            gpg -ab target/ellithium-3.0.0-javadoc.jar
+            gpg -ab target/ellithium-3.0.0-sources.jar
+            gpg -ab target/ellithium-3.0.0.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>

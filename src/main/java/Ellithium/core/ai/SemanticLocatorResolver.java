@@ -329,9 +329,11 @@ public class SemanticLocatorResolver {
 
         By cleanLocator = ElementFingerprint.reconstructLocator(best.element);
         String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
-        Reporter.log(String.format("[TIER 2] healed via %s: %s (score %.2f)",
-                best.desc, cleanLocatorStr, best.score), LogLevel.INFO_GREEN);
-        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, best.score, true);
+        String scoreStr = Double.isNaN(best.score) ? "unscored" : String.format("%.2f", best.score);
+        Reporter.log(String.format("[TIER 2] healed via %s: %s (score %s)",
+                best.desc, cleanLocatorStr, scoreStr), LogLevel.INFO_GREEN);
+        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr,
+                Double.isNaN(best.score) ? 0.0 : best.score, true);
         return best.element;
     }
 
@@ -414,8 +416,9 @@ public class SemanticLocatorResolver {
                         continue;
                     }
                     if (!scoring) {
-                        // No baseline to rank by — preserve the original first-match behavior.
-                        return new Scored(el, 0.85, candidateDesc.getOrDefault(el, "strategy"));
+                        // No baseline to rank by — return NaN score so callers can distinguish
+                        // "scored heal" from "first-visible-match with no baseline to validate against".
+                        return new Scored(el, Double.NaN, candidateDesc.getOrDefault(el, "strategy"));
                     }
                     double score = (attrs != null)
                             ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
