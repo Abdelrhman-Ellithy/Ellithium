@@ -117,8 +117,8 @@ public class AISelfHealer {
         // previous app's locator patterns.
         Ellithium.core.ai.scoring.LocatorMutationEngine.resetCache();
         Ellithium.core.ai.healing.SemanticLocatorResolver.resetCache();
-        // Clear the one-backup-per-file registry so a fresh suite gets a new backup
-        // for each healed file (rather than skipping it because a backup was made earlier).
+        // Clear the per-file git-check registry so each file gets re-validated at
+        // the start of a new suite run (not carried over from the previous one).
         Ellithium.core.ai.JavaSourceModifier.resetSessionState();
     }
 
