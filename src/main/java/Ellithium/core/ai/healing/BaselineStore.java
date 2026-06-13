@@ -552,7 +552,10 @@ public class BaselineStore {
                     saveToDiskAsync();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Reporter.log("BaselineStore: acceptHeal baseline-update skipped: "
+                    + e.getClass().getSimpleName() + ": " + e.getMessage(), LogLevel.DEBUG);
+        }
 
         AIHealingReporter.queueChange(
                 "algorithmic-baseline", brokenLocator.toString(),

@@ -30,6 +30,10 @@ public class AllureHelper {
         String lastReportPath="LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
+            if (allureBinaryPath == null) {
+                Logger.error("Could not resolve Allure binary path");
+                return;
+            }
             File allureExecutable = new File(allureBinaryPath, "allure");
             if (!SystemUtils.IS_OS_WINDOWS) {
                 if (!allureExecutable.exists()) {
@@ -50,42 +54,38 @@ public class AllureHelper {
                     Logger.error("Permission setting failed: " + e.getMessage());
                 }
             }
-            if (allureBinaryPath != null) {
-                String generateCommand = String.format(
-                        "\"%s\" generate --single-file --name \"Test Report\" -c -o \"%s\" \"%s\"",
-                        allureExecutable,
-                        new File(lastReportPath).getAbsolutePath(),
-                        new File(resultsPath).getAbsolutePath()
-                );
-                executeCommand(generateCommand);
-                File indexFile = new File(lastReportPath + File.separator + "index.html");
-                File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-"
-                        + TestDataGenerator.getTimeStamp() + ".html");
-                if (indexFile.exists()) {
-                    try {
-                        File destinationDir = new File(reportPath);
-                        if (!destinationDir.exists() && !destinationDir.mkdirs()) {
-                            Logger.error("Failed to create destination directory: " + reportPath);
-                            return;
-                        }
-                        Files.move(indexFile.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        Logger.info("Report renamed to: " + renamedFile.getPath());
-                    } catch (IOException e) {
-                        Logger.error("Failed to rename report file: " + e.getMessage());
+            String generateCommand = String.format(
+                    "\"%s\" generate --single-file --name \"Test Report\" -c -o \"%s\" \"%s\"",
+                    allureExecutable,
+                    new File(lastReportPath).getAbsolutePath(),
+                    new File(resultsPath).getAbsolutePath()
+            );
+            executeCommand(generateCommand);
+            File indexFile = new File(lastReportPath + File.separator + "index.html");
+            File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-"
+                    + TestDataGenerator.getTimeStamp() + ".html");
+            if (indexFile.exists()) {
+                try {
+                    File destinationDir = new File(reportPath);
+                    if (!destinationDir.exists() && !destinationDir.mkdirs()) {
+                        Logger.error("Failed to create destination directory: " + reportPath);
+                        return;
                     }
-                } else {
-                    Logger.error("Generated index.html not found. Allure report generation failed.");
-                }
-                File lastReportDir = new File(lastReportPath);
-                if (lastReportDir.exists()) {
-                    lastReportDir.delete();
-                }
-                String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-                if (openFlag != null && openFlag.equalsIgnoreCase("true")){
-                    CommandExecutor.openFile(renamedFile.getPath());
+                    Files.move(indexFile.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    Logger.info("Report renamed to: " + renamedFile.getPath());
+                } catch (IOException e) {
+                    Logger.error("Failed to rename report file: " + e.getMessage());
                 }
             } else {
-                Logger.info(Colors.RED +"Failed to resolve Allure binary path."+Colors.RESET);
+                Logger.error("Generated index.html not found. Allure report generation failed.");
+            }
+            File lastReportDir = new File(lastReportPath);
+            if (lastReportDir.exists()) {
+                lastReportDir.delete();
+            }
+            String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+            if (openFlag != null && openFlag.equalsIgnoreCase("true")){
+                CommandExecutor.openFile(renamedFile.getPath());
             }
         }
     }
@@ -177,6 +177,7 @@ public class AllureHelper {
     public static void addEnvironmentDetailsToReport (){
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
+        if (resultsPath == null) return;
         resultsPath=resultsPath.concat(File.separator).concat("environment.properties");
         PropertyHelper.setDataToProperties(resultsPath,"OS", System.getProperty("os.name"));
         PropertyHelper.setDataToProperties(resultsPath,"OS Version", System.getProperty("os.version"));

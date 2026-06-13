@@ -98,8 +98,19 @@ public class HealingTelemetryStore {
         if (max > 0 && n > max) {
             boolean dropped = false;
             while (n > max) {
-                if (records.poll() != null) { n = recordCount.decrementAndGet(); dropped = true; }
-                else break;
+                TelemetryRecord evicted = records.poll();
+                if (evicted != null) {
+                    n = recordCount.decrementAndGet();
+                    dropped = true;
+                    if (evicted.testId != null) {
+                        java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> tl =
+                                byTestId.get(evicted.testId);
+                        if (tl != null) tl.remove(evicted);
+                    }
+                    java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> tl2 =
+                            byTier.get(evicted.tier);
+                    if (tl2 != null) tl2.remove(evicted);
+                } else break;
             }
             if (dropped) {
                 Reporter.log("[TELEMETRY] Record limit (" + max + ") reached — oldest entries evicted. "

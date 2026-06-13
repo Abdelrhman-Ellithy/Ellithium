@@ -128,6 +128,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException ignored) {}
         }
+        if (steps > 5000) Reporter.log("moveSliderTo: reset loop exhausted without reaching zero", LogLevel.WARN);
         steps = 0;
         while (steps++ < 5000) {
             try {
@@ -140,6 +141,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException ignored) {}
         }
+        if (steps > 5000) Reporter.log("moveSliderTo: target loop exhausted without reaching " + targetValue, LogLevel.WARN);
         try {
             float finalValue = Float.parseFloat(range.getText());
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);

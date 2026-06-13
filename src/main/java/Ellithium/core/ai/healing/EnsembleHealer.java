@@ -79,6 +79,8 @@ public class EnsembleHealer {
     static void awaitInit() {
         java.util.concurrent.CompletableFuture<Void> f = INIT_FUTURE;
         if (f == null && !initialized) {
+            Reporter.log("[LOCAL AI MODEL] awaitInit called before initializeAsync — starting init now "
+                    + "(ensure GeneralHandler.StartRoutine() is invoked before healing)", LogLevel.DEBUG);
             initializeAsync();
             return;
         }
@@ -722,7 +724,7 @@ public class EnsembleHealer {
         if (!hasIdentity) return "";   // no stable key → never cache (avoid collisions)
         // text-hash: a re-rendered element that keeps its id but changes its text yields a new key,
         // so an SPA mutation is a natural cache miss (re-embed) rather than a stale-vector hit.
-        String textHash = (text == null || text.isBlank()) ? "" : Integer.toHexString(text.hashCode());
+        String textHash = text == null ? "~null" : text.isBlank() ? "" : Integer.toHexString(text.hashCode());
         return MODEL_VERSION + "|" + nz(tag) + "|" + nz(id) + "|" + nz(name) + "|" + nz(testid)
                 + "|" + nz(resId) + "|" + nz(accId) + "|" + nz(contentDesc) + "|" + textHash;
     }

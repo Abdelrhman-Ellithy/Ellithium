@@ -325,7 +325,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     private String getTestName(ITestResult result) {
         StringBuilder name = new StringBuilder(result.getName());
         name.append("_");
-        name.append(DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase());
+        Ellithium.core.driver.DriverConfiguration cfg = DriverFactory.getCurrentDriverConfiguration();
+        name.append(cfg != null && cfg.getDriverType() != null ? cfg.getDriverType().getName().toUpperCase() : "UNKNOWN");
         name.append("_");
         Object[] parameters = result.getParameters();
         if (parameters != null && parameters.length > 0) {

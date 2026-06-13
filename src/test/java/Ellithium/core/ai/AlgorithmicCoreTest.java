@@ -220,4 +220,105 @@ public class AlgorithmicCoreTest {
         Assert.assertEquals(score, 8.0 / 33.0, 1e-9,
                 "type match = 8pts, dynamicMax = 25(id) + 8(type) = 33 → 8/33");
     }
+
+    // ── computeDynamicMax ──
+
+    @Test
+    public void computeDynamicMax_tagOnly_returnsFive() {
+        ElementFingerprint fp = GSON.fromJson("{\"tagName\":\"button\"}", ElementFingerprint.class);
+        Assert.assertEquals(fp.computeDynamicMax(), 5,
+                "tagName alone contributes 5 pts — all other attributes null");
+    }
+
+    @Test
+    public void computeDynamicMax_tagAndClass_returnsTen() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"tagName\":\"div\",\"className\":\"btn-primary\"}", ElementFingerprint.class);
+        Assert.assertEquals(fp.computeDynamicMax(), 10, "tagName(5) + className(5) = 10");
+    }
+
+    @Test
+    public void computeDynamicMax_idOnly_returns25() {
+        ElementFingerprint fp = GSON.fromJson("{\"id\":\"loginBtn\"}", ElementFingerprint.class);
+        Assert.assertEquals(fp.computeDynamicMax(), 25, "id contributes 25 pts");
+    }
+
+    @Test
+    public void computeDynamicMax_dataTestIdOnly_returns30() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"dataTestId\":\"login-submit\"}", ElementFingerprint.class);
+        Assert.assertEquals(fp.computeDynamicMax(), 30, "dataTestId contributes 30 pts");
+    }
+
+    @Test
+    public void computeDynamicMax_multipleFields_returnsCorrectSum() {
+        // id(25) + name(20) + type(8) + tagName(5) = 58
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"id\":\"email\",\"name\":\"email\",\"type\":\"email\",\"tagName\":\"input\"}",
+                ElementFingerprint.class);
+        Assert.assertEquals(fp.computeDynamicMax(), 58,
+                "id(25) + name(20) + type(8) + tagName(5) = 58");
+    }
+
+    @Test
+    public void computeDynamicMax_belowPersistThreshold_whenTagAndTypeOnly() {
+        // tag(5) + type(8) = 13 — below the dynamicMax<15 persist-skip guard in BaselineStore
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"tagName\":\"button\",\"type\":\"submit\"}", ElementFingerprint.class);
+        int dmax = fp.computeDynamicMax();
+        Assert.assertEquals(dmax, 13, "tagName(5) + type(8) = 13");
+        Assert.assertTrue(dmax < 15,
+                "dynamicMax < 15 triggers the BaselineStore persist-skip gate; 13 must be < 15");
+    }
+
+    // ── hasStrongIdentity ──
+
+    @Test
+    public void hasStrongIdentity_withId_returnsTrue() {
+        ElementFingerprint fp = GSON.fromJson("{\"id\":\"submit\"}", ElementFingerprint.class);
+        Assert.assertTrue(fp.hasStrongIdentity(), "id is a strong-identity anchor");
+    }
+
+    @Test
+    public void hasStrongIdentity_withName_returnsTrue() {
+        ElementFingerprint fp = GSON.fromJson("{\"name\":\"username\"}", ElementFingerprint.class);
+        Assert.assertTrue(fp.hasStrongIdentity(), "name is a strong-identity anchor");
+    }
+
+    @Test
+    public void hasStrongIdentity_withDataTestId_returnsTrue() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"dataTestId\":\"login-btn\"}", ElementFingerprint.class);
+        Assert.assertTrue(fp.hasStrongIdentity(), "dataTestId is a strong-identity anchor");
+    }
+
+    @Test
+    public void hasStrongIdentity_withResourceId_returnsTrue() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"resourceId\":\"com.app:id/loginBtn\"}", ElementFingerprint.class);
+        Assert.assertTrue(fp.hasStrongIdentity(), "resourceId is a strong-identity anchor");
+    }
+
+    @Test
+    public void hasStrongIdentity_tagAndClassOnly_returnsFalse() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"tagName\":\"div\",\"className\":\"grid-row active\"}", ElementFingerprint.class);
+        Assert.assertFalse(fp.hasStrongIdentity(),
+                "tagName + className are weak signals — no stable identity anchor");
+    }
+
+    @Test
+    public void hasStrongIdentity_ariaLabelOnly_returnsFalse() {
+        ElementFingerprint fp = GSON.fromJson("{\"ariaLabel\":\"Login\"}", ElementFingerprint.class);
+        Assert.assertFalse(fp.hasStrongIdentity(),
+                "ariaLabel is not a strong-identity anchor (scores 15 pts but is mutable text)");
+    }
+
+    @Test
+    public void hasStrongIdentity_roleAndTypeOnly_returnsFalse() {
+        ElementFingerprint fp = GSON.fromJson(
+                "{\"role\":\"button\",\"type\":\"submit\"}", ElementFingerprint.class);
+        Assert.assertFalse(fp.hasStrongIdentity(),
+                "role + type have no stable identity value — expected false");
+    }
 }

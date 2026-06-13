@@ -36,6 +36,13 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 new Tier1AlgorithmicHealer(), new Tier2EnsembleHealer(), new Tier3LLMHealer()));
         try {
             for (HealingTier ext : java.util.ServiceLoader.load(HealingTier.class)) {
+                if (ext.apiVersion() != 1) {
+                    Reporter.log("[HEALING-SPI] Rejected external tier " + ext.getClass().getName()
+                            + " — apiVersion=" + ext.apiVersion() + " (expected 1); "
+                            + "update the implementation to match the current HealingTier contract",
+                            LogLevel.WARN);
+                    continue;
+                }
                 tiers.add(ext);
             }
         } catch (Exception ignored) {}
@@ -82,6 +89,9 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 }
                 Reporter.log("[TIER " + tier.order() + "] heal raised " + e.getClass().getSimpleName()
                         + " — falling through", LogLevel.WARN);
+                Reporter.log("[TIER " + tier.order() + "] cause: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+                        LogLevel.DEBUG);
                 continue;
             }
             if (raw == null || raw.element() == null) continue;

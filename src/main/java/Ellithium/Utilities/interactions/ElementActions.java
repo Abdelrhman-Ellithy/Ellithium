@@ -349,8 +349,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             }
             
             WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
-            
+                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
+
             uploadElement.sendKeys(file.getAbsolutePath());
             Reporter.log("File uploaded successfully: " + file.getName(), LogLevel.INFO_BLUE);
         } catch (Exception e) {
@@ -377,8 +377,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             String pathsString = buildFilePathsString(filePaths);
             
             WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
-            
+                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
+
             uploadElement.sendKeys(pathsString);
             Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
         } catch (Exception e) {
