@@ -290,8 +290,13 @@ public class NotificationSender {
     private String buildSlackPayload(String message, String channel, String username) {
         return String.format(
             "{\"channel\":\"%s\",\"username\":\"%s\",\"text\":\"%s\",\"icon_emoji\":\":robot_face:\"}",
-            channel, username, message.replace("\n", "\\n")
+            escapeJson(channel), escapeJson(username), escapeJson(message)
         );
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
 
     /**

@@ -73,14 +73,14 @@ public class ConfigContext {
     public static String getLogFilePath() {
         return logFilePath;
     }
-    private static boolean onExecution=false;
+    private static volatile boolean onExecution=false;
     public static boolean isLoggingOn() {
         return isLoggingOn;
     }
     public static void setIsLoggingOn(boolean isLoggingOn) {
         ConfigContext.isLoggingOn = isLoggingOn;
     }
-    private static boolean isLoggingOn=false;
+    private static volatile boolean isLoggingOn=false;
     public static boolean isOnExecution() {
         return onExecution;
     }

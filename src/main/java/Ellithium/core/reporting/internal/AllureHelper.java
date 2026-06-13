@@ -185,7 +185,6 @@ public class AllureHelper {
         PropertyHelper.setDataToProperties(resultsPath,"User", System.getProperty("user.name"));
         PropertyHelper.setDataToProperties(resultsPath,"Machine Name", getHostName());
         PropertyHelper.setDataToProperties(resultsPath,"Maven Version", executeCommandWithOutput("mvn -v"));
-        Properties props = new Properties();
     }
     private static String getHostName() {
         try {

@@ -50,7 +50,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      * @param defaultCollectionName the default collection name for NoSQL operations
      */
     public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize, String defaultCollectionName) {
-        Reporter.log("Initializing MongoDB connection to " + connectionString, LogLevel.INFO_YELLOW);
+        Reporter.log("Initializing MongoDB connection to " + redactConnectionString(connectionString), LogLevel.INFO_YELLOW);
         this.mongoClient = MongoClients.create(connectionString);
         this.database = mongoClient.getDatabase(databaseName);
         this.queryResultCache = Caffeine.newBuilder()
@@ -367,5 +367,10 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      */
     public MongoCollection<Document> getCollection(String collectionName) {
         return database.getCollection(collectionName);
+    }
+
+    private static String redactConnectionString(String connectionString) {
+        if (connectionString == null) return "null";
+        return connectionString.replaceAll("://[^@]+@", "://<redacted>@");
     }
 }

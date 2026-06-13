@@ -38,7 +38,7 @@ public class GeneralHandler {
     public static File testFailed( String browserName, String testName)  {
         try {
             TakesScreenshot camera = DriverFactory.getCurrentDriver();
-            assert camera != null;
+            if (camera == null) return null;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File("Test-Output"+ File.separator +"ScreenShots"+ File.separator +"Failed"+ File.separator + name + ".png");
@@ -107,7 +107,8 @@ public class GeneralHandler {
                     parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(currentDriverConfiguration.getWebSecurityMode().getName()));
                 }
                 if(type instanceof RemoteDriverType ||type instanceof MobileDriverType){
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("Remote Address").setValue(currentDriverConfiguration.getRemoteAddress().toString()));
+                    java.net.URL remoteAddress = currentDriverConfiguration.getRemoteAddress();
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("Remote Address").setValue(remoteAddress != null ? remoteAddress.toString() : "N/A"));
                 }
             }
         }
