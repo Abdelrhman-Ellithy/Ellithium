@@ -1542,3 +1542,69 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-13T22:25:32.6655616
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.cssSelector: emaaaiiiail` | `By.id: username` | 1.00 |
+| 2 | `algorithmic-baseline` | - | - | `By.id: sssecreeett` | `By.id: password` | 1.00 |
+| 3 | `algorithmic-baseline` | - | - | `By.tagName: btnnnn` | `By.xpath: //button[normalize-space(.)='Login' and @type='submit']` | 1.00 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Healed to:** `By.id: username`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 2. By.id: sssecreeett
+- **Healed to:** `By.id: password`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Healed to:** `By.xpath: //button[normalize-space(.)='Login' and @type='submit']`
+- **Reasoning:** [TIER 1 - Algorithmic] Matched by: tag='button' text(partial)
+
+---
+
+
+---
+
+## Run: 2026-06-13T22:37:11.3587925
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.cssSelector: emaaaiiiail` | `By.id: username` | 1.00 |
+| 2 | `algorithmic-baseline` | - | - | `By.id: sssecreeett` | `By.id: password` | 1.00 |
+| 3 | `algorithmic-baseline` | - | - | `By.tagName: btnnnn` | `By.xpath: //button[normalize-space(.)='Login' and @type='submit']` | 1.00 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Healed to:** `By.id: username`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 2. By.id: sssecreeett
+- **Healed to:** `By.id: password`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Healed to:** `By.xpath: //button[normalize-space(.)='Login' and @type='submit']`
+- **Reasoning:** [TIER 1 - Algorithmic] Matched by: tag='button' text(partial)
+
+---
+

@@ -117,6 +117,9 @@ public class AISelfHealer {
         // previous app's locator patterns.
         Ellithium.core.ai.scoring.LocatorMutationEngine.resetCache();
         Ellithium.core.ai.healing.SemanticLocatorResolver.resetCache();
+        // Clear the one-backup-per-file registry so a fresh suite gets a new backup
+        // for each healed file (rather than skipping it because a backup was made earlier).
+        Ellithium.core.ai.JavaSourceModifier.resetSessionState();
     }
 
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();

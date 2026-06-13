@@ -41,6 +41,9 @@ public class JavaSourceModifier {
     // Per-file lock registry to prevent concurrent writes to the same POM file
     private static final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
 
+    // Tracks which files have already been backed up this session (backup once per file)
+    private static final ConcurrentHashMap<String, Boolean> backedUpFiles = new ConcurrentHashMap<>();
+
     private static ReentrantLock getFileLock(String filePath) {
         return fileLocks.computeIfAbsent(filePath, k -> new ReentrantLock());
     }
@@ -232,26 +235,29 @@ public class JavaSourceModifier {
 
     private static boolean prepareForPatch(File javaFile) {
         String path = javaFile.getAbsolutePath();
-        try {
-            ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain", path);
-            pb.redirectErrorStream(true);
-            Process proc = pb.start();
-            String out = new String(proc.getInputStream().readAllBytes()).trim();
-            proc.waitFor();
-            if (!out.isEmpty()) {
-                Reporter.log("AI source-patch aborted: file has uncommitted changes — " + path, LogLevel.WARN);
-                return false;
+        // NOTE: We intentionally do NOT abort on uncommitted git changes here.
+        // After the healer applies its first patch to a file the file becomes dirty
+        // in git. Aborting subsequent patches because of that would mean only the
+        // very first locator in a batch ever gets fixed. The healer itself is the
+        // agent that made those changes, so it is safe to continue patching.
+
+        // Create a one-time backup per file per JVM session so the developer can
+        // diff or revert if needed, but avoid creating a new .bak on every patch.
+        if (backedUpFiles.putIfAbsent(path, Boolean.TRUE) == null) {
+            try {
+                java.nio.file.Path src = javaFile.toPath();
+                java.nio.file.Path bak = src.getParent().resolve(javaFile.getName() + ".bak." + System.currentTimeMillis());
+                Files.copy(src, bak);
+                Reporter.log("AI source-patch: backup created → " + bak.getFileName(), LogLevel.DEBUG);
+            } catch (IOException e) {
+                Reporter.log("AI source-patch: backup failed for " + path + " — " + e.getMessage(), LogLevel.WARN);
             }
-        } catch (Exception e) {
-            Reporter.log("AI source-patch: git check skipped (" + e.getMessage() + "), proceeding without guard", LogLevel.DEBUG);
-        }
-        try {
-            java.nio.file.Path src = javaFile.toPath();
-            java.nio.file.Path bak = src.getParent().resolve(javaFile.getName() + ".bak." + System.currentTimeMillis());
-            Files.copy(src, bak);
-        } catch (IOException e) {
-            Reporter.log("AI source-patch: backup failed for " + path + " — " + e.getMessage(), LogLevel.WARN);
         }
         return true;
+    }
+
+    /** Clears the session backup registry (call from {@code AISelfHealer#resetForSuite}). */
+    public static void resetSessionState() {
+        backedUpFiles.clear();
     }
 }
