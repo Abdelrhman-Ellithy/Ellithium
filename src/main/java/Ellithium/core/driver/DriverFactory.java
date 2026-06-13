@@ -643,7 +643,9 @@ public class DriverFactory {
                         try { localDriver.navigate().to("about:blank"); } catch (Exception ignored) {
                         } finally {
                             try { seleniumListener.resumeLogging(); } catch (Exception ignored) {}
-                            localDriver.quit();
+                            try { localDriver.quit(); } catch (Exception e) {
+                                Reporter.log("Driver quit failed (non-fatal): " + e.getMessage(), LogLevel.WARN);
+                            }
                         }
                     }
                 }
@@ -665,6 +667,27 @@ public class DriverFactory {
         AndroidDriverThread.remove();
         IOSDriverThread.remove();
         driverConfigurationThread.remove();
+    }
+
+    /**
+     * Re-registers an already-created driver on the calling thread's ThreadLocals.
+     *
+     * <p>TestNG's {@code dependsOnMethods} can dispatch test methods to a different thread-pool
+     * thread than the one where {@code @BeforeClass} ran. Because {@link DriverFactory} stores
+     * the driver in {@link ThreadLocal} fields, the method thread sees {@code null} even though
+     * the browser is running. Calling this from {@code @BeforeMethod(alwaysRun=true)} in the
+     * test base class re-associates the existing driver with the current thread so that all
+     * framework features (recording, screenshots, listeners) work correctly.</p>
+     *
+     * <p>Safe to call when already on the owning thread (re-sets the same values, no-op in effect).
+     * The next {@code @BeforeClass} on a recycled thread will overwrite these ThreadLocals.</p>
+     *
+     * @param decoratedDriver the decorated driver returned by {@code getNewDriver}
+     * @param config          the configuration captured from {@code getCurrentDriverConfiguration()}
+     */
+    public static void adoptCurrentThread(WebDriver decoratedDriver, DriverConfiguration config) {
+        WebDriverThread.set(decoratedDriver);
+        driverConfigurationThread.set(config);
     }
 
     /**

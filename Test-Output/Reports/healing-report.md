@@ -1337,3 +1337,207 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-13T15:22:04.3244776
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+| 4 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 5 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 6 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+| 7 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 8 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 9 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 4. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 5. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 6. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 7. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 8. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 9. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-13T15:27:04.5327255
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+| 4 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 5 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 6 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+| 7 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 8 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.89 |
+| 9 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 4. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 5. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 6. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 7. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 8. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 9. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+

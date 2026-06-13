@@ -291,7 +291,7 @@ public class seleniumListener implements WebDriverListener {
 
    @Override
    public void afterGetCssValue(WebElement element, String propertyName, String result) {
-       Reporter.log("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.DEBUG);
    }
 
    @Override

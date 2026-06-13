@@ -4,6 +4,7 @@ import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
+import org.openqa.selenium.WebDriver;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
@@ -44,6 +45,15 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
      * This allows us to correlate test results with their recordings
      */
     private static final Map<String, String> testResultToRecordingId = new ConcurrentHashMap<>();
+
+    /**
+     * Per-class driver snapshot captured after @BeforeClass completes.
+     * Used to re-adopt the driver onto worker threads that TestNG dispatches via
+     * dependsOnMethods — those threads never ran @BeforeClass and therefore have
+     * null ThreadLocals in DriverFactory, even though the browser is running fine.
+     */
+    private final Map<String, WebDriver>           classDriverMap = new ConcurrentHashMap<>();
+    private final Map<String, DriverConfiguration> classConfigMap = new ConcurrentHashMap<>();
 
 
     /**
@@ -213,8 +223,47 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
     }
     
+    /**
+     * Restores the driver ThreadLocal on borrowed threads before any method body runs.
+     *
+     * TestNG's dependsOnMethods can dispatch a test method (or @BeforeMethod/@AfterMethod) to a
+     * thread-pool thread that never executed @BeforeClass for that class. Because DriverFactory
+     * stores the driver in ThreadLocals, those threads see null even though the browser is alive.
+     * We capture the driver snapshot after @BeforeClass (in afterInvocation below) and re-adopt
+     * it here so that all framework features — recording, screenshots, AI healing — work
+     * transparently without any user boilerplate.
+     */
+    @Override
+    public void beforeInvocation(IInvokedMethod method, ITestResult testResult) {
+        if (DriverFactory.getCurrentDriver() == null) {
+            String className = testResult.getTestClass().getRealClass().getName();
+            WebDriver savedDriver = classDriverMap.get(className);
+            DriverConfiguration savedConfig = classConfigMap.get(className);
+            if (savedDriver != null && savedConfig != null) {
+                DriverFactory.adoptCurrentThread(savedDriver, savedConfig);
+            }
+        }
+    }
+
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+        // Capture the driver right after @BeforeClass so we can restore it on worker threads.
+        if (method.getTestMethod().isBeforeClassConfiguration()) {
+            WebDriver current = DriverFactory.getCurrentDriver();
+            DriverConfiguration config = DriverFactory.getCurrentDriverConfiguration();
+            if (current != null) {
+                String className = testResult.getTestClass().getRealClass().getName();
+                classDriverMap.put(className, current);
+                classConfigMap.put(className, config);
+            }
+        } else if (method.getTestMethod().isAfterClassConfiguration()) {
+            // @AfterClass has quit the driver — remove the stale entry so recycled threads
+            // from the pool don't accidentally adopt the dead browser.
+            String className = testResult.getTestClass().getRealClass().getName();
+            classDriverMap.remove(className);
+            classConfigMap.remove(className);
+        }
+
         if (method.isTestMethod()){
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
             DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
