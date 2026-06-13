@@ -139,39 +139,7 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
         return new MouseActions<>(driver);
     }
 
-    /**
-     * Returns Android-specific mobile gestures and actions.
-     *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>Android only — throws {@link ClassCastException} if driver is not {@link AndroidDriver}</li>
-     * </ul>
-     *
-     * @return a new {@link AndroidActions} instance
-     * @throws ClassCastException if the current driver is not an {@link AndroidDriver}
-     * @deprecated Use {@link #mobileActions()} for cross-platform compatibility
-     */
-    @Deprecated
-    public AndroidActions androidActions() {
-        return new AndroidActions<>((AndroidDriver) driver);
-    }
 
-    /**
-     * Returns iOS-specific mobile gestures and actions.
-     *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>iOS only — throws {@link ClassCastException} if driver is not {@link IOSDriver}</li>
-     * </ul>
-     *
-     * @return a new {@link IOSActions} instance
-     * @throws ClassCastException if the current driver is not an {@link IOSDriver}
-     * @deprecated Use {@link #mobileActions()} for cross-platform compatibility
-     */
-    @Deprecated
-    public IOSActions iosActions() {
-        return new IOSActions((IOSDriver) driver);
-    }
 
     /**
      * Returns a unified, cross-platform API for mobile gestures and native actions.

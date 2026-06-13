@@ -17,7 +17,7 @@ public class ProductPage {
 
     public void navigateToProducts() {
         driverActions.navigation().navigateToUrl("https://automationexercise.com/");
-        By products = By.xpath("//a[normalize-space(.)=' Products']");
+        By products = By.xpath("products");
         driverActions.elements().clickOnElement(products);
     }
 }

@@ -7,6 +7,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
 import java.util.*;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ExcelHelper {
@@ -83,9 +84,10 @@ public class ExcelHelper {
                     sheet = workbook.createSheet(sheetName);
                 }
 
-                int rowNum = sheet.getLastRowNum() + 1;
+                boolean sheetEmpty = sheet.getPhysicalNumberOfRows() == 0;
+                int rowNum = sheetEmpty ? 0 : sheet.getLastRowNum() + 1;
 
-                if (rowNum == 0 && !data.isEmpty()) {
+                if (sheetEmpty && !data.isEmpty()) {
                     Row headerRow = sheet.createRow(rowNum++);
                     int colNum = 0;
                     for (String key : data.get(0).keySet()) {
@@ -222,7 +224,7 @@ public class ExcelHelper {
                 double value = cell.getNumericCellValue();
                 if (value % 1 == 0) {
                     // It's a whole number, return without decimal
-                    return String.valueOf((int) value);
+                    return String.valueOf((long) value);
                 }
                 return String.valueOf(value);
             case BOOLEAN:
@@ -518,10 +520,10 @@ public class ExcelHelper {
      * @param sheetName Name of the sheet.
      * @param columnIndex Column index.
      * @param filterValue Value to filter by.
-     * @return List of rows matching the filter.
+     * @return List of row snapshots (header→value maps) matching the filter.
      */
-    public static List<Row> filterRows(String filePath, String sheetName, int columnIndex, String filterValue) {
-        List<Row> filteredRows = new ArrayList<>();
+    public static List<Map<String, String>> filterRows(String filePath, String sheetName, int columnIndex, String filterValue) {
+        List<Map<String, String>> filteredRows = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = WorkbookFactory.create(fis)) {
             Sheet sheet = workbook.getSheet(sheetName);
@@ -529,14 +531,25 @@ public class ExcelHelper {
                 Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
                 return filteredRows;
             }
-
-            for (Row row : sheet) {
-                Cell cell = row.getCell(columnIndex);
-                if (cell != null && cell.toString().equals(filterValue)) {
-                    filteredRows.add(row);
+            Row headerRow = sheet.getRow(0);
+            List<String> headers = new ArrayList<>();
+            if (headerRow != null) {
+                for (Cell cell : headerRow) {
+                    headers.add(getCellValueAsString(cell));
                 }
             }
-
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
+                Cell cell = row.getCell(columnIndex);
+                if (cell != null && getCellValueAsString(cell).equals(filterValue)) {
+                    Map<String, String> rowMap = new LinkedHashMap<>();
+                    for (int i = 0; i < headers.size(); i++) {
+                        Cell c = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        rowMap.put(headers.get(i), getCellValueAsString(c));
+                    }
+                    filteredRows.add(rowMap);
+                }
+            }
             Reporter.log("Filtered rows in sheet " + sheetName + " based on value: " + filterValue + ".", LogLevel.INFO_GREEN);
         } catch (IOException e) {
             Reporter.log("Error while filtering rows: " + e.getMessage(), LogLevel.ERROR);
@@ -590,25 +603,28 @@ public class ExcelHelper {
                 return;
             }
 
-            List<Row> rows = new ArrayList<>();
+            List<List<String>> snapshot = new ArrayList<>();
             for (Row row : sheet) {
-                rows.add(row);
+                List<String> cells = new ArrayList<>();
+                for (int i = row.getFirstCellNum(); i < row.getLastCellNum(); i++) {
+                    Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    cells.add(getCellValueAsString(cell));
+                }
+                snapshot.add(cells);
             }
 
-            rows.sort((r1, r2) -> {
-                Cell c1 = r1.getCell(columnIndex);
-                Cell c2 = r2.getCell(columnIndex);
-
-                if (c1 == null || c2 == null) return 0;
-                String v1 = c1.toString();
-                String v2 = c2.toString();
-
+            snapshot.sort((r1, r2) -> {
+                String v1 = columnIndex < r1.size() ? r1.get(columnIndex) : "";
+                String v2 = columnIndex < r2.size() ? r2.get(columnIndex) : "";
                 return ascending ? v1.compareTo(v2) : v2.compareTo(v1);
             });
 
-            for (int i = 0; i < rows.size(); i++) {
+            for (int i = 0; i < snapshot.size(); i++) {
                 Row newRow = sheet.createRow(i);
-                copyRow(rows.get(i), newRow);
+                List<String> cells = snapshot.get(i);
+                for (int j = 0; j < cells.size(); j++) {
+                    newRow.createCell(j).setCellValue(cells.get(j));
+                }
             }
 
             try (FileOutputStream fos = new FileOutputStream(filePath)) {
@@ -618,20 +634,6 @@ public class ExcelHelper {
                     (ascending ? " in ascending order." : " in descending order."), LogLevel.INFO_GREEN);
         } catch (IOException e) {
             Reporter.log("Error while sorting rows: " + e.getMessage(), LogLevel.ERROR);
-        }
-    }
-
-    /**
-     * Copies a row from the source to the target row.
-     * @param sourceRow The source row.
-     * @param targetRow The target row.
-     */
-    private static void copyRow(Row sourceRow, Row targetRow) {
-        for (int i = sourceRow.getFirstCellNum(); i < sourceRow.getLastCellNum(); i++) {
-            Cell newCell = targetRow.createCell(i);
-            if (sourceRow.getCell(i) != null) {
-                newCell.setCellValue(sourceRow.getCell(i).toString());
-            }
         }
     }
 

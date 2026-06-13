@@ -115,8 +115,13 @@ public class PDFHelper {
                 contentStream.beginText();
                 contentStream.setFont(PDType1Font.HELVETICA, 12);
                 if (yPosition < 100) {
+                    contentStream.endText();
+                    contentStream.close();
                     page = new PDPage();
                     document.addPage(page);
+                    contentStream = new PDPageContentStream(document, page);
+                    contentStream.beginText();
+                    contentStream.setFont(PDType1Font.HELVETICA, 12);
                     yPosition = 700;
                 }
                 contentStream.newLineAtOffset(100, yPosition);

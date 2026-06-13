@@ -1,6 +1,8 @@
 package Helpers;
 
 import Ellithium.Utilities.helpers.JarExtractor;
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.reporting.Reporter;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;
@@ -26,9 +28,16 @@ public class JarExtractorTests {
 
     @AfterMethod
     public void tearDown() throws IOException {
-        // Clean up test files
-        deleteDirectory(new File(EXTRACTED_DIR));
-        Files.deleteIfExists(Paths.get(TEST_JAR));
+        try {
+            deleteDirectory(new File(EXTRACTED_DIR));
+            Files.deleteIfExists(Paths.get(TEST_JAR));
+            Files.deleteIfExists(Paths.get(TEST_DIR + "sample.txt"));
+            Files.deleteIfExists(Paths.get(TEST_DIR + "sample_in_dir.txt"));
+            Reporter.log("Test cleanup completed successfully", LogLevel.INFO_GREEN);
+        } catch (IOException e) {
+            Reporter.log("Failed to clean up test files: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     private void createTestJar(String jarPath) throws IOException {
@@ -76,57 +85,70 @@ public class JarExtractorTests {
 
     @Test
     public void testExtractJar() throws IOException {
-        JarExtractor.extractFolderFromJar(new File(TEST_JAR), "", new File(EXTRACTED_DIR));
-
-        File extractedSample = new File(EXTRACTED_DIR + "sample.txt");
-        File extractedDir = new File(EXTRACTED_DIR + "testdir");
-        File extractedSampleInDir = new File(EXTRACTED_DIR + "testdir/sample_in_dir.txt");
-
-        assertTrue(extractedSample.exists());
-        assertTrue(extractedDir.exists());
-        assertTrue(extractedSampleInDir.exists());
+        try {
+            JarExtractor.extractFolderFromJar(new File(TEST_JAR), "", new File(EXTRACTED_DIR));
+            assertTrue(new File(EXTRACTED_DIR + "sample.txt").exists());
+            assertTrue(new File(EXTRACTED_DIR + "testdir").exists());
+            assertTrue(new File(EXTRACTED_DIR + "testdir/sample_in_dir.txt").exists());
+            Reporter.log("JAR extraction test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("JAR extraction test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testExtractNonExistentJar() {
-        JarExtractor.extractFolderFromJar(new File("nonexistent.jar"), "", new File(EXTRACTED_DIR));
-        File extractedDir = new File(EXTRACTED_DIR);
-        assertFalse(extractedDir.exists());
+        try {
+            JarExtractor.extractFolderFromJar(new File("nonexistent.jar"), "", new File(EXTRACTED_DIR));
+            assertFalse(new File(EXTRACTED_DIR).exists());
+            Reporter.log("Non-existent JAR test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("Non-existent JAR test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testExtractJarWithEmptyJar() throws IOException {
         String emptyJarPath = TEST_DIR + "empty.jar";
-        try (FileOutputStream fos = new FileOutputStream(emptyJarPath);
-             JarOutputStream jarOut = new JarOutputStream(fos)) {
-            // Create an empty JAR
+        try {
+            try (FileOutputStream fos = new FileOutputStream(emptyJarPath);
+                 JarOutputStream jarOut = new JarOutputStream(fos)) {
+                jarOut.finish();
+            }
+            JarExtractor.extractFolderFromJar(new File(emptyJarPath), "", new File(EXTRACTED_DIR));
+            assertTrue(new File(EXTRACTED_DIR).exists());
+            Reporter.log("Empty JAR extraction test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("Empty JAR extraction test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        } finally {
+            Files.deleteIfExists(Paths.get(emptyJarPath));
         }
-        JarExtractor.extractFolderFromJar(new File(emptyJarPath), "", new File(EXTRACTED_DIR));
-        File extractedDir = new File(EXTRACTED_DIR);
-        assertTrue(extractedDir.exists());
-        Files.deleteIfExists(Paths.get(emptyJarPath));
     }
 
     @Test
     public void testExtractJarWithSubdirectories() throws IOException {
         String subDirJarPath = TEST_DIR + "subdir.jar";
-        try (FileOutputStream fos = new FileOutputStream(subDirJarPath);
-             JarOutputStream jarOut = new JarOutputStream(fos)) {
-
-            addDirectoryToJar(jarOut, "level1/");
-            addDirectoryToJar(jarOut, "level1/level2/");
-            addFileToJar(new File("src/test/resources/TestData/sample.txt"), jarOut, "level1/level2/sample.txt");
+        try {
+            try (FileOutputStream fos = new FileOutputStream(subDirJarPath);
+                 JarOutputStream jarOut = new JarOutputStream(fos)) {
+                addDirectoryToJar(jarOut, "level1/");
+                addDirectoryToJar(jarOut, "level1/level2/");
+                addFileToJar(new File("src/test/resources/TestData/sample.txt"), jarOut, "level1/level2/sample.txt");
+            }
+            JarExtractor.extractFolderFromJar(new File(subDirJarPath), "", new File(EXTRACTED_DIR));
+            assertTrue(new File(EXTRACTED_DIR + "level1").exists());
+            assertTrue(new File(EXTRACTED_DIR + "level1/level2").exists());
+            assertTrue(new File(EXTRACTED_DIR + "level1/level2/sample.txt").exists());
+            Reporter.log("Subdirectory extraction test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("Subdirectory extraction test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        } finally {
+            Files.deleteIfExists(Paths.get(subDirJarPath));
         }
-
-        JarExtractor.extractFolderFromJar(new File(subDirJarPath), "", new File(EXTRACTED_DIR));
-        File level1Dir = new File(EXTRACTED_DIR + "level1");
-        File level2Dir = new File(EXTRACTED_DIR + "level1/level2");
-        File sampleInLevel2 = new File(EXTRACTED_DIR + "level1/level2/sample.txt");
-
-        assertTrue(level1Dir.exists());
-        assertTrue(level2Dir.exists());
-        assertTrue(sampleInLevel2.exists());
-        Files.deleteIfExists(Paths.get(subDirJarPath));
     }
 
     @Test

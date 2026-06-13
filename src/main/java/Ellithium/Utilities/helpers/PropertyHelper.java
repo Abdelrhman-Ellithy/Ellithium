@@ -188,18 +188,20 @@ public class PropertyHelper {
      * @param key key to remove.
      */
     public static void removeKeyFromProperties(String filePath, String key) {
-        try {
-            Properties prop = loadProperties(filePath);
-            if (prop.containsKey(key)) {
-                prop.remove(key);
-                saveProperties(filePath, prop);
-                log("Successfully removed key: " + key + " from properties file: ", LogLevel.INFO_GREEN, filePath);
-            } else {
-                log("Key not found in properties file: ", LogLevel.WARN, key);
+        synchronized (getFileLock(filePath)) {
+            try {
+                Properties prop = loadProperties(filePath);
+                if (prop.containsKey(key)) {
+                    prop.remove(key);
+                    saveProperties(filePath, prop);
+                    log("Successfully removed key: " + key + " from properties file: ", LogLevel.INFO_GREEN, filePath);
+                } else {
+                    log("Key not found in properties file: ", LogLevel.WARN, key);
+                }
+            } catch (IOException e) {
+                log("Failed to remove key from properties file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
             }
-        } catch (IOException e) {
-            log("Failed to remove key from properties file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
         }
     }
 
@@ -248,14 +250,16 @@ public class PropertyHelper {
      * @param properties Properties object containing the key-value pairs to update.
      */
     public static void updateMultipleProperties(String filePath, Properties properties) {
-        try {
-            Properties prop = loadProperties(filePath);
-            properties.forEach((key, value) -> prop.setProperty(key.toString(), value.toString()));
-            saveProperties(filePath, prop);
-            log("Successfully updated multiple properties in file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to update multiple properties in file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                Properties prop = loadProperties(filePath);
+                properties.forEach((key, value) -> prop.setProperty(key.toString(), value.toString()));
+                saveProperties(filePath, prop);
+                log("Successfully updated multiple properties in file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to update multiple properties in file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -265,14 +269,16 @@ public class PropertyHelper {
      * @param map Map containing the key-value pairs to add or update.
      */
     public static void addOrUpdatePropertiesFromMap(String filePath, Map<String, String> map) {
-        try {
-            Properties prop = loadProperties(filePath);
-            map.forEach(prop::setProperty);
-            saveProperties(filePath, prop);
-            log("Successfully added or updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to add or update properties in file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                Properties prop = loadProperties(filePath);
+                map.forEach(prop::setProperty);
+                saveProperties(filePath, prop);
+                log("Successfully added or updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to add or update properties in file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -300,18 +306,20 @@ public class PropertyHelper {
      * @param updates Map containing the key-value pairs to update.
      */
     public static void updatePropertiesFromMap(String filePath, Map<String, String> updates) {
-        try {
-            Properties prop = loadProperties(filePath);
-            updates.forEach((key, value) -> {
-                if (prop.containsKey(key)) {
-                    prop.setProperty(key, value);
-                }
-            });
-            saveProperties(filePath, prop);
-            log("Successfully updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to update properties in file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                Properties prop = loadProperties(filePath);
+                updates.forEach((key, value) -> {
+                    if (prop.containsKey(key)) {
+                        prop.setProperty(key, value);
+                    }
+                });
+                saveProperties(filePath, prop);
+                log("Successfully updated properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to update properties in file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -321,18 +329,20 @@ public class PropertyHelper {
      * @param newProperties Map containing the key-value pairs to add.
      */
     public static void addNewPropertiesFromMap(String filePath, Map<String, String> newProperties) {
-        try {
-            Properties prop = loadProperties(filePath);
-            newProperties.forEach((key, value) -> {
-                if (!prop.containsKey(key)) {
-                    prop.setProperty(key, value);
-                }
-            });
-            saveProperties(filePath, prop);
-            log("Successfully added new properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to add new properties in file: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                Properties prop = loadProperties(filePath);
+                newProperties.forEach((key, value) -> {
+                    if (!prop.containsKey(key)) {
+                        prop.setProperty(key, value);
+                    }
+                });
+                saveProperties(filePath, prop);
+                log("Successfully added new properties from Map in file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to add new properties in file: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 

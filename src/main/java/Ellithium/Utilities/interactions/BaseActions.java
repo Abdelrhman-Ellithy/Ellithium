@@ -16,6 +16,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -25,7 +26,7 @@ class BaseActions<T extends WebDriver> {
 
     protected final T driver;
     protected BaseActions(T driver) {
-        this.driver = driver;
+        this.driver = Objects.requireNonNull(driver, "driver must not be null");
     }
     /**
      * Gets a FluentWait instance with specified timeout and polling interval.

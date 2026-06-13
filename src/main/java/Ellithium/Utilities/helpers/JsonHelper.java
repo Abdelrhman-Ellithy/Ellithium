@@ -153,13 +153,17 @@ public class JsonHelper {
         log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
         synchronized (getFileLock(filePath)) {
             try (FileReader reader = new FileReader(jsonFile)) {
-                JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-                log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
-                var value= jsonObject.get(key);
-                if(value!=null) {
-                    return value.getAsString();
+                JsonElement parsed = JsonParser.parseReader(reader);
+                if (!parsed.isJsonObject()) {
+                    log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+                    return null;
                 }
-                else {
+                JsonObject jsonObject = parsed.getAsJsonObject();
+                log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
+                var value = jsonObject.get(key);
+                if (value != null) {
+                    return value.getAsString();
+                } else {
                     return null;
                 }
             } catch (FileNotFoundException e) {
@@ -234,7 +238,12 @@ public class JsonHelper {
         }
 
         try (FileReader reader = new FileReader(jsonFile)) {
-            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
+            JsonElement parsed = JsonParser.parseReader(reader);
+            if (!parsed.isJsonObject()) {
+                log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+                return false;
+            }
+            JsonObject jsonObject = parsed.getAsJsonObject();
 
             for (String key : requiredKeys) {
                 if (!jsonObject.has(key)) {
@@ -267,8 +276,12 @@ public class JsonHelper {
         log("Attempting to read nested JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
         try (FileReader reader = new FileReader(jsonFile)) {
-            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-            return parseJsonObject(jsonObject);
+            JsonElement parsed = JsonParser.parseReader(reader);
+            if (!parsed.isJsonObject()) {
+                log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+                return Collections.emptyMap();
+            }
+            return parseJsonObject(parsed.getAsJsonObject());
 
         } catch (FileNotFoundException e) {
             log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
@@ -371,8 +384,14 @@ public class JsonHelper {
         log("Merging JSON files: ", LogLevel.INFO_BLUE, sourceFilePath1 + " and " + sourceFilePath2);
 
         try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
-            JsonObject json1 = JsonParser.parseReader(reader1).getAsJsonObject();
-            JsonObject json2 = JsonParser.parseReader(reader2).getAsJsonObject();
+            JsonElement parsed1 = JsonParser.parseReader(reader1);
+            JsonElement parsed2 = JsonParser.parseReader(reader2);
+            if (!parsed1.isJsonObject() || !parsed2.isJsonObject()) {
+                log("One or both JSON files are not top-level objects — merge requires objects.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
+                return;
+            }
+            JsonObject json1 = parsed1.getAsJsonObject();
+            JsonObject json2 = parsed2.getAsJsonObject();
 
             for (Map.Entry<String, JsonElement> entry : json2.entrySet()) {
                 json1.add(entry.getKey(), entry.getValue());
@@ -472,8 +491,11 @@ public class JsonHelper {
                 if (index == targetArray.size()) {
                     newArray.add(new JsonPrimitive(value));
                 }
-                // Replace the original array with the new one
-                jsonObject.add(arrayPath.getLast(), newArray);
+                JsonObject parent = jsonObject;
+                for (int i = 0; i < arrayPath.size() - 1; i++) {
+                    parent = parent.getAsJsonObject(arrayPath.get(i));
+                }
+                parent.add(arrayPath.getLast(), newArray);
                 return true;
             }
             return false;
@@ -587,21 +609,28 @@ public class JsonHelper {
             return;
         }
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-
-            if(modifier.apply(jsonObject)) {
-                try (FileWriter writer = new FileWriter(jsonFile)) {
-                    writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
-                    log("Successfully modified JSON structure", LogLevel.INFO_GREEN, filePath);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement parsed = JsonParser.parseReader(reader);
+                if (!parsed.isJsonObject()) {
+                    log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+                    return;
                 }
-            } else {
-                log("Failed to locate target structure", LogLevel.ERROR, filePath);
-            }
+                JsonObject jsonObject = parsed.getAsJsonObject();
 
-        } catch (Exception e) {
-            log("Failed to modify JSON structure", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                if (modifier.apply(jsonObject)) {
+                    try (FileWriter writer = new FileWriter(jsonFile)) {
+                        writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
+                        log("Successfully modified JSON structure", LogLevel.INFO_GREEN, filePath);
+                    }
+                } else {
+                    log("Failed to locate target structure", LogLevel.ERROR, filePath);
+                }
+
+            } catch (Exception e) {
+                log("Failed to modify JSON structure", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+            }
         }
     }
 

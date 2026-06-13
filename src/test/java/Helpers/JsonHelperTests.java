@@ -251,14 +251,19 @@ public class JsonHelperTests {
 
     @Test
     public void testBackupAndNullRemoval() {
+        String backupPath = null;
         try {
-            JsonHelper.backupJsonFile(TEST_JSON);
+            backupPath = JsonHelper.backupJsonFile(TEST_JSON);
             JsonHelper.removeNullValues(TEST_JSON);
             assertTrue(JsonHelper.isValidJson(TEST_JSON));
             Reporter.log("Backup and null removal test passed successfully", LogLevel.INFO_GREEN);
         } catch (AssertionError e) {
             Reporter.log("Backup and null removal test failed: ", LogLevel.ERROR, e.getMessage());
             throw e;
+        } finally {
+            if (backupPath != null) {
+                try { Files.deleteIfExists(Path.of(backupPath)); } catch (IOException ignored) {}
+            }
         }
     }
 
@@ -365,36 +370,36 @@ public class JsonHelperTests {
 
     @Test
     public void testJsonBackupAndRestoration() {
+        String backupPath = null;
         try {
-            // Create initial content
             JsonObject initialContent = new JsonObject();
             initialContent.addProperty("testKey", "testValue");
             try (FileWriter writer = new FileWriter(TEST_JSON)) {
                 writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(initialContent));
             }
-            
-            // Create backup
-            String backupPath = JsonHelper.backupJsonFile(TEST_JSON);
+
+            backupPath = JsonHelper.backupJsonFile(TEST_JSON);
             assertNotNull(backupPath, "Backup path should not be null");
-            
-            // Modify original file
+
             JsonHelper.setJsonKeyValue(TEST_JSON, "testKey", "modifiedValue");
-            
-            // Verify backup exists and contents are correct
+
             File backupFile = new File(backupPath);
             assertTrue(backupFile.exists(), "Backup file should exist");
-            
-            // Read backup content and verify
+
             try (FileReader reader = new FileReader(backupFile)) {
                 JsonObject backupContent = JsonParser.parseReader(reader).getAsJsonObject();
-                assertEquals("testValue", backupContent.get("testKey").getAsString(), 
+                assertEquals("testValue", backupContent.get("testKey").getAsString(),
                     "Backup should contain original value");
             }
-            
+
             Reporter.log("Backup and restore test passed successfully", LogLevel.INFO_GREEN);
         } catch (IOException e) {
             Reporter.log("Backup and restore test failed: ", LogLevel.ERROR, e.getMessage());
             fail("Test failed due to IOException: " + e.getMessage());
+        } finally {
+            if (backupPath != null) {
+                try { Files.deleteIfExists(Path.of(backupPath)); } catch (IOException ignored) {}
+            }
         }
     }
 

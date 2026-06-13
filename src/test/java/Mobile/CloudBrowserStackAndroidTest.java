@@ -1,14 +1,16 @@
 package Mobile;
 
-import Ellithium.Utilities.helpers.CloudAppUploader;
+import Ellithium.Utilities.cloud.CloudAppUploader;
 import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
-import Ellithium.Utilities.interactions.Sleep;
+import Ellithium.Utilities.interactions.DriverActions;
 import Ellithium.core.driver.CloudMobileDriverConfig;
 import Ellithium.core.driver.CloudProviderType;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.MobileDriverType;
 import io.appium.java_client.android.AndroidDriver;
+
+import org.openqa.selenium.By;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -22,6 +24,21 @@ public class CloudBrowserStackAndroidTest {
     @Test
     public void testBrowserStackAndroid() {
         new ScreenRecorderActions<>(driver).captureScreenshot("test browserstack ios app");
+        DriverActions driverActions = new DriverActions(driver);
+        driverActions.elements().clickOnElement(
+            By.xpath("(//android.widget.EditText)[1]"));
+        driverActions.elements().sendData(By.xpath("(//android.widget.EditText)[1]"),"testuser");
+
+        driverActions.elements().clickOnElement(By.xpath("(//android.widget.EditText)[2]"));
+        driverActions.elements().sendData(By.xpath("(//android.widget.EditText)[2]"),"test");
+
+        driverActions.elements().isElementDisplayed(By.xpath("//android.widget.TextView[@text='Hello World!']"));
+
+        // Verify AddNumber title
+        driverActions.elements().isElementDisplayed(By.xpath("//android.widget.TextView[@text='AddNumber']"));
+
+        // ADD button (if needed)
+        driverActions.elements().clickOnElement( By.xpath("//android.widget.Button[@text='ADD']"));
     }
     @BeforeMethod
     public void setUp() throws Exception {

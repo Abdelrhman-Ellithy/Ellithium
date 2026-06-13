@@ -6,11 +6,16 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
 import io.appium.java_client.android.nativekey.KeyEvent;
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.remote.RemoteWebElement;
 
+import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -268,18 +273,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void doubleTap(By locator, double durationSeconds) {
         Reporter.log("Performing double-tap gesture on element with duration " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
             WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
 
             if (isIOS()) {
-                params.put("duration", durationSeconds);
+                // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
-                // Android doesn't support duration for double-tap, perform standard double-tap
                 driver.executeScript("mobile: doubleClickGesture", params);
-                Reporter.log("Note: Android does not support duration parameter for double-tap", LogLevel.INFO_BLUE);
             }
             Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
@@ -308,11 +310,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("y", convertCoordinate(y));
 
             if (isIOS()) {
-                params.put("duration", durationSeconds);
+                // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
-                Reporter.log("Note: Android does not support duration parameter for double-tap", LogLevel.INFO_BLUE);
             }
             Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
@@ -496,36 +497,31 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     }
 
     /**
-     * Performs a swipe gesture from one point to another.
+     * Performs a swipe gesture from one point to another using W3C PointerInput actions.
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: swipe' command with coordinate parameters (duration in seconds)</li>
-     *   <li>Android: Uses 'mobile: swipeGesture' command (duration in milliseconds)</li>
+     *   <li>iOS: W3C touch pointer sequence (cross-platform)</li>
+     *   <li>Android: W3C touch pointer sequence (cross-platform)</li>
      * </ul>
      *
-     * @param startX The starting X coordinate
-     * @param startY The starting Y coordinate
-     * @param endX The ending X coordinate
-     * @param endY The ending Y coordinate
-     * @param durationSeconds The duration in seconds
+     * @param startX The starting X coordinate (absolute viewport)
+     * @param startY The starting Y coordinate (absolute viewport)
+     * @param endX The ending X coordinate (absolute viewport)
+     * @param endY The ending Y coordinate (absolute viewport)
+     * @param durationSeconds The gesture duration in seconds
      */
     public void swipe(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing swipe gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("startX", convertCoordinate(startX));
-            params.put("startY", convertCoordinate(startY));
-            params.put("endX", convertCoordinate(endX));
-            params.put("endY", convertCoordinate(endY));
-
-            if (isIOS()) {
-                params.put("duration", durationSeconds);
-                driver.executeScript("mobile: swipe", params);
-            } else {
-                params.put("duration", secondsToMillis(durationSeconds));
-                driver.executeScript("mobile: swipeGesture", params);
-            }
+            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+            Sequence swipe = new Sequence(finger, 1);
+            swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
+            swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+            swipe.addAction(finger.createPointerMove(Duration.ofMillis(secondsToMillis(durationSeconds)), PointerInput.Origin.viewport(), (int) endX, (int) endY));
+            swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            AppiumDriver d = (AppiumDriver) driver;
+            if (d != null) d.perform(Collections.singletonList(swipe));
             Reporter.log("Successfully performed swipe gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to perform swipe gesture: " + e.getMessage(), LogLevel.ERROR);
@@ -595,7 +591,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             if (isIOS()) {
                 driver.executeScript("mobile: scroll", params);
             } else {
-                params.put("percent", 50); // Default 50% scroll for Android
+                params.put("percent", 0.5);
                 driver.executeScript("mobile: scrollGesture", params);
             }
             Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
@@ -632,7 +628,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                     Reporter.log("Note: iOS does not support percent parameter for scroll, using default", LogLevel.INFO_BLUE);
                 }
             } else {
-                params.put("percent", percent);
+                params.put("percent", percent / 100.0);
                 driver.executeScript("mobile: scrollGesture", params);
             }
             Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
@@ -642,35 +638,30 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     }
 
     /**
-     * Performs a scroll gesture from one point to another.
+     * Performs a scroll gesture from one point to another using W3C PointerInput actions (600ms).
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: scroll' command with coordinate parameters (duration in seconds)</li>
-     *   <li>Android: Uses 'mobile: scrollGesture' command with coordinate parameters</li>
+     *   <li>iOS: W3C touch pointer sequence (cross-platform)</li>
+     *   <li>Android: W3C touch pointer sequence (cross-platform)</li>
      * </ul>
      *
-     * @param startX The starting X coordinate
-     * @param startY The starting Y coordinate
-     * @param endX The ending X coordinate
-     * @param endY The ending Y coordinate
+     * @param startX The starting X coordinate (absolute viewport)
+     * @param startY The starting Y coordinate (absolute viewport)
+     * @param endX The ending X coordinate (absolute viewport)
+     * @param endY The ending Y coordinate (absolute viewport)
      */
     public void scroll(double startX, double startY, double endX, double endY) {
         Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ")", LogLevel.INFO_BLUE);
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("startX", convertCoordinate(startX));
-            params.put("startY", convertCoordinate(startY));
-            params.put("endX", convertCoordinate(endX));
-            params.put("endY", convertCoordinate(endY));
-
-            if (isIOS()) {
-                params.put("duration", 1.0); // Default duration for iOS
-                driver.executeScript("mobile: scroll", params);
-            } else {
-                params.put("percent", 50); // Default percent for Android
-                driver.executeScript("mobile: scrollGesture", params);
-            }
+            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+            Sequence scroll = new Sequence(finger, 1);
+            scroll.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
+            scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+            scroll.addAction(finger.createPointerMove(Duration.ofMillis(600), PointerInput.Origin.viewport(), (int) endX, (int) endY));
+            scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            AppiumDriver d = (AppiumDriver) driver;
+            if (d != null) d.perform(Collections.singletonList(scroll));
             Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
@@ -678,36 +669,31 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     }
 
     /**
-     * Performs a scroll gesture from one point to another with custom duration/percent.
+     * Performs a scroll gesture from one point to another with custom duration using W3C PointerInput actions.
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: scroll' command (durationSeconds parameter)</li>
-     *   <li>Android: Uses 'mobile: scrollGesture' command (percent parameter)</li>
+     *   <li>iOS: W3C touch pointer sequence (cross-platform)</li>
+     *   <li>Android: W3C touch pointer sequence (cross-platform)</li>
      * </ul>
      *
-     * @param startX The starting X coordinate
-     * @param startY The starting Y coordinate
-     * @param endX The ending X coordinate
-     * @param endY The ending Y coordinate
-     * @param durationSeconds The duration in seconds for iOS, treated as percent (0-100) for Android
+     * @param startX The starting X coordinate (absolute viewport)
+     * @param startY The starting Y coordinate (absolute viewport)
+     * @param endX The ending X coordinate (absolute viewport)
+     * @param endY The ending Y coordinate (absolute viewport)
+     * @param durationSeconds The gesture duration in seconds (applied on both platforms)
      */
     public void scroll(double startX, double startY, double endX, double endY, double durationSeconds) {
-        Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ")", LogLevel.INFO_BLUE);
+        Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("startX", convertCoordinate(startX));
-            params.put("startY", convertCoordinate(startY));
-            params.put("endX", convertCoordinate(endX));
-            params.put("endY", convertCoordinate(endY));
-
-            if (isIOS()) {
-                params.put("duration", durationSeconds);
-                driver.executeScript("mobile: scroll", params);
-            } else {
-                params.put("percent", (int) durationSeconds); // Treat as percent for Android
-                driver.executeScript("mobile: scrollGesture", params);
-            }
+            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+            Sequence scroll = new Sequence(finger, 1);
+            scroll.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
+            scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+            scroll.addAction(finger.createPointerMove(Duration.ofMillis(secondsToMillis(durationSeconds)), PointerInput.Origin.viewport(), (int) endX, (int) endY));
+            scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+            AppiumDriver d = (AppiumDriver) driver;
+            if (d != null) d.perform(Collections.singletonList(scroll));
             Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
@@ -741,7 +727,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("width", width);
             params.put("height", height);
             params.put("direction", direction);
-            params.put("percent", percent);
+            params.put("percent", percent / 100.0);
             driver.executeScript("mobile: scrollGesture", params);
             Reporter.log("Successfully performed scroll gesture in area", LogLevel.INFO_GREEN);
         } catch (Exception e) {
@@ -765,19 +751,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void scrollToElement(By locator, String selector, String direction) {
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
         try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
             WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-            Map<String, Object> params = new HashMap<>();
-            
+
             if (isIOS()) {
+                Map<String, Object> params = new HashMap<>();
                 putElement(params, element);
                 params.put("predicateString", selector);
                 params.put("direction", direction);
                 driver.executeScript("mobile: scroll", params);
             } else {
-                params.put("strategy", "-android uiautomator");
-                params.put("selector", selector);
-                driver.executeScript("mobile: scroll", params);
+                driver.findElement(AppiumBy.androidUIAutomator(
+                    "new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector()." + selector + ")"
+                ));
             }
             Reporter.log("Successfully scrolled to element", LogLevel.INFO_GREEN);
         } catch (Exception e) {
@@ -801,10 +786,9 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
         validatePlatform("scrollToElementBySelector", false, true);
         Reporter.log("Scrolling to element with UiSelector: " + uiSelector, LogLevel.INFO_BLUE);
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("strategy", "-android uiautomator");
-            params.put("selector", uiSelector);
-            driver.executeScript("mobile: scroll", params);
+            driver.findElement(AppiumBy.androidUIAutomator(
+                "new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector()." + uiSelector + ")"
+            ));
             Reporter.log("Successfully scrolled to element", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to scroll to element: " + e.getMessage(), LogLevel.ERROR);
@@ -849,16 +833,12 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void drag(By locator, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture on element to coordinates (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
             WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-            
+
             if (isIOS()) {
-                // For iOS, we need fromX, fromY which should be the element's center
-                // Since we don't have element coordinates, we'll use 0,0 and rely on element reference
-                params.put("fromX", 0.0);
-                params.put("fromY", 0.0);
+                // XCUITest: when "element" is present, fromX/fromY are ignored and element center is used as drag source
                 params.put("toX", endX);
                 params.put("toY", endY);
                 params.put("duration", durationSeconds);
@@ -1006,14 +986,14 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-            params.put("scale", scale);
-            params.put("velocity", velocity);
-            
             if (isIOS()) {
+                params.put("scale", scale);
+                params.put("velocity", velocity);
                 driver.executeScript("mobile: pinch", params);
             } else {
-                // Android supports pinchGesture with scale and velocity
-                driver.executeScript("mobile: pinchGesture", params);
+                // UIAutomator2 has no scale/velocity pinch — route by direction with clamped percent
+                params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
+                driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
             }
             Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
@@ -1144,9 +1124,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("top", top);
             params.put("width", width);
             params.put("height", height);
-            params.put("scale", scale);
-            params.put("velocity", velocity);
-            driver.executeScript("mobile: pinchGesture", params);
+            params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
+            driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
             Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to perform pinch gesture: " + e.getMessage(), LogLevel.ERROR);
@@ -1158,17 +1137,19 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     // ========================================================================================
 
     /**
-     * Performs a multi-touch gesture with multiple fingers.
-     * 
+     * Performs a multi-touch gesture with multiple fingers (Android only).
+     *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: multiTouchGesture' command</li>
-     *   <li>Android: Uses 'mobile: multiTouchGesture' command</li>
+     *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
+     *   <li>Android: Uses 'mobile: multiTouchGesture' command (UIAutomator2)</li>
      * </ul>
-     * 
+     *
      * @param actions Array of touch actions for each finger
+     * @throws UnsupportedOperationException if called on iOS
      */
     public void multiTouchGesture(Map<String, Object>[] actions) {
+        validatePlatform("multiTouchGesture", false, true);
         Reporter.log("Performing multi-touch gesture with " + actions.length + " fingers", LogLevel.INFO_BLUE);
         try {
             Map<String, Object> params = new HashMap<>();
@@ -1341,7 +1322,9 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * </ul>
      * 
      * @param keyEvent KeyEvent to press
-     * @param durationMillis Duration to hold the key in milliseconds
+     * @param durationMillis Intended hold duration in milliseconds — not honored by Appium 10.1.1;
+     *                       {@link io.appium.java_client.android.nativekey.KeyEvent} has no
+     *                       {@code withDurationMs} method in this version
      * @throws UnsupportedOperationException if called on iOS
      */
     public void longPressKey(KeyEvent keyEvent, long durationMillis) {
@@ -1350,11 +1333,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
         try {
             AndroidDriver androidDriver = (AndroidDriver) driver;
             androidDriver.longPressKey(keyEvent);
-            Thread.sleep(durationMillis);
-            Reporter.log("Long pressed key for " + durationMillis + "ms", LogLevel.INFO_GREEN);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Successfully long pressed key", LogLevel.INFO_GREEN);
         } catch (Exception e) {
             Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
         }

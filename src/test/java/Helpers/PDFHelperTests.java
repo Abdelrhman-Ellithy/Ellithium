@@ -58,6 +58,7 @@ public class PDFHelperTests {
             Files.deleteIfExists(Path.of(OUTPUT_PDF));
             Files.deleteIfExists(Path.of(MERGED_PDF));
             Files.deleteIfExists(Path.of(COMPARE_PDF));
+            Reporter.log("Test cleanup completed successfully", LogLevel.INFO_GREEN);
         } catch (IOException e) {
             Reporter.log("Failed to clean up test files: ", LogLevel.ERROR, e.getMessage());
             throw e;
@@ -93,42 +94,72 @@ public class PDFHelperTests {
 
     @Test
     public void testAppendToPdf() {
-        List<String> content = Arrays.asList("Appended Line 1", "Appended Line 2");
-        PDFHelper.appendToPdf(TEST_PDF, content);
-        String readContent = PDFHelper.readPdf(TEST_PDF);
-        assertTrue(readContent.contains("Test Content"));
-        assertTrue(readContent.contains("Appended Line 1"));
+        try {
+            List<String> content = Arrays.asList("Appended Line 1", "Appended Line 2");
+            PDFHelper.appendToPdf(TEST_PDF, content);
+            String readContent = PDFHelper.readPdf(TEST_PDF);
+            assertTrue(readContent.contains("Test Content"));
+            assertTrue(readContent.contains("Appended Line 1"));
+            Reporter.log("PDF append test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF append test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testMergePdfs() {
-        PDFHelper.writePdf(COMPARE_PDF, Arrays.asList("Compare Content"));
-        List<String> inputFiles = Arrays.asList(TEST_PDF, COMPARE_PDF);
-        PDFHelper.mergePdfs(inputFiles, MERGED_PDF);
-        assertTrue(Files.exists(Path.of(MERGED_PDF)));
-        String mergedContent = PDFHelper.readPdf(MERGED_PDF);
-        assertTrue(mergedContent.contains("Test Content"));
-        assertTrue(mergedContent.contains("Compare Content"));
+        try {
+            PDFHelper.writePdf(COMPARE_PDF, Arrays.asList("Compare Content"));
+            List<String> inputFiles = Arrays.asList(TEST_PDF, COMPARE_PDF);
+            PDFHelper.mergePdfs(inputFiles, MERGED_PDF);
+            assertTrue(Files.exists(Path.of(MERGED_PDF)));
+            String mergedContent = PDFHelper.readPdf(MERGED_PDF);
+            assertTrue(mergedContent.contains("Test Content"));
+            assertTrue(mergedContent.contains("Compare Content"));
+            Reporter.log("PDF merge test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF merge test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testExtractPage() {
-        PDFHelper.extractPdfPage(TEST_PDF, OUTPUT_PDF, 0);
-        assertTrue(Files.exists(Path.of(OUTPUT_PDF)));
-        String extractedContent = PDFHelper.readPdf(OUTPUT_PDF);
-        assertTrue(extractedContent.contains("Test Content"));
+        try {
+            PDFHelper.extractPdfPage(TEST_PDF, OUTPUT_PDF, 0);
+            assertTrue(Files.exists(Path.of(OUTPUT_PDF)));
+            String extractedContent = PDFHelper.readPdf(OUTPUT_PDF);
+            assertTrue(extractedContent.contains("Test Content"));
+            Reporter.log("PDF page extraction test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF page extraction test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testComparePdfFiles() {
-        PDFHelper.writePdf(COMPARE_PDF, Arrays.asList("Test Content"));
-        assertTrue(PDFHelper.comparePdfFiles(TEST_PDF, COMPARE_PDF));
+        try {
+            PDFHelper.writePdf(COMPARE_PDF, Arrays.asList("Test Content"));
+            assertTrue(PDFHelper.comparePdfFiles(TEST_PDF, COMPARE_PDF));
+            Reporter.log("PDF comparison test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF comparison test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testAddWatermark() {
-        PDFHelper.addWatermark(TEST_PDF, OUTPUT_PDF, "WATERMARK");
-        assertTrue(Files.exists(Path.of(OUTPUT_PDF)));
+        try {
+            PDFHelper.addWatermark(TEST_PDF, OUTPUT_PDF, "WATERMARK");
+            assertTrue(Files.exists(Path.of(OUTPUT_PDF)));
+            Reporter.log("PDF watermark test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF watermark test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
@@ -175,45 +206,76 @@ public class PDFHelperTests {
 
     @Test
     public void testRemovePages() {
-        try (PDDocument doc = PDDocument.load(new File(TEST_PDF))) {
-            doc.addPage(new PDPage());
-            doc.addPage(new PDPage());
-            doc.save(TEST_PDF);
+        try {
+            try (PDDocument doc = PDDocument.load(new File(TEST_PDF))) {
+                doc.addPage(new PDPage());
+                doc.addPage(new PDPage());
+                doc.save(TEST_PDF);
+            }
+            PDFHelper.removePages(TEST_PDF, OUTPUT_PDF, 1, 1);
+            assertEquals(2, PDFHelper.getPageCount(OUTPUT_PDF));
+            Reporter.log("PDF remove pages test passed successfully", LogLevel.INFO_GREEN);
         } catch (IOException e) {
+            Reporter.log("Failed to prepare or verify remove pages test: ", LogLevel.ERROR, e.getMessage());
             fail("Failed to prepare test document");
+        } catch (AssertionError e) {
+            Reporter.log("PDF remove pages test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
         }
-
-        PDFHelper.removePages(TEST_PDF, OUTPUT_PDF, 1, 1);
-        assertEquals(2, PDFHelper.getPageCount(OUTPUT_PDF));
     }
 
     @Test
     public void testRotatePage() {
-        PDFHelper.rotatePage(TEST_PDF, OUTPUT_PDF, 0, 90);
-        try (PDDocument doc = PDDocument.load(new File(OUTPUT_PDF))) {
-            assertEquals(90, doc.getPage(0).getRotation());
+        try {
+            PDFHelper.rotatePage(TEST_PDF, OUTPUT_PDF, 0, 90);
+            try (PDDocument doc = PDDocument.load(new File(OUTPUT_PDF))) {
+                assertEquals(90, doc.getPage(0).getRotation());
+            }
+            Reporter.log("PDF rotate page test passed successfully", LogLevel.INFO_GREEN);
         } catch (IOException e) {
+            Reporter.log("Failed to verify page rotation: ", LogLevel.ERROR, e.getMessage());
             fail("Failed to verify page rotation");
+        } catch (AssertionError e) {
+            Reporter.log("PDF rotate page test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
         }
     }
 
     @Test
     public void testGetPageCount() {
-        assertEquals(1, PDFHelper.getPageCount(TEST_PDF));
+        try {
+            assertEquals(1, PDFHelper.getPageCount(TEST_PDF));
+            Reporter.log("PDF page count test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF page count test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testAddBlankPages() {
-        PDFHelper.addBlankPages(TEST_PDF, 2);
-        assertEquals(3, PDFHelper.getPageCount(TEST_PDF));
+        try {
+            PDFHelper.addBlankPages(TEST_PDF, 2);
+            assertEquals(3, PDFHelper.getPageCount(TEST_PDF));
+            Reporter.log("PDF add blank pages test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF add blank pages test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
     public void testGetPageDimensions() {
-        PDRectangle dimensions = PDFHelper.getPageDimensions(TEST_PDF, 0);
-        assertNotNull(dimensions);
-        assertEquals(PDRectangle.LETTER.getWidth(), dimensions.getWidth(), String.valueOf(0.1));
-        assertEquals(PDRectangle.LETTER.getHeight(), dimensions.getHeight(), String.valueOf(0.1));
+        try {
+            PDRectangle dimensions = PDFHelper.getPageDimensions(TEST_PDF, 0);
+            assertNotNull(dimensions);
+            assertEquals(dimensions.getWidth(), PDRectangle.LETTER.getWidth(), 0.1, "Page width should match LETTER width");
+            assertEquals(dimensions.getHeight(), PDRectangle.LETTER.getHeight(), 0.1, "Page height should match LETTER height");
+            Reporter.log("PDF page dimensions test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF page dimensions test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Test
@@ -255,24 +317,27 @@ public class PDFHelperTests {
     }
 
     @Test(groups = {"pdf"})
-    public void testEncryptAndDecryptPdf() throws Exception {
+    public void testEncryptAndDecryptPdf() {
         String originalFile = "src/test/resources/TestData/sample.pdf";
         String encryptedFile = "src/test/resources/TestData/encrypted.pdf";
-        String decryptedFile = "src/test/resources/TestData/decrypted.pdf";
         String ownerPassword = "owner123";
         String userPassword = "user123";
-
-        // Create a sample pdf for testing (assume PDFHelper.createSamplePdf exists)
-        PDFHelper.writePdf(originalFile, java.util.Arrays.asList("Test PDF Encryption"));
-        PDFHelper.encryptPdf(originalFile, encryptedFile, ownerPassword, userPassword);
-
-        // For decryption, you might need to implement a decryptPdf method; here we simply verify encryption status.
-        boolean isEncrypted = PDFHelper.isEncrypted(encryptedFile, userPassword);
-        assertTrue(isEncrypted);
-
-        // Clean up
-        Files.deleteIfExists(Path.of(originalFile));
-        Files.deleteIfExists(Path.of(encryptedFile));
-        Files.deleteIfExists(Path.of(decryptedFile));
+        try {
+            PDFHelper.writePdf(originalFile, java.util.Arrays.asList("Test PDF Encryption"));
+            PDFHelper.encryptPdf(originalFile, encryptedFile, ownerPassword, userPassword);
+            boolean isEncrypted = PDFHelper.isEncrypted(encryptedFile, userPassword);
+            assertTrue(isEncrypted);
+            Reporter.log("PDF encrypt/decrypt test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("PDF encrypt/decrypt test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        } finally {
+            try {
+                Files.deleteIfExists(Path.of(originalFile));
+                Files.deleteIfExists(Path.of(encryptedFile));
+            } catch (IOException e) {
+                Reporter.log("Failed to clean up encrypt test files: ", LogLevel.WARN, e.getMessage());
+            }
+        }
     }
 }
