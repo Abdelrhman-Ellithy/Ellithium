@@ -237,7 +237,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             Logger.logException(e);
         }
         try {
-            Ellithium.core.ai.EnsembleHealer.shutdown();
+            Ellithium.core.ai.healing.EnsembleHealer.shutdown();
             AIHealingReporter.generateReport();
         } catch (Exception e) {
             Logger.warn(YELLOW+"Failed to finalize AI healing (shutdown/report): " + e.getMessage()+RESET);

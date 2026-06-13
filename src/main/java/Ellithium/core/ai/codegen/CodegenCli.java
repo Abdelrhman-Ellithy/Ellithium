@@ -90,7 +90,7 @@ public final class CodegenCli {
             try { InteractionRecorder.stop(); } catch (Exception ignored) {}
             try { DriverFactory.quitDriver(); } catch (Exception ignored) {}
             if (needsAi) {
-                try { Ellithium.core.ai.EnsembleHealer.shutdown(); } catch (Exception ignored) {}
+                try { Ellithium.core.ai.healing.EnsembleHealer.shutdown(); } catch (Exception ignored) {}
             }
         }
     }

@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import org.openqa.selenium.By;
 import org.testng.Assert;
@@ -6,8 +6,8 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
 
-import static Ellithium.core.ai.SemanticLocatorResolver.categorizeAction;
-import static Ellithium.core.ai.SemanticLocatorResolver.xpathLiteral;
+import static Ellithium.core.ai.healing.SemanticLocatorResolver.categorizeAction;
+import static Ellithium.core.ai.healing.SemanticLocatorResolver.xpathLiteral;
 
 public class SemanticLocatorResolverTest {
 

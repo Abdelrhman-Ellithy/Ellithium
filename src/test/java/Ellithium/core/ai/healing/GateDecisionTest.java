@@ -1,10 +1,10 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import static Ellithium.core.ai.EnsembleHealer.GateResult;
-import static Ellithium.core.ai.EnsembleHealer.decideGate;
+import static Ellithium.core.ai.healing.EnsembleHealer.GateResult;
+import static Ellithium.core.ai.healing.EnsembleHealer.decideGate;
 
 /**
  * Behaviour spec for the ensemble accept gate.

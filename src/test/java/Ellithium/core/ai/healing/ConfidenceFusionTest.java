@@ -1,9 +1,9 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import static Ellithium.core.ai.EnsembleHealer.fuseConfidence;
+import static Ellithium.core.ai.healing.EnsembleHealer.fuseConfidence;
 
 /**
  * Behaviour spec for {@link EnsembleHealer#fuseConfidence}.

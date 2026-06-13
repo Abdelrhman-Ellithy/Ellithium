@@ -1,8 +1,5 @@
 package DB;
 
-import Ellithium.Utilities.assertion.AssertionExecutor;
-import Ellithium.core.DB.SQLDBType;
-import Ellithium.core.DB.SQLDatabaseProvider;
 import org.testng.annotations.*;
 
 import javax.sql.rowset.CachedRowSet;
@@ -105,7 +102,7 @@ public class SQLiteDBAdvancedTest extends SQLiteDBTest {
         while (groupResult.next()) {
             stockGroups.put(groupResult.getBoolean(1), groupResult.getInt(2));
         }
-        softAssert.assertEquals(stockGroups.get(true), 2, "Should have 2 products with high stock");
+        softAssert.assertEquals(stockGroups.get(true), (Integer) 2, "Should have 2 products with high stock");
 
         softAssert.assertAll();
     }

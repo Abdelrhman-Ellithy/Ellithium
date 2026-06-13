@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;

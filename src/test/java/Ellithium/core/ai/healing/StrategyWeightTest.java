@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static Ellithium.core.ai.SemanticLocatorResolver.strategyWeightForAttrs;
+import static Ellithium.core.ai.healing.SemanticLocatorResolver.strategyWeightForAttrs;
 
 /**
  * Unit tests for Tier-2 resolver weight grading.
