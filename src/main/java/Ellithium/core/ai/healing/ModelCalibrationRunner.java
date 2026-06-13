@@ -233,8 +233,7 @@ public class ModelCalibrationRunner {
         System.out.println("→ ai.onnx.similarityThreshold = " + r.useThreshold + "   (use: accept a heal for the action)");
         System.out.println("→ ai.healing.storeThreshold    = " + r.storeThreshold + "   (persist baseline + patch source)");
         if (r.negativeP95 >= r.useThreshold) {
-            System.out.println("  WARNING: wrong elements score above the use threshold (neg-P95 >= use). "
-                    + "The bi-encoder cannot separate these classes alone — add the cross-encoder reranker.");
+            System.out.println("  WARNING: wrong elements score above the use threshold (neg-P95 >= use). ");
         }
     }
 

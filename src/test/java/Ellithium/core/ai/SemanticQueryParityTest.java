@@ -8,8 +8,7 @@ import org.testng.annotations.Test;
 /**
  * Train/serve PARITY guard for the Tier 3 query string.
  *
- * <p>The bi-encoder is fine-tuned on queries produced by {@code build_query_v2} in
- * {@code kaggle-finetune/01_data_generation.py}; at runtime the SAME query must be produced by
+ * <p>The local model is fine-tuned on queries produced by {@code build_query_v2} in
  * {@link SemanticQueryBuilder#build}. If the two diverge, the model is served a different string
  * than it trained on (train/serve skew) and Tier 3 silently degrades — this class has bitten the
  * project repeatedly (action-expansion skew, the missing token dedup).
@@ -19,11 +18,6 @@ import org.testng.annotations.Test;
  * Ellithium action (e.g. {@code sendData}) whose {@code expandAction} must map to the same tokens as
  * the TRAIN-form action ({@code type}) — that mapping equality is exactly what we are guarding.
  *
- * <p>To regenerate the fixtures after a deliberate format change, run in {@code kaggle-finetune/}:
- * <pre>
- *   python -c "import importlib.util as u; s=u.spec_from_file_location('dg','01_data_generation.py'); \
- *     m=u.module_from_spec(s); s.loader.exec_module(m); print(m.build_query_v2(...))"
- * </pre>
  * and update both sides in the same commit.
  */
 public class SemanticQueryParityTest {

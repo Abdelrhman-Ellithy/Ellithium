@@ -79,8 +79,6 @@ public class EnsembleHealer {
     static void awaitInit() {
         java.util.concurrent.CompletableFuture<Void> f = INIT_FUTURE;
         if (f == null && !initialized) {
-            // Suite startup hook was skipped — kick off async init now and return unavailable
-            // for this heal rather than paying model-load cost on the test thread.
             initializeAsync();
             return;
         }
@@ -101,7 +99,7 @@ public class EnsembleHealer {
 
         byte[] modelBytes = Ellithium.core.ai.crypto.ModelDecryptor.decryptModel();
         if (modelBytes == null) {
-            Reporter.log("[ENSEMBLE] Model not found — Tier 2 unavailable", LogLevel.WARN);
+            Reporter.log("[LOCAL AI MODEL] Model not found — Tier 2 unavailable", LogLevel.WARN);
             return;
         }
 
@@ -114,7 +112,7 @@ public class EnsembleHealer {
                 } catch (Exception ignored) {}
             }
             if (tokenizerBytes == null) {
-                Reporter.log("[ENSEMBLE] Tokenizer not found — Tier 2 unavailable", LogLevel.WARN);
+                Reporter.log("[LOCAL AI MODEL] Tokenizer not found — Tier 2 unavailable", LogLevel.WARN);
                 return;
             }
 
@@ -143,7 +141,7 @@ public class EnsembleHealer {
                             SESSION_POOL.offer(sess2);
                         } catch (Throwable t) {
                             java.util.Arrays.fill(copy, (byte) 0);
-                            Reporter.log("[ENSEMBLE] Extra ORT session " + (i + 2) + " failed — pool running at "
+                            Reporter.log("[LOCAL AI MODEL] Extra ORT session " + (i + 2) + " failed — pool running at "
                                     + SESSION_POOL.size() + "/" + SESSION_POOL_SIZE + ": "
                                     + t.getClass().getSimpleName(), LogLevel.WARN);
                         }
@@ -157,16 +155,16 @@ public class EnsembleHealer {
             // Warmup inference: forces ORT JIT compilation so the first real heal
             // doesn't pay a 2-5× latency penalty.
             try { embed("warmup click button input", false); } catch (Exception ignored) {}
-            Reporter.log("[ENSEMBLE] Tier 2 ready", LogLevel.INFO_GREEN);
+            Reporter.log("[LOCAL AI MODEL] Tier 2 ready", LogLevel.INFO_GREEN);
 
         } catch (ClassNotFoundException e) {
-            Reporter.log("[ENSEMBLE] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
+            Reporter.log("[LOCAL AI MODEL] Required JARs not on classpath (onnxruntime / djl-tokenizers): "
                     + e.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         } catch (Exception e) {
-            Reporter.log("[ENSEMBLE] Init failed: " + e.getClass().getSimpleName()
+            Reporter.log("[LOCAL AI MODEL] Init failed: " + e.getClass().getSimpleName()
                     + ": " + e.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         } catch (Throwable t) {
-            Reporter.log("[ENSEMBLE] Init failed (native/JVM error): " + t.getClass().getSimpleName()
+            Reporter.log("[LOCAL AI MODEL] Init failed (native/JVM error): " + t.getClass().getSimpleName()
                     + ": " + t.getMessage() + " — Tier 2 unavailable", LogLevel.WARN);
         }
     }
@@ -191,7 +189,7 @@ public class EnsembleHealer {
         initialized    = false;
         INIT_FUTURE    = null;
         ElementVectorCache.getInstance().invalidate();
-        Reporter.log("[ENSEMBLE] ONNX session closed", LogLevel.DEBUG);
+        Reporter.log("[LOCAL AI MODEL] ONNX session closed", LogLevel.DEBUG);
     }
 
     public static boolean isAvailable() {
@@ -316,7 +314,7 @@ public class EnsembleHealer {
             return l2Normalize(pooled);
 
         } catch (Exception ex) {
-            Reporter.log("[ENSEMBLE] embed failed: " + ex.getMessage(), LogLevel.WARN);
+            Reporter.log("[LOCAL AI MODEL] embed failed: " + ex.getMessage(), LogLevel.WARN);
             return null;
         } finally {
             EMBED_IN_FLIGHT.decrementAndGet();
@@ -537,12 +535,12 @@ public class EnsembleHealer {
     private static final double SIGNAL_AGREEMENT = 0.35;
 
     /**
-     * Fuses the resolver/strategy signal (f2) and the bi-encoder cosine (f3) into one confidence.
+     * Fuses the resolver/strategy signal (f2) and the model cosine (f3) into one confidence.
      * f3 is the primary signal — it is calibrated and semantically grounded. f2 (strategy heuristic)
      * adds a proportional bonus over the remaining headroom to 1.0, capped by SIGNAL_AGREEMENT so
      * f2 can never dominate. Max f2 boost = SIGNAL_AGREEMENT * (1 - f3): shrinks as f3 rises.
      * Hard cosine floor: f3 below GATE_RESCUE_COSINE_FLOOR returns f3 unchanged — wrong-type
-     * attribute matches cannot override a disagreeing bi-encoder regardless of how high f2 is.
+     * attribute matches cannot override a disagreeing model regardless of how high f2 is.
      */
     static double fuseConfidence(double f2, double f3) {
         if (Double.isNaN(f2)) return f3;
@@ -573,7 +571,7 @@ public class EnsembleHealer {
     /**
      * Accept decision (pure, unit-testable). Path A: the fused combined score clears the calibrated
      * threshold. Path B (strategy-rescue): a gold-tier match (f2 ≥ 0.95: exact data-testid /
-     * AppiumBy / cross-validated mutation) corroborated by the bi-encoder cosine (f3 ≥ 0.35) —
+     * AppiumBy / cross-validated mutation) corroborated by the local model cosine (f3 ≥ 0.35) —
      * two genuinely independent signals (algorithmic strategy vs. learned embedding) so the heal is
      * trusted even when combined hasn't cleared the threshold. Using cosine as the second gate instead
      * of the baseline fingerprint means cold-start elements (no stored baseline) can still be rescued,
@@ -794,7 +792,7 @@ public class EnsembleHealer {
             return el;
         } catch (org.openqa.selenium.StaleElementReferenceException e) {
             WebElement refreshed = tryRefreshStale(driver, attrs);
-            if (refreshed != null) Reporter.log("[ENSEMBLE] healed element was stale — re-found via stable locator", LogLevel.DEBUG);
+            if (refreshed != null) Reporter.log("[LOCAL AI MODEL] healed element was stale — re-found via stable locator", LogLevel.DEBUG);
             return refreshed;
         } catch (Exception e) {
             return el;

@@ -70,6 +70,7 @@ public class GeneralHandler {
     }
     
     public static void StartRoutine(){
+        EnsembleHealer.initializeAsync();
         ConfigContext.setIsLoggingOn(false);
         AllureHelper.deleteAllureResultsDir();
         AllureHelper.addEnvironmentDetailsToReport();
@@ -84,7 +85,6 @@ public class GeneralHandler {
         if (aiProvider != null) {
             AISelfHealer.initialize(aiProvider, AIConfigLoader.getHealingStrategy(), AIConfigLoader.getConfidenceThreshold());
         }
-        EnsembleHealer.initializeAsync();
         BaselineStore.preWarmAsync();
     }
     

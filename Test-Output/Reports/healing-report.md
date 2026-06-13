@@ -1608,3 +1608,245 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-13T22:49:25.3491655
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.90 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-13T22:57:11.1112884
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.90 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-13T23:01:28.7101664
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.90 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-13T23:03:20.0651223
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/ProductPage.java` | navigateToProducts | clickOnElement | `By.xpath: products` | `By.xpath("//a[normalize-space(.)=' Products']")` | 0.85 |
+
+## Detailed Reasoning
+
+### 1. By.xpath: products
+- **Class:** `Pages.ProductPage`
+- **Method:** `navigateToProducts`
+- **Line:** 21
+- **Healed to:** `By.xpath("//a[normalize-space(.)=' Products']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-13T23:50:11.3567955
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.xpath: products` | `By.xpath: //a[normalize-space(.)=' Products']` | 0.76 |
+
+## Detailed Reasoning
+
+### 1. By.xpath: products
+- **Healed to:** `By.xpath: //a[normalize-space(.)=' Products']`
+- **Reasoning:** [TIER 1 - Algorithmic] Matched by: tag='a' text(partial)
+
+---
+
+
+---
+
+## Run: 2026-06-14T00:02:05.9259611
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.cssSelector: emaaaiiiail` | `By.id: username` | 1.00 |
+| 2 | `algorithmic-baseline` | - | - | `By.id: sssecreeett` | `By.id: password` | 1.00 |
+| 3 | `algorithmic-baseline` | - | - | `By.tagName: btnnnn` | `By.xpath: //button[normalize-space(.)='Login' and @type='submit']` | 1.00 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Healed to:** `By.id: username`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 2. By.id: sssecreeett
+- **Healed to:** `By.id: password`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Healed to:** `By.xpath: //button[normalize-space(.)='Login' and @type='submit']`
+- **Reasoning:** [TIER 1 - Algorithmic] Matched by: tag='button' text(partial)
+
+---
+
+
+---
+
+## Run: 2026-06-14T00:03:38.4247176
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.cssSelector: emaaaiiiail` | `By.id("username")` | 0.90 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: sssecreeett` | `By.id("password")` | 0.94 |
+| 3 | `src/test/java/Pages/LoginPage.java` | clickLoginBtn | clickOnElement | `By.tagName: btnnnn` | `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")` | 0.71 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: sssecreeett
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Class:** `Pages.LoginPage`
+- **Method:** `clickLoginBtn`
+- **Line:** 27
+- **Healed to:** `By.xpath("//button[normalize-space(.)='Login' and @type='submit']")`
+- **Reasoning:** [TIER 2]
+
+---
+

@@ -585,6 +585,7 @@ public class AISelfHealer {
     public static void cleanup() {
         llmProviderThread.remove();
         strategyThread.remove();
+        LAST_HEAL_CONFIDENCE.remove();
         if (!HealingContextBuilder.TIER3_PREP_POOL.isShutdown()) {
             HealingContextBuilder.TIER3_PREP_POOL.shutdown();
         }

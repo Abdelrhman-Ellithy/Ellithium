@@ -797,7 +797,7 @@ public class DriverFactory {
      * @param capabilities Desired capabilities for Android
      * @return Decorated AndroidDriver instance
      */
-    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities){
+    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress,Capabilities capabilities){
         return createProxy(
                 AndroidDriver.class,
                 new Object[] {remoteAddress,capabilities},

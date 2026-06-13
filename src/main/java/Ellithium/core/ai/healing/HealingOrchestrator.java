@@ -11,7 +11,6 @@ import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
 import Ellithium.core.ai.spi.Tier3LLMHealer;
 import Ellithium.core.ai.HealingTelemetryStore;
-import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -88,7 +87,7 @@ public final class HealingOrchestrator implements ElementHealingPort {
             if (raw == null || raw.element() == null) continue;
 
             WebElement resolved = resolveInteractiveElement(
-                    raw.element(), request.actionType(), "TIER " + tier.order());
+                    raw.element(), request.actionType(), "TIER " + tier.order(), request.driver());
             if (resolved == null) continue;
 
             By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
@@ -123,8 +122,13 @@ public final class HealingOrchestrator implements ElementHealingPort {
                         srcLoc != null ? srcLoc.lineNumber : 0);
             }
             WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
+            if (guarded == null) continue;
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
+        Reporter.log("[AI] All healing tiers exhausted for " + request.brokenLocator()
+                + ". Known limitations: elements inside <iframe> (switch frame context before the"
+                + " action) and inside Shadow DOM roots (use CSS ::part() or pierce selector)"
+                + " are not reachable by standard WebDriver and will not heal.", LogLevel.DEBUG);
         return null;
     }
 
@@ -151,13 +155,27 @@ public final class HealingOrchestrator implements ElementHealingPort {
     }
 
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
-                                                        String tierLabel) {
+                                                        String tierLabel, WebDriver driver) {
         if (healed == null || !isClickLikeAction(actionType)) return healed;
         try {
-            String tag = healed.getTagName().toLowerCase();
+            // Batch getTagName + getAttribute("role") into one JS round-trip instead of two.
+            String tag, role;
+            try {
+                Object[] res = (Object[]) ((org.openqa.selenium.JavascriptExecutor) driver)
+                        .executeScript("var e=arguments[0]; return [e.tagName.toLowerCase(), e.getAttribute('role')];", healed);
+                if (res != null && res.length >= 2) {
+                    tag  = res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase();
+                    role = res[1] != null ? res[1].toString() : null;
+                } else {
+                    tag  = healed.getTagName().toLowerCase();
+                    role = healed.getAttribute("role");
+                }
+            } catch (Exception jse) {
+                tag  = healed.getTagName().toLowerCase();
+                role = healed.getAttribute("role");
+            }
             if (INTERACTIVE_TAGS.contains(tag)) return healed;
 
-            String role = healed.getAttribute("role");
             if (role != null && INTERACTIVE_ROLES.contains(role)) return healed;
 
             for (String selector : INNER_INTERACTIVE_SELECTORS) {
@@ -204,26 +222,31 @@ public final class HealingOrchestrator implements ElementHealingPort {
                                 + fallback, LogLevel.INFO_YELLOW);
                         return candidates.get(0);
                     }
-                    // Multiple matches: re-score against baseline to pick the right one
-                    if (baseline != null && !candidates.isEmpty()) {
-                        WebElement best = null;
-                        double bestScore = -1;
-                        for (WebElement c : candidates) {
-                            try {
-                                double s = baseline.scoreSimilarity(c);
-                                if (s > bestScore) { bestScore = s; best = c; }
-                            } catch (Exception ignored) {}
+                    if (!candidates.isEmpty()) {
+                        // Multiple matches: pick the best-scoring candidate against the baseline.
+                        // No threshold gate here — this is stale recovery, not a fresh heal;
+                        // the locator was already validated. Any re-found element is better than stale.
+                        if (baseline != null) {
+                            WebElement best = null;
+                            double bestScore = -1;
+                            for (WebElement c : candidates) {
+                                try {
+                                    double s = baseline.scoreSimilarity(c);
+                                    if (s > bestScore) { bestScore = s; best = c; }
+                                } catch (Exception ignored) {}
+                            }
+                            if (best != null) {
+                                Reporter.log("Healed element went stale — re-resolved via fingerprint score "
+                                        + String.format("%.2f", bestScore) + " using " + fallback,
+                                        LogLevel.INFO_YELLOW);
+                                return best;
+                            }
                         }
-                        if (best != null && bestScore >= AIConfigLoader.getOnnxSimilarityThreshold()) {
-                            Reporter.log("Healed element went stale — re-resolved via fingerprint score "
-                                    + String.format("%.2f", bestScore) + " using " + fallback,
-                                    LogLevel.INFO_YELLOW);
-                            return best;
-                        }
+                        return candidates.get(0);
                     }
                 } catch (Exception ignored) {}
             }
-            return healed;
+            return null;
         } catch (Exception other) {
             return healed;
         }

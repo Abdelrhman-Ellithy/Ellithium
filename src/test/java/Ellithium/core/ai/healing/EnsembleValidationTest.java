@@ -18,14 +18,11 @@ import java.util.*;
 /**
  * Phase B4 — Tier 3 measurement runner / SHIP GATE.
  *
- * <p>Runs the embedded bi-encoder over the real-page validation mini-set
+ * <p>Runs the embedded local model over the real-page validation mini-set
  * ({@code src/test/resources/ai/tier3-validation-miniset.json}, B1) and reports, per category and
  * overall: <b>Recall@1/3/5</b> (is the correct element ranked first / in top-K among the page's
  * candidates) and the <b>coverage at ≥99% precision</b> (what fraction of correct heals clear a
  * threshold that almost no wrong candidate clears) — its complement is the <b>fallthrough rate</b>.
- *
- * <p>This is the decision instrument for B5: build the cross-encoder ONLY if gate-alone bi-encoder
- * fallthrough at ≥99% precision is too high. Synthetic-only numbers don't count — this set is the bar.
  *
  * <p>Placed in package {@code Ellithium.Utilities.ai} so it can call the package-private
  * {@link EnsembleHealer#embed} on the exact serving path. Skips cleanly (no failure) when no
@@ -276,7 +273,6 @@ public class EnsembleValidationTest {
         }
         System.out.println("─────────────────────────────────────────────────────────────────");
         System.out.println("  B5 decision input: if fallthrough@99%-precision is high (esp. READABLE),");
-        System.out.println("  the bi-encoder alone can't separate those classes → build the cross-encoder.");
         System.out.println("═════════════════════════════════════════════════════════════════");
     }
 

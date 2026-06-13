@@ -28,7 +28,7 @@ public class ConfidenceFusionTest {
     @Test
     public void floorGuard_f3BelowFloor_f2AboveF3_returnsF3Unchanged() {
         // f3 < 0.50 AND f2 > f3 → floor guard fires, f3 returned as-is
-        // A high strategy signal cannot override a bi-encoder that disagrees at < 0.50
+        // A high strategy signal cannot override a local model that disagrees at < 0.50
         Assert.assertEquals(fuseConfidence(1.0, 0.417), 0.417, 1e-9);
         Assert.assertEquals(fuseConfidence(1.0, 0.0),   0.0,   1e-9);
         Assert.assertEquals(fuseConfidence(0.6, 0.3),   0.3,   1e-9);

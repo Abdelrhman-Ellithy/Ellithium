@@ -48,7 +48,11 @@ public class ModelDecryptor {
     }
 
     public static boolean isModelResourcePresent() {
-        return ModelDecryptor.class.getResourceAsStream(MODEL_RESOURCE_PATH) != null;
+        try (java.io.InputStream is = ModelDecryptor.class.getResourceAsStream(MODEL_RESOURCE_PATH)) {
+            return is != null;
+        } catch (java.io.IOException ignored) {
+            return false;
+        }
     }
 
     private static synchronized boolean ensureNativeLoaded() {
@@ -75,10 +79,23 @@ public class ModelDecryptor {
                 try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
             }));
             try {
-                java.nio.file.attribute.PosixFileAttributeView view =
+                java.nio.file.attribute.PosixFileAttributeView posix =
                         Files.getFileAttributeView(tmp, java.nio.file.attribute.PosixFileAttributeView.class);
-                if (view != null) {
-                    view.setPermissions(java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
+                if (posix != null) {
+                    posix.setPermissions(java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
+                }
+            } catch (Exception ignored) {}
+            try {
+                java.nio.file.attribute.AclFileAttributeView acl =
+                        Files.getFileAttributeView(tmp, java.nio.file.attribute.AclFileAttributeView.class);
+                if (acl != null) {
+                    java.nio.file.attribute.UserPrincipal owner = acl.getOwner();
+                    java.nio.file.attribute.AclEntry ownerOnly = java.nio.file.attribute.AclEntry.newBuilder()
+                            .setType(java.nio.file.attribute.AclEntryType.ALLOW)
+                            .setPrincipal(owner)
+                            .setPermissions(java.util.EnumSet.allOf(java.nio.file.attribute.AclEntryPermission.class))
+                            .build();
+                    acl.setAcl(java.util.List.of(ownerOnly));
                 }
             } catch (Exception ignored) {}
             Files.write(tmp, libBytes);

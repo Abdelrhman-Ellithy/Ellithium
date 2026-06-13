@@ -42,6 +42,12 @@ public class HealingTelemetryStore {
             java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord>> byTestId =
             new java.util.concurrent.ConcurrentHashMap<>();
 
+    // Secondary index: tier → records for that tier. Enables O(tier-records) getRecordsForTier()
+    // instead of O(all-records) stream filter — important for calibration on large suites.
+    private static final java.util.concurrent.ConcurrentHashMap<Integer,
+            java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord>> byTier =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
 
     /** Sets the test identifier for the current thread so subsequent heals are attributed to it. */
@@ -86,6 +92,8 @@ public class HealingTelemetryStore {
             byTestId.computeIfAbsent(rec.testId,
                     k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(rec);
         }
+        byTier.computeIfAbsent(rec.tier,
+                k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(rec);
         int n = recordCount.incrementAndGet();
         if (max > 0 && n > max) {
             boolean dropped = false;
@@ -132,9 +140,8 @@ public class HealingTelemetryStore {
      * Used by {@link ModelCalibrationRunner} for per-model threshold calibration.
      */
     public static List<TelemetryRecord> getRecordsForTier(int tier) {
-        return records.stream()
-                .filter(r -> r.tier == tier)
-                .collect(Collectors.toList());
+        java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> tierRecs = byTier.get(tier);
+        return tierRecs != null ? new ArrayList<>(tierRecs) : List.of();
     }
 
     /**
@@ -235,6 +242,7 @@ public class HealingTelemetryStore {
         records.clear();
         recordCount.set(0);
         byTestId.clear();
+        byTier.clear();
     }
 
     public static class TelemetryRecord {
