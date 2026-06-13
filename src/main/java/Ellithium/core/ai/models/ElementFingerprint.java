@@ -24,6 +24,41 @@ public class ElementFingerprint {
     /** Max length of either side for the partial-contains text bonus to apply. */
     private static final int TEXT_PARTIAL_CAP = 50;
 
+    private static final String CAPTURE_BATCH_JS =
+        "var el=arguments[0];"
+        + "function g(a){var v=el.getAttribute(a);return v&&v.trim()?v:null;}"
+        + "var t=(el.innerText!==undefined?el.innerText:el.textContent)||'';"
+        + "t=t.trim().substring(0,240);"
+        + "var dm={},at=el.attributes;"
+        + "for(var k=0;k<at.length;k++){"
+        + " var n=at[k].name,v=at[k].value;"
+        + " if(n.indexOf('data-')===0&&n!=='data-ellithium-pick'&&v&&v.trim())dm[n]=v;"
+        + "}"
+        + "var ifc=[];"
+        + "try{var w=window;while(w!==w.top){"
+        + " var fe=w.frameElement;if(!fe)break;"
+        + " var fid=fe.getAttribute('id')||fe.getAttribute('name');"
+        + " var sibs=fe.parentElement?Array.prototype.slice.call(fe.parentElement.querySelectorAll('iframe,frame')):[];"
+        + " ifc.unshift(fid?fid:(':'+sibs.indexOf(fe)));w=w.parent;"
+        + "}}catch(e){}"
+        + "return {"
+        + " tag:el.tagName?el.tagName.toLowerCase():null,"
+        + " id:g('id'),name:g('name'),type:g('type'),cls:g('class'),"
+        + " ariaLabel:g('aria-label'),placeholder:g('placeholder'),href:g('href'),"
+        + " value:g('value'),role:g('role'),"
+        + " dataTestId:g('data-testid'),dataTest:g('data-test'),"
+        + " dataCy:g('data-cy'),dataQa:g('data-qa'),"
+        + " resourceId:g('resource-id'),accessibilityId:g('accessibility-id'),"
+        + " contentDesc:g('content-desc'),"
+        + " title:g('title'),label:g('label'),"
+        + " text:t||null,"
+        + " parentTag:el.parentElement?el.parentElement.tagName.toLowerCase():null,"
+        + " childIndex:el.parentElement?Array.prototype.indexOf.call(el.parentElement.children,el):-1,"
+        + " prevSiblingTag:el.previousElementSibling?el.previousElementSibling.tagName.toLowerCase():null,"
+        + " nextSiblingTag:el.nextElementSibling?el.nextElementSibling.tagName.toLowerCase():null,"
+        + " dataAttrs:dm,iframeChain:ifc"
+        + "};";
+
     // ── Identity ──
     private String locatorKey;           // Original By.toString(), e.g. "By.id: user" (the broken one)
     private String healedLocatorKey;     // Reconstructed best locator, e.g. "By.id: username" (the real one)
@@ -100,95 +135,57 @@ public class ElementFingerprint {
         fp.locatorKey = locator.toString();
         fp.lastSeenEpoch = System.currentTimeMillis();
 
-        // Page URL — safe for both Selenium and Appium
         try {
             fp.pageUrl = driver.getCurrentUrl();
         } catch (Exception ignored) {
             fp.pageUrl = null;
         }
 
-        // Core attributes via standard WebElement API (works on all drivers)
-        fp.tagName = safeGetTag(element);
-        fp.id = safeGetAttribute(element, "id");
-        fp.name = safeGetAttribute(element, "name");
-        fp.type = safeGetAttribute(element, "type");
-        fp.className = safeGetAttribute(element, "class");
-        fp.ariaLabel = safeGetAttribute(element, "aria-label");
-        fp.placeholder = safeGetAttribute(element, "placeholder");
-        fp.href = safeGetAttribute(element, "href");
-        fp.value = safeGetAttribute(element, "value");
-        fp.role = safeGetAttribute(element, "role");
-        fp.dataTestId = safeGetAttribute(element, "data-testid");
-        fp.dataTest   = safeGetAttribute(element, "data-test");
-        fp.dataCy     = safeGetAttribute(element, "data-cy");
-        fp.dataQa     = safeGetAttribute(element, "data-qa");
-        // title and label are captured inside the structural JS call below (0 extra RTs)
-        fp.resourceId      = safeGetAttribute(element, "resource-id");
-        fp.accessibilityId = safeGetAttribute(element, "accessibility-id");
-        fp.contentDesc     = safeGetAttribute(element, "content-desc");
-        if (!isNonBlank(fp.accessibilityId) && isNonBlank(fp.contentDesc)) {
-            fp.accessibilityId = fp.contentDesc;
-        }
-
-        // Reconstruct the healed locator from the element's actual attributes
-        // so the baseline JSON shows what the element was healed TO
-        By reconstructed = reconstructLocator(element);
-        fp.healedLocatorKey = (reconstructed != null) ? reconstructed.toString() : null;
-
-        // Text — truncated to 240 chars (was 100) so longer titles/messages survive for scoring
-        try {
-            String rawText = element.getText();
-            fp.text = (rawText != null && rawText.length() > TEXT_CAP)
-                    ? rawText.substring(0, TEXT_CAP) : rawText;
-        } catch (Exception ignored) {
-            fp.text = null;
-        }
-
-        // Structural + adaptive data-* attrs — ONE JS call, zero extra round-trips.
-        fp.parentTag = null;
-        fp.childIndex = -1;
-        fp.prevSiblingTag = null;
-        fp.nextSiblingTag = null;
-        fp.customDataAttrs = null;
-        if (driver instanceof JavascriptExecutor) {
+        boolean batchedOk = false;
+        if (driver instanceof JavascriptExecutor js) {
             try {
-                JavascriptExecutor js = (JavascriptExecutor) driver;
-                Object result = js.executeScript(
-                        "var el=arguments[0], p=el.parentElement;"
-                        + "var prev=el.previousElementSibling, next=el.nextElementSibling;"
-                        + "var dm={}, at=el.attributes;"
-                        + "for(var k=0;k<at.length;k++){"
-                        + " var n=at[k].name, v=at[k].value;"
-                        + " if(n.indexOf('data-')===0 && n!=='data-ellithium-pick' && v) dm[n]=v;"
-                        + "}"
-                        + "var ifc=[];"
-                        + "try{ var w=window;"
-                        + "  while(w!==w.top){"
-                        + "    var fe=w.frameElement; if(!fe)break;"
-                        + "    var fid=fe.getAttribute('id')||fe.getAttribute('name');"
-                        + "    var sibs=fe.parentElement?Array.prototype.slice.call(fe.parentElement.querySelectorAll('iframe,frame')):[];"
-                        + "    ifc.unshift(fid?fid:(':'+sibs.indexOf(fe)));"
-                        + "    w=w.parent;"
-                        + "  }"
-                        + "}catch(e){}"
-                        + "return [p?p.tagName.toLowerCase():null,"
-                        + " p?Array.prototype.indexOf.call(p.children,el):-1,"
-                        + " prev?prev.tagName.toLowerCase():null,"
-                        + " next?next.tagName.toLowerCase():null,"
-                        + " dm, ifc,"
-                        + " el.getAttribute('title'), el.getAttribute('label')];",
-                        element);
-                if (result instanceof java.util.List<?> r && r.size() >= 4) {
-                    if (r.get(0) != null) fp.parentTag = r.get(0).toString();
-                    if (r.get(1) instanceof Number n) fp.childIndex = n.intValue();
-                    if (r.get(2) != null) fp.prevSiblingTag = r.get(2).toString();
-                    if (r.get(3) != null) fp.nextSiblingTag = r.get(3).toString();
-                    if (r.size() >= 5 && r.get(4) instanceof java.util.Map<?, ?> dm && !dm.isEmpty()) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> attrs =
+                        (java.util.Map<String, Object>) js.executeScript(CAPTURE_BATCH_JS, element);
+                if (attrs != null) {
+                    fp.tagName         = mapStr(attrs, "tag");
+                    fp.id              = mapStr(attrs, "id");
+                    fp.name            = mapStr(attrs, "name");
+                    fp.type            = mapStr(attrs, "type");
+                    fp.className       = mapStr(attrs, "cls");
+                    fp.ariaLabel       = mapStr(attrs, "ariaLabel");
+                    fp.placeholder     = mapStr(attrs, "placeholder");
+                    fp.href            = mapStr(attrs, "href");
+                    fp.value           = mapStr(attrs, "value");
+                    fp.role            = mapStr(attrs, "role");
+                    fp.dataTestId      = mapStr(attrs, "dataTestId");
+                    fp.dataTest        = mapStr(attrs, "dataTest");
+                    fp.dataCy          = mapStr(attrs, "dataCy");
+                    fp.dataQa          = mapStr(attrs, "dataQa");
+                    fp.resourceId      = mapStr(attrs, "resourceId");
+                    fp.accessibilityId = mapStr(attrs, "accessibilityId");
+                    fp.contentDesc     = mapStr(attrs, "contentDesc");
+                    fp.title           = mapStr(attrs, "title");
+                    fp.label           = mapStr(attrs, "label");
+
+                    String rawText = mapStr(attrs, "text");
+                    fp.text = (rawText != null && rawText.length() > TEXT_CAP)
+                            ? rawText.substring(0, TEXT_CAP) : rawText;
+
+                    fp.parentTag      = mapStr(attrs, "parentTag");
+                    Object ci = attrs.get("childIndex");
+                    fp.childIndex     = (ci instanceof Number n) ? n.intValue() : -1;
+                    fp.prevSiblingTag = mapStr(attrs, "prevSiblingTag");
+                    fp.nextSiblingTag = mapStr(attrs, "nextSiblingTag");
+
+                    Object dm = attrs.get("dataAttrs");
+                    if (dm instanceof java.util.Map<?, ?> dmMap && !dmMap.isEmpty()) {
                         java.util.Map<String, String> custom = new java.util.LinkedHashMap<>();
-                        for (java.util.Map.Entry<?, ?> e : dm.entrySet()) {
-                            if (e.getKey() == null || e.getValue() == null) continue;
-                            String an = e.getKey().toString();
-                            String av = e.getValue().toString();
+                        for (java.util.Map.Entry<?, ?> e : dmMap.entrySet()) {
+                            Object ek = e.getKey(), ev = e.getValue();
+                            if (ek == null || ev == null) continue;
+                            String an = ek.toString();
+                            String av = ev.toString();
                             if (av.isBlank()) continue;
                             if ("data-testid".equals(an) || "data-test".equals(an)
                                     || "data-cy".equals(an) || "data-qa".equals(an)) continue;
@@ -196,21 +193,68 @@ public class ElementFingerprint {
                         }
                         if (!custom.isEmpty()) fp.customDataAttrs = custom;
                     }
-                    if (r.size() >= 6 && r.get(5) instanceof java.util.List<?> ifc && !ifc.isEmpty()) {
+
+                    Object ifc = attrs.get("iframeChain");
+                    if (ifc instanceof java.util.List<?> ifcList && !ifcList.isEmpty()) {
                         java.util.List<String> chain = new java.util.ArrayList<>();
-                        for (Object item : ifc) if (item != null) chain.add(item.toString());
+                        for (Object item : ifcList) if (item != null) chain.add(item.toString());
                         if (!chain.isEmpty()) fp.iframeChain = java.util.List.copyOf(chain);
                     }
-                    // title and label piggyback on this single JS call — 0 extra WebDriver RTs
-                    if (r.size() >= 7 && r.get(6) instanceof String t && !t.isBlank()) fp.title = t;
-                    if (r.size() >= 8 && r.get(7) instanceof String l && !l.isBlank()) fp.label = l;
+
+                    batchedOk = true;
                 }
             } catch (Exception ignored) {
-                // JS not supported (some Appium contexts) — skip gracefully
+                // JS not available or failed — fall through to sequential
             }
         }
 
+        if (!batchedOk) {
+            fp.tagName         = safeGetTag(element);
+            fp.id              = safeGetAttribute(element, "id");
+            fp.name            = safeGetAttribute(element, "name");
+            fp.type            = safeGetAttribute(element, "type");
+            fp.className       = safeGetAttribute(element, "class");
+            fp.ariaLabel       = safeGetAttribute(element, "aria-label");
+            fp.placeholder     = safeGetAttribute(element, "placeholder");
+            fp.href            = safeGetAttribute(element, "href");
+            fp.value           = safeGetAttribute(element, "value");
+            fp.role            = safeGetAttribute(element, "role");
+            fp.dataTestId      = safeGetAttribute(element, "data-testid");
+            fp.dataTest        = safeGetAttribute(element, "data-test");
+            fp.dataCy          = safeGetAttribute(element, "data-cy");
+            fp.dataQa          = safeGetAttribute(element, "data-qa");
+            fp.resourceId      = safeGetAttribute(element, "resource-id");
+            fp.accessibilityId = safeGetAttribute(element, "accessibility-id");
+            fp.contentDesc     = safeGetAttribute(element, "content-desc");
+            try {
+                String rawText = element.getText();
+                fp.text = (rawText != null && rawText.length() > TEXT_CAP)
+                        ? rawText.substring(0, TEXT_CAP) : rawText;
+            } catch (Exception ignored) {
+                fp.text = null;
+            }
+            fp.parentTag = null;
+            fp.childIndex = -1;
+            fp.prevSiblingTag = null;
+            fp.nextSiblingTag = null;
+            fp.customDataAttrs = null;
+        }
+
+        if (!isNonBlank(fp.accessibilityId) && isNonBlank(fp.contentDesc)) {
+            fp.accessibilityId = fp.contentDesc;
+        }
+
+        By reconstructed = reconstructLocator(element);
+        fp.healedLocatorKey = (reconstructed != null) ? reconstructed.toString() : null;
+
         return fp;
+    }
+
+    private static String mapStr(java.util.Map<String, Object> m, String key) {
+        Object v = m.get(key);
+        if (v == null) return null;
+        String s = v.toString();
+        return s.isBlank() ? null : s;
     }
 
     /**
