@@ -1,4 +1,4 @@
-package Ellithium.config.managment;
+package Ellithium.config.management;
 
 import Ellithium.Utilities.ai.LLMProvider;
 import Ellithium.Utilities.ai.LLMProviderFactory;
@@ -7,7 +7,7 @@ import Ellithium.Utilities.interactions.WaitManager;
 import Ellithium.core.API.APIFilterHelper;
 import Ellithium.config.Internal.VersionChecker;
 import Ellithium.core.ai.healing.BaselineStore;
-import Ellithium.core.ai.EnsembleHealer;
+import Ellithium.core.ai.healing.EnsembleHealer;
 import Ellithium.core.driver.*;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.Logger;
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeneralHandler {
-    
+
     /**
      * Internally used with The Ellithium Not for General Use.
      * @param browserName Slider element locator

@@ -1,7 +1,7 @@
 package Ellithium.core.execution.Internal.Loader;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import static Ellithium.Utilities.helpers.JarExtractor.extractFileFromJar;
 import java.io.File;
 import java.io.IOException;

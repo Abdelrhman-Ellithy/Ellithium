@@ -1,5 +1,6 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
+import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.scoring.SemanticNameExtractor;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.scoring.LocatorMutationEngine;

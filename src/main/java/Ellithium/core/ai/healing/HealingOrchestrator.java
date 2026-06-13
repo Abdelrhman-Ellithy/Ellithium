@@ -5,6 +5,7 @@ import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.ai.reporting.AIHealingReporter;
+import Ellithium.core.ai.spi.ElementHealingPort;
 import Ellithium.core.ai.spi.HealingTier;
 import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
@@ -24,7 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-public final class HealingOrchestrator {
+public final class HealingOrchestrator implements ElementHealingPort {
 
     private static final java.nio.file.Path KILL_SWITCH_PATH =
             Paths.get(System.getProperty("user.home"), ".ellithium", "ai-disable");
@@ -52,8 +53,17 @@ public final class HealingOrchestrator {
         return INSTANCE;
     }
 
+    @Override
+    public By getCachedLocator(WebDriver driver, By brokenLocator) {
+        return AISelfHealer.getCachedHealedLocator(driver, brokenLocator);
+    }
+
+    public static boolean isHealingGloballyEnabled() {
+        return !Files.exists(KILL_SWITCH_PATH);
+    }
+
     public HealOutcome heal(HealingRequest request) {
-        if (Files.exists(KILL_SWITCH_PATH)) {
+        if (!isHealingGloballyEnabled()) {
             Reporter.log("[AI] Kill switch active (~/.ellithium/ai-disable exists) — all healing disabled",
                     LogLevel.WARN);
             HealingTelemetryStore.record(0, request.brokenLocator().toString(), null, 0.0, false);

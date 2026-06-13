@@ -450,6 +450,13 @@ public class LocalDriverConfig implements DriverConfigBuilder {
      */
     @Override
     public DriverType getDriverType() {
-        return localDriverType;
+        return localDriverType != null ? localDriverType : LocalDriverType.Chrome;
+    }
+
+    @Override
+    public void validate() {
+        if (localDriverType == null) {
+            throw new IllegalStateException("LocalDriverType must be set before creating a driver");
+        }
     }
 }

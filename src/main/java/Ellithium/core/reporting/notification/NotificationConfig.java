@@ -55,18 +55,22 @@ public class NotificationConfig {
         private static final NotificationConfig INSTANCE = new NotificationConfig();
     }
     
+    private static volatile Boolean cachedQuickCheck = null;
+
     /**
      * Quick check if notifications are enabled without full configuration loading.
-     * This method provides early exit for performance optimization.
+     * Result is cached after the first read so the properties file is not re-read on every call.
      * @return true if notifications are enabled, false otherwise
      */
     static boolean isNotificationEnabledQuick() {
+        if (cachedQuickCheck != null) {
+            return cachedQuickCheck;
+        }
         try {
-            // Use PropertyHelper to get just the notification.enabled property
             String enabled = Ellithium.Utilities.helpers.PropertyHelper.getAllProperties("src/main/resources/properties/config.properties").getProperty("notification.enabled");
-            return enabled != null && Boolean.parseBoolean(enabled);
+            cachedQuickCheck = enabled != null && Boolean.parseBoolean(enabled);
+            return cachedQuickCheck;
         } catch (Exception e) {
-            // If we can't check, assume disabled for safety
             return false;
         }
     }

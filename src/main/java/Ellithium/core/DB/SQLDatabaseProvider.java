@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Provides database operations with connection pooling and caching capabilities.
  * Supports multiple SQL database types including MySQL, PostgreSQL, SQLite, and Oracle.
  */
-public class SQLDatabaseProvider implements AutoCloseable {
+public class SQLDatabaseProvider implements SQLProvider {
     private HikariDataSource dataSource;
     private final String userName;
     private final String password;

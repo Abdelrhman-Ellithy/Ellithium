@@ -1,5 +1,5 @@
 package Ellithium.core.execution.listener;
-import Ellithium.core.ai.EnsembleHealer;
+import Ellithium.core.ai.healing.EnsembleHealer;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
@@ -14,8 +14,8 @@ import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.execution.context.TestContext;
 import Ellithium.core.execution.context.TestContextData;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
-import Ellithium.config.managment.ConfigContext;
-import Ellithium.config.managment.GeneralHandler;
+import Ellithium.config.management.ConfigContext;
+import Ellithium.config.management.GeneralHandler;
 import Ellithium.core.reporting.notification.TestResultCollector;
 import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;

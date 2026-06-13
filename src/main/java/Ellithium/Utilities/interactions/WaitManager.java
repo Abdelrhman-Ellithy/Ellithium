@@ -1,7 +1,7 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;

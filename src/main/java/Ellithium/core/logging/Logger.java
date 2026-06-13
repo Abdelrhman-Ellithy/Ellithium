@@ -1,6 +1,6 @@
 package Ellithium.core.logging;
 
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import org.apache.logging.log4j.LogManager;
 
 import java.text.SimpleDateFormat;

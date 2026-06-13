@@ -29,6 +29,7 @@ public class AISelfHealer {
     private static volatile double confidenceThreshold = 0.85;
 
     static final long HEALED_CACHE_TTL_MS = 30 * 60 * 1_000L;
+    private static final int  HEALED_CACHE_MAX     = 2_000;
 
     static class CachedLocator {
         final By newLocator;
@@ -99,6 +100,9 @@ public class AISelfHealer {
         if (healedLocator == null) return;
         if (score < AIConfigLoader.getHealingStoreThreshold()) return;
         String key = cacheKey(driver, brokenLocator);
+        if (globalHealedCache.size() >= HEALED_CACHE_MAX) {
+            globalHealedCache.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
         globalHealedCache.putIfAbsent(key,
                 new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed"));
     }
@@ -112,7 +116,7 @@ public class AISelfHealer {
         // AUT loaded in the same JVM) does not receive stale strategy lists built for the
         // previous app's locator patterns.
         Ellithium.core.ai.scoring.LocatorMutationEngine.resetCache();
-        Ellithium.core.ai.SemanticLocatorResolver.resetCache();
+        Ellithium.core.ai.healing.SemanticLocatorResolver.resetCache();
     }
 
     private static final ConcurrentLinkedQueue<SourcePatch> pendingPatches = new ConcurrentLinkedQueue<>();

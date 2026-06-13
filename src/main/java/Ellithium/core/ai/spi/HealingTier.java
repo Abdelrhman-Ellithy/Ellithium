@@ -12,4 +12,6 @@ public interface HealingTier {
     boolean persistsOwnHeal();
 
     HealOutcome heal(HealingRequest request);
+
+    default int apiVersion() { return 1; }
 }

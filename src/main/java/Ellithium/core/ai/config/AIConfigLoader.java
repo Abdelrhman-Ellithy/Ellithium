@@ -2,7 +2,7 @@ package Ellithium.core.ai.config;
 
 import Ellithium.Utilities.ai.HealingStrategy;
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
@@ -194,4 +194,54 @@ public class AIConfigLoader {
     public static boolean isTier3Enabled()                      { return tier3Enabled; }
     public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
     public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }
+
+    // ── Grouped config views ──────────────────────────────────────────────────
+
+    public record LlmConfig(
+            String providerName,
+            String apiKey,
+            String model,
+            String baseUrl,
+            String providerClass,
+            int    maxWaitMs,
+            int    maxRetries
+    ) {}
+
+    public record ThresholdConfig(
+            double confidence,
+            double storeThreshold,
+            double onnxSimilarity,
+            double tier3BaselineFloor,
+            double semanticFallback,
+            int    ciAlertThreshold,
+            boolean visionRca,
+            boolean visionMobile,
+            boolean visionWeb
+    ) {}
+
+    public record ModelConfig(
+            int     maxCandidates,
+            int     onnxMaxCandidates,
+            int     onnxHardLimit,
+            int     baselineTtlDays,
+            int     telemetryMaxRecords,
+            boolean tier3Enabled,
+            int     baselineMaxLocators
+    ) {}
+
+    public static LlmConfig llm() {
+        return new LlmConfig(llmProviderName, llmApiKey, llmModel, llmBaseUrl,
+                llmProviderClass, llmHealMaxWaitMs, llmMaxRetries);
+    }
+
+    public static ThresholdConfig thresholds() {
+        return new ThresholdConfig(confidenceThreshold, healingStoreThreshold,
+                onnxSimilarityThreshold, tier3BaselineMatchFloor, semanticFallbackScore,
+                ciHealAlertThreshold, visionRcaEnabled, visionAllowMobile, visionAllowWeb);
+    }
+
+    public static ModelConfig model() {
+        return new ModelConfig(maxCandidates, onnxMaxCandidates, onnxHardCandidateLimit,
+                baselineTtlDays, telemetryMaxRecords, tier3Enabled, baselineMaxLocators);
+    }
 }

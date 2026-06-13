@@ -1,9 +1,9 @@
 package Ellithium.core.driver;
 
 import Ellithium.core.execution.listener.appiumListener;
+import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.execution.listener.seleniumListener;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
@@ -763,8 +763,8 @@ public class DriverFactory {
      * @param driver Base WebDriver instance to be decorated
      * @return Decorated WebDriver instance
      */
-    private static WebDriver getDecoratedWebDriver(WebDriver driver){
-        return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new seleniumListener()).decorate(driver);
+    private static WebDriver getDecoratedWebDriver(WebDriver driver) {
+        return new EventFiringDecorator<>(WebDriver.class, new seleniumListener()).decorate(driver);
     }
 
     /**

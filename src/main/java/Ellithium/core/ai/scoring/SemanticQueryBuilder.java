@@ -1,6 +1,6 @@
 package Ellithium.core.ai.scoring;
 
-import Ellithium.core.ai.SemanticLocatorResolver;
+import Ellithium.core.ai.healing.SemanticLocatorResolver;
 import Ellithium.core.ai.models.ElementFingerprint;
 
 import java.util.*;

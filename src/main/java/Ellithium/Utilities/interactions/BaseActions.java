@@ -1,11 +1,11 @@
 package Ellithium.Utilities.interactions;
 
-import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.healing.BaselineStore;
 import Ellithium.core.ai.healing.HealingOrchestrator;
 import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.spi.ElementHealingPort;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
@@ -20,6 +20,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 class BaseActions<T extends WebDriver> {
+
+    private static final ElementHealingPort HEALING_PORT = HealingOrchestrator.get();
+
     protected final T driver;
     protected BaseActions(T driver) {
         this.driver = driver;
@@ -49,7 +52,7 @@ class BaseActions<T extends WebDriver> {
             return element;
         } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException e) {
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-            HealOutcome outcome = HealingOrchestrator.get().heal(buildHealingRequest(locator, stack));
+            HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.element() != null) {
                 return outcome.element();
             }
@@ -75,7 +78,7 @@ class BaseActions<T extends WebDriver> {
      * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
     WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
-        By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
+        By effective = HEALING_PORT.getCachedLocator(driver, locator);
         if (effective == null) effective = locator;
         try {
             WebElement element = getFluentWait(timeout, pollingEvery)
@@ -91,7 +94,7 @@ class BaseActions<T extends WebDriver> {
      * If a TimeoutException occurs, attempts to heal the locator before querying again.
      */
     List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
-        By effective = AISelfHealer.getCachedHealedLocator(driver, locator);
+        By effective = HEALING_PORT.getCachedLocator(driver, locator);
         if (effective == null) effective = locator;
         try {
             getFluentWait(timeout, pollingEvery)
@@ -99,7 +102,7 @@ class BaseActions<T extends WebDriver> {
             return driver.findElements(effective);
         } catch (org.openqa.selenium.TimeoutException e) {
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-            HealOutcome outcome = HealingOrchestrator.get().heal(buildHealingRequest(locator, stack));
+            HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.reconstructedLocator() != null) {
                 return driver.findElements(outcome.reconstructedLocator());
             }
@@ -114,7 +117,7 @@ class BaseActions<T extends WebDriver> {
      * @return List of found WebElements
      */
     List<WebElement> findWebElements(By locator) {
-        By healed = AISelfHealer.getCachedHealedLocator(driver, locator);
+        By healed = HEALING_PORT.getCachedLocator(driver, locator);
         if (healed != null) {
             return driver.findElements(healed);
         }

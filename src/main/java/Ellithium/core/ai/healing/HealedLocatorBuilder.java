@@ -1,7 +1,7 @@
 package Ellithium.core.ai.healing;
 
 import Ellithium.core.ai.DriverProfile;
-import Ellithium.core.ai.SemanticLocatorResolver;
+import Ellithium.core.ai.healing.SemanticLocatorResolver;
 import Ellithium.core.ai.dom.CandidateAttributeBatcher;
 import Ellithium.core.ai.locators.LocatorTechniques;
 import io.appium.java_client.AppiumBy;

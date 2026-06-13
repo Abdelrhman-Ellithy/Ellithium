@@ -62,7 +62,12 @@ public class NotificationSender {
             });
 
             Message message = new MimeMessage(session);
-            message.setFrom(createEncodedInternetAddress(config.getFromEmail()));
+            InternetAddress fromAddress = createEncodedInternetAddress(config.getFromEmail());
+            if (fromAddress == null) {
+                Reporter.log("Invalid from email address, cannot send email", LogLevel.ERROR);
+                return false;
+            }
+            message.setFrom(fromAddress);
             message.setRecipients(Message.RecipientType.TO, createEncodedInternetAddresses(config.getToEmail()));
             message.setSubject(encodeEmailSubject(subject));
 
@@ -237,11 +242,12 @@ public class NotificationSender {
             String channel = config.getSlackChannel();
             String username = config.getSlackUsername();
 
-            Slack slack = Slack.getInstance();
-
             String payload = buildSlackPayload(message, channel, username);
 
-            WebhookResponse response = slack.send(webhookUrl, payload);
+            WebhookResponse response;
+            try (Slack slack = Slack.getInstance()) {
+                response = slack.send(webhookUrl, payload);
+            }
 
             if (response.getCode() == 200) {
                 Reporter.log("Slack notification sent successfully to channel " + channel, LogLevel.INFO_GREEN);

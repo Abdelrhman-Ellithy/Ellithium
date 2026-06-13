@@ -1,5 +1,7 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
+import Ellithium.core.ai.DriverProfile;
+import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;

@@ -408,11 +408,18 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
 
     /**
      * Gets the driver type.
-     * 
+     *
      * @return The current driver type configuration
      */
     @Override
     public DriverType getDriverType() {
-        return driverType;
+        return driverType != null ? driverType : RemoteDriverType.REMOTE_Chrome;
+    }
+
+    @Override
+    public void validate() {
+        if (driverType == null) {
+            throw new IllegalStateException("RemoteDriverType must be set before creating a driver");
+        }
     }
 }

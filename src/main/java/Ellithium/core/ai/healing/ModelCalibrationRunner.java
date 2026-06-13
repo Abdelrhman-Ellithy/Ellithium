@@ -1,4 +1,4 @@
-package Ellithium.core.ai;
+package Ellithium.core.ai.healing;
 
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
@@ -32,7 +32,7 @@ import java.util.*;
  * </ol>
  *
  * <h3>How to run</h3>
- * <pre>java -cp ellithium-*.jar Ellithium.core.ai.ModelCalibrationRunner</pre>
+ * <pre>java -cp ellithium-*.jar Ellithium.core.ai.healing.ModelCalibrationRunner</pre>
  * Pre-requisite: {@code EnsembleHealer.isAvailable()} must be true (model embedded).
  */
 public class ModelCalibrationRunner {

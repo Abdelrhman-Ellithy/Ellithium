@@ -1,7 +1,7 @@
 package Ellithium.core.ai.spi;
 
-import Ellithium.core.ai.EnsembleHealer;
-import Ellithium.core.ai.SemanticLocatorResolver;
+import Ellithium.core.ai.healing.EnsembleHealer;
+import Ellithium.core.ai.healing.SemanticLocatorResolver;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.models.HealingRequest;
 import org.openqa.selenium.WebElement;

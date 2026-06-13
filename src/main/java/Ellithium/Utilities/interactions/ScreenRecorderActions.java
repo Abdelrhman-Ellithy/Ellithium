@@ -1,7 +1,7 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
 import Ellithium.core.driver.LocalDriverType;

@@ -3,7 +3,7 @@ package Ellithium.core.recording.internal;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.PropertyHelper;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;

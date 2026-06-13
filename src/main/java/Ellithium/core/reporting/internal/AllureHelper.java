@@ -3,7 +3,7 @@ package Ellithium.core.reporting.internal;
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.CommandExecutor;
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.execution.Internal.Loader.StartUpLoader;
 import Ellithium.core.logging.Logger;
 import org.apache.commons.lang3.SystemUtils;

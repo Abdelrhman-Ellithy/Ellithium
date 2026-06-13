@@ -1,6 +1,6 @@
 package Ellithium.core.execution.listener;
 
-import Ellithium.config.managment.GeneralHandler;
+import Ellithium.config.management.GeneralHandler;
 import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static Ellithium.config.managment.GeneralHandler.testFailed;
+import static Ellithium.config.management.GeneralHandler.testFailed;
 import static Ellithium.core.reporting.internal.Colors.*;
 
 /**

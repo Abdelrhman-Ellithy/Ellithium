@@ -2,7 +2,7 @@ package Ellithium.config.Internal;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.JsonHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.Logger;
 import io.restassured.http.ContentType;
 

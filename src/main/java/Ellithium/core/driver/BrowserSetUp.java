@@ -55,22 +55,22 @@ public class BrowserSetUp {
         switch (driverType) {
             case REMOTE_Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) chromeOptions.merge(capabilities);
+                if (capabilities != null) chromeOptions = chromeOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, chromeOptions);
             }
             case REMOTE_FireFox -> {
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) firefoxOptions.merge(capabilities);
+                if (capabilities != null) firefoxOptions = firefoxOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, firefoxOptions);
             }
             case REMOTE_Edge -> {
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                if (capabilities != null) edgeOptions.merge(capabilities);
+                if (capabilities != null) edgeOptions = edgeOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, edgeOptions);
             }
             case REMOTE_Safari -> {
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-                if (capabilities != null) safariOptions.merge(capabilities);
+                if (capabilities != null) safariOptions = safariOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, safariOptions);
             }
             default -> throw new IllegalStateException("Unsupported remote driver type: " + driverType);
