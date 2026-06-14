@@ -164,7 +164,12 @@ public final class InteractionRecorder {
             String oid = str(ev.get("id"));
             if (oid == null) return false;
             RecordedStep step = BY_ID.get(oid);
-            if (step != null) { step.choose((int) asLong(ev.get("index"))); return true; }
+            if (step != null) {
+                int idx = (int) asLong(ev.get("index"));
+                if (idx < 0) return false;
+                step.choose(idx);
+                return true;
+            }
             return false;
         }
         if ("clearAll".equals(type)) {

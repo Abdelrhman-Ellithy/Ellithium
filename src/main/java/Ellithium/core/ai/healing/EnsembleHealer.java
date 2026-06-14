@@ -191,6 +191,8 @@ public class EnsembleHealer {
         initialized    = false;
         INIT_FUTURE    = null;
         ElementVectorCache.getInstance().invalidate();
+        ElementVectorCache.remove();
+        threadLastGen.remove();
         Reporter.log("[LOCAL AI MODEL] ONNX session closed", LogLevel.DEBUG);
     }
 

@@ -720,14 +720,12 @@ public class BaselineStore {
     private static void saveToDiskAsync() {
         if (saveScheduled.compareAndSet(false, true)) {
             try {
-                java.util.concurrent.ScheduledExecutorService exec = SAVE_EXECUTOR;
-                if (exec.isShutdown()) {
-                    synchronized (LOCK) {
-                        if (SAVE_EXECUTOR.isShutdown()) {
-                            SAVE_EXECUTOR = newSaveExecutor();
-                        }
-                        exec = SAVE_EXECUTOR;
+                java.util.concurrent.ScheduledExecutorService exec;
+                synchronized (LOCK) {
+                    if (SAVE_EXECUTOR.isShutdown()) {
+                        SAVE_EXECUTOR = newSaveExecutor();
                     }
+                    exec = SAVE_EXECUTOR;
                 }
                 exec.schedule(() -> {
                     saveScheduled.set(false);

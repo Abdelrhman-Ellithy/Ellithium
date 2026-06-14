@@ -57,11 +57,12 @@ public class GeminiProvider implements LLMProvider {
             if (!url.endsWith("/")) url += "/";
             // Check if model name already starts with models/
             String modelPath = model.startsWith("models/") ? model : "models/" + model;
-            url += modelPath + ":generateContent?key=" + apiKey;
+            url += modelPath + ":generateContent";
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
+                    .header("x-goog-api-key", apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                     .timeout(Duration.ofSeconds(120))
                     .build();
@@ -79,10 +80,12 @@ public class GeminiProvider implements LLMProvider {
                             .getString("text");
                      return stripMarkdownFences(rawText);
                 }
-                Reporter.log("Gemini API Empty Response: " + response.body(), LogLevel.ERROR);
+                Reporter.log("Gemini API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("Gemini API empty body: " + response.body(), LogLevel.DEBUG);
                 return null;
             } else {
-                Reporter.log("Gemini API Error: " + response.statusCode() + " - " + response.body(), LogLevel.ERROR);
+                Reporter.log("Gemini API Error: HTTP " + response.statusCode() + " — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("Gemini API error body: " + response.body(), LogLevel.DEBUG);
                 return null;
             }
         } catch (java.net.http.HttpTimeoutException e) {
@@ -122,11 +125,12 @@ public class GeminiProvider implements LLMProvider {
             String url = baseUrl;
             if (!url.endsWith("/")) url += "/";
             String modelPath = model.startsWith("models/") ? model : "models/" + model;
-            url += modelPath + ":generateContent?key=" + apiKey;
+            url += modelPath + ":generateContent";
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
+                    .header("x-goog-api-key", apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                     .timeout(Duration.ofSeconds(120))
                     .build();
@@ -144,10 +148,12 @@ public class GeminiProvider implements LLMProvider {
                             .getString("text");
                      return stripMarkdownFences(rawText);
                 }
-                Reporter.log("Gemini Vision API Empty Response: " + response.body(), LogLevel.ERROR);
+                Reporter.log("Gemini Vision API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("Gemini Vision API empty body: " + response.body(), LogLevel.DEBUG);
                 return null;
             } else {
-                Reporter.log("Gemini Vision API Error: " + response.statusCode() + " - " + response.body(), LogLevel.ERROR);
+                Reporter.log("Gemini Vision API Error: HTTP " + response.statusCode() + " — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("Gemini Vision API error body: " + response.body(), LogLevel.DEBUG);
                 return null;
             }
         } catch (java.net.http.HttpTimeoutException e) {

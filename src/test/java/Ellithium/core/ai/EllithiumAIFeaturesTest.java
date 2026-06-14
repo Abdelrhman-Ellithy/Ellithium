@@ -3,6 +3,8 @@ package Ellithium.core.ai;
 import Ellithium.Utilities.ai.EllithiumAIEngine;
 import Ellithium.Utilities.ai.GeminiProvider;
 import Ellithium.Utilities.ai.LLMProvider;
+import Ellithium.Utilities.interactions.DriverActions;
+import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -56,7 +58,9 @@ public class EllithiumAIFeaturesTest {
         // 3. Demonstrate Live In-Context Generation
         String naturalLanguageSteps = "navigate to https://the-internet.herokuapp.com/ and then click on the link with text Dropdown to go to the dropdown page";
         EllithiumAIEngine.continueFrom(driver, llmProvider, naturalLanguageSteps);
-
+        DriverActions driverActions = new DriverActions(driver);
+        driverActions.waits().waitForUrlContains("dropdown");
+        new ScreenRecorderActions<>(driver).captureScreenshot("naturalLanguageSteps");
         Assert.assertTrue(driver.getCurrentUrl().contains("/dropdown"), "Expected to be on the dropdown page but was: " + driver.getCurrentUrl());
     }
 

@@ -8,6 +8,7 @@ import Ellithium.Utilities.ai.HealingStrategy;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;
@@ -51,16 +52,20 @@ public class AISelfHealerTest {
         try (MockedStatic<AIConfigLoader> configMock = Mockito.mockStatic(AIConfigLoader.class)) {
             configMock.when(AIConfigLoader::getHealingStrategy).thenReturn(HealingStrategy.HEAL_AND_CONTINUE);
             configMock.when(AIConfigLoader::getConfidenceThreshold).thenReturn(0.85);
+            configMock.when(AIConfigLoader::getMaxCandidates).thenReturn(3);
+            configMock.when(AIConfigLoader::getLlmMaxRetries).thenReturn(1);
 
-            WebDriver driver = mock(WebDriver.class);
+            WebDriver driver = mock(WebDriver.class, withSettings().extraInterfaces(JavascriptExecutor.class));
+            JavascriptExecutor js = (JavascriptExecutor) driver;
             when(driver.getPageSource()).thenReturn("<html><body><div id='newLogin'>Login</div></body></html>");
+            when(js.executeScript(anyString())).thenReturn(null);
 
             WebElement mockElement = mock(WebElement.class);
             when(driver.findElement(By.id("newLogin"))).thenReturn(mockElement);
 
             LLMProvider provider = mock(LLMProvider.class);
             String mockJsonResponse = "{\"locator\": \"By.id(\\\"newLogin\\\")\", \"confidence\": 0.95, \"reasoning\": \"Id changed\"}";
-            when(provider.ask(anyString(), anyString())).thenReturn(mockJsonResponse);
+            when(provider.ask(any(), any())).thenReturn(mockJsonResponse);
 
             AISelfHealer.initializeForThread(provider, HealingStrategy.HEAL_AND_CONTINUE);
 

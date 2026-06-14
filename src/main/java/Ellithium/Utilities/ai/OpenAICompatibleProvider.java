@@ -61,13 +61,19 @@ public class OpenAICompatibleProvider implements LLMProvider {
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 JSONObject jsonResponse = new JSONObject(response.body());
-                String rawText = jsonResponse.getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content");
-                return stripMarkdownFences(rawText);
+                JSONArray choices = jsonResponse.optJSONArray("choices");
+                if (choices != null && choices.length() > 0) {
+                    String rawText = choices.getJSONObject(0)
+                            .getJSONObject("message")
+                            .getString("content");
+                    return stripMarkdownFences(rawText);
+                }
+                Reporter.log("OpenAI API returned empty choices array (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("OpenAI API empty body: " + response.body(), LogLevel.DEBUG);
+                return null;
             } else {
-                Reporter.log("OpenAI API Error: " + response.statusCode() + " - " + response.body(), LogLevel.ERROR);
+                Reporter.log("OpenAI API Error: HTTP " + response.statusCode() + " — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("OpenAI API error body: " + response.body(), LogLevel.DEBUG);
                 return null;
             }
         } catch (Exception e) {

@@ -329,9 +329,7 @@ public class CommandExecutor {
             commandList.add("/c");
             Collections.addAll(commandList, command);
         } else {
-            commandList.add("/bin/bash");
-            commandList.add("-c");
-            commandList.add(String.join(" ", command));
+            Collections.addAll(commandList, command);
         }
         return new ProcessBuilder(commandList);
     }

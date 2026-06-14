@@ -49,15 +49,16 @@ public class HealingTelemetryStore {
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
+    private static final String CLEARED = "";
 
     /** Sets the test identifier for the current thread so subsequent heals are attributed to it. */
     public static void setCurrentTest(String testId) {
-        if (testId == null) CURRENT_TEST.remove(); else CURRENT_TEST.set(testId);
+        CURRENT_TEST.set(testId == null ? CLEARED : testId);
     }
 
-    /** Clears the current-thread test attribution (call at test end to avoid leaking across reuse). */
+    /** Clears the current-thread test attribution — heals recorded after this call get null testId. */
     public static void clearCurrentTest() {
-        CURRENT_TEST.remove();
+        CURRENT_TEST.set(CLEARED);
     }
 
     /**
@@ -83,8 +84,15 @@ public class HealingTelemetryStore {
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
         int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
-        String testId = Ellithium.core.execution.context.TestContext.testId();
-        if (testId == null) testId = CURRENT_TEST.get();
+        String manual = CURRENT_TEST.get();
+        String testId;
+        if (manual == null) {
+            testId = Ellithium.core.execution.context.TestContext.testId();
+        } else if (manual.isEmpty()) {
+            testId = null;
+        } else {
+            testId = manual;
+        }
         TelemetryRecord rec = new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
                 query, category, testId);
         records.add(rec);

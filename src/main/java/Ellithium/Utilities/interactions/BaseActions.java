@@ -57,7 +57,7 @@ class BaseActions<T extends WebDriver> {
             if (outcome != null && outcome.element() != null) {
                 return outcome.element();
             }
-            throw new AssertionError("Element not found and could not be healed: " + locator
+            throw new NoSuchElementException("Element not found and could not be healed: " + locator
                     + " | All healing tiers exhausted (Tier 1: Algorithmic baseline, "
                     + "Tier 2: Local embedding ensemble, Tier 3: LLM)", e);
         }

@@ -135,12 +135,12 @@ public class HealedLocatorBuilderTest {
     }
 
     @Test
-    public void buildWebCandidates_cappedAtTen() {
+    public void buildWebCandidates_cappedAtMaxCandidates() {
         Map<String, Object> a = attrs("tag", "button", "text", "Go", "aria-label", "Go action",
                 "type", "submit", "placeholder", "ph", "title", "tt", "name", "n",
                 "data-testid", "dt", "role", "button", "class", "a b");
         List<Candidate> cs = HealedLocatorBuilder.buildWebCandidates(a);
-        Assert.assertTrue(cs.size() <= 10, "candidate set must be capped at 10, was " + cs.size());
+        Assert.assertTrue(cs.size() <= 15, "candidate set must be capped at MAX_CANDIDATES(15), was " + cs.size());
     }
 
     private static String sels(List<Candidate> cs) {

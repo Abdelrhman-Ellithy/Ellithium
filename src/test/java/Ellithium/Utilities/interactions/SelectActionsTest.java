@@ -29,6 +29,8 @@ public class SelectActionsTest {
         when(mockSelect.isDisplayed()).thenReturn(true);
         when(mockSelect.isEnabled()).thenReturn(true);
         when(mockSelect.getTagName()).thenReturn("select");
+        // Selenium 4.44.0 Select.assertSelectIsVisible() calls getCssValue(); null NPEs in ImmutableCollections.SetN
+        when(mockSelect.getCssValue(anyString())).thenReturn("visible");
         selectActions = new SelectActions<>(mockDriver);
     }
 

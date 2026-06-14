@@ -45,6 +45,9 @@ public class ElementVectorCache {
 
     public static ElementVectorCache getInstance() { return THREAD_LOCAL.get(); }
 
+    /** Removes this thread's cache instance. Call in test teardown and suite shutdown to prevent leaks in pooled threads. */
+    public static void remove() { THREAD_LOCAL.remove(); }
+
     // ──────────────────────── Cache Operations ────────────────────────
 
     /**

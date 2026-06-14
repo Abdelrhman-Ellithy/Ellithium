@@ -61,6 +61,24 @@ jobs:
         with:
           artifact-name: ubuntu-api-test-results
 
+  Ubuntu-driver-Tests:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Driver Tests
+        run: mvn test -Dtest="driver.**.*" -Dsurefire.parallel=classes
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: ubuntu-driver-test-results
+
   MacOS-UI-Basic-Tests:
     runs-on: macos-latest
     env:
@@ -85,6 +103,7 @@ jobs:
       EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
@@ -92,7 +111,7 @@ jobs:
           java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run AI Tests
-        run: mvn test -Dtest="codegen.**.*,config.**.*,healing.**.*,scoring.**.*" -Dsurefire.parallel=classes
+        run: mvn test -Dtest="ai.**.**.*" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ai-test-results

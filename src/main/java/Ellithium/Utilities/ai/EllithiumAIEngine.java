@@ -521,7 +521,7 @@ public class EllithiumAIEngine {
 
             // Generate BDD feature file if enabled
             String featureFile = null;
-            if (generateBDD && json.has("featureFile")) {
+            if (generateBDD && json.has("featureFile") && !json.get("featureFile").isJsonNull()) {
                 featureFile = json.get("featureFile").getAsString();
                 String scenarioTitle = json.has("scenarioTitle") ? json.get("scenarioTitle").getAsString() : "";
                 String gherkin = json.has("gherkinScenario") ? json.get("gherkinScenario").getAsString() : "";
