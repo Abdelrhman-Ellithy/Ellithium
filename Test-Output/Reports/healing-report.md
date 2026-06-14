@@ -1850,3 +1850,98 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-14T17:35:22.7232248
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.cssSelector: emaaaiiiail` | `By.id: username` | 1.00 |
+| 2 | `algorithmic-baseline` | - | - | `By.id: sssecreeett` | `By.id: password` | 1.00 |
+| 3 | `algorithmic-baseline` | - | - | `By.tagName: btnnnn` | `By.xpath: //button[normalize-space(.)='Login' and @type='submit']` | 1.00 |
+| 4 | `src/test/java/Pages/AmazonSearchPage.java` | searchForItem | sendData | `By.id: search` | `By.id("twotabsearchtextbox")` | 0.65 |
+| 5 | `src/test/java/Pages/AmazonSearchPage.java` | clickSearch | clickOnElement | `By.tagName: searchbutton` | `By.id("nav-search-submit-button")` | 0.82 |
+| 6 | `src/test/java/UI_NonBDD/tempTest.java` | testProducts | clickOnElement | `By.xpath: products` | `By.xpath("//a[normalize-space(.)='Test Cases']")` | 0.72 |
+
+## Detailed Reasoning
+
+### 1. By.cssSelector: emaaaiiiail
+- **Healed to:** `By.id: username`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 2. By.id: sssecreeett
+- **Healed to:** `By.id: password`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 3. By.tagName: btnnnn
+- **Healed to:** `By.xpath: //button[normalize-space(.)='Login' and @type='submit']`
+- **Reasoning:** [TIER 1 - Algorithmic] Matched by: tag='button' text(partial)
+
+---
+
+### 4. By.id: search
+- **Class:** `Pages.AmazonSearchPage`
+- **Method:** `searchForItem`
+- **Line:** 30
+- **Healed to:** `By.id("twotabsearchtextbox")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 5. By.tagName: searchbutton
+- **Class:** `Pages.AmazonSearchPage`
+- **Method:** `clickSearch`
+- **Line:** 34
+- **Healed to:** `By.id("nav-search-submit-button")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 6. By.xpath: products
+- **Class:** `UI_NonBDD.tempTest`
+- **Method:** `testProducts`
+- **Line:** 17
+- **Healed to:** `By.xpath("//a[normalize-space(.)='Test Cases']")`
+- **Reasoning:** [TIER 2]
+
+---
+
+
+---
+
+## Run: 2026-06-14T17:47:26.8094787
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/AmazonSearchPage.java` | searchForItem | sendData | `By.id: search` | `By.id("twotabsearchtextbox")` | 0.65 |
+| 2 | `src/test/java/Pages/AmazonSearchPage.java` | getItemsPrices | getTextFromMultipleElements | `By.cssSelector: .a-price` | `By.cssSelector("[data-cy='price-recipe']")` | 0.77 |
+
+## Detailed Reasoning
+
+### 1. By.id: search
+- **Class:** `Pages.AmazonSearchPage`
+- **Method:** `searchForItem`
+- **Line:** 30
+- **Healed to:** `By.id("twotabsearchtextbox")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.cssSelector: .a-price
+- **Class:** `Pages.AmazonSearchPage`
+- **Method:** `getItemsPrices`
+- **Line:** 42
+- **Healed to:** `By.cssSelector("[data-cy='price-recipe']")`
+- **Reasoning:** [TIER 2]
+
+---
+

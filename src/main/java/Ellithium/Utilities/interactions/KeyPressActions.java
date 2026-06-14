@@ -22,14 +22,15 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
      * @throws UnsupportedOperationException if not using AndroidDriver
      */
     public void pressKey(KeyEvent keyEvent) {
-        if (driver instanceof AndroidDriver) {
-            try {
-                ((AndroidDriver) driver).pressKey(keyEvent);
-            } catch (Exception e) {
-                Reporter.log("Failed to press key event: " + e.getMessage(), LogLevel.ERROR);
-            }
-        } else {
+        if (!(driver instanceof AndroidDriver)) {
             Reporter.log("pressKey requires AndroidDriver", LogLevel.ERROR);
+            throw new UnsupportedOperationException("pressKey is only supported on AndroidDriver");
+        }
+        try {
+            ((AndroidDriver) driver).pressKey(keyEvent);
+        } catch (Exception e) {
+            Reporter.log("Failed to press key event: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
         }
     }
 
@@ -43,7 +44,7 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
             try {
                 AndroidDriver androidDriver = (AndroidDriver) driver;
                 androidDriver.longPressKey(keyEvent);
-                new Sleep().sleepMillis(durationMillis);
+                Sleep.sleepMillis(durationMillis);
                 Reporter.log("Long pressed key for " + durationMillis + "ms", LogLevel.INFO_BLUE);
             } catch (Exception e) {
                 Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);

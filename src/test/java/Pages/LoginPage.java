@@ -16,15 +16,15 @@ public class LoginPage {
     }
 
     public void setUserName(String username) {
-        driverActions.elements().sendData(By.cssSelector("emaaaiiiail"), username);
+        driverActions.elements().sendData(By.id("username"), username);
     }
 
     public void setPassword(String password) {
-        driverActions.elements().sendData(By.id("sssecreeett"), password);
+        driverActions.elements().sendData(By.id("password"), password);
     }
 
     public SecureAreaPage clickLoginBtn() {
-        driverActions.elements().clickOnElement(By.tagName("btnnnn"));
+        driverActions.elements().clickOnElement(By.xpath("//button[normalize-space(.)='Login' and @type='submit']"));
         return new SecureAreaPage(driver);
     }
 }

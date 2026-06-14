@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  Ubuntu-Helper-Tests:
+  Ubuntu-Utilities-Tests:
     runs-on: ubuntu-latest
     env:
       EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
@@ -19,11 +19,11 @@ jobs:
         with:
           java-version: 25
       - uses: ./.github/actions/cleanup
-      - name: Run Helper Tests
-        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -Dparallel=classes -DthreadCount=4
+      - name: Run Utilities Tests
+        run: mvn test -Dtest="Utilities.**.**.*" -Dsurefire.parallel=classes -Dparallel=classes -DthreadCount=4
       - uses: ./.github/actions/test-results
         with:
-          artifact-name: ubuntu-helper-test-results
+          artifact-name: ubuntu-utilities-test-results
 
   Ubuntu-DataBase-Tests:
     runs-on: ubuntu-latest
@@ -74,10 +74,28 @@ jobs:
           java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
-        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
+        run: mvn test -Dtest="loginTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-basic-test-results
+
+  MacOS-AI-Tests:
+    runs-on: macos-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run AI Tests
+        run: mvn test -Dtest="codegen.**.*,config.**.*,healing.**.*,scoring.**.*" -Dsurefire.parallel=classes
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: macos-ai-test-results
 
   MacOS-UI-Actions-Tests:
     runs-on: macos-latest

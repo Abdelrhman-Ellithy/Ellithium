@@ -1,6 +1,6 @@
-package Helpers;
+package Ellithium.Utilities.helpers;
 
-import Ellithium.Utilities.helpers.TextHelper;
+
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;

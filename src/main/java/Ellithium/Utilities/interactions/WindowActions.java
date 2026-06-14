@@ -90,15 +90,16 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Closes the popup window and switches back to the main window.
      */
     public void closePopupWindow() {
+        Set<String> allHandles = new java.util.HashSet<>(driver.getWindowHandles());
+        String popupHandle = driver.getWindowHandle();
         driver.close();
         Reporter.log("Popup window closed. Switching back to the main window.", LogLevel.INFO_BLUE);
-        Set<String> remaining = driver.getWindowHandles();
-        if (remaining.isEmpty()) {
+        allHandles.remove(popupHandle);
+        if (allHandles.isEmpty()) {
             Reporter.log("No windows left after closing popup", LogLevel.ERROR);
             return;
         }
-        String main = remaining.iterator().next();
-        driver.switchTo().window(main);
+        driver.switchTo().window(allHandles.iterator().next());
     }
 
     /**

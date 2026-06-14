@@ -1,6 +1,5 @@
-package Helpers;
+package Ellithium.Utilities.helpers;
 
-import Ellithium.Utilities.helpers.JsonHelper;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.*;

@@ -1,6 +1,5 @@
-package Helpers;
+package Ellithium.Utilities.helpers;
 
-import Ellithium.Utilities.helpers.ExcelHelper;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.apache.poi.ss.usermodel.*;

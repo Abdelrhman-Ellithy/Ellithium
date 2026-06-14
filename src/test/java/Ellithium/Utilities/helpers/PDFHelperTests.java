@@ -1,4 +1,4 @@
-package Helpers;
+package Ellithium.Utilities.helpers;
 
 import Ellithium.Utilities.helpers.PDFHelper;
 import Ellithium.core.logging.LogLevel;

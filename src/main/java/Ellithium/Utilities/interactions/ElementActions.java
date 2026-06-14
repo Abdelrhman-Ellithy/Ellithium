@@ -394,7 +394,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             if (!file.exists()) {
                 throw new IllegalArgumentException("File does not exist: " + filePath);
             }
-            paths.append(file.getAbsolutePath()).append(System.lineSeparator());
+            paths.append(file.getAbsolutePath()).append("\n");
         }
         return paths.toString().trim();
     }

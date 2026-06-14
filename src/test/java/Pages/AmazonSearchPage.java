@@ -14,7 +14,7 @@ public class AmazonSearchPage {
 
     private final By searchBar = By.id("search");
 
-    private final By searchBtn = By.tagName("searchbutton");
+    private final By searchBtn = By.id("nav-search-submit-button");
 
     private final By searchItemName = By.cssSelector("h2 span");
 

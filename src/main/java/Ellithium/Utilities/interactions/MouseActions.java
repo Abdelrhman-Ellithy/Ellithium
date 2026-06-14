@@ -126,7 +126,9 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             } catch (org.openqa.selenium.StaleElementReferenceException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException e) {
+                Reporter.log("moveSliderTo: non-numeric slider value during reset: " + range.getText(), LogLevel.WARN);
+            }
         }
         if (steps > 5000) Reporter.log("moveSliderTo: reset loop exhausted without reaching zero", LogLevel.WARN);
         steps = 0;
@@ -139,7 +141,9 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             } catch (org.openqa.selenium.StaleElementReferenceException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException e) {
+                Reporter.log("moveSliderTo: non-numeric slider value during seek: " + range.getText(), LogLevel.WARN);
+            }
         }
         if (steps > 5000) Reporter.log("moveSliderTo: target loop exhausted without reaching " + targetValue, LogLevel.WARN);
         try {

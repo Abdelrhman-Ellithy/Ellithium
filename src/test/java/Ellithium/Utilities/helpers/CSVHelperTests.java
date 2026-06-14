@@ -1,6 +1,5 @@
-package Helpers;
+package Ellithium.Utilities.helpers;
 
-import Ellithium.Utilities.helpers.CSVHelper;
 import org.testng.annotations.*;
 import java.io.*;
 import java.nio.file.*;

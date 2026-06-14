@@ -13,7 +13,7 @@ public class tempTest extends Base.BaseTests {
     public void testProducts() {
         driverActions = new DriverActions(driver);
         driverActions.navigation().navigateToUrl("https://automationexercise.com/");
-        By products = By.xpath("products");
+        By products = By.xpath("//a[normalize-space(.)='Test Cases']");
         driverActions.elements().clickOnElement(products);
     }
 }

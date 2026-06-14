@@ -174,6 +174,10 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
      * @since 2.2.2 (unified mobile actions)
      */
     public MobileActions mobileActions() {
+        if (!(driver instanceof AppiumDriver)) {
+            throw new UnsupportedOperationException(
+                "mobileActions() requires an AppiumDriver but received: " + driver.getClass().getSimpleName());
+        }
         return new MobileActions<>((AppiumDriver) driver);
     }
 }
