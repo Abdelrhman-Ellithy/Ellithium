@@ -97,7 +97,7 @@
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
         <onnxRuntimeVersion>1.20.0</onnxRuntimeVersion>
-        <djlTokenizersVersion>0.31.0</djlTokenizersVersion>
+        <djlTokenizersVersion>0.36.0</djlTokenizersVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
