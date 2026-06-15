@@ -78,7 +78,7 @@
         <Cucumber>7.34.3</Cucumber>
         <cucumberTsetNG>7.34.3</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
-        <SQLiteVersion>3.53.1.0</SQLiteVersion>
+        <SQLiteVersion>3.53.2.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.6</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
@@ -93,7 +93,7 @@
         <oracleDBVersion>23.26.2.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>7.5.2</redisDBVersion>
-        <couchBaseVersion>3.11.3</couchBaseVersion>
+        <couchBaseVersion>3.12.0</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
         <onnxRuntimeVersion>1.20.0</onnxRuntimeVersion>
