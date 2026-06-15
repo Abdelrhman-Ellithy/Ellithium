@@ -16,9 +16,20 @@ public class LLMProviderFactory {
         String baseUrl = AIConfigLoader.getLlmBaseUrl();
         String apiKey = AIConfigLoader.getLlmApiKey();
         String model = AIConfigLoader.getLlmModel();
+        String providerClass = AIConfigLoader.getLlmProviderClass();
+        return createProvider(providerName, baseUrl, apiKey, model, providerClass);
+    }
+
+    static LLMProvider createProvider(String providerName, String baseUrl, String apiKey, String model) {
+        return createProvider(providerName, baseUrl, apiKey, model, null);
+    }
+
+    static LLMProvider createProvider(String providerName, String baseUrl, String apiKey,
+                                      String model, String providerClass) {
+        String name = providerName == null ? "" : providerName.trim().toLowerCase();
 
         if (apiKey == null || apiKey.isEmpty()) {
-            if ("local".equals(providerName)) {
+            if ("local".equals(name)) {
                 Reporter.log("Local LLM: no API key set — using placeholder bearer token", LogLevel.INFO_BLUE);
                 apiKey = "local";
             } else {
@@ -27,13 +38,12 @@ public class LLMProviderFactory {
             }
         }
 
-        String providerClass = AIConfigLoader.getLlmProviderClass();
         if (providerClass != null && !providerClass.isEmpty()) {
             LLMProvider custom = instantiate(providerClass, baseUrl, apiKey, model);
             if (custom != null) return custom;
         }
 
-        switch (providerName) {
+        switch (name) {
             case "gemini":
             case "google":
                 return new GeminiProvider(baseUrl, apiKey, model);
@@ -48,7 +58,6 @@ public class LLMProviderFactory {
             case "deepseek":
             case "local":
             default:
-                // Universal fallback for all models that follow the standard OpenAI API structure
                 return new OpenAICompatibleProvider(baseUrl, apiKey, model);
         }
     }
