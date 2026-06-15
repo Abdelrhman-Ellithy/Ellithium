@@ -674,6 +674,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
+        requireJavascriptContext("scrollIntoView");
         try {
             WebElement element;
             try {

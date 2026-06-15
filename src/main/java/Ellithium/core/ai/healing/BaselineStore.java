@@ -754,6 +754,7 @@ public class BaselineStore {
     private static void writeToDisk() {
         synchronized (LOCK) {
             try {
+                pruneByCount();
                 persist(new LinkedHashMap<>(baselines));
             } catch (Exception ignored) {}
         }

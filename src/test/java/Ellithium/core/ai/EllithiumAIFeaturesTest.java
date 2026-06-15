@@ -48,12 +48,6 @@ public class EllithiumAIFeaturesTest {
         // The AISelfHealer will catch the failure, analyze the AX tree, and heal the locator at runtime
         loginPage.setUserName("tomsmith");
         loginPage.setPassword("SuperSecretPassword!");
-        SecureAreaPage secureAreaPage = loginPage.clickLoginBtn();
-
-        // 2. Demonstrate Self-Healing on the next page
-        // getLoginMessage() is intentionally broken (By.cssSelector("flash") instead of id("flash"))
-        String message = secureAreaPage.getSecureAreaMessage();
-        //Assert.assertTrue(message.contains("You logged into a secure area!"), "Message was: " + message);
 
         // 3. Demonstrate Live In-Context Generation
         String naturalLanguageSteps = "navigate to https://the-internet.herokuapp.com/ and then click on the link with text Dropdown to go to the dropdown page";

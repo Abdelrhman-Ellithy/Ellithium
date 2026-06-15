@@ -267,12 +267,13 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         if (result.getTestClass() == null) {
             return false;
         }
-        String className = result.getTestClass().getName();
-        return className != null && (
-            className.toLowerCase().contains("cucumber") ||
-            className.toLowerCase().contains("feature") ||
-            className.toLowerCase().contains("stepdef")
-        );
+        Class<?> realClass = result.getTestClass().getRealClass();
+        for (Class<?> c = realClass; c != null && c != Object.class; c = c.getSuperclass()) {
+            if (c.getName().equals("io.cucumber.testng.AbstractTestNGCucumberTests")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isCucumberTestByAnnotation(ITestResult result) {

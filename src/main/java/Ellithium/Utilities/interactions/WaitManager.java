@@ -81,7 +81,6 @@ public class WaitManager <T extends WebDriver>{
     }
     private static final ArrayList<Class<? extends Exception>> expectedExceptions = new ArrayList<>();
     static {
-        expectedExceptions.add(java.lang.ClassCastException.class);
         expectedExceptions.add(org.openqa.selenium.NoSuchElementException.class);
         expectedExceptions.add(org.openqa.selenium.StaleElementReferenceException.class);
         expectedExceptions.add(org.openqa.selenium.JavascriptException.class);

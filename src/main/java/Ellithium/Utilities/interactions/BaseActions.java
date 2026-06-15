@@ -37,6 +37,26 @@ class BaseActions<T extends WebDriver> {
     FluentWait<T> getFluentWait(int timeoutInSeconds, int pollingEveryInMillis) {
         return WaitManager.getFluentWait(driver, timeoutInSeconds, pollingEveryInMillis);
     }
+
+    protected boolean isNativeMobileContext() {
+        if (!(driver instanceof io.appium.java_client.remote.SupportsContextSwitching ctxAware)) return false;
+        try {
+            String ctx = ctxAware.getContext();
+            return ctx == null || ctx.toUpperCase(java.util.Locale.ROOT).contains("NATIVE");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    protected void requireJavascriptContext(String operation) {
+        if (isNativeMobileContext()) {
+            Ellithium.core.reporting.Reporter.log(
+                    operation + " requires a web or webview context; not supported in a native mobile context",
+                    Ellithium.core.logging.LogLevel.ERROR);
+            throw new UnsupportedOperationException(
+                    operation + " is not supported in a native mobile (Appium) context");
+        }
+    }
     /**
      * Finds a WebElement using the given locator.
      * If the element is not found, and AI Self-Healing is configured, the healer

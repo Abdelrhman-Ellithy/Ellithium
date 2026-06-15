@@ -25,6 +25,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      */
     public void javascriptClick(By locator, int timeout, int pollingEvery) {
+        requireJavascriptContext("javascriptClick");
         WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
         Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -35,6 +36,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param locator Element locator
      */
     public  void javascriptClick( By locator) {
+        requireJavascriptContext("javascriptClick");
         // Re-locate element right before JavaScript execution to avoid stale element
         WebElement element = findWebElement( locator);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
@@ -45,6 +47,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param locator Element locator
      */
     public void scrollToElement(By locator) {
+        requireJavascriptContext("scrollToElement");
         // Re-locate element right before JavaScript execution to avoid stale element
         WebElement element = findWebElement( locator);
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
@@ -56,6 +59,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param timeout Maximum wait time in seconds
      */
     public  void javascriptClick( By locator, int timeout) {
+        requireJavascriptContext("javascriptClick");
         WebElement element = waitForVisibilityAndFindElement(locator, timeout, WaitManager.getDefaultPollingTime());
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
         Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -66,6 +70,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param yOffset Y offset to scroll
      */
     public  void scrollByOffset( int xOffset, int yOffset) {
+        requireJavascriptContext("scrollByOffset");
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
 
@@ -77,6 +82,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @param value Value to set
      */
     public  void setElementValueUsingJS( By locator, String value) {
+        requireJavascriptContext("setElementValueUsingJS");
         // Re-locate element right before JavaScript execution to avoid stale element
         JavascriptExecutor js = (JavascriptExecutor) driver;
         WebElement element = findWebElement( locator);

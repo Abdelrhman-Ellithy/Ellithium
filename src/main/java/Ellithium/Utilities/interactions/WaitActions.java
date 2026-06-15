@@ -11,6 +11,8 @@ import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitActions <T extends WebDriver> extends BaseActions<T>{
+    private static final int HEAL_RETRY_TIMEOUT = 5;
+
     public WaitActions(T driver) {
         super(driver);
     }
@@ -41,7 +43,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.elementToBeClickable(locator));
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            return getFluentWait(timeout,pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
+            return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
         }
     }
 
@@ -90,7 +92,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             return findWebElement( locator);
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            getFluentWait(timeout,pollingEvery).until(ExpectedConditions.textToBePresentInElement(element, text));
+            getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.textToBePresentInElement(element, text));
             return element;
         }
     }
@@ -110,7 +112,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.elementToBeSelected(locator));
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            return getFluentWait( timeout, pollingEvery).until(ExpectedConditions.elementToBeSelected(element));
+            return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeSelected(element));
         }
     }
 
@@ -130,7 +132,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.attributeToBe(locator, attribute, value));
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            return getFluentWait( timeout, pollingEvery).until(ExpectedConditions.attributeToBe(element, attribute, value));
+            return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeToBe(element, attribute, value));
         }
     }
 
@@ -150,7 +152,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.attributeContains(locator, attribute, value));
         } catch (org.openqa.selenium.TimeoutException e) {
             WebElement element = findWebElement(locator);
-            return getFluentWait( timeout, pollingEvery).until(ExpectedConditions.attributeContains(element, attribute, value));
+            return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeContains(element, attribute, value));
         }
     }
 
