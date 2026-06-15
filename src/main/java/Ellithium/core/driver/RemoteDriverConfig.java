@@ -246,8 +246,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param driverType The remote driver type to configure
      */
-    public void setRemoteDriverType(RemoteDriverType driverType) {
+    public RemoteDriverConfig setRemoteDriverType(RemoteDriverType driverType) {
         this.driverType = driverType;
+        return this;
     }
 
     /**
@@ -268,8 +269,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param remoteAddress The URL of the remote server to connect to
      */
-    public void setRemoteAddress(URL remoteAddress) {
+    public RemoteDriverConfig setRemoteAddress(URL remoteAddress) {
         this.remoteAddress = remoteAddress;
+        return this;
     }
 
     /**
@@ -287,8 +289,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param privateMode The private mode configuration to set
      */
-    public void setPrivateMode(PrivateMode privateMode) {
+    public RemoteDriverConfig setPrivateMode(PrivateMode privateMode) {
         this.privateMode = privateMode;
+        return this;
     }
 
     /**
@@ -306,8 +309,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param sandboxMode The sandbox mode configuration to set
      */
-    public void setSandboxMode(SandboxMode sandboxMode) {
+    public RemoteDriverConfig setSandboxMode(SandboxMode sandboxMode) {
         this.sandboxMode = sandboxMode;
+        return this;
     }
 
     /**
@@ -325,8 +329,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param webSecurityMode The web security mode configuration to set
      */
-    public void setWebSecurityMode(WebSecurityMode webSecurityMode) {
+    public RemoteDriverConfig setWebSecurityMode(WebSecurityMode webSecurityMode) {
         this.webSecurityMode = webSecurityMode;
+        return this;
     }
 
     /**
@@ -344,8 +349,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param pageLoadStrategyMode The page load strategy configuration to set
      */
-    public void setPageLoadStrategy(PageLoadStrategyMode pageLoadStrategyMode) {
+    public RemoteDriverConfig setPageLoadStrategy(PageLoadStrategyMode pageLoadStrategyMode) {
         this.pageLoadStrategyMode = pageLoadStrategyMode;
+        return this;
     }
 
     /**
@@ -363,8 +369,9 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
      * 
      * @param headlessMode The headless mode configuration to set
      */
-    public void setHeadlessMode(HeadlessMode headlessMode) {
+    public RemoteDriverConfig setHeadlessMode(HeadlessMode headlessMode) {
         this.headlessMode = headlessMode;
+        return this;
     }
 
     /**
@@ -401,11 +408,18 @@ public class RemoteDriverConfig implements DriverConfigBuilder {
 
     /**
      * Gets the driver type.
-     * 
+     *
      * @return The current driver type configuration
      */
     @Override
     public DriverType getDriverType() {
-        return driverType;
+        return driverType != null ? driverType : RemoteDriverType.REMOTE_Chrome;
+    }
+
+    @Override
+    public void validate() {
+        if (driverType == null) {
+            throw new IllegalStateException("RemoteDriverType must be set before creating a driver");
+        }
     }
 }

@@ -1,15 +1,22 @@
 package Ellithium.core.execution.listener;
+import Ellithium.core.ai.healing.EnsembleHealer;
+import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
+import org.openqa.selenium.WebDriver;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
+import Ellithium.core.ai.reporting.AIHealingReporter;
+import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.execution.context.TestContext;
+import Ellithium.core.execution.context.TestContextData;
 import Ellithium.Utilities.interactions.ScreenRecorderActions;
-import Ellithium.config.managment.ConfigContext;
-import Ellithium.config.managment.GeneralHandler;
+import Ellithium.config.management.ConfigContext;
+import Ellithium.config.management.GeneralHandler;
 import Ellithium.core.reporting.notification.TestResultCollector;
 import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;
@@ -28,7 +35,8 @@ import static org.testng.ITestResult.*;
 
 @Listeners({AllureTestNg.class})
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
-        IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener {
+        IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener,
+        IHookable {
     private long timeStartMills;
     private TestResultCollector testResultCollector;
 
@@ -37,6 +45,15 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
      * This allows us to correlate test results with their recordings
      */
     private static final Map<String, String> testResultToRecordingId = new ConcurrentHashMap<>();
+
+    /**
+     * Per-class driver snapshot captured after @BeforeClass completes.
+     * Used to re-adopt the driver onto worker threads that TestNG dispatches via
+     * dependsOnMethods — those threads never ran @BeforeClass and therefore have
+     * null ThreadLocals in DriverFactory, even though the browser is running fine.
+     */
+    private final Map<String, WebDriver>           classDriverMap = new ConcurrentHashMap<>();
+    private final Map<String, DriverConfiguration> classConfigMap = new ConcurrentHashMap<>();
 
 
     /**
@@ -47,7 +64,26 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     }
     
     @Override
+    public void run(IHookCallBack callBack, ITestResult testResult) {
+        TestContextData data = new TestContextData(
+                getTestIdentifier(testResult), testResult.getName(), resolveBrowser());
+        ScopedValue.where(TestContext.CURRENT, data)
+                .run(() -> callBack.runTestMethod(testResult));
+    }
+
+    private String resolveBrowser() {
+        try {
+            DriverConfiguration cfg = DriverFactory.getCurrentDriverConfiguration();
+            if (cfg != null && cfg.getDriverType() != null) return cfg.getDriverType().getName();
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    @Override
     public void onTestStart(ITestResult result) {
+        // Attribute every heal on this thread to this test, so the false-heal detector (R9) can flag a
+        // heal that was USED in a test that later FAILS. Safe for BDD + non-BDD (id needs no driver).
+        HealingTelemetryStore.setCurrentTest(getTestIdentifier(result));
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.clearCurrentExecutionLogs();
             Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
@@ -87,20 +123,25 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     
     @Override
     public void onTestFailure(ITestResult result) {
+        // False-heal detector (R9): flag any heal USED in this now-failed test as a wrong-heal suspect.
+        HealingTelemetryStore.markTestFailed(getTestIdentifier(result));
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
     }
-    
+
     @Override
     public void onTestSuccess(ITestResult result) {
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(GREEN + "[PASSED] TESTCASE " +result.getName()+" [PASSED]" + RESET);
         }
     }
-    
+
     @Override
     public void onTestSkipped(ITestResult result) {
+        HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(YELLOW + "[SKIPPED] TESTCASE " +result.getName()+" [SKIPPED]" + RESET);
         }
@@ -114,7 +155,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void onFinish(ITestContext context) {
         Logger.info(PURPLE + "[ALL TESTS COMPLETED]: " + context.getName().toUpperCase()+ " [ALL TESTS COMPLETED]" + RESET);
-        testResultCollector.collectTestResults(context);
+        try {
+            testResultCollector.collectTestResults(context);
+        } catch (Throwable t) {
+            Logger.info("Notification result collection skipped: " + t.getClass().getSimpleName());
+        }
         testResultToRecordingId.clear();
     }
     
@@ -158,7 +203,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         Logger.info(BLUE + "------------------------------------------" + RESET);
         Logger.info(CYAN + "------- Ellithium Engine TearDown --------" + RESET);
         Logger.info(BLUE + "------------------------------------------" + RESET);
-        int active = ScreenRecorderActions.activeCompilations.get();
+        int active = ScreenRecorderActions.pendingCompilations();
         try {
             if (active > 0) {
             Logger.info("Background video compilation in progress (" + active + " videos)");
@@ -170,13 +215,55 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Logger.logException(e);
         }
         finally {
+            AISelfHealer.cleanup();
+            EnsembleHealer.shutdown();
+            AIHealingReporter.generateReport();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
         }
     }
     
+    /**
+     * Restores the driver ThreadLocal on borrowed threads before any method body runs.
+     *
+     * TestNG's dependsOnMethods can dispatch a test method (or @BeforeMethod/@AfterMethod) to a
+     * thread-pool thread that never executed @BeforeClass for that class. Because DriverFactory
+     * stores the driver in ThreadLocals, those threads see null even though the browser is alive.
+     * We capture the driver snapshot after @BeforeClass (in afterInvocation below) and re-adopt
+     * it here so that all framework features — recording, screenshots, AI healing — work
+     * transparently without any user boilerplate.
+     */
+    @Override
+    public void beforeInvocation(IInvokedMethod method, ITestResult testResult) {
+        if (DriverFactory.getCurrentDriver() == null) {
+            String className = testResult.getTestClass().getRealClass().getName();
+            WebDriver savedDriver = classDriverMap.get(className);
+            DriverConfiguration savedConfig = classConfigMap.get(className);
+            if (savedDriver != null && savedConfig != null) {
+                DriverFactory.adoptCurrentThread(savedDriver, savedConfig);
+            }
+        }
+    }
+
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+        // Capture the driver right after @BeforeClass so we can restore it on worker threads.
+        if (method.getTestMethod().isBeforeClassConfiguration()) {
+            WebDriver current = DriverFactory.getCurrentDriver();
+            DriverConfiguration config = DriverFactory.getCurrentDriverConfiguration();
+            if (current != null) {
+                String className = testResult.getTestClass().getRealClass().getName();
+                classDriverMap.put(className, current);
+                classConfigMap.put(className, config);
+            }
+        } else if (method.getTestMethod().isAfterClassConfiguration()) {
+            // @AfterClass has quit the driver — remove the stale entry so recycled threads
+            // from the pool don't accidentally adopt the dead browser.
+            String className = testResult.getTestClass().getRealClass().getName();
+            classDriverMap.remove(className);
+            classConfigMap.remove(className);
+        }
+
         if (method.isTestMethod()){
             boolean driverExecution=(DriverFactory.getCurrentDriver() != null);
             DriverConfiguration currentDriverConfiguration=DriverFactory.getCurrentDriverConfiguration();
@@ -238,7 +325,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     private String getTestName(ITestResult result) {
         StringBuilder name = new StringBuilder(result.getName());
         name.append("_");
-        name.append(DriverFactory.getCurrentDriverConfiguration().getDriverType().getName().toUpperCase());
+        Ellithium.core.driver.DriverConfiguration cfg = DriverFactory.getCurrentDriverConfiguration();
+        name.append(cfg != null && cfg.getDriverType() != null ? cfg.getDriverType().getName().toUpperCase() : "UNKNOWN");
         name.append("_");
         Object[] parameters = result.getParameters();
         if (parameters != null && parameters.length > 0) {

@@ -144,66 +144,89 @@ public class APIListener implements Filter {
                            FilterContext ctx) {
         Response response = ctx.next(requestSpec, responseSpec);
 
-        logRequestDetails(requestSpec);
-        logResponseDetails(response);
-
-        return response;
-    }
-
-    @FunctionalInterface
-    private interface LogAction {
-        void execute() throws Exception;
-    }
-
-    private void safeLog(String errorPrefix, LogAction action) {
+        // Request logging
         try {
-            action.execute();
-        } catch (Exception e) {
-            Reporter.log("Error logging " + errorPrefix + ": " + e.getMessage(), LogLevel.ERROR);
-        }
-    }
-
-    private void logRequestDetails(FilterableRequestSpecification requestSpec) {
-        safeLog("request basic info", () -> {
             Reporter.log("Request Method: ", LogLevel.INFO_BLUE, requestSpec.getMethod());
             Reporter.log("Request URI: ", LogLevel.INFO_BLUE, requestSpec.getURI());
-        });
+        } catch (Exception e) {
+            Reporter.log("Error logging request basic info: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("request headers", () -> Reporter.log("Request Headers: ", LogLevel.INFO_BLUE,
-                requestSpec.getHeaders() != null ? headersToJson(requestSpec.getHeaders()).toString() : "No Headers"));
+        try {
+            Reporter.log("Request Headers: ", LogLevel.INFO_BLUE,
+                    requestSpec.getHeaders() != null 
+                      ? headersToJson(requestSpec.getHeaders()).toString() 
+                      : "No Headers");
+        } catch (Exception e) {
+            Reporter.log("Error logging request headers: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("request parameters", () -> {
+        try {
             Reporter.log("Request Parameters: ", LogLevel.INFO_BLUE,
-                    !requestSpec.getQueryParams().isEmpty() ? mapToJson(requestSpec.getQueryParams()).toString() : "No Query Params");
+                    !requestSpec.getQueryParams().isEmpty()
+                      ? mapToJson(requestSpec.getQueryParams()).toString() 
+                      : "No Query Params");
             Reporter.log("Request Base Path: ", LogLevel.INFO_BLUE,
                     requestSpec.getBasePath() != null ? requestSpec.getBasePath() : "No Base Path");
             Reporter.log("Request Proxy Specification: ", LogLevel.INFO_BLUE,
                     requestSpec.getProxySpecification() != null ? requestSpec.getProxySpecification().toString() : "No Proxy");
             Reporter.log("Request ContentType: ", LogLevel.INFO_BLUE,
                     requestSpec.getContentType() != null ? requestSpec.getContentType() : "No Content Type");
-        });
+        } catch (Exception e) {
+            Reporter.log("Error logging request parameters: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("request cookies", () -> Reporter.log("Request Cookies: ", LogLevel.INFO_BLUE, handleCookies(requestSpec.getCookies())));
+        try {
+            Reporter.log("Request Cookies: ", LogLevel.INFO_BLUE,
+                    handleCookies(requestSpec.getCookies()));
+        } catch (Exception e) {
+            Reporter.log("Error logging request cookies: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("request body", () -> Reporter.log("Request Body: ", LogLevel.INFO_BLUE,
-                obfuscateData(requestSpec.getBody() != null ? requestSpec.getBody().toString() : "No Body")));
-    }
+        try {
+            Reporter.log("Request Body: ", LogLevel.INFO_BLUE,
+                    obfuscateData(requestSpec.getBody() != null ? requestSpec.getBody().toString() : "No Body"));
+        } catch (Exception e) {
+            Reporter.log("Error logging request body: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-    private void logResponseDetails(Response response) {
-        safeLog("response basic info", () -> {
+        // Response logging
+        try {
             Reporter.log("Response Status Code: ", LogLevel.INFO_BLUE, String.valueOf(response.getStatusCode()));
             Reporter.log("Response ContentType: ", LogLevel.INFO_BLUE, response.getContentType());
             Reporter.log("Response Status Line: ", LogLevel.INFO_BLUE, response.getStatusLine());
-        });
+        } catch (Exception e) {
+            Reporter.log("Error logging response basic info: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("response cookies", () -> Reporter.log("Response Cookies: ", LogLevel.INFO_BLUE, handleCookies(response.detailedCookies())));
+        try {
+            Reporter.log("Response Cookies: ", LogLevel.INFO_BLUE,
+                    handleCookies(response.detailedCookies()));
+        } catch (Exception e) {
+            Reporter.log("Error logging response cookies: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("response headers", () -> Reporter.log("Response Headers: ", LogLevel.INFO_BLUE,
-                response.getHeaders() != null ? headersToJson(response.getHeaders()).toString() : "No Headers"));
+        try {
+            Reporter.log("Response Headers: ", LogLevel.INFO_BLUE,
+                    response.getHeaders() != null 
+                      ? headersToJson(response.getHeaders()).toString() 
+                      : "No Headers");
+        } catch (Exception e) {
+            Reporter.log("Error logging response headers: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("response body", () -> Reporter.log("Response Body: ", LogLevel.INFO_BLUE,
-                obfuscateData(response.getBody() != null ? response.getBody().asString() : "No Body")));
+        try {
+            Reporter.log("Response Body: ", LogLevel.INFO_BLUE,
+                    obfuscateData(response.getBody() != null ? response.getBody().asString() : "No Body"));
+        } catch (Exception e) {
+            Reporter.log("Error logging response body: " + e.getMessage(), LogLevel.ERROR);
+        }
 
-        safeLog("response time", () -> Reporter.log("Response Time (ms): ", LogLevel.INFO_BLUE, String.valueOf(response.getTime())));
+        try {
+            Reporter.log("Response Time (ms): ", LogLevel.INFO_BLUE, String.valueOf(response.getTime()));
+        } catch (Exception e) {
+            Reporter.log("Error logging response time: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return response;
     }
 }

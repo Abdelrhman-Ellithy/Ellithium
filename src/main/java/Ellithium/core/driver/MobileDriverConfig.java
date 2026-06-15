@@ -34,7 +34,7 @@ import java.util.Map;
 public class MobileDriverConfig implements DriverConfigBuilder {
     private MobileDriverType driverType;
     private URL remoteAddress;
-    private MutableCapabilities internalCapabilities;
+    protected MutableCapabilities internalCapabilities;
     private static final String DEFAULT_URL = "http://127.0.0.1:4723";
 
     /**

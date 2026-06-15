@@ -30,7 +30,7 @@ public class CSVHelper {
         List<Map<String, String>> data = new ArrayList<>();
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord csvRecord : csvParser) {
                     Map<String, String> recordMap = new HashMap<>();
                     csvRecord.toMap().forEach(recordMap::put);
@@ -53,7 +53,12 @@ public class CSVHelper {
      */
     public static void setCsvData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to write data to CSV file: ", LogLevel.INFO_GREEN, filePath);
-        File csvFile = new File(filePath );
+        if (data.isEmpty()) {
+            Reporter.log("No data to write to CSV file: ", LogLevel.WARN, filePath);
+            return;
+        }
+        File csvFile = new File(filePath);
+        List<String> headers = new ArrayList<>(data.get(0).keySet());
         synchronized (getFileLock(filePath)) {
             try {
                 if (!csvFile.exists()) {
@@ -61,10 +66,13 @@ public class CSVHelper {
                     Reporter.log("Creating new CSV file: ", LogLevel.INFO_GREEN, filePath);
                 }
                 try (Writer writer = new FileWriter(csvFile);
-                     CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(data.get(0).keySet().toArray(new String[0])))) {
-
+                     CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers.toArray(new String[0])).get())) {
                     for (Map<String, String> record : data) {
-                        csvPrinter.printRecord(record.values());
+                        List<String> values = new ArrayList<>();
+                        for (String header : headers) {
+                            values.add(record.getOrDefault(header, ""));
+                        }
+                        csvPrinter.printRecord(values);
                     }
                     Reporter.log("Successfully wrote data to CSV file: ", LogLevel.INFO_GREEN, filePath);
                 } catch (IOException e) {
@@ -89,7 +97,7 @@ public class CSVHelper {
 
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
 
                 for (CSVRecord csvRecord : csvParser) {
                     if (csvRecord.get(columnName).equals(columnValue)) {
@@ -117,7 +125,7 @@ public class CSVHelper {
         Reporter.log("Attempting to read column: " + columnName + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord record : csvParser) {
                     columnData.add(record.get(columnName));
                 }
@@ -141,7 +149,7 @@ public class CSVHelper {
         Reporter.log("Attempting to read cell at row: " + rowIndex + ", column: " + columnName, LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 List<CSVRecord> records = csvParser.getRecords();
                 if (rowIndex < records.size()) {
                     cellData = records.get(rowIndex).get(columnName);
@@ -165,7 +173,7 @@ public class CSVHelper {
         Reporter.log("Attempting to read row at index: " + rowIndex + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 List<CSVRecord> records = csvParser.getRecords();
                 if (rowIndex < records.size()) {
                     rowData = records.get(rowIndex).toMap();
@@ -218,12 +226,20 @@ public class CSVHelper {
      */
     public static void appendData(String filePath, List<Map<String, String>> data) {
         Reporter.log("Attempting to append data to CSV file: ", LogLevel.INFO_GREEN, filePath);
+        if (data.isEmpty()) {
+            Reporter.log("No data to append to CSV file: ", LogLevel.WARN, filePath);
+            return;
+        }
+        List<String> headers = new ArrayList<>(data.get(0).keySet());
         synchronized (getFileLock(filePath)) {
-            try (Writer writer = new FileWriter(filePath , true);
-                 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(data.get(0).keySet().toArray(new String[0])).withSkipHeaderRecord())) {
-
+            try (Writer writer = new FileWriter(filePath, true);
+                 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers.toArray(new String[0])).setSkipHeaderRecord(true).get())) {
                 for (Map<String, String> record : data) {
-                    csvPrinter.printRecord(record.values());
+                    List<String> values = new ArrayList<>();
+                    for (String header : headers) {
+                        values.add(record.getOrDefault(header, ""));
+                    }
+                    csvPrinter.printRecord(values);
                 }
                 Reporter.log("Successfully appended data to CSV file: ", LogLevel.INFO_GREEN, filePath);
             } catch (IOException e) {
@@ -317,8 +333,8 @@ public class CSVHelper {
         Reporter.log("Attempting to sort data by column: " + columnName, LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> sortedData = getCsvData(filePath);
         sortedData.sort((row1, row2) -> {
-            String val1 = row1.get(columnName);
-            String val2 = row2.get(columnName);
+            String val1 = row1.getOrDefault(columnName, "");
+            String val2 = row2.getOrDefault(columnName, "");
             return ascending ? val1.compareTo(val2) : val2.compareTo(val1);
         });
         Reporter.log("Successfully sorted data in CSV file: ", LogLevel.INFO_GREEN, filePath);
@@ -360,7 +376,7 @@ public class CSVHelper {
         List<List<String>> listData = new ArrayList<>();
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord record : csvParser) {
                     listData.add(new ArrayList<>(record.toMap().values()));
                 }
@@ -380,8 +396,10 @@ public class CSVHelper {
      */
     public static void mergeCsvFiles(String filePath1, String filePath2, String outputFilePath) {
         Reporter.log("Attempting to merge CSV files: " + filePath1 + " and " + filePath2, LogLevel.INFO_GREEN, outputFilePath);
-        synchronized (getFileLock(filePath1)) {
-            synchronized (getFileLock(filePath2)) {
+        String firstLock  = filePath1.compareTo(filePath2) <= 0 ? filePath1 : filePath2;
+        String secondLock = filePath1.compareTo(filePath2) <= 0 ? filePath2 : filePath1;
+        synchronized (getFileLock(firstLock)) {
+            synchronized (getFileLock(secondLock)) {
                 try {
                     List<Map<String, String>> data1 = getCsvData(filePath1);
                     List<Map<String, String>> data2 = getCsvData(filePath2);
@@ -421,7 +439,7 @@ public class CSVHelper {
         Reporter.log("Validating structure of CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
             try (Reader reader = new FileReader(filePath );
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 Set<String> actualColumns = csvParser.getHeaderMap().keySet();
                 return actualColumns.containsAll(expectedColumns);
             } catch (IOException e) {

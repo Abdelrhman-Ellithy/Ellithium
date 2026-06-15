@@ -20,11 +20,12 @@ import org.openqa.selenium.safari.SafariOptions;
 import java.net.URL;
 import static Ellithium.core.driver.LocalDriverType.*;
 import static Ellithium.core.driver.RemoteDriverType.*;
-import static Ellithium.core.recording.internal.VideoRecordingManager.isRecordingEnabled;
 
 public class BrowserSetUp {
 
-    public static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+    private BrowserSetUp() {}
+
+    static WebDriver setupLocalDriver(DriverType driverType,Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         switch (driverType) {
             case Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
@@ -46,37 +47,33 @@ public class BrowserSetUp {
                 if (capabilities != null) safariOptions=safariOptions.merge(capabilities);
                 return new SafariDriver(safariOptions);
             }
-            default -> {
-                return null;
-            }
+            default -> throw new IllegalStateException("Unsupported local driver type: " + driverType);
         }
     }
-    public static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
+    static RemoteWebDriver setupRemoteDriver(DriverType driverType, URL remoteAddress, Capabilities capabilities, HeadlessMode headlessMode, PageLoadStrategyMode pageLoadStrategy, PrivateMode privateMode, SandboxMode sandboxMode, WebSecurityMode webSecurityMode) {
         RemoteWebDriver driver;
         switch (driverType) {
             case REMOTE_Chrome -> {
                 ChromeOptions chromeOptions = configureChromeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(chromeOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) chromeOptions = chromeOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, chromeOptions);
             }
             case REMOTE_FireFox -> {
                 FirefoxOptions firefoxOptions = configureFirefoxOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(firefoxOptions);
-                driver = new RemoteWebDriver(remoteAddress, capabilities);
+                if (capabilities != null) firefoxOptions = firefoxOptions.merge(capabilities);
+                driver = new RemoteWebDriver(remoteAddress, firefoxOptions);
             }
             case REMOTE_Edge -> {
                 EdgeOptions edgeOptions = configureEdgeOptions(headlessMode, pageLoadStrategy, privateMode, sandboxMode, webSecurityMode);
-                capabilities.merge(edgeOptions);
+                if (capabilities != null) edgeOptions = edgeOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, edgeOptions);
             }
             case REMOTE_Safari -> {
                 SafariOptions safariOptions = configureSafariOptions(pageLoadStrategy, privateMode);
-                capabilities.merge(safariOptions);
+                if (capabilities != null) safariOptions = safariOptions.merge(capabilities);
                 driver = new RemoteWebDriver(remoteAddress, safariOptions);
             }
-            default -> {
-                return null;
-            }
+            default -> throw new IllegalStateException("Unsupported remote driver type: " + driverType);
         }
         driver.setFileDetector(new LocalFileDetector());
         return driver;
@@ -162,7 +159,6 @@ public class BrowserSetUp {
 
         // Miscellaneous
         options.addArguments("--metrics-recording-only");
-        options.addArguments("--host-resolver-rules");
         options.addArguments("--disable-device-discovery-notifications");
         options.addArguments("--ash-disable-system-sounds");
         options.addArguments("--disable-plugins");
@@ -170,23 +166,13 @@ public class BrowserSetUp {
         // ====================================================================
         // REQUIRED FOR CDP
         // ====================================================================
-        options.addArguments("--enable-features=NetworkService");
-        options.addArguments("--enable-features=NetworkServiceInProcess");
-        options.addArguments("--enable-use-zoom-for-dsf");
+        options.addArguments("--enable-features=NetworkService,NetworkServiceInProcess");
         options.setCapability("unhandledPromptBehavior", "ignore");
         options.setCapability("webSocketUrl", true);
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-component-extensions-with-background-pages");
         Reporter.log(  "Chrome Options Configured" , LogLevel.INFO_GREEN);
-        boolean isRecordingEnabled = isRecordingEnabled();
-
-        if (!isRecordingEnabled) {
-            // These can interfere with CDP but are safe when not recording
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--enable-logging");
-            options.addArguments("--log-net-log");
-            options.addArguments("--net-log-capture-mode");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--disable-component-extensions-with-background-pages");
-        }
         addCapabilitiesToParam(options);
         return options;
     }
@@ -210,10 +196,6 @@ public class BrowserSetUp {
             options.addPreference("browser.privatebrowsing.autostart", true);
         }
 
-        if (sandboxMode == SandboxMode.NoSandboxMode) {
-            // Firefox doesn't have a single --no-sandbox flag like Chromium; only use if you know what you're doing
-            // (left intentionally blank or use environment-specific service config)
-        }
         if (webSecurityMode == WebSecurityMode.AllowUnsecure) {
             options.addPreference("security.mixed_content.block_active_content", false);
             options.addPreference("security.mixed_content.block_display_content", false);
@@ -351,25 +333,13 @@ public class BrowserSetUp {
         // =========================================================
         // REQUIRED FOR CDP / BiDi
         // =========================================================
-        options.addArguments("--enable-features=NetworkService");
-        options.addArguments("--enable-features=NetworkServiceInProcess");
-        options.addArguments("--enable-use-zoom-for-dsf");
+        options.addArguments("--enable-features=NetworkService,NetworkServiceInProcess");
         options.setCapability("webSocketUrl", true);
         options.setCapability(CapabilityType.UNHANDLED_PROMPT_BEHAVIOUR, UnexpectedAlertBehaviour.IGNORE);
 
-        // =========================================================
-        // CONDITIONAL (NOT recording)
-        // =========================================================
-        boolean isRecordingEnabled = isRecordingEnabled();
-        if (!isRecordingEnabled) {
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--enable-logging");
-            options.addArguments("--log-net-log");
-            options.addArguments("--net-log-capture-mode");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--disable-component-extensions-with-background-pages");
-        }
-
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-component-extensions-with-background-pages");
         Reporter.log("Edge Options Configured", LogLevel.INFO_GREEN);
         addCapabilitiesToParam(options);
         return options;

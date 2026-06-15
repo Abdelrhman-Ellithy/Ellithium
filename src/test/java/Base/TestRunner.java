@@ -4,8 +4,8 @@ import io.cucumber.testng.CucumberOptions;
 
 @CucumberOptions(
         glue = {"UI_BDD", "Base"},
-        features="src/test/resources/features",
-        tags = "@run"
+        features="src/test/resources/features"
+        ,tags="@test"
 )
 public class TestRunner extends BDDSetup {
 }

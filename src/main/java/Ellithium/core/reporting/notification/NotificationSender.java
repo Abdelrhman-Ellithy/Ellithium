@@ -4,7 +4,6 @@ import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.slack.api.Slack;
 import com.slack.api.webhook.WebhookResponse;
-import org.jetbrains.annotations.NotNull;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -63,7 +62,12 @@ public class NotificationSender {
             });
 
             Message message = new MimeMessage(session);
-            message.setFrom(createEncodedInternetAddress(config.getFromEmail()));
+            InternetAddress fromAddress = createEncodedInternetAddress(config.getFromEmail());
+            if (fromAddress == null) {
+                Reporter.log("Invalid from email address, cannot send email", LogLevel.ERROR);
+                return false;
+            }
+            message.setFrom(fromAddress);
             message.setRecipients(Message.RecipientType.TO, createEncodedInternetAddresses(config.getToEmail()));
             message.setSubject(encodeEmailSubject(subject));
 
@@ -87,7 +91,6 @@ public class NotificationSender {
         }
     }
 
-    @NotNull
     private Properties getProperties() {
         Properties mailProps = new Properties();
         mailProps.put("mail.smtp.auth", "true");
@@ -239,11 +242,12 @@ public class NotificationSender {
             String channel = config.getSlackChannel();
             String username = config.getSlackUsername();
 
-            Slack slack = Slack.getInstance();
-
             String payload = buildSlackPayload(message, channel, username);
 
-            WebhookResponse response = slack.send(webhookUrl, payload);
+            WebhookResponse response;
+            try (Slack slack = Slack.getInstance()) {
+                response = slack.send(webhookUrl, payload);
+            }
 
             if (response.getCode() == 200) {
                 Reporter.log("Slack notification sent successfully to channel " + channel, LogLevel.INFO_GREEN);
@@ -292,8 +296,13 @@ public class NotificationSender {
     private String buildSlackPayload(String message, String channel, String username) {
         return String.format(
             "{\"channel\":\"%s\",\"username\":\"%s\",\"text\":\"%s\",\"icon_emoji\":\":robot_face:\"}",
-            channel, username, message.replace("\n", "\\n")
+            escapeJson(channel), escapeJson(username), escapeJson(message)
         );
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
 
     /**

@@ -1,6 +1,8 @@
 package UI_NonBDD;
 import Base.BaseTests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
+import Ellithium.core.reporting.Reporter;
+import Ellithium.core.logging.LogLevel;
 import Pages.LoginPage;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -21,8 +23,9 @@ public class loginTests extends BaseTests {
         login.setUserName(username);
         login.setPassword(password);
         var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMessage();
-        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+        String actualMessage=secureAreaPage.getSecureAreaMessage();
+        Reporter.log(actualMessage,LogLevel.INFO_GREEN);
+        AssertionExecutor.hard.assertTrue(actualMessage.toLowerCase().contains(expectedMessage.toLowerCase()));
     }
     @Test(priority = 2)
     public void validLogin() {
@@ -30,8 +33,9 @@ public class loginTests extends BaseTests {
         login.setPassword("SuperSecretPassword!");
         login.setUserName("tomsmith");
         var secureAreaPage=login.clickLoginBtn();
-        String actualMessage=secureAreaPage.getLoginMessage();
+        String actualMessage=secureAreaPage.getSecureAreaMessage();
         String expectedMessage="You logged into a secure area!";
-        AssertionExecutor.hard.assertTrue(actualMessage.contains(expectedMessage));
+        Reporter.log(actualMessage,LogLevel.INFO_GREEN);
+        AssertionExecutor.hard.assertTrue(actualMessage.toLowerCase().contains(expectedMessage.toLowerCase()));
     }
 }

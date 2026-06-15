@@ -147,7 +147,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>2.4.0</Ellithiumversion>
+    <Ellithiumversion>3.0.0-beta</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>
@@ -162,7 +162,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.14.0</version>
+        <version>3.15.0</version>
         <configuration>
             <source>21</source>
             <target>21</target>
@@ -172,7 +172,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.6</version>
         <configuration>
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <testFailureIgnore>true</testFailureIgnore>
@@ -197,7 +197,7 @@ Here is the updated **Getting Started** section formatted for your README file:
     <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.6.3</version>
         <executions>
             <execution>
                 <id>intialize</id>

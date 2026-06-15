@@ -3,7 +3,8 @@ description: 'Sets up Java and Maven dependencies'
 
 inputs:
   java-version:
-    required: true
+    required: false
+    default: '25'
     description: 'Java version to use'
 
 runs:

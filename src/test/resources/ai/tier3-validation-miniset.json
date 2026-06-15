@@ -1,0 +1,214 @@
+{
+  "_about": "Tier 3 real-page validation mini-set (Phase B1). Each entry is a simulated 'page': a broken-locator query context plus a pool of candidate element docs, exactly one marked correct. The measurement runner (Tier3ValidationTest) embeds the query and every candidate, ranks by cosine, and reports Recall@K + precision@threshold + fallthrough@99%-precision per category. This is the SHIP GATE and the cross-encoder go/no-go bar (synthetic-only numbers don't count). Candidate keys are the canonical buildElementDocument fields (id,name,resource-id,accessibility-id,aria-label,content-desc,role,placeholder,data-testid,data-test,title,type,label,class,tag,text). Add real pages across sectors over time. fingerprint = last-known attrs before the break (omit for cold-start, R5).",
+  "entries": [
+    {
+      "name": "herokuapp-login-username",
+      "sector": "auth",
+      "category": "INPUT",
+      "action": "sendData",
+      "method": "setUserName",
+      "brokenLocator": "By.id: username",
+      "fingerprint": {"id": "username", "tag": "input"},
+      "candidates": [
+        {"correct": true, "tag": "input", "id": "username", "name": "username", "type": "text"},
+        {"correct": false, "tag": "input", "id": "password", "name": "password", "type": "password"},
+        {"correct": false, "tag": "button", "type": "submit", "class": "radius", "text": "Login"},
+        {"correct": false, "tag": "h2", "text": "Login Page"},
+        {"correct": false, "tag": "h4", "class": "subheader", "text": "This is where you can log into the secure area."}
+      ]
+    },
+    {
+      "name": "herokuapp-login-password",
+      "sector": "auth",
+      "category": "INPUT",
+      "action": "sendData",
+      "method": "setPassword",
+      "brokenLocator": "By.id: password",
+      "fingerprint": {"id": "password", "tag": "input"},
+      "candidates": [
+        {"correct": true, "tag": "input", "id": "password", "name": "password", "type": "password"},
+        {"correct": false, "tag": "input", "id": "username", "name": "username", "type": "text"},
+        {"correct": false, "tag": "button", "type": "submit", "class": "radius", "text": "Login"},
+        {"correct": false, "tag": "a", "href": "#", "text": "Forgot password?"}
+      ]
+    },
+    {
+      "name": "herokuapp-login-button",
+      "sector": "auth",
+      "category": "CLICKABLE",
+      "action": "clickOnElement",
+      "method": "clickLoginButton",
+      "brokenLocator": "By.cssSelector: button.radius",
+      "fingerprint": {"tag": "button", "text": "Login"},
+      "candidates": [
+        {"correct": true, "tag": "button", "type": "submit", "class": "radius", "text": "Login"},
+        {"correct": false, "tag": "input", "id": "username", "name": "username", "type": "text"},
+        {"correct": false, "tag": "input", "id": "password", "name": "password", "type": "password"},
+        {"correct": false, "tag": "a", "class": "github", "text": "Fork me on GitHub"}
+      ]
+    },
+    {
+      "name": "herokuapp-secure-flash-message",
+      "sector": "auth",
+      "category": "READABLE",
+      "action": "getText",
+      "method": "getSecureAreaMessage",
+      "brokenLocator": "By.id: message",
+      "fingerprint": {"id": "flash", "tag": "div"},
+      "candidates": [
+        {"correct": true, "tag": "div", "id": "flash", "class": "flash success", "text": "You logged into a secure area!"},
+        {"correct": false, "tag": "h2", "text": "Secure Area"},
+        {"correct": false, "tag": "h4", "class": "subheader", "text": "Welcome to the Secure Area. When you are done click logout below."},
+        {"correct": false, "tag": "a", "class": "button secondary radius", "href": "/logout", "text": "Logout"}
+      ]
+    },
+    {
+      "name": "herokuapp-secure-logout-button",
+      "sector": "auth",
+      "category": "CLICKABLE",
+      "action": "clickOnElement",
+      "method": "clickLogoutButton",
+      "brokenLocator": "By.cssSelector: a.button",
+      "candidates": [
+        {"correct": true, "tag": "a", "class": "button secondary radius", "href": "/logout", "text": "Logout"},
+        {"correct": false, "tag": "div", "id": "flash", "class": "flash success", "text": "You logged into a secure area!"},
+        {"correct": false, "tag": "h2", "text": "Secure Area"}
+      ]
+    },
+    {
+      "name": "ecommerce-search-box",
+      "sector": "ecommerce",
+      "category": "INPUT",
+      "action": "sendData",
+      "method": "searchProducts",
+      "brokenLocator": "By.id: twotabsearchtextbox",
+      "fingerprint": {"id": "search", "tag": "input"},
+      "candidates": [
+        {"correct": true, "tag": "input", "id": "search", "name": "q", "type": "search", "placeholder": "Search products", "aria-label": "Search"},
+        {"correct": false, "tag": "input", "id": "zip", "name": "zip", "type": "text", "placeholder": "Enter ZIP code"},
+        {"correct": false, "tag": "button", "type": "submit", "class": "search-btn", "aria-label": "Submit search", "text": "Search"},
+        {"correct": false, "tag": "a", "class": "cart-link", "href": "/cart", "text": "Cart"}
+      ]
+    },
+    {
+      "name": "ecommerce-search-submit",
+      "sector": "ecommerce",
+      "category": "CLICKABLE",
+      "action": "clickOnElement",
+      "method": "clickSearchButton",
+      "brokenLocator": "By.id: nav-search-submit-button",
+      "candidates": [
+        {"correct": true, "tag": "button", "type": "submit", "class": "search-btn", "aria-label": "Submit search", "text": "Search"},
+        {"correct": false, "tag": "input", "id": "search", "name": "q", "type": "search", "placeholder": "Search products"},
+        {"correct": false, "tag": "button", "class": "filter-btn", "text": "Filters"},
+        {"correct": false, "tag": "a", "class": "cart-link", "href": "/cart", "text": "Cart"}
+      ]
+    },
+    {
+      "name": "ecommerce-product-price",
+      "sector": "ecommerce",
+      "category": "READABLE",
+      "action": "getText",
+      "method": "getProductPrice",
+      "brokenLocator": "By.cssSelector: .a-price-whole",
+      "fingerprint": {"tag": "span", "class": "price"},
+      "candidates": [
+        {"correct": true, "tag": "span", "class": "product-price", "data-testid": "price", "text": "$129.99"},
+        {"correct": false, "tag": "span", "class": "product-title", "text": "Wireless Headphones"},
+        {"correct": false, "tag": "span", "class": "rating", "aria-label": "4.5 out of 5 stars", "text": "4.5"},
+        {"correct": false, "tag": "button", "class": "add-to-cart", "text": "Add to Cart"}
+      ]
+    },
+    {
+      "name": "ecommerce-add-to-cart-grid",
+      "sector": "ecommerce",
+      "category": "CLICKABLE",
+      "action": "clickOnElement",
+      "method": "clickAddToCart",
+      "brokenLocator": "By.cssSelector: .product-card .add-to-cart",
+      "fingerprint": {"tag": "button", "data-testid": "add-to-cart", "text": "Add to Cart"},
+      "candidates": [
+        {"correct": true, "tag": "button", "class": "add-to-cart primary", "data-testid": "add-to-cart", "text": "Add to Cart"},
+        {"correct": false, "tag": "button", "class": "wishlist", "data-testid": "add-to-wishlist", "aria-label": "Add to wishlist", "text": "Save"},
+        {"correct": false, "tag": "button", "class": "compare", "text": "Compare"},
+        {"correct": false, "tag": "span", "class": "product-price", "text": "$129.99"}
+      ]
+    },
+    {
+      "name": "banking-transfer-amount",
+      "sector": "banking",
+      "category": "INPUT",
+      "action": "sendData",
+      "method": "enterTransferAmount",
+      "brokenLocator": "By.id: amount",
+      "fingerprint": {"id": "amount", "tag": "input"},
+      "candidates": [
+        {"correct": true, "tag": "input", "id": "transfer-amount", "name": "amount", "type": "number", "placeholder": "0.00", "aria-label": "Transfer amount"},
+        {"correct": false, "tag": "input", "id": "account-from", "name": "from", "type": "text", "placeholder": "From account"},
+        {"correct": false, "tag": "input", "id": "account-to", "name": "to", "type": "text", "placeholder": "To account"},
+        {"correct": false, "tag": "button", "type": "submit", "class": "btn-primary", "text": "Transfer"}
+      ]
+    },
+    {
+      "name": "banking-account-balance",
+      "sector": "banking",
+      "category": "READABLE",
+      "action": "getText",
+      "method": "getAccountBalance",
+      "brokenLocator": "By.id: balance",
+      "fingerprint": {"id": "balance", "tag": "span"},
+      "candidates": [
+        {"correct": true, "tag": "span", "id": "current-balance", "class": "balance-amount", "data-testid": "balance", "text": "$12,450.30"},
+        {"correct": false, "tag": "span", "class": "account-number", "text": "****1234"},
+        {"correct": false, "tag": "h3", "text": "Checking Account"},
+        {"correct": false, "tag": "span", "class": "last-updated", "text": "Updated 2 min ago"}
+      ]
+    },
+    {
+      "name": "settings-notifications-toggle",
+      "sector": "saas",
+      "category": "CLICKABLE",
+      "action": "clickOnElement",
+      "method": "toggleNotifications",
+      "brokenLocator": "By.id: notif-toggle",
+      "candidates": [
+        {"correct": true, "tag": "button", "role": "switch", "aria-label": "Enable notifications", "data-testid": "notifications-toggle", "text": ""},
+        {"correct": false, "tag": "button", "role": "switch", "aria-label": "Enable dark mode", "data-testid": "darkmode-toggle", "text": ""},
+        {"correct": false, "tag": "button", "role": "switch", "aria-label": "Enable two factor authentication", "data-testid": "2fa-toggle", "text": ""},
+        {"correct": false, "tag": "h2", "text": "Settings"}
+      ]
+    },
+    {
+      "name": "checkout-email-renamed-id",
+      "sector": "ecommerce",
+      "category": "INPUT",
+      "action": "sendData",
+      "method": "setEmail",
+      "brokenLocator": "By.id: email",
+      "fingerprint": {"id": "email", "tag": "input"},
+      "candidates": [
+        {"correct": true, "tag": "input", "id": "checkout-email-7f3a2b", "name": "email", "type": "email", "aria-label": "Email address", "placeholder": "you@example.com"},
+        {"correct": false, "tag": "input", "id": "checkout-phone-9c1d", "name": "phone", "type": "tel", "placeholder": "Phone number"},
+        {"correct": false, "tag": "input", "id": "checkout-zip-2a", "name": "zip", "type": "text", "placeholder": "ZIP"},
+        {"correct": false, "tag": "input", "id": "checkout-coupon", "name": "coupon", "type": "text", "placeholder": "Coupon code"},
+        {"correct": false, "tag": "button", "type": "submit", "class": "place-order", "text": "Place Order"}
+      ]
+    },
+    {
+      "name": "form-error-alert-vs-heading",
+      "sector": "saas",
+      "category": "READABLE",
+      "action": "getText",
+      "method": "getErrorMessage",
+      "brokenLocator": "By.id: error",
+      "fingerprint": {"tag": "div", "role": "alert"},
+      "candidates": [
+        {"correct": true, "tag": "div", "role": "alert", "class": "error-message", "data-testid": "form-error", "text": "Please enter a valid email address."},
+        {"correct": false, "tag": "h1", "text": "Create your account"},
+        {"correct": false, "tag": "h2", "text": "Account details"},
+        {"correct": false, "tag": "label", "for": "email", "text": "Email address"},
+        {"correct": false, "tag": "p", "class": "help-text", "text": "We'll never share your email."}
+      ]
+    }
+  ]
+}

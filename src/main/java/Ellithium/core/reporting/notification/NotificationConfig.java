@@ -13,7 +13,6 @@ import java.util.Properties;
 public class NotificationConfig {
     
     private static final String NOTIFICATION_FILE = "src/main/resources/properties/notifications.properties";
-    private static NotificationConfig instance;
     private Properties properties;
     private boolean propertiesLoaded = false;
     
@@ -49,28 +48,29 @@ public class NotificationConfig {
      * @return The singleton instance
      */
     public static NotificationConfig getInstance() {
-        if (instance == null) {
-            synchronized (NotificationConfig.class) {
-                if (instance == null) {
-                    instance = new NotificationConfig();
-                }
-            }
-        }
-        return instance;
+        return Holder.INSTANCE;
+    }
+
+    private static final class Holder {
+        private static final NotificationConfig INSTANCE = new NotificationConfig();
     }
     
+    private static volatile Boolean cachedQuickCheck = null;
+
     /**
      * Quick check if notifications are enabled without full configuration loading.
-     * This method provides early exit for performance optimization.
+     * Result is cached after the first read so the properties file is not re-read on every call.
      * @return true if notifications are enabled, false otherwise
      */
-    public static boolean isNotificationEnabledQuick() {
+    static boolean isNotificationEnabledQuick() {
+        if (cachedQuickCheck != null) {
+            return cachedQuickCheck;
+        }
         try {
-            // Use PropertyHelper to get just the notification.enabled property
             String enabled = Ellithium.Utilities.helpers.PropertyHelper.getAllProperties("src/main/resources/properties/config.properties").getProperty("notification.enabled");
-            return enabled != null && Boolean.parseBoolean(enabled);
+            cachedQuickCheck = enabled != null && Boolean.parseBoolean(enabled);
+            return cachedQuickCheck;
         } catch (Exception e) {
-            // If we can't check, assume disabled for safety
             return false;
         }
     }
@@ -315,14 +315,6 @@ public class NotificationConfig {
         }
     }
     
-    private boolean isFieldMissing(String value, String fieldName, String configType) {
-        if (value == null || value.trim().isEmpty()) {
-            Reporter.log(fieldName + " is missing from " + configType + " configuration", LogLevel.ERROR);
-            return true;
-        }
-        return false;
-    }
-
     /**
      * Validates email configuration.
      * @return true if email configuration is valid
@@ -333,13 +325,44 @@ public class NotificationConfig {
                 return false;
             }
             
-            String configType = "email";
-            if (isFieldMissing(getSmtpHost(), "SMTP host", configType)) return false;
-            if (isFieldMissing(getSmtpPort(), "SMTP port", configType)) return false;
-            if (isFieldMissing(getSmtpUsername(), "SMTP username", configType)) return false;
-            if (isFieldMissing(getSmtpPassword(), "SMTP password", configType)) return false;
-            if (isFieldMissing(getFromEmail(), "From email", configType)) return false;
-            return !isFieldMissing(getToEmail(), "To email", configType);
+            String smtpHost = getSmtpHost();
+            String smtpPort = getSmtpPort();
+            String username = getSmtpUsername();
+            String password = getSmtpPassword();
+            String fromEmail = getFromEmail();
+            String toEmail = getToEmail();
+            
+            if (smtpHost == null || smtpHost.trim().isEmpty()) {
+                Reporter.log("SMTP host is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (smtpPort == null || smtpPort.trim().isEmpty()) {
+                Reporter.log("SMTP port is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (username == null || username.trim().isEmpty()) {
+                Reporter.log("SMTP username is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (password == null || password.trim().isEmpty()) {
+                Reporter.log("SMTP password is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (fromEmail == null || fromEmail.trim().isEmpty()) {
+                Reporter.log("From email is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (toEmail == null || toEmail.trim().isEmpty()) {
+                Reporter.log("To email is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            return true;
         } catch (Exception e) {
             Reporter.log("Failed to validate email configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;
@@ -356,10 +379,26 @@ public class NotificationConfig {
                 return false;
             }
             
-            String configType = "Slack";
-            if (isFieldMissing(getSlackWebhookUrl(), "Slack webhook URL", configType)) return false;
-            if (isFieldMissing(getSlackChannel(), "Slack channel", configType)) return false;
-            return !isFieldMissing(getSlackUsername(), "Slack username", configType);
+            String webhookUrl = getSlackWebhookUrl();
+            String channel = getSlackChannel();
+            String username = getSlackUsername();
+            
+            if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
+                Reporter.log("Slack webhook URL is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (channel == null || channel.trim().isEmpty()) {
+                Reporter.log("Slack channel is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            if (username == null || username.trim().isEmpty()) {
+                Reporter.log("Slack username is missing from Slack configuration", LogLevel.ERROR);
+                return false;
+            }
+            
+            return true;
         } catch (Exception e) {
             Reporter.log("Failed to validate Slack configuration: " + e.getMessage(), LogLevel.ERROR);
             return false;

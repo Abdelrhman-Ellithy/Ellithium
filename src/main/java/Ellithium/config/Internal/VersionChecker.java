@@ -2,7 +2,7 @@ package Ellithium.config.Internal;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
 import Ellithium.Utilities.helpers.JsonHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.Logger;
 import io.restassured.http.ContentType;
 
@@ -10,7 +10,7 @@ import static Ellithium.core.reporting.internal.Colors.*;
 import static io.restassured.RestAssured.given;
 
 public class VersionChecker {
-    public static String getLatestVersion(){
+    private static String getLatestVersion(){
         var response= given().
                 baseUri("https://api.github.com").and().basePath("repos/Abdelrhman-Ellithy/Ellithium/releases/")
                     .accept(ContentType.JSON)
@@ -26,12 +26,14 @@ public class VersionChecker {
             try {
                 String latestVersion=getLatestVersion();
                 if (latestVersion==null)latestVersion=getLatestVersion();
+                if (latestVersion==null) throw new Exception("Version check failed after retry");
                 String currentVersion= ConfigContext.getEllithuiumVersion();
                 if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
                     Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
                     Logger.info(BLUE + "---------------------------------------------------------" + RESET);
                     Logger.info(RED+   "You Are Using Old Version of Ellithium: "+currentVersion+"-----------"+ RESET);
-                    Logger.info(BLUE+  "You Need To update to the latest Version: "+latestVersion+"------------"+ RESET);
+                    Logger.info(BLUE + "---------------------------------------------------------" + RESET);
+                    Logger.info(BLUE+  "You Need To update to the latest Version: "+latestVersion+"-----------"+ RESET);
                     Logger.info(BLUE + "---------------------------------------------------------" + RESET);
                     Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
                 }

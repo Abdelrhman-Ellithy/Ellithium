@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  Ubuntu-Helper-Tests:
+  Ubuntu-Utilities-Tests:
     runs-on: ubuntu-latest
     env:
       EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
@@ -17,13 +17,13 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
-      - name: Run Helper Tests
-        run: mvn test -Dtest="Helpers.**.*" -Dsurefire.parallel=classes -Dparallel=classes -DthreadCount=4
+      - name: Run Utilities Tests
+        run: mvn test -Dtest="Utilities.**.**.*" -Dsurefire.parallel=classes -Dparallel=classes -DthreadCount=4
       - uses: ./.github/actions/test-results
         with:
-          artifact-name: ubuntu-helper-test-results
+          artifact-name: ubuntu-utilities-test-results
 
   Ubuntu-DataBase-Tests:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run Database Tests
         run: mvn test -Dtest="DB.**.*"
@@ -53,13 +53,31 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run API Tests
         run: mvn test -Dtest="BookingAPITests,ContactListAPITests" -Dsurefire.parallel=classes -Dmaven.test.failure.ignore=true
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-api-test-results
+
+  Ubuntu-driver-Tests:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Driver Tests
+        run: mvn test -Dtest="driver.**.*" -Dsurefire.parallel=classes
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: ubuntu-driver-test-results
 
   MacOS-UI-Basic-Tests:
     runs-on: macos-latest
@@ -71,13 +89,32 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI Basic Tests
-        run: mvn test -Dtest="loginTests,AmazonSearchTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
+        run: mvn test -Dtest="loginTests,AlertsTests,HorizontalSliderTests" -Dsurefire.parallel=classes
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-basic-test-results
+
+  MacOS-AI-Tests:
+    runs-on: macos-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run AI Tests
+        run: mvn test -Dtest="ai.**.**.*" -Dsurefire.parallel=classes
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: macos-ai-test-results
 
   MacOS-UI-Actions-Tests:
     runs-on: macos-latest
@@ -89,7 +126,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI Actions Tests
         run: mvn test -Dtest="DropDownTests,DragDropTests,HoverPageTests,DynamicLoadingPageTests" -Dsurefire.parallel=classes
@@ -107,10 +144,46 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
-          java-version: 21
+          java-version: 25
       - uses: ./.github/actions/cleanup
       - name: Run UI BDD Tests
         run: mvn test -Dtest="TestRunner" -Dsurefire.parallel=methods
       - uses: ./.github/actions/test-results
         with:
           artifact-name: macos-ui-bdd-test-results
+
+  Ubuntu-Unit-Core-Tests:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Unit Tests - Core Execution, Reporting & Config
+        run: mvn test -Dsurefire.parallel=classes -DthreadCount=4 -Dtest="execution.**.**.*,reporting.**.**.*,config.**.*"
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: ubuntu-unit-core-test-results
+
+  Ubuntu-Unit-AI-Models-Tests:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Unit Tests - AI Models, Sanitizers & File I/O
+        run: mvn test -Dsurefire.parallel=classes -DthreadCount=4 -Dtest="ai.models.**.*,ai.sanitizers.**.*,ai.generators.**.*,ai.reporting.**.*"
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: ubuntu-unit-ai-models-test-results

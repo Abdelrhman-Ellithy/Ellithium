@@ -1,0 +1,7 @@
+[
+  {
+    "testId": "TC-LOGIN-02",
+    "description": "User logs in with username 'tomsmith' and password 'SuperSecretPassword!' successfully. Create the POM class with the exact name 'AILoginPage'.",
+    "targetUrl": "https://the-internet.herokuapp.com/login"
+  }
+]

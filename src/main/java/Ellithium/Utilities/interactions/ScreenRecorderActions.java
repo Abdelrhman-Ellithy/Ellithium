@@ -1,7 +1,7 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.Utilities.generators.TestDataGenerator;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.DriverType;
 import Ellithium.core.driver.LocalDriverType;
@@ -68,15 +68,26 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
  * @see <a href="https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-startScreencast">CDP Screencast</a>
  * @see <a href="https://github.com/jcodec/jcodec">JCodec Documentation</a>
  */
-@SuppressWarnings("squid:S3011")
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
-     * Thread-safe storage for video frames captured during recording.
-     * Each thread maintains its own queue of frame data (as byte arrays).
+     * Stores one unique frame plus how many consecutive times it appeared.
+     * Consecutive identical frames increment count instead of storing duplicate byte arrays —
+     * keeping memory proportional to unique-frame count, not total-frame count.
      */
-    private static final ThreadLocal<Queue<byte[]>> videoFrames =
-        ThreadLocal.withInitial(ConcurrentLinkedQueue::new);
+    private static final class FrameEntry {
+        final byte[] data;
+        volatile int count;
+        FrameEntry(byte[] data) { this.data = data; this.count = 1; }
+    }
+
+    /**
+     * Thread-safe storage for video frames captured during recording.
+     * ConcurrentLinkedDeque is used because the CDP listener / snapshot executor writes
+     * from a background thread while the main thread reads during stop. peekLast() is O(1).
+     */
+    private static final ThreadLocal<java.util.concurrent.ConcurrentLinkedDeque<FrameEntry>> videoFrames =
+        ThreadLocal.withInitial(java.util.concurrent.ConcurrentLinkedDeque::new);
 
     /**
      * Thread-safe storage for the video name/identifier.
@@ -126,10 +137,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     private static final ThreadLocal<Long> recordingStartTime = new ThreadLocal<>();
 
-    /**
-     * atomic counter to track active video compilations.
-     */
-    public static final AtomicInteger activeCompilations = new AtomicInteger(0);
+    private static volatile String cdpVersionCache = null;
+    private static final String CDP_NOT_FOUND = "";
+
+    private static final AtomicInteger activeCompilations = new AtomicInteger(0);
+
+    public static int pendingCompilations() { return activeCompilations.get(); }
 
     /**
      * Creates a new ScreenRecorderActions instance.
@@ -296,8 +309,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
             if (path != null) {
                 Reporter.log("Video recording saved: " + path, LogLevel.INFO_GREEN);
-            } else {
-                Reporter.log("Failed to save video recording", LogLevel.ERROR);
             }
         } catch (Exception e) {
             Reporter.log("Error stopping recording: " + e.getMessage(), LogLevel.ERROR);
@@ -424,7 +435,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
             addScreencastFrameListener(devTools, pageClass);
-            Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.INFO_BLUE);
+            Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.DEBUG);
             return true;
 
         } catch (ClassNotFoundException e) {
@@ -491,8 +502,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     continue;
                 }
             } catch (Exception ignored) {}
-            // If we reach here, we couldn't unwrap further
-            return null;
+            break;
         }
 
         return null;
@@ -503,15 +513,21 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * Scans for org.openqa.selenium.devtools.v* packages.
      */
     private String detectCDPVersion() {
-        // Try to find the highest available version
-        for (int version = 150; version >= 85; version--) {
-            String versionStr = "v" + version;
-            try {
-                Class.forName("org.openqa.selenium.devtools." + versionStr + ".page.Page");
-                return versionStr;
-            } catch (ClassNotFoundException ignored) {}
+        String cached = cdpVersionCache;
+        if (cached != null) return cached.isEmpty() ? null : cached;
+        synchronized (ScreenRecorderActions.class) {
+            cached = cdpVersionCache;
+            if (cached != null) return cached.isEmpty() ? null : cached;
+            for (int version = 150; version >= 85; version--) {
+                try {
+                    Class.forName("org.openqa.selenium.devtools.v" + version + ".page.Page");
+                    cdpVersionCache = "v" + version;
+                    return cdpVersionCache;
+                } catch (ClassNotFoundException ignored) {}
+            }
+            cdpVersionCache = CDP_NOT_FOUND;
+            return null;
         }
-        return null;
     }
 
     /**
@@ -533,7 +549,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     private void addScreencastFrameListener(DevTools devTools, Class<?> pageClass) throws Exception {
         Object screencastFrameEvent = pageClass.getMethod("screencastFrame").invoke(null);
 
-        final Queue<byte[]> targetQueue = videoFrames.get();
+        final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames.get();
         final AtomicBoolean recordingFlag = isRecording.get();
 
         devTools.addListener((org.openqa.selenium.devtools.Event<?>) screencastFrameEvent, frameData -> {
@@ -543,7 +559,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Method getDataMethod = frameData.getClass().getMethod("getData");
                     String base64Data = (String) getDataMethod.invoke(frameData);
                     byte[] imageData = Base64.getDecoder().decode(base64Data);
-                    targetQueue.add(imageData);
+                    FrameEntry last = targetDeque.peekLast();
+                    if (last != null && java.util.Arrays.equals(last.data, imageData)) {
+                        last.count++;
+                    } else {
+                        targetDeque.addLast(new FrameEntry(imageData));
+                    }
 
                     // Reflection: frameData.getSessionId() -> Integer
                     Method getSessionIdMethod = frameData.getClass().getMethod("getSessionId");
@@ -579,14 +600,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
 
         // Capture references from Main Thread
-        final Queue<byte[]> targetQueue = videoFrames.get();
+        final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames.get();
         final AtomicBoolean recordingFlag = isRecording.get();
         final TakesScreenshot screenshotDriver = (TakesScreenshot) rawDriver;
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "SnapshotRecorder-" + name);
-            thread.setDaemon(true);
-            return thread;
+            return Thread.ofPlatform().daemon(true).name("SnapshotRecorder-" + name).unstarted(r);
         });
         backgroundCapturer.set(executor);
 
@@ -595,13 +614,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 try {
                     byte[] screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
                     if (screenshot != null && screenshot.length > 0) {
-                        targetQueue.add(screenshot);
+                        FrameEntry last = targetDeque.peekLast();
+                        if (last != null && java.util.Arrays.equals(last.data, screenshot)) {
+                            last.count++;
+                        } else {
+                            targetDeque.addLast(new FrameEntry(screenshot));
+                        }
                     }
                 } catch (Exception ignored) {}
             }
         }, 0, SNAPSHOT_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.INFO_GREEN);
+        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.DEBUG);
     }
 
     /**
@@ -649,8 +673,20 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     private String stopWebRecording(String name, File videoFolder) {
         try {
-            // Get queue reference BEFORE stopping executor
-            Queue<byte[]> frames = videoFrames.get();
+            // Get deque reference BEFORE stopping executor
+            java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> frames = videoFrames.get();
+
+            // Capture final screenshot before tearing down recorders so the last visible
+            // state is always included — CDP and snapshot both stop emitting frames the
+            // moment recording is flagged false, leaving a gap at the end.
+            if (driver instanceof TakesScreenshot) {
+                try {
+                    byte[] lastFrame = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+                    if (lastFrame != null && lastFrame.length > 0) {
+                        frames.addLast(new FrameEntry(lastFrame));
+                    }
+                } catch (Exception ignored) {}
+            }
 
             // Stop CDP if active
             if (devToolsSession.get() != null) {
@@ -662,7 +698,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 stopSnapshotExecutor();
             }
 
-            if (frames == null || frames.isEmpty()) {
+            if (frames.isEmpty()) {
                 Reporter.log("No frames captured during recording", LogLevel.WARN);
                 return null;
             }
@@ -671,7 +707,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Long startTime = recordingStartTime.get();
             long durationMs = (startTime != null) ? System.currentTimeMillis() - startTime : 0;
 
-
             String fileName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, fileName);
 
@@ -679,25 +714,31 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (needsAttachment) {
                 // SYNCHRONOUS: Compile immediately because we need to attach to report
                 Reporter.log("Compiling video synchronously for report attachment", LogLevel.INFO_GREEN);
-                return compileFramesToMP4(frames, videoFile,durationMs);
+                return compileFramesToMP4(frames, videoFile, durationMs);
             } else {
                 // ASYNCHRONOUS: Compile in background to not block test execution
-                final Queue<byte[]> framesCopy = new ConcurrentLinkedQueue<>(frames);
-                final int frameCount = framesCopy.size();
-                final long capturedDuration = durationMs; // Capture for lambda
-                videoCompilationExecutor.submit(() -> {
-                    activeCompilations.incrementAndGet();
-                    try {
-                        compileFramesToMP4(framesCopy, videoFile, capturedDuration);
-                        Reporter.log("Video compiled asynchronously: " + videoFile.getName() +
-                                " (" + frameCount + " frames)", LogLevel.INFO_GREEN);
-                    } catch (Exception e) {
-                        Reporter.log("Async video compilation failed: " + e.getMessage(), LogLevel.ERROR);
-                    }
-                    finally {
-                        activeCompilations.decrementAndGet();
-                    }
-                });
+                final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
+                        new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
+                final int frameCount = framesCopy.stream().mapToInt(e -> e.count).sum();
+                final long capturedDuration = durationMs;
+                activeCompilations.incrementAndGet();
+                try {
+                    videoCompilationExecutor.submit(() -> {
+                        try {
+                            compileFramesToMP4(framesCopy, videoFile, capturedDuration);
+                            Logger.info("Video compiled asynchronously: " + videoFile.getName() +
+                                    " (" + frameCount + " frames)");
+                        } catch (Exception e) {
+                            Logger.error("Async video compilation failed: " + e.getMessage());
+                        }
+                        finally {
+                            activeCompilations.decrementAndGet();
+                        }
+                    });
+                } catch (java.util.concurrent.RejectedExecutionException rex) {
+                    activeCompilations.decrementAndGet();
+                    Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
+                }
 
                 Reporter.log("Video compilation started in background (" + frameCount + " frames)",
                         LogLevel.INFO_BLUE);
@@ -795,24 +836,23 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * @param recordingDurationMs Recording duration in milliseconds (0 if unknown)
      * @return Absolute path of compiled video, or null if failed
      */
-    private String compileFramesToMP4(Queue<byte[]> frames, File outputFile, long recordingDurationMs) {
-        int totalFrames = frames.size();
+    private String compileFramesToMP4(java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> frames,
+                                       File outputFile, long recordingDurationMs) {
+        int totalFrames = frames.stream().mapToInt(e -> e.count).sum();
         if (totalFrames == 0) {
             Reporter.log("No frames to encode", LogLevel.WARN);
             return null;
         }
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        final int MAX_WIDTH = 1280;
-        final int MAX_HEIGHT = 720;
+        final int MAX_WIDTH = 854;
+        final int MAX_HEIGHT = 480;
         int batchSize = 50;
         try {
-            // Peek at the first frame to calculate accurate memory requirements
-            byte[] firstFrame = frames.peek();
-            if (firstFrame != null) {
-                BufferedImage probe = ImageIO.read(new ByteArrayInputStream(firstFrame));
+            FrameEntry firstEntry = frames.peek();
+            if (firstEntry != null) {
+                BufferedImage probe = ImageIO.read(new ByteArrayInputStream(firstEntry.data));
                 if (probe != null) {
-                    // Calculate the dimensions this frame will have AFTER processing
                     long frameSize = getFrameSize(probe, MAX_WIDTH, MAX_HEIGHT);
                     batchSize = calculateOptimalBatchSize(frameSize);
                 }
@@ -820,7 +860,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         } catch (Exception e) {
             Reporter.log("Failed to calculate dynamic batch size, using default: " + e.getMessage(), LogLevel.DEBUG);
         }
-        // -----------------------------------------
 
         try {
             double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
@@ -832,37 +871,77 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             while (!frames.isEmpty()) {
 
-                // A. Create Batch
-                List<byte[]> rawBatch = new ArrayList<>(batchSize);
+                // A. Create Batch — one slot per unique frame
+                List<FrameEntry> entryBatch = new ArrayList<>(batchSize);
                 for (int i = 0; i < batchSize && !frames.isEmpty(); i++) {
-                    byte[] data = frames.poll();
-                    if (data != null) rawBatch.add(data);
+                    FrameEntry entry = frames.poll();
+                    if (entry != null) entryBatch.add(entry);
                 }
 
-                if (rawBatch.isEmpty()) continue;
+                if (entryBatch.isEmpty()) continue;
 
-                // B. Parallel Process
-                List<BufferedImage> processedBatch = rawBatch.parallelStream()
-                        .map(frameBytes -> processFrame(frameBytes, MAX_WIDTH, MAX_HEIGHT))
-                        .filter(Objects::nonNull)
+                // B. Parallel decode — each unique frame decoded once
+                List<BufferedImage> processedBatch = entryBatch.parallelStream()
+                        .map(entry -> {
+                            try {
+                                BufferedImage original = ImageIO.read(new ByteArrayInputStream(entry.data));
+                                if (original == null) return null;
+
+                                int origW = original.getWidth();
+                                int origH = original.getHeight();
+
+                                boolean needsScaling = (origW > MAX_WIDTH || origH > MAX_HEIGHT);
+                                int newW = origW;
+                                int newH = origH;
+
+                                if (needsScaling) {
+                                    double scale = Math.min((double) MAX_WIDTH / origW, (double) MAX_HEIGHT / origH);
+                                    newW = (int) (origW * scale);
+                                    newH = (int) (origH * scale);
+                                }
+
+                                int evenW = (newW % 2 == 0) ? newW : newW - 1;
+                                int evenH = (newH % 2 == 0) ? newH : newH - 1;
+
+                                if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
+                                    return original;
+                                }
+
+                                BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
+                                Graphics2D g2d = resized.createGraphics();
+                                try {
+                                    if (needsScaling) {
+                                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                                    }
+                                    g2d.drawImage(original, 0, 0, evenW, evenH, null);
+                                } finally {
+                                    g2d.dispose();
+                                }
+                                return resized;
+                            } catch (Exception e) {
+                                return null;
+                            }
+                        })
                         .collect(Collectors.toList());
 
-                // C. Encode
-                for (BufferedImage img : processedBatch) {
+                // C. Encode — each decoded image entry.count times (lossless repeat)
+                for (int i = 0; i < processedBatch.size(); i++) {
+                    BufferedImage img = processedBatch.get(i);
+                    if (img == null) continue;
+                    int repeatCount = entryBatch.get(i).count;
                     try {
-                        encoder.encodeImage(img);
-                        successfulFrames++;
+                        for (int r = 0; r < repeatCount; r++) {
+                            encoder.encodeImage(img);
+                            successfulFrames++;
+                        }
                     } catch (Exception e) {}
                 }
 
                 // D. Cleanup
                 processedBatch.clear();
-                rawBatch.clear();
+                entryBatch.clear();
             }
 
-            encoder.finish();
-
-            // ... (Remaining logging logic same as before)
             if (successfulFrames == 0) {
                 Reporter.log("No valid frames encoded", LogLevel.ERROR);
                 if (outputFile.exists()) outputFile.delete();
@@ -896,45 +975,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         // Calculate uncompressed size: Width * Height * 3 bytes (BGR)
         return ((long) w * h * 3);
-    }
-
-    private BufferedImage processFrame(byte[] frameBytes, int maxWidth, int maxHeight) {
-        try {
-            BufferedImage original = ImageIO.read(new ByteArrayInputStream(frameBytes));
-            if (original == null) return null;
-
-            int origW = original.getWidth();
-            int origH = original.getHeight();
-
-            boolean needsScaling = (origW > maxWidth || origH > maxHeight);
-            int newW = origW;
-            int newH = origH;
-
-            if (needsScaling) {
-                double scale = Math.min((double) maxWidth / origW, (double) maxHeight / origH);
-                newW = (int) (origW * scale);
-                newH = (int) (origH * scale);
-            }
-
-            int evenW = (newW % 2 == 0) ? newW : newW - 1;
-            int evenH = (newH % 2 == 0) ? newH : newH - 1;
-
-            if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-                return original;
-            }
-
-            BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
-            Graphics2D g2d = resized.createGraphics();
-            if (needsScaling) {
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            }
-            g2d.drawImage(original, 0, 0, evenW, evenH, null);
-            g2d.dispose();
-
-            return resized;
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     /**
@@ -1032,31 +1072,28 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * - Predictable memory usage
      * - Faster individual compilation (no resource competition)
      */
-    public static final ExecutorService videoCompilationExecutor =
-            Executors.newFixedThreadPool(
-                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1), // Leave 1 core for OS/tests
-                    r -> {
-                        Thread t = new Thread(r, "VideoCompiler-" + r.hashCode());
-                        t.setDaemon(true);
-                        t.setPriority(Thread.NORM_PRIORITY); // Normal priority for speed
-                        return t;
-                    }
-            );
+    private static final ExecutorService videoCompilationExecutor =
+            new java.util.concurrent.ThreadPoolExecutor(
+                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
+                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
+                    0L, TimeUnit.MILLISECONDS,
+                    new java.util.concurrent.LinkedBlockingQueue<>(),
+                    Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory());
 
         static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("VideoCompilationShutdownHook").unstarted(() -> {
             int active = activeCompilations.get();
             if (active > 0) {
-                System.out.println("[Ellithium] Waiting for " + active + 
+                System.out.println("[Ellithium] Waiting for " + active +
                                  " video(s) to finish compiling...");
                 try {
                     videoCompilationExecutor.shutdown();
-                    // Wait up to 3 minutes for videos to finish
-                    boolean completed = videoCompilationExecutor.awaitTermination(180, TimeUnit.SECONDS);
+                    // Wait up to 45 seconds for videos to finish
+                    boolean completed = videoCompilationExecutor.awaitTermination(45, TimeUnit.SECONDS);
                     if (completed) {
                         System.out.println("[Ellithium] ✓ All videos compiled successfully");
                     } else {
-                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() + 
+                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() +
                                          " video(s) may be incomplete");
                         videoCompilationExecutor.shutdownNow();
                     }
@@ -1068,7 +1105,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else {
                 System.out.println("[Ellithium] All videos already compiled");
             }
-        }, "VideoCompilationShutdownHook"));
+        }));
         
         System.out.println("[Ellithium] Video compilation shutdown hook registered");
     }

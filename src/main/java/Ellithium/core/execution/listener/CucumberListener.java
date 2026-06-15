@@ -1,6 +1,7 @@
 package Ellithium.core.execution.listener;
 
-import Ellithium.config.managment.GeneralHandler;
+import Ellithium.config.management.GeneralHandler;
+import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.HeadlessMode;
@@ -18,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static Ellithium.config.managment.GeneralHandler.testFailed;
+import static Ellithium.config.management.GeneralHandler.testFailed;
 import static Ellithium.core.reporting.internal.Colors.*;
 
 /**
@@ -234,6 +235,12 @@ public class CucumberListener extends AllureCucumber7Jvm {
         } catch (Exception e) {
             Logger.warn(YELLOW+"Failed to cleanup video recording resources: " + e.getMessage()+RESET);
             Logger.logException(e);
+        }
+        try {
+            Ellithium.core.ai.healing.EnsembleHealer.shutdown();
+            AIHealingReporter.generateReport();
+        } catch (Exception e) {
+            Logger.warn(YELLOW+"Failed to finalize AI healing (shutdown/report): " + e.getMessage()+RESET);
         }
     }
 

@@ -1,7 +1,7 @@
 Feature: Search
   Background:
     Given The user is on the homepage
-  @run
+  
   Scenario: User Search query is Accepted
     When they type a search query into the search bar
     Then the search query should be accepted and processed
@@ -11,6 +11,7 @@ Feature: Search
     When they click the Search button or press Enter key
     Then the search results page should display items matching the search query
 
+  @test
   Scenario: Verify Search result updated according to the applied filter
       Given The search results are displayed
       When the user applies filters (eg brand)

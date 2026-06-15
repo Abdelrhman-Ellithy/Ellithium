@@ -1,0 +1,80 @@
+package Ellithium.core.ai.codegen;
+
+import java.util.List;
+
+public final class RecordedStep {
+
+    private final String id;
+    private final String actionType;
+    private final String data;
+    private final String tagName;
+    private final String elementName;
+    private final List<LocatorCandidate> candidates;
+    private final List<Integer> frameChain;
+    private volatile int chosenIndex;
+    private volatile String generatorMethod;
+    private volatile String assertAttr;
+    private final List<LocatorCandidate> targetCandidates;  // non-null only for dragAndDrop
+    private volatile int targetChosenIndex;
+
+    public RecordedStep(String id, String actionType, String data, String tagName,
+                        String elementName, List<LocatorCandidate> candidates) {
+        this(id, actionType, data, tagName, elementName, candidates, List.of(), List.of());
+    }
+
+    public RecordedStep(String id, String actionType, String data, String tagName,
+                        String elementName, List<LocatorCandidate> candidates, List<Integer> frameChain) {
+        this(id, actionType, data, tagName, elementName, candidates, frameChain, List.of());
+    }
+
+    public RecordedStep(String id, String actionType, String data, String tagName,
+                        String elementName, List<LocatorCandidate> candidates, List<Integer> frameChain,
+                        List<LocatorCandidate> targetCandidates) {
+        this.id = id;
+        this.actionType = actionType;
+        this.data = data;
+        this.tagName = tagName;
+        this.elementName = elementName;
+        this.candidates = candidates != null ? candidates : List.of();
+        this.frameChain = frameChain != null ? frameChain : List.of();
+        this.chosenIndex = this.candidates.isEmpty() ? -1 : 0;
+        this.targetCandidates = targetCandidates != null ? targetCandidates : List.of();
+        this.targetChosenIndex = this.targetCandidates.isEmpty() ? -1 : 0;
+    }
+
+    public String getId() { return id; }
+    public String getActionType() { return actionType; }
+    public String getData() { return data; }
+    public String getTagName() { return tagName; }
+    public String getElementName() { return elementName; }
+    public List<LocatorCandidate> getCandidates() { return candidates; }
+    public List<Integer> getFrameChain() { return frameChain; }
+    public int getChosenIndex() { return chosenIndex; }
+
+    public LocatorCandidate chosen() {
+        return (chosenIndex >= 0 && chosenIndex < candidates.size()) ? candidates.get(chosenIndex) : null;
+    }
+
+    public void choose(int index) {
+        if (index >= 0 && index < candidates.size()) chosenIndex = index;
+    }
+
+    public String getGeneratorMethod() { return generatorMethod; }
+    public void setGeneratorMethod(String method) { this.generatorMethod = method; }
+
+    public String getAssertAttr() { return assertAttr; }
+    public void setAssertAttr(String attr) { this.assertAttr = attr; }
+
+    public List<LocatorCandidate> getTargetCandidates() { return targetCandidates; }
+
+    public LocatorCandidate targetChosen() {
+        return (targetChosenIndex >= 0 && targetChosenIndex < targetCandidates.size())
+                ? targetCandidates.get(targetChosenIndex) : null;
+    }
+
+    public void chooseTarget(int index) {
+        if (index >= 0 && index < targetCandidates.size()) targetChosenIndex = index;
+    }
+
+    public int getTargetChosenIndex() { return targetChosenIndex; }
+}

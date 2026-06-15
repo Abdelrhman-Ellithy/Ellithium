@@ -90,15 +90,16 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Closes the popup window and switches back to the main window.
      */
     public void closePopupWindow() {
+        Set<String> allHandles = new java.util.HashSet<>(driver.getWindowHandles());
+        String popupHandle = driver.getWindowHandle();
         driver.close();
         Reporter.log("Popup window closed. Switching back to the main window.", LogLevel.INFO_BLUE);
-        Set<String> remaining = driver.getWindowHandles();
-        if (remaining.isEmpty()) {
+        allHandles.remove(popupHandle);
+        if (allHandles.isEmpty()) {
             Reporter.log("No windows left after closing popup", LogLevel.ERROR);
             return;
         }
-        String main = remaining.iterator().next();
-        driver.switchTo().window(main);
+        driver.switchTo().window(allHandles.iterator().next());
     }
 
     /**
@@ -253,7 +254,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
         try {
             List<String> handles = getAllWindowHandles();
             if (!handles.isEmpty()) {
-                driver.switchTo().window(handles.get(handles.size() - 1));
+                driver.switchTo().window(handles.getLast());
                 Reporter.log("Switched to last window", LogLevel.INFO_BLUE);
                 return true;
             }
@@ -345,9 +346,9 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void switchToParentWindow() {
         try {
-            driver.switchTo().defaultContent();
+            driver.switchTo().parentFrame();
         } catch (Exception e) {
-            Reporter.log("Failed to switch to parent window: " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Failed to switch to parent frame: " + e.getMessage(), LogLevel.ERROR);
             throw e;
         }
     }
@@ -357,8 +358,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getCurrentWindowTitle() {
         try {
-            String title = driver.getTitle();
-            return title;
+            return driver.getTitle();
         } catch (Exception e) {
             Reporter.log("Failed to get window title: " + e.getMessage(), LogLevel.ERROR);
             throw e;

@@ -21,11 +21,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        WebElement element = findWebElement(locator);
-        element.clear();
-        element.sendKeys(data);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
     /**
@@ -36,11 +32,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        WebElement element = findWebElement(locator);
-        element.clear();
-        element.sendKeys(data);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
     /**
@@ -50,9 +42,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnElement(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        findWebElement(locator).click();
+        performWithStaleRetry(locator, timeout, pollingEvery, WebElement::click);
     }
 
     /**
@@ -63,9 +53,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return Text content of the element
      */
     public String getText(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getText();
+        return performAndGet(locator, timeout, pollingEvery, WebElement::getText);
     }
 
     /**
@@ -76,9 +64,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of text from the elements
      */
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery).until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        return mapElementsSafely(locator, WebElement::getText);
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
+                .stream().map(WebElement::getText).toList();
     }
 
     /**
@@ -91,9 +79,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getAttributeFromMultipleElements(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        return mapElementsSafely(locator, element -> element.getDomAttribute(attribute));
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
+                .stream().map(el -> el.getDomAttribute(attribute)).toList();
     }
     /**
      * Gets the value of a property from multiple elements.
@@ -105,9 +92,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        return mapElementsSafely(locator, element -> element.getDomProperty(property));
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
+                .stream().map(el -> el.getDomProperty(property)).toList();
     }
 
     /**
@@ -133,9 +119,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getDomAttribute(attribute);
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute));
     }
 
     /**
@@ -148,25 +132,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        return findWebElement(locator).getDomProperty(property);
-    }
-
-    /**
-     * Gets all elements matching the locator.
-     * @deprecated This method returns a List of WebElements which can become stale.
-     * Consider using methods that return data (e.g., getTextFromMultipleElements) instead.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @param pollingEvery Polling interval in milliseconds
-     * @return List of found WebElements
-     */
-    @Deprecated
-    public List<WebElement> getElements(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
-        return findWebElements(locator);
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property));
     }
 
     // Overloaded methods with default timeouts
@@ -365,24 +331,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         return getPropertyValue(locator, property, timeout, WaitManager.getDefaultPollingTime());
     }
 
-    /**
-     * Gets all elements matching the locator with default timeout and polling time.
-     * @param locator Element locator
-     * @return List of found WebElements
-     */
-    public List<WebElement> getElements(By locator) {
-        return getElements(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-    }
-
-    /**
-     * Gets all elements matching the locator with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     * @return List of found WebElements
-     */
-    public List<WebElement> getElements(By locator, int timeout) {
-        return getElements(locator, timeout, WaitManager.getDefaultPollingTime());
-    }
 
     /**
      * Uploads a file using sendKeys method.
@@ -401,8 +349,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             }
             
             WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
-            
+                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
+
             uploadElement.sendKeys(file.getAbsolutePath());
             Reporter.log("File uploaded successfully: " + file.getName(), LogLevel.INFO_BLUE);
         } catch (Exception e) {
@@ -421,12 +369,16 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if any file does not exist
      */
     public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
+        if (filePaths == null || filePaths.length == 0) {
+            Reporter.log("uploadMultipleFiles: filePaths must not be null or empty", LogLevel.ERROR);
+            throw new IllegalArgumentException("filePaths must not be null or empty");
+        }
         try {
             String pathsString = buildFilePathsString(filePaths);
             
             WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(fileUploadLocator));
-            
+                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
+
             uploadElement.sendKeys(pathsString);
             Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
         } catch (Exception e) {
@@ -442,7 +394,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             if (!file.exists()) {
                 throw new IllegalArgumentException("File does not exist: " + filePath);
             }
-            paths.append(file.getAbsolutePath()).append(System.lineSeparator());
+            paths.append(file.getAbsolutePath()).append("\n");
         }
         return paths.toString().trim();
     }
@@ -556,9 +508,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public boolean isElementEnabled(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            boolean enabled = findWebElement(locator).isEnabled();
+            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+            boolean enabled = element.isEnabled();
             if (enabled) {
                 Reporter.log("Element is enabled: " + locator, LogLevel.INFO_BLUE);
             } else {
@@ -602,9 +553,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public boolean isElementSelected(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            boolean selected = findWebElement(locator).isSelected();
+            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+            boolean selected = element.isSelected();
             if (selected) {
                 Reporter.log("Element is selected: " + locator, LogLevel.INFO_BLUE);
             } else {
@@ -687,10 +637,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void clearElement(By locator, int timeout, int pollingEvery) {
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            findWebElement(locator).clear();
-            Reporter.log("Element cleared: " + locator, LogLevel.INFO_BLUE);
+            performWithStaleRetry(locator, timeout, pollingEvery, el -> {
+                el.clear();
+                Reporter.log("Element cleared: " + locator, LogLevel.INFO_BLUE);
+            });
         } catch (TimeoutException e) {
             Reporter.log("Clear failed – element not visible within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
             throw e;
@@ -724,11 +674,15 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
+        requireJavascriptContext("scrollIntoView");
         try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(locator));
-            // Re-locate element right before JavaScript execution to avoid stale element
-            WebElement element = findWebElement(locator);
+            WebElement element;
+            try {
+                element = getFluentWait(timeout, pollingEvery)
+                        .until(ExpectedConditions.presenceOfElementLocated(locator));
+            } catch (TimeoutException e) {
+                element = findWebElement(locator);
+            }
             ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
             Reporter.log("Scrolled into view: " + locator, LogLevel.INFO_BLUE);
         } catch (TimeoutException e) {
