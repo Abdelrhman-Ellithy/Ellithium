@@ -21,12 +21,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void hoverOverElement(By locator, int timeout) {
         Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, WaitManager.getDefaultPollingTime())
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        // Re-locate element right before use to avoid stale element
-        WebElement element = findWebElement(locator);
-        Actions action = new Actions(driver);
-        action.moveToElement(element).perform();
+        performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
+                el -> new Actions(driver).moveToElement(el).perform());
     }
 
     /**
@@ -38,18 +34,10 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void hoverAndClick(By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locatorToHover));
-
-        Reporter.log("Waiting for element to click: " + locatorToClick.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.elementToBeClickable(locatorToClick));
-
-        // Re-locate elements right before use to avoid stale element
-        WebElement elementToHover = findWebElement(locatorToHover);
-        WebElement elementToClick = findWebElement(locatorToClick);
-        Actions action = new Actions(driver);
-        action.moveToElement(elementToHover).click(elementToClick).perform();
+        performWithStaleRetry(locatorToHover, timeout, pollingEvery, elementToHover -> {
+            WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
+            new Actions(driver).moveToElement(elementToHover).click(elementToClick).perform();
+        });
         Reporter.log("Hovered over " + locatorToHover + " and clicked " + locatorToClick, LogLevel.INFO_BLUE);
     }
 
@@ -59,12 +47,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param targetLocator Target element locator
      */
     public void dragAndDrop(By sourceLocator, By targetLocator) {
-        getFluentWait(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime())
-        .until(ExpectedConditions.visibilityOfElementLocated(sourceLocator));
-        WebElement source = findWebElement(sourceLocator);
-        getFluentWait(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime())
-        .until(ExpectedConditions.visibilityOfElementLocated(targetLocator));
-        WebElement target = findWebElement(targetLocator);
+        WebElement source = waitForVisibilityAndFindElement(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        WebElement target = waitForVisibilityAndFindElement(targetLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
         Actions action = new Actions(driver);
         action.clickAndHold(source)
                 .moveToElement(target)
@@ -80,10 +64,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param yOffset Y offset to move
      */
     public void dragAndDropByOffset(By sourceLocator, int xOffset, int yOffset) {
-        getFluentWait(WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime())
-        .until(ExpectedConditions.visibilityOfElementLocated(sourceLocator));
-        // Re-locate element right before building Actions chain to avoid stale element
-        WebElement source = findWebElement(sourceLocator);
+        WebElement source = waitForVisibilityAndFindElement(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
         Actions action = new Actions(driver);
 
         action.clickAndHold(source)
@@ -102,14 +83,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void rightClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to right-click: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-
-        // Re-locate element right before use to avoid stale element
-        WebElement element = findWebElement(locator);
-        Actions action = new Actions(driver);
-        action.contextClick(element).perform();
-
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> new Actions(driver).contextClick(el).perform());
         Reporter.log("Right-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
 
@@ -121,12 +96,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void doubleClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(locator));
-        // Re-locate element right before use to avoid stale element
-        WebElement element = findWebElement(locator);
-        Actions action = new Actions(driver);
-        action.doubleClick(element).perform();
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> new Actions(driver).doubleClick(el).perform());
         Reporter.log("Double-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
 
@@ -138,20 +109,52 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @return The final value of the slider
      */
     public float moveSliderTo(By sliderLocator, By rangeLocator, float targetValue) {
-        // Re-locate elements on each iteration to prevent stale element exceptions
-        float currentValue = Float.parseFloat(findWebElement(rangeLocator).getText());
-        int timeout = 0;
-        while((Float.valueOf(findWebElement(rangeLocator).getText()) != 0) && (timeout < 5000)) {
-            findWebElement(sliderLocator).sendKeys(Keys.ARROW_LEFT);
-            timeout++;
+        final float EPSILON = 0.01f;
+        // Cache element references; only re-locate on StaleElementReferenceException.
+        // Previous implementation re-called findWebElement (= driver.findElement + capture JS)
+        // on every step — up to 6 CDP round-trips per iteration × 10,000 steps = 60,000 calls.
+        // Now: 2 CDP calls per step (getText + sendKeys) regardless of slider range.
+        WebElement slider = waitForVisibilityAndFindElement(sliderLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        WebElement range  = waitForVisibilityAndFindElement(rangeLocator,  WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        int steps = 0;
+        while (steps++ < 5000) {
+            try {
+                String raw = range.getText();
+                if (raw == null || raw.isBlank()) continue;
+                if (Math.abs(Float.parseFloat(raw)) <= EPSILON) break;
+                slider.sendKeys(Keys.ARROW_LEFT);
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                slider = findWebElement(sliderLocator);
+                range  = findWebElement(rangeLocator);
+            } catch (NumberFormatException e) {
+                Reporter.log("moveSliderTo: non-numeric slider value during reset: " + range.getText(), LogLevel.WARN);
+            }
         }
-        timeout = 0;
-        while((Float.valueOf(findWebElement(rangeLocator).getText()) != targetValue) && (timeout < 5000)) {
-            findWebElement(sliderLocator).sendKeys(Keys.ARROW_RIGHT);
-            timeout++;
+        if (steps > 5000) Reporter.log("moveSliderTo: reset loop exhausted without reaching zero", LogLevel.WARN);
+        steps = 0;
+        while (steps++ < 5000) {
+            try {
+                String raw = range.getText();
+                if (raw == null || raw.isBlank()) continue;
+                if (Math.abs(Float.parseFloat(raw) - targetValue) <= EPSILON) break;
+                slider.sendKeys(Keys.ARROW_RIGHT);
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                slider = findWebElement(sliderLocator);
+                range  = findWebElement(rangeLocator);
+            } catch (NumberFormatException e) {
+                Reporter.log("moveSliderTo: non-numeric slider value during seek: " + range.getText(), LogLevel.WARN);
+            }
         }
-        Reporter.log("Slider moved to: " + currentValue, LogLevel.INFO_BLUE);
-        return currentValue;
+        if (steps > 5000) Reporter.log("moveSliderTo: target loop exhausted without reaching " + targetValue, LogLevel.WARN);
+        try {
+            float finalValue = Float.parseFloat(range.getText());
+            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+            return finalValue;
+        } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
+            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+            return finalValue;
+        }
     }
 
     /**
@@ -164,11 +167,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void moveSliderByOffset(By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
         Reporter.log("Waiting for slider to be visible: " + sliderLocator.toString(), LogLevel.INFO_BLUE);
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfElementLocated(sliderLocator));
-
-        // Re-locate element right before building Actions chain to avoid stale element
-        WebElement slider = findWebElement(sliderLocator);
+        WebElement slider = waitForVisibilityAndFindElement(sliderLocator, timeout, pollingEvery);
         Actions action = new Actions(driver);
         action.clickAndHold(slider)
                 .moveByOffset(xOffset, yOffset)

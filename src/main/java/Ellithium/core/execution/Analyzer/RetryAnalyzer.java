@@ -1,6 +1,6 @@
 package Ellithium.core.execution.Analyzer;
 import Ellithium.Utilities.helpers.PropertyHelper;
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;

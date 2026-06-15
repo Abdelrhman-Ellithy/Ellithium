@@ -15,9 +15,9 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void accept(int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
+        org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().accept();
+        alert.accept();
     }
 
     /**
@@ -26,9 +26,9 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void dismiss(int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
+        org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().dismiss();
+        alert.dismiss();
     }
 
     /**
@@ -38,9 +38,9 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @return The alert text
      */
     public String getText(int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
+        org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        return driver.switchTo().alert().getText();
+        return alert.getText();
     }
 
     /**
@@ -50,9 +50,9 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(String data, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
+        org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
-        driver.switchTo().alert().sendKeys(data);
+        alert.sendKeys(data);
     }
 
     /**

@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 /**
  * Helper class to execute OS commands and interact with the system.
  */
-@SuppressWarnings("squid:S2076")
 public class CommandExecutor {
 
     /**
@@ -29,7 +28,10 @@ public class CommandExecutor {
             String output = captureProcessOutput(process);
             int exitCode = process.waitFor();
             logCommandResult(command, exitCode, output);
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
+        } catch (IOException e) {
             Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
         }
     }
@@ -166,7 +168,10 @@ public class CommandExecutor {
             Process process = new ProcessBuilder(command).start();
             process.waitFor();
             Reporter.log("Successfully killed process: ", LogLevel.INFO_GREEN, processId);
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Reporter.log("Failed to kill process: ", LogLevel.ERROR, processId);
+        } catch (IOException e) {
             Reporter.log("Failed to kill process: ", LogLevel.ERROR, processId);
         }
     }
@@ -227,7 +232,11 @@ public class CommandExecutor {
             String output = captureProcessOutput(process);
             process.waitFor();
             return output;
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Reporter.log("Failed to execute command with output: ", LogLevel.ERROR, command);
+            return null;
+        } catch (IOException e) {
             Reporter.log("Failed to execute command with output: ", LogLevel.ERROR, command);
             return null;
         }
@@ -239,7 +248,10 @@ public class CommandExecutor {
             Process process = new ProcessBuilder(command).start();
             process.waitFor();
             Reporter.log("Successfully executed script: ", LogLevel.INFO_GREEN, scriptPath);
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Reporter.log("Failed to execute script: ", LogLevel.ERROR, scriptPath);
+        } catch (IOException e) {
             Reporter.log("Failed to execute script: ", LogLevel.ERROR, scriptPath);
         }
     }
@@ -317,7 +329,6 @@ public class CommandExecutor {
             commandList.add("/c");
             Collections.addAll(commandList, command);
         } else {
-            // Run process directly without bash -c to avoid shell injection
             Collections.addAll(commandList, command);
         }
         return new ProcessBuilder(commandList);

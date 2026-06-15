@@ -61,9 +61,9 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>2.4.0</EllithiumVersion>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <EllithiumVersion>3.0.0-beta</EllithiumVersion>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <seleniumVersion>4.44.0</seleniumVersion>
         <testNG>7.12.0</testNG>
@@ -96,14 +96,16 @@
         <couchBaseVersion>3.12.0</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
+        <onnxRuntimeVersion>1.20.0</onnxRuntimeVersion>
+        <djlTokenizersVersion>0.31.0</djlTokenizersVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-2.4.0.jar
-            gpg -ab target/ellithium-2.4.0-javadoc.jar
-            gpg -ab target/ellithium-2.4.0-sources.jar
-            gpg -ab target/ellithium-2.4.0.pom
+            gpg -ab target/ellithium-3.0.0-beta.jar
+            gpg -ab target/ellithium-3.0.0-beta-javadoc.jar
+            gpg -ab target/ellithium-3.0.0-beta-sources.jar
+            gpg -ab target/ellithium-3.0.0-beta.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>
@@ -119,22 +121,51 @@
             <artifactId>selenium-java</artifactId>
             <version>${seleniumVersion}</version>
             <scope>compile</scope>
+            <exclusions>
+                <!-- IE not supported by this framework -->
+                <exclusion>
+                    <groupId>org.seleniumhq.selenium</groupId>
+                    <artifactId>selenium-ie-driver</artifactId>
+                </exclusion>
+                <!-- slf4j-nop on classpath handles all SLF4J routing -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <!-- Selenium 4 uses OkHttp, not Apache HttpClient — JCL not needed -->
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <!-- Empty placeholder JAR, no code inside -->
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>listenablefuture</artifactId>
+                </exclusion>
+                <!-- Annotation-only; J2ObjC transpiler artifact, not needed at runtime -->
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+                <!-- Compile-time annotation processor only -->
+                <exclusion>
+                    <groupId>com.google.auto.service</groupId>
+                    <artifactId>auto-service-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.github.javafaker/javafaker -->
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${JavaFaker}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gsonVersion}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
@@ -144,7 +175,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
-            <version>2.0.18</version>
+            <version>2.0.17</version>
         </dependency>
         <dependency>
             <groupId>io.qameta.allure</groupId>
@@ -162,21 +193,18 @@
             </exclusions>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.hamcrest/hamcrest -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
             <version>${hamcrestversion}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- Apache Commons CSV -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>${CSV}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- Apache POI for Excel -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
@@ -190,10 +218,14 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>jcl-over-slf4j</artifactId>
                 </exclusion>
+                <!-- log4j-core already provides log4j-api -->
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                </exclusion>
             </exclusions>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
@@ -216,6 +248,7 @@
                     <groupId>org.testng</groupId>
                     <artifactId>testng</artifactId>
                 </exclusion>
+                <!-- cucumber-java (explicit) brings cucumber-core transitively -->
                 <exclusion>
                     <groupId>io.cucumber</groupId>
                     <artifactId>cucumber-core</artifactId>
@@ -242,7 +275,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -254,74 +286,99 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId> <!-- If simple logger is used -->
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+                <!-- Explicit dep manages the version -->
+                <exclusion>
+                    <groupId>org.hamcrest</groupId>
+                    <artifactId>hamcrest</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.hamcrest</groupId>
+                    <artifactId>hamcrest-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.10.0</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/io.qameta.allure/allure-cucumber7-jvm -->
-        <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-cucumber7-jvm</artifactId>
             <version>${AllureJVMVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <!-- cucumber-java is an explicit dep -->
+                <exclusion>
+                    <groupId>io.cucumber</groupId>
+                    <artifactId>cucumber-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>${HikariCPVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
             <version>${caffineVersion}</version>
         </dependency>
-        <!-- MySQL JDBC Driver -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>${mysqlVersion}</version>
         </dependency>
-        <!-- PostgreSQL JDBC Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresqlVersion}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssqlVersion}</version>
         </dependency>
-        
-        <!-- JavaMail API for email notifications -->
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>javax.mail-api</artifactId>
-            <version>1.6.2</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- JavaMail — implementation JAR already contains the API; no separate api artifact needed -->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>javax.mail</artifactId>
             <version>1.6.2</version>
             <scope>compile</scope>
         </dependency>
-        
-        <!-- Slack SDK for Slack notifications -->
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.49.0</version>
+            <version>1.48.1</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <!-- gson is an explicit dep -->
+                <exclusion>
+                    <groupId>com.google.code.gson</groupId>
+                    <artifactId>gson</artifactId>
+                </exclusion>
+                <!-- okhttp 4.12.0 already on classpath from selenium-java -->
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>logging-interceptor</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- Oracle JDBC Driver -->
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
@@ -332,18 +389,16 @@
             <artifactId>db2jcc</artifactId>
             <version>db2jcc4</version>
         </dependency>
-        <!-- JCodec for MP4 encoding -->
         <dependency>
             <groupId>org.jcodec</groupId>
             <artifactId>jcodec</artifactId>
             <version>0.2.5</version>
-                <exclusions>
-                    <!-- Exclude test-scoped JUnit (direct test dep in jcodec POM) -->
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jcodec</groupId>
@@ -364,12 +419,33 @@
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
             <version>${mongoDBVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/redis.clients/jedis -->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>${redisDBVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <!-- gson is an explicit dep -->
+                <exclusion>
+                    <groupId>com.google.code.gson</groupId>
+                    <artifactId>gson</artifactId>
+                </exclusion>
+                <!-- Redis AUTH 2.0 not used; removes redis-authx-core artifact -->
+                <exclusion>
+                    <groupId>redis.clients.authentication</groupId>
+                    <artifactId>redis-authx-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.couchbase.client</groupId>
@@ -394,13 +470,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.appium/java-client -->
         <dependency>
             <groupId>io.appium</groupId>
             <artifactId>java-client</artifactId>
             <version>${appiumVersion}</version>
             <exclusions>
+                <!-- selenium-java is an explicit dep; exclude all selenium sub-modules from appium -->
                 <exclusion>
                     <groupId>org.seleniumhq.selenium</groupId>
                     <artifactId>selenium-java</artifactId>
@@ -425,6 +500,25 @@
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
+                <!-- guava is on classpath from selenium-java -->
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <!-- byte-buddy is on classpath from selenium-java -->
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+                <!-- Annotation-only artifacts not needed at runtime -->
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>listenablefuture</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -432,12 +526,26 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>${SQLiteVersion}</version>
         </dependency>
-        <!-- Mockito -->
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.25.9</version>
+        </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>${onnxRuntimeVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.djl.huggingface</groupId>
+            <artifactId>tokenizers</artifactId>
+            <version>${djlTokenizersVersion}</version>
         </dependency>
     </dependencies>
     <build>
@@ -459,12 +567,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>${mavenDeployPluginVersion}</version> <!-- Or check for the latest version -->
+                <version>${mavenDeployPluginVersion}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.4.0</version> <!-- You can check for the latest version -->
+                <version>3.4.0</version>
+                <configuration>
+                    <excludeResources>true</excludeResources>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -510,18 +621,18 @@
                     <centralBaseUrl>https://central.sonatype.com</centralBaseUrl>
                     <autoPublish>true</autoPublish>
                     <waitUntil>published</waitUntil>
-                    <waitMaxTime>3600</waitMaxTime> <!-- one hour -->
+                    <waitMaxTime>3600</waitMaxTime>
                 </configuration>
             </plugin>
-            <!-- Maven Surefire Plugin to run tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${mavenSurefirePluginVersion}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
+                    <argLine>--enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+ZGenerational</argLine>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <printSummary>false</printSummary> <!-- Suppresses some output -->
+                    <printSummary>false</printSummary>
                     <testFailureIgnore>true</testFailureIgnore>
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     <failIfNoTests>false</failIfNoTests>
@@ -552,8 +663,19 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>25</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>
@@ -562,21 +684,35 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>**/*.properties</include> <!-- Include all properties files -->
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <!-- Encrypted ONNX model + tokenizer for AI healing.
+                     filtering=false is mandatory: Maven's text-based substitution corrupts binary files.
+                     Only the .enc file is included — the plaintext .onnx is never packaged. -->
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>Ellithium-ai-model/model_quantized.onnx.enc</include>
+                    <include>Ellithium-ai-model/tokenizer.json</include>
+                    <include>native/*.dll</include>
+                    <include>native/*.so</include>
+                    <include>native/*.dylib</include>
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources/properties</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>**/*</include> <!-- Include all properties files -->
+                    <include>**/*</include>
                 </includes>
             </resource>
             <resource>
                 <directory>.allure</directory>
                 <filtering>false</filtering>
                 <includes>
-                    <include>**/*</include> <!-- Include all properties files -->
+                    <include>**/*</include>
                 </includes>
             </resource>
         </resources>

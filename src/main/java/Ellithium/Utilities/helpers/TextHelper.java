@@ -506,7 +506,7 @@ public class TextHelper {
                 return result;
             }
 
-            result = allLines.subList(start - 1, end);
+            result = new ArrayList<>(allLines.subList(start - 1, end));
             Reporter.log("Successfully read lines " + start + "-" + end + " from: ",
                     LogLevel.INFO_GREEN, filePath);
         } catch (IndexOutOfBoundsException e) {
@@ -585,7 +585,7 @@ public class TextHelper {
         Reporter.log("Reading last " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
         int startIndex = Math.max(0, lines.size() - n);
-        List<String> result = lines.subList(startIndex, lines.size());
+        List<String> result = new ArrayList<>(lines.subList(startIndex, lines.size()));
         Reporter.log("Retrieved last " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
         return result;
     }
@@ -594,7 +594,7 @@ public class TextHelper {
         Reporter.log("Reading first " + n + " lines from: ", LogLevel.INFO_BLUE, filePath);
         List<String> lines = readTextFile(filePath);
         int endIndex = Math.min(n, lines.size());
-        List<String> result = lines.subList(0, endIndex);
+        List<String> result = new ArrayList<>(lines.subList(0, endIndex));
         Reporter.log("Retrieved first " + result.size() + " lines from: ", LogLevel.INFO_GREEN, filePath);
         return result;
     }

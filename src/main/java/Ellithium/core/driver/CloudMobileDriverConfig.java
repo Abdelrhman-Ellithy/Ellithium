@@ -43,7 +43,6 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
     private String testName;
     private String customHost;
     private Map<String, Object> providerOptions;
-    private MutableCapabilities internalCapabilities;
 
     /**
      * Default constructor initializing with LOCAL provider.
@@ -53,7 +52,6 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
         this.cloudProvider = CloudProviderType.LOCAL;
         this.providerOptions = new HashMap<>();
         this.internalCapabilities = new MutableCapabilities();
-
     }
 
     /**
@@ -422,8 +420,9 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
             // Default to Android if not specified or explicitly Android
             finalCapabilities = new UiAutomator2Options(internalCapabilities);
         }
-        if (finalCapabilities.getCapability("appium:platformName") == null) {
-            String platform = String.valueOf(finalCapabilities.getCapability("platformName"));
+        if (finalCapabilities.getCapability("appium:automationName") == null) {
+            Object platformObj = finalCapabilities.getCapability("platformName");
+            String platform = platformObj != null ? platformObj.toString() : "android";
             finalCapabilities.setCapability("appium:automationName", platform.equalsIgnoreCase("ios") ? "XCUITest" : "UiAutomator2");
         }
         if (!providerOptions.isEmpty()) {
@@ -437,8 +436,9 @@ public class CloudMobileDriverConfig extends MobileDriverConfig {
                 }
                 case LAMBDATEST -> {
                     providerOptions.putIfAbsent("w3c", true);
-                    String platform= finalCapabilities.getCapability("platformName").toString();
-                    finalCapabilities.setCapability("platformName",platform.toLowerCase());
+                    Object platformObj = finalCapabilities.getCapability("platformName");
+                    String platform = platformObj != null ? platformObj.toString() : "android";
+                    finalCapabilities.setCapability("platformName", platform.toLowerCase());
                     finalCapabilities.setCapability("lt:options", new HashMap<>(providerOptions));
                 }
             }

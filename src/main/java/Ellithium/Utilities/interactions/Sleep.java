@@ -11,7 +11,8 @@ public class Sleep {
      * Sleeps for a specified number of milliseconds.
      * @param millis Number of milliseconds to sleep
      */
-    public  void sleepMillis(long millis) {
+    public static void sleepMillis(long millis) {
+        if (millis < 0) return;
         try {
             Reporter.log("Sleeping for " + millis + " milliseconds", LogLevel.INFO_BLUE);
             Thread.sleep(millis);
@@ -26,7 +27,7 @@ public class Sleep {
      * Sleeps for a specified number of seconds.
      * @param seconds Number of seconds to sleep
      */
-    public  void sleepSeconds(long seconds) {
+    public static void sleepSeconds(long seconds) {
         sleepMillis(seconds * 1000);
     }
 
@@ -34,7 +35,7 @@ public class Sleep {
      * Sleeps for a specified number of minutes.
      * @param minutes Number of minutes to sleep
      */
-    public  void sleepMinutes(long minutes) {
+    public static void sleepMinutes(long minutes) {
         sleepSeconds(minutes * 60);
     }
 }

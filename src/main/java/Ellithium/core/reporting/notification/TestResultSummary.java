@@ -353,9 +353,9 @@ public class TestResultSummary {
                     String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
                     
                     html.append("<tr>");
-                    html.append("<td class=\"test-name\">").append(testName).append("</td>");
-                    html.append("<td class=\"test-class\">").append(className).append("</td>");
-                    html.append("<td><div class=\"test-error\">").append(errorMessage).append("</div></td>");
+                    html.append("<td class=\"test-name\">").append(escapeHtml(testName)).append("</td>");
+                    html.append("<td class=\"test-class\">").append(escapeHtml(className)).append("</td>");
+                    html.append("<td><div class=\"test-error\">").append(escapeHtml(errorMessage)).append("</div></td>");
                     html.append("</tr>");
                 }
                 
@@ -382,6 +382,15 @@ public class TestResultSummary {
         html.append("</html>");
     }
     
+    private static String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&#x27;");
+    }
+
     private String getFormattedExecutionDate() {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

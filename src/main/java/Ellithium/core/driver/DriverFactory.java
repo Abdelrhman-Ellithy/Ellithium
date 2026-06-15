@@ -1,9 +1,9 @@
 package Ellithium.core.driver;
 
 import Ellithium.core.execution.listener.appiumListener;
+import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import Ellithium.core.execution.listener.seleniumListener;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
@@ -47,10 +47,10 @@ import static io.appium.java_client.proxy.Helpers.createProxy;
  * </pre>
  */
 public class DriverFactory {
-    private static ThreadLocal<WebDriver> WebDriverThread = new ThreadLocal<>();
-    private static ThreadLocal<AndroidDriver> AndroidDriverThread = new ThreadLocal<>();
-    private static ThreadLocal<IOSDriver> IOSDriverThread = new ThreadLocal<>();
-    private static ThreadLocal<DriverConfiguration> driverConfigurationThread=new ThreadLocal<>();
+    private static final ThreadLocal<WebDriver> WebDriverThread = new ThreadLocal<>();
+    private static final ThreadLocal<AndroidDriver> AndroidDriverThread = new ThreadLocal<>();
+    private static final ThreadLocal<IOSDriver> IOSDriverThread = new ThreadLocal<>();
+    private static final ThreadLocal<DriverConfiguration> driverConfigurationThread = new ThreadLocal<>();
 
     // ========================================================================================
     // MAIN FACTORY METHOD
@@ -74,13 +74,15 @@ public class DriverFactory {
      * @throws IllegalArgumentException if unknown config type is provided
      */
     public static <T> T getNewDriver(DriverConfigBuilder driverConfigBuilder) {
+        if (driverConfigBuilder == null) {
+            throw new IllegalArgumentException("driverConfigBuilder must not be null");
+        }
         return switch (driverConfigBuilder) {
             case LocalDriverConfig localDriverConfig -> getNewDriver(localDriverConfig);
             case RemoteDriverConfig remoteDriverConfig -> getNewDriver(remoteDriverConfig);
             case CloudMobileDriverConfig cloudMobileConfig -> getNewDriver(cloudMobileConfig);
             case MobileDriverConfig mobileDriverConfig -> getNewDriver(mobileDriverConfig);
-            case null, default ->
-                    throw new IllegalArgumentException("Unknown driver config type: " + driverConfigBuilder.getClass().getName());
+            default -> throw new IllegalArgumentException("Unknown driver config type: " + driverConfigBuilder.getClass().getName());
         };
     }
 
@@ -97,6 +99,7 @@ public class DriverFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getNewDriver(LocalDriverConfig localDriverConfig) {
+        localDriverConfig.validate();
         DriverConfiguration driverConfiguration=new DriverConfiguration(
                 localDriverConfig.getLocalDriverType(),
                 localDriverConfig.getHeadlessMode(),
@@ -245,6 +248,7 @@ public class DriverFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getNewDriver(RemoteDriverConfig remoteDriverConfig) {
+        remoteDriverConfig.validate();
         DriverConfiguration driverConfiguration=new DriverConfiguration(
                 remoteDriverConfig.getDriverType(),
                 remoteDriverConfig.getHeadlessMode(),
@@ -254,6 +258,7 @@ public class DriverFactory {
                 remoteDriverConfig.getWebSecurityMode()
                 ,remoteDriverConfig.getCapabilities(),
                 false);
+        driverConfiguration.setRemoteAddress(remoteDriverConfig.getRemoteAddress());
         driverConfigurationThread.set(driverConfiguration);
         webSetUp();
         return (T)WebDriverThread.get();
@@ -413,6 +418,7 @@ public class DriverFactory {
      * @return Configured mobile driver instance
      */
     public static <T> T getNewDriver(MobileDriverConfig mobileDriverConfig) {
+        mobileDriverConfig.validate();
         HeadlessMode mode=checkMobileHeadless(mobileDriverConfig.getCapabilities());
         DriverConfiguration driverConfiguration=new DriverConfiguration(
                 mobileDriverConfig.getDriverType(),
@@ -486,9 +492,8 @@ public class DriverFactory {
         driverConfigurationThread.set(driverConfiguration);
         Reporter.logReportOnly("Capabilities: "+cloudMobileConfig.getCapabilities().asMap().toString(),LogLevel.INFO_BLUE);
         Reporter.log("Creating driver: "+ ((MobileDriverType)cloudMobileConfig.getDriverType()).getPlatformName()+ " for " + cloudMobileConfig.getCloudProvider() +
-                " cloud provider", LogLevel.INFO_BLUE);
-        checkMobileHeadless(cloudMobileConfig.getCapabilities());
-         return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
+                " cloud provider at " + sanitizeHubUrl(cloudMobileConfig.getRemoteAddress()), LogLevel.INFO_BLUE);
+        return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
     }
 
     /**
@@ -620,43 +625,69 @@ public class DriverFactory {
         if (config == null) return;
         var driverType = config.getDriverType();
         if (driverType!=null){
-            if (driverType==MobileDriverType.Android) {
-                AndroidDriver localDriver = AndroidDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
+            try {
+                if (driverType==MobileDriverType.Android) {
+                    AndroidDriver localDriver = AndroidDriverThread.get();
+                    if (localDriver != null) {
+                        localDriver.quit();
+                    }
+                } else if (driverType==IOS) {
+                    IOSDriver localDriver = IOSDriverThread.get();
+                    if (localDriver != null) {
+                        localDriver.quit();
+                    }
+                } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
+                    var localDriver = WebDriverThread.get();
+                    if (localDriver != null) {
+                        seleniumListener.suppressLogging();
+                        try { localDriver.navigate().to("about:blank"); } catch (Exception ignored) {
+                        } finally {
+                            try { seleniumListener.resumeLogging(); } catch (Exception ignored) {}
+                            try { localDriver.quit(); } catch (Exception e) {
+                                Reporter.log("Driver quit failed (non-fatal): " + e.getMessage(), LogLevel.WARN);
+                            }
+                        }
+                    }
                 }
-            } else if (driverType==IOS) {
-                IOSDriver localDriver = IOSDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
-                }
-            } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                var localDriver = WebDriverThread.get();
-                if (localDriver != null) {
-                    localDriver.quit();
-                }
+            } finally {
+                removeDriver();
             }
-            removeDriver();
         }
     }
 
     /**
-     * Removes the current driver instance from thread local storage.
+     * Clears the CURRENT thread's driver and configuration ThreadLocals.
+     * {@link ThreadLocal#remove()} affects only the calling thread; other parallel threads are
+     * untouched. A thread holds at most one driver, so the non-matching {@code remove()} calls are
+     * no-ops — they exist to guarantee cleanup even when config/driverType state is inconsistent,
+     * preventing a stale driver leaking into the next test on a reused carrier thread.
      */
-    public static void removeDriver() {
-        var config = driverConfigurationThread.get();
-        if (config == null) return;
-        DriverType driverType = config.getDriverType();
-        if(driverType!=null) {
-            if (driverType.equals(MobileDriverType.Android)) {
-                AndroidDriverThread.remove();
-            } else if (driverType.equals(IOS)) {
-                IOSDriverThread.remove();
-            } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                WebDriverThread.remove();
-            }
-            driverConfigurationThread.remove();
-        }
+    static void removeDriver() {
+        WebDriverThread.remove();
+        AndroidDriverThread.remove();
+        IOSDriverThread.remove();
+        driverConfigurationThread.remove();
+    }
+
+    /**
+     * Re-registers an already-created driver on the calling thread's ThreadLocals.
+     *
+     * <p>TestNG's {@code dependsOnMethods} can dispatch test methods to a different thread-pool
+     * thread than the one where {@code @BeforeClass} ran. Because {@link DriverFactory} stores
+     * the driver in {@link ThreadLocal} fields, the method thread sees {@code null} even though
+     * the browser is running. Calling this from {@code @BeforeMethod(alwaysRun=true)} in the
+     * test base class re-associates the existing driver with the current thread so that all
+     * framework features (recording, screenshots, listeners) work correctly.</p>
+     *
+     * <p>Safe to call when already on the owning thread (re-sets the same values, no-op in effect).
+     * The next {@code @BeforeClass} on a recycled thread will overwrite these ThreadLocals.</p>
+     *
+     * @param decoratedDriver the decorated driver returned by {@code getNewDriver}
+     * @param config          the configuration captured from {@code getCurrentDriverConfiguration()}
+     */
+    public static void adoptCurrentThread(WebDriver decoratedDriver, DriverConfiguration config) {
+        WebDriverThread.set(decoratedDriver);
+        driverConfigurationThread.set(config);
     }
 
     /**
@@ -673,7 +704,7 @@ public class DriverFactory {
      * Automatically managed don't call it
      *
      */
-    public static void removeCurrentDriverConfiguration(){
+    static void removeCurrentDriverConfiguration(){
         driverConfigurationThread.remove();
     }
 
@@ -703,12 +734,12 @@ public class DriverFactory {
         } else {
             localDriver = BrowserSetUp.setupLocalDriver(driverType, capabilities,headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         }
-        WebDriverThread.set(getDecoratedWebDriver(localDriver));
-        if (WebDriverThread.get() != null) {
-            Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-        } else {
+        if (localDriver == null) {
             Reporter.log("Driver Creation Failed", LogLevel.ERROR);
+            return;
         }
+        WebDriverThread.set(getDecoratedWebDriver(localDriver));
+        Reporter.log("Driver Created", LogLevel.INFO_GREEN);
     }
 
     /**
@@ -729,18 +760,18 @@ public class DriverFactory {
         switch (driverType){
             case IOS -> {
                 IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
-                IOSDriverThread.set(localDriver);
-                if(IOSDriverThread.get()!=null){
+                if(localDriver!=null){
+                    IOSDriverThread.set(localDriver);
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)IOSDriverThread.get();
+                    return (T)localDriver;
                 }
             }
             case Android -> {
                 AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
-                AndroidDriverThread.set(localDriver);
-                if(AndroidDriverThread.get()!=null){
+                if(localDriver!=null){
+                    AndroidDriverThread.set(localDriver);
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)AndroidDriverThread.get();
+                    return (T)localDriver;
                 }
             }
             default -> throw new IllegalArgumentException("Wrong Driver Initialization: " + getCurrentDriverConfiguration().getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
@@ -755,8 +786,8 @@ public class DriverFactory {
      * @param driver Base WebDriver instance to be decorated
      * @return Decorated WebDriver instance
      */
-    private static WebDriver getDecoratedWebDriver(WebDriver driver){
-        return new EventFiringDecorator<>(org.openqa.selenium.WebDriver.class, new seleniumListener()).decorate(driver);
+    private static WebDriver getDecoratedWebDriver(WebDriver driver) {
+        return new EventFiringDecorator<>(WebDriver.class, new seleniumListener()).decorate(driver);
     }
 
     /**
@@ -766,7 +797,7 @@ public class DriverFactory {
      * @param capabilities Desired capabilities for Android
      * @return Decorated AndroidDriver instance
      */
-    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities){
+    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress,Capabilities capabilities){
         return createProxy(
                 AndroidDriver.class,
                 new Object[] {remoteAddress,capabilities},
@@ -790,6 +821,12 @@ public class DriverFactory {
                 new appiumListener()
         );
     }
+    private static String sanitizeHubUrl(java.net.URL url) {
+        if (url == null) return "unknown";
+        String s = url.toString();
+        return s.replaceAll("(?<=://)[^:]+:[^@]+@", "***:***@");
+    }
+
     private static HeadlessMode checkMobileHeadless(Capabilities capabilities){
         Object isHeadless=capabilities.getCapability("appium:isHeadless");
         if (isHeadless!=null){

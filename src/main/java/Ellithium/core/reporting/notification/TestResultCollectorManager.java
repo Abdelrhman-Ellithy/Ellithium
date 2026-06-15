@@ -9,22 +9,22 @@ import Ellithium.core.reporting.Reporter;
  */
 public class TestResultCollectorManager {
     
-    private static TestResultCollectorManager instance;
     private final NotificationIntegrationHandler testResultCollector;
-    
+
     private TestResultCollectorManager() {
         this.testResultCollector = new NotificationIntegrationHandler();
     }
-    
+
+    private static final class Holder {
+        private static final TestResultCollectorManager INSTANCE = new TestResultCollectorManager();
+    }
+
     /**
      * Gets the singleton instance of TestResultCollectorManager.
      * @return The singleton instance
      */
-    public static synchronized TestResultCollectorManager getInstance() {
-        if (instance == null) {
-            instance = new TestResultCollectorManager();
-        }
-        return instance;
+    public static TestResultCollectorManager getInstance() {
+        return Holder.INSTANCE;
     }
     
     /**

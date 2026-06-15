@@ -1,6 +1,6 @@
 package Ellithium.core.reporting;
 
-import Ellithium.config.managment.ConfigContext;
+import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.internal.Colors;
 import Ellithium.core.logging.LogLevel;
@@ -50,7 +50,9 @@ public class Reporter {
     public static void log(String message, LogLevel logLevel, String additionalParameter) {
         String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
         logByLevel(logLevel, coloredMessage);
-        if (ConfigContext.isOnExecution()) {
+        // Only attach to Allure report if the log level is at or above the configured threshold.
+        // This prevents DEBUG/TRACE internal framework logs from polluting the test report.
+        if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
             Allure.step(message + additionalParameter, allureStatusMap.get(logLevel));
         }
     }
@@ -69,6 +71,22 @@ public class Reporter {
             case DEBUG -> debug(message);
             default ->  {}
         }
+    }
+
+    private static final org.apache.logging.log4j.Logger LOG4J = org.apache.logging.log4j.LogManager.getLogger(Reporter.class);
+
+    /**
+     * Checks whether a log message at the given level should be attached to the Allure report.
+     * Maps Ellithium LogLevel to Log4j2 Level and checks against the effective logger threshold.
+     * DEBUG/TRACE messages are excluded from the report when the logger is at INFO or above.
+     */
+    private static boolean shouldAttachToReport(LogLevel logLevel) {
+        return switch (logLevel) {
+            case TRACE -> LOG4J.isTraceEnabled();
+            case DEBUG -> LOG4J.isDebugEnabled();
+            // INFO variants, WARN, ERROR always show in the report
+            default -> true;
+        };
     }
 
     /**
@@ -109,8 +127,7 @@ public class Reporter {
      */
     public static void attachScreenshotToReport(File screenshot, String name, String description ){
         try (FileInputStream fis = new FileInputStream(screenshot)) {
-            Allure.description(description);
-            Allure.addAttachment(name, "image/png", fis, ".png");
+            Allure.addAttachment(name + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, ".png");
         }catch (IOException e) {
             Logger.logException(e);
         }

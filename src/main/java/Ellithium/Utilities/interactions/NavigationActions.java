@@ -1,39 +1,31 @@
 package Ellithium.Utilities.interactions;
 
+import Ellithium.core.ai.scoring.ElementVectorCache;
 import org.openqa.selenium.WebDriver;
 
 public class NavigationActions<T extends WebDriver> extends BaseActions<T> {
-    
+
     public NavigationActions(T driver) {
         super(driver);
     }
 
-    /**
-     * Navigates to the specified URL.
-     * @param url The URL to navigate to
-     */
     public void navigateToUrl(String url) {
         driver.get(url);
+        ElementVectorCache.getInstance().invalidate();
     }
 
-    /**
-     * Refreshes the current page.
-     */
     public void refreshPage() {
         driver.navigate().refresh();
+        ElementVectorCache.getInstance().invalidate();
     }
 
-    /**
-     * Navigates back to the previous page.
-     */
     public void navigateBack() {
         driver.navigate().back();
+        ElementVectorCache.getInstance().invalidate();
     }
 
-    /**
-     * Navigates forward to the next page.
-     */
     public void navigateForward() {
         driver.navigate().forward();
+        ElementVectorCache.getInstance().invalidate();
     }
 }
