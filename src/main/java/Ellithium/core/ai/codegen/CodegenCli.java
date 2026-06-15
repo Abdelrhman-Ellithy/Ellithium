@@ -54,7 +54,13 @@ public final class CodegenCli {
             driver = DriverFactory.getNewLocalDriver(browser, headless);
             driver.get(url != null ? url : "about:blank");
             if (flags.containsKey("load-storage")) {
-                StorageManager.load(driver, flags.get("load-storage"));
+                if (url == null) {
+                    System.out.println("[WARNING] --load-storage skipped: no URL was provided. "
+                            + "Cookies and localStorage are domain-bound and cannot be applied on about:blank. "
+                            + "Pass a starting URL so storage is loaded before recording begins.");
+                } else {
+                    StorageManager.load(driver, flags.get("load-storage"));
+                }
             }
             InteractionRecorder.start(driver, opts, url);
 
