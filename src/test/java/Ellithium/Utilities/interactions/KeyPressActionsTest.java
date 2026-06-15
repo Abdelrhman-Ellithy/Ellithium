@@ -34,8 +34,8 @@ public class KeyPressActionsTest {
         verify(mockAndroid).longPressKey(any(KeyEvent.class));
     }
 
-    @Test
-    public void longPressKey_silentlyIgnores_nonAndroidDriver() {
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void longPressKey_throwsUnsupportedOperation_onNonAndroidDriver() {
         AppiumDriver mockAppiumDriver = mock(AppiumDriver.class);
         KeyPressActions<AppiumDriver> actions = new KeyPressActions<>(mockAppiumDriver);
         actions.longPressKey(new KeyEvent(AndroidKey.ENTER), 300L);
