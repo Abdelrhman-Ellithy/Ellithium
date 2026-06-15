@@ -505,7 +505,7 @@ public class AISelfHealer {
         java.util.concurrent.CompletableFuture<String> future =
                 java.util.concurrent.CompletableFuture.supplyAsync(
                         () -> attemptWithRetries(provider, systemPrompt, userPrompt, maxRetries, false, null),
-                        HealingContextBuilder.TIER3_PREP_POOL);
+                        HealingContextBuilder.tier3PrepPool());
         try {
             return future.get(totalMs, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
@@ -558,7 +558,7 @@ public class AISelfHealer {
         java.util.concurrent.CompletableFuture<String> future =
                 java.util.concurrent.CompletableFuture.supplyAsync(
                         () -> attemptWithRetries(provider, "", prompt, maxRetries, true, screenshot),
-                        HealingContextBuilder.TIER3_PREP_POOL);
+                        HealingContextBuilder.tier3PrepPool());
         try {
             return future.get(totalMs, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
@@ -591,9 +591,7 @@ public class AISelfHealer {
         llmProviderThread.remove();
         strategyThread.remove();
         LAST_HEAL_CONFIDENCE.remove();
-        if (!HealingContextBuilder.TIER3_PREP_POOL.isShutdown()) {
-            HealingContextBuilder.TIER3_PREP_POOL.shutdown();
-        }
+        HealingContextBuilder.shutdownTier3Pool();
     }
 
     /** Returns the global healed cache (for use by BaseActions findWebElements). */

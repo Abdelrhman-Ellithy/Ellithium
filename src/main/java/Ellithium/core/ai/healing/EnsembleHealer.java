@@ -322,7 +322,8 @@ public class EnsembleHealer {
             return null;
         } finally {
             EMBED_IN_FLIGHT.decrementAndGet();
-            SESSION_POOL.offer(session);
+            if (available && session != null) SESSION_POOL.offer(session);
+            else closeQuietly(session);
             closeQuietly(result);
             closeQuietly(tIds);
             closeQuietly(tMask);

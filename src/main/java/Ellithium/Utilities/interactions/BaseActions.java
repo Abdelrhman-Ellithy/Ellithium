@@ -384,7 +384,8 @@ class BaseActions<T extends WebDriver> {
     /**
      * Attempts to extract the By field name from source code at the call site.
      */
-    private static final java.util.concurrent.ConcurrentHashMap<String, java.util.List<String>> SOURCE_CACHE =
+    private record CachedSource(long mtime, java.util.List<String> lines) {}
+    private static final java.util.concurrent.ConcurrentHashMap<String, CachedSource> SOURCE_CACHE =
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private static String extractFieldNameFromStack(StackTraceElement[] stack, By locator) {
@@ -400,11 +401,14 @@ class BaseActions<T extends WebDriver> {
                 String path = root + classFilePart;
                 if (new java.io.File(path).exists()) {
                     try {
-                        java.util.List<String> lines = SOURCE_CACHE.get(path);
-                        if (lines == null) {
-                            lines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path));
-                            SOURCE_CACHE.putIfAbsent(path, lines);
+                        long mtime = new java.io.File(path).lastModified();
+                        CachedSource cached = SOURCE_CACHE.get(path);
+                        if (cached == null || cached.mtime() != mtime) {
+                            cached = new CachedSource(mtime,
+                                    java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path)));
+                            SOURCE_CACHE.put(path, cached);
                         }
+                        java.util.List<String> lines = cached.lines();
                         int lineNum = frame.getLineNumber();
                         if (lineNum >= 1 && lineNum <= lines.size()) {
                             // Look for By field variable used at call site
@@ -459,7 +463,8 @@ class BaseActions<T extends WebDriver> {
             } catch (StaleElementReferenceException e) {
                 if (attempt == STALE_MAX_RETRIES) throw e;
                 try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt(); throw e;
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during stale-element retry", ie);
                 }
             }
         }
@@ -474,7 +479,8 @@ class BaseActions<T extends WebDriver> {
             } catch (StaleElementReferenceException e) {
                 if (attempt == STALE_MAX_RETRIES) throw e;
                 try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt(); throw e;
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during stale-element retry", ie);
                 }
             }
         }

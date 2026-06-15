@@ -21,9 +21,25 @@ import java.util.regex.Pattern;
 
 class HealingContextBuilder {
 
-    static final ExecutorService TIER3_PREP_POOL =
+    private static volatile ExecutorService TIER3_PREP_POOL =
             Executors.newThreadPerTaskExecutor(
                     Thread.ofVirtual().name("ellithium-tier3-prep-", 0).factory());
+
+    static ExecutorService tier3PrepPool() {
+        if (TIER3_PREP_POOL.isShutdown()) {
+            synchronized (HealingContextBuilder.class) {
+                if (TIER3_PREP_POOL.isShutdown()) {
+                    TIER3_PREP_POOL = Executors.newThreadPerTaskExecutor(
+                            Thread.ofVirtual().name("ellithium-tier3-prep-", 0).factory());
+                }
+            }
+        }
+        return TIER3_PREP_POOL;
+    }
+
+    static void shutdownTier3Pool() {
+        if (!TIER3_PREP_POOL.isShutdown()) TIER3_PREP_POOL.shutdown();
+    }
 
     static class HealingContext {
         String brokenLocatorStr;
@@ -112,7 +128,7 @@ class HealingContextBuilder {
                 } finally {
                     Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 }
-            }, TIER3_PREP_POOL);
+            }, tier3PrepPool());
         }
         java.util.concurrent.CompletableFuture<byte[]> shotF = wantScreenshot
                 ? java.util.concurrent.CompletableFuture.supplyAsync(() -> {

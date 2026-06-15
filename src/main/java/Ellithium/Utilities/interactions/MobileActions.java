@@ -101,7 +101,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @return The element ID string
      */
     private String getElementId(WebElement element) {
-        return ((RemoteWebElement) element).getId();
+        if (element instanceof RemoteWebElement rwe) return rwe.getId();
+        try {
+            java.lang.reflect.Method m = element.getClass().getMethod("getId");
+            m.setAccessible(true);
+            return (String) m.invoke(element);
+        } catch (Exception e) {
+            throw new ClassCastException("Cannot extract element ID from " + element.getClass().getName()
+                    + ": not a RemoteWebElement and no getId() method accessible");
+        }
     }
 
     /**

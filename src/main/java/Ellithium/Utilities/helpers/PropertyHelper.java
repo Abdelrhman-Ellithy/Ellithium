@@ -32,7 +32,9 @@ public class PropertyHelper {
         long size = f.length();
         CachedProps c = READ_CACHE.get(filePath);
         if (c != null && c.mtime() == mtime && c.size() == size) {
-            return c.props();
+            Properties copy = new Properties();
+            copy.putAll(c.props());
+            return copy;
         }
         Properties prop = loadProperties(filePath);
         READ_CACHE.put(filePath, new CachedProps(mtime, size, prop));

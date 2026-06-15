@@ -272,14 +272,20 @@ public class SQLDatabaseProvider implements SQLProvider {
         Connection conn = beginTransaction();
         try {
             T result = callback.execute(conn);
-            commitTransaction();
+            conn.commit();
+            Reporter.log("Transaction committed successfully.", LogLevel.INFO_BLUE);
             return result;
         } catch (SQLException e) {
-            rollbackTransaction();
+            try { conn.rollback(); } catch (Exception ignored) {}
+            Reporter.log("Transaction rolled back.", LogLevel.INFO_BLUE);
             throw e;
         } catch (Exception e) {
-            rollbackTransaction();
+            try { conn.rollback(); } catch (Exception ignored) {}
+            Reporter.log("Transaction rolled back.", LogLevel.INFO_BLUE);
             throw new SQLException("Transaction failed", e);
+        } finally {
+            transactionConnection.remove();
+            try { conn.close(); } catch (Exception ignored) {}
         }
     }
 

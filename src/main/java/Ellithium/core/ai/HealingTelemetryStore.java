@@ -105,7 +105,7 @@ public class HealingTelemetryStore {
         int n = recordCount.incrementAndGet();
         if (max > 0 && n > max) {
             boolean dropped = false;
-            while (n > max) {
+            while (recordCount.get() > max) {
                 TelemetryRecord evicted = records.poll();
                 if (evicted != null) {
                     n = recordCount.decrementAndGet();

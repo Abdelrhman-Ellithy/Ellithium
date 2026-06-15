@@ -206,22 +206,18 @@ public class BaselineStore {
         try {
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
             if (mutationMatch != null) {
-                Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace, category);
                 return HealOutcome.of(mutationMatch, 0.92, 1);
             }
 
             WebElement attrMatch = tryAttributePreSearch(driver, baseline, history);
             if (attrMatch != null) {
-                Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                 double score = scoreBestHistory(attrMatch, history);
                 acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null, stackTrace, category);
                 return HealOutcome.of(attrMatch, score, 1);
             }
 
             ScoredCandidate best = findBestMatch(driver, baseline, history);
-
-            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
 
             if (best == null) {
                 Reporter.log("BaselineStore: Tier 1 found no candidates in DOM", LogLevel.DEBUG);
