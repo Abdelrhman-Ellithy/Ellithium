@@ -13,7 +13,7 @@
          <img alt="Codacy" src="https://img.shields.io/codacy/grade/4d6d48aba396411fa3170184330ba089?style=for-the-badge&color=blue&label=Code%20Quality" width="170">
         </a>
         <a href="https://github.com/Abdelrhman-Ellithy/Ellithium/blob/main/LICENSE" target="_blank">
-            <img alt="License" src="https://img.shields.io/github/license/apache/maven.svg?label=License" width="200">
+            <img alt="License" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/1280px-Apache_Maven_logo.svg.png" width="170">
         </a>
         <a href="https://central.sonatype.com/artifact/io.github.abdelrhman-ellithy/ellithium" target="_blank">
             <img alt="Codacy" src="https://central.sonatype.com/maven-central-logo.svg?" width="200">
@@ -157,9 +157,9 @@ Ellithium supports reading and writing data from various file formats, including
 ## 👨‍💻 Developed using:
 <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
   <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" style="height:50px; width:auto; max-width:100px;"></a>
-  <a href="https://maven.apache.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/320px-Apache_Maven_logo.svg.png" alt="Maven" style="height:50px; width:auto; max-width:100px;"></a>
+  <a href="https://maven.apache.org/" target="_blank"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_kfjhmEkppRhYhJjGc4qrXahjpchftSrMKn_NmAElHA&s=10" alt="Maven" style="height:50px; width:auto; max-width:100px;"></a>
   <a href="https://www.jetbrains.com/idea/" target="_blank"><img src="https://resources.jetbrains.com/storage/products/intellij-idea/img/meta/intellij-idea_logo_300x300.png" alt="IntelliJ IDEA" style="height:50px; width:auto; max-width:100px;"></a>
-  <a href="https://code.visualstudio.com/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Visual_Studio_Code_1.35_icon.svg/512px-Visual_Studio_Code_1.35_icon.svg.png" alt="VS Code" style="height:50px; width:auto; max-width:100px;"></a>
+  <a href="https://code.visualstudio.com/" target="_blank"><img src="https://code.visualstudio.com/assets/branding/code-stable.png" alt="VS Code" style="height:50px; width:auto; max-width:100px;"></a>
 </div>
 <br/>
 
