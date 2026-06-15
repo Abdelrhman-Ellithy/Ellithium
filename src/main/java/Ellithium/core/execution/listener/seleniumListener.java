@@ -156,16 +156,14 @@ public class seleniumListener implements WebDriverListener {
      * (e.g., ElementFingerprint capture reads 13+ attributes per element).
      * Set to true via {@link #suppressLogging()} and reset via {@link #resumeLogging()}.
      */
-    private static final ThreadLocal<Integer> SUPPRESS_DEPTH = ThreadLocal.withInitial(() -> 0);
-
     /** Suppress listener logging on the current thread (reentrant — pair every call with resumeLogging()). */
-    public static void suppressLogging() { SUPPRESS_DEPTH.set(SUPPRESS_DEPTH.get() + 1); }
+    public static void suppressLogging() { ListenerLogSuppression.suppress(); }
 
     /** Resume listener logging on the current thread (decrements the suppression depth). */
-    public static void resumeLogging() { SUPPRESS_DEPTH.set(Math.max(0, SUPPRESS_DEPTH.get() - 1)); }
+    public static void resumeLogging() { ListenerLogSuppression.resume(); }
 
     /** Returns true if logging is currently suppressed. */
-    private static boolean isSuppressed() { return SUPPRESS_DEPTH.get() > 0; }
+    private static boolean isSuppressed() { return ListenerLogSuppression.isSuppressed(); }
 
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {

@@ -105,11 +105,18 @@ class HealingContextBuilder {
         if (strategy == HealingStrategy.SUGGEST_ONLY) {
             domF = java.util.concurrent.CompletableFuture.completedFuture("");
         } else {
-            domF = java.util.concurrent.CompletableFuture.supplyAsync(
-                    () -> DOMMinimizer.getOptimalDOMRepresentation(driver), TIER3_PREP_POOL);
+            domF = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+                try {
+                    return DOMMinimizer.getOptimalDOMRepresentation(driver);
+                } finally {
+                    Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                }
+            }, TIER3_PREP_POOL);
         }
         java.util.concurrent.CompletableFuture<byte[]> shotF = wantScreenshot
                 ? java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
                         try {
                             return ((org.openqa.selenium.TakesScreenshot) driver)
                                     .getScreenshotAs(org.openqa.selenium.OutputType.BYTES);
@@ -117,6 +124,8 @@ class HealingContextBuilder {
                             Reporter.log("Failed to capture screenshot for visual healing: "
                                     + e.getMessage(), LogLevel.WARN);
                             return null;
+                        } finally {
+                            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                         }
                     }, TIER3_PREP_POOL)
                 : java.util.concurrent.CompletableFuture.completedFuture(null);

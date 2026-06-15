@@ -13,6 +13,7 @@ public class appiumListener implements MethodCallListener {
 
     @Override
     public void afterCall(Object obj, Method method, Object[] args, Object result) {
+        if (ListenerLogSuppression.isSuppressed()) return;
         String methodName = method.getName();
         switch (methodName) {
 

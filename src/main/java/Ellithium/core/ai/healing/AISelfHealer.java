@@ -399,6 +399,8 @@ public class AISelfHealer {
         By acceptedLocator = null;
         HealingResult acceptedResult = null;
 
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
         for (HealingResult candidate : candidates) {
             if (!candidate.isConfidentEnough(confidenceThreshold)) {
                 Reporter.log("[TIER 3] candidate skipped (conf=" + String.format("%.2f", candidate.getConfidence())
@@ -449,6 +451,9 @@ public class AISelfHealer {
             acceptedLocator = candidateLocator;
             acceptedResult = candidate;
             break;
+        }
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
         if (acceptedLocator == null || acceptedResult == null) {

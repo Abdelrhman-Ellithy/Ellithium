@@ -1977,3 +1977,61 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-15T12:41:20.8699295
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `algorithmic-baseline` | - | - | `By.id: usenameemail` | `By.id: username` | 1.00 |
+| 2 | `algorithmic-baseline` | - | - | `By.id: secret` | `By.id: password` | 1.00 |
+
+## Detailed Reasoning
+
+### 1. By.id: usenameemail
+- **Healed to:** `By.id: username`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+### 2. By.id: secret
+- **Healed to:** `By.id: password`
+- **Reasoning:** [TIER 1 - AttrSearch]
+
+---
+
+
+---
+
+## Run: 2026-06-15T13:06:12.4627255
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.id: usenameemail` | `By.id("username")` | 0.91 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: secret` | `By.id("password")` | 0.89 |
+
+## Detailed Reasoning
+
+### 1. By.id: usenameemail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: secret
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
