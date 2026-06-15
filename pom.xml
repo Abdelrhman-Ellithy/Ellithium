@@ -356,7 +356,7 @@
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.48.1</version>
+            <version>1.49.0</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
