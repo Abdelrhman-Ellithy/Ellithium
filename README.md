@@ -58,6 +58,10 @@
 |:------:|:---: |:---: |:---: |:---: |
 |✅       |✅  |✅  |✅   |✅   |
 
+|AI Self-Healing|Codegen Recorder|LLM Test Generation|Live In-Session Test Extension|Manual Test → Script|BDD Feature Generation|
+|:------:|:---: |:---: |:---: |:---: |:---: |
+|✅       |✅  |✅  |✅   |✅   |✅   |
+
 - **Allure Reporting**: Generate rich, interactive test reports with **Allure**, including test history and trend analysis.
 - **Modular Design**: A well-structured and modular framework promoting code reuse and easy maintenance.
 - **Executing OS Commands**: Execute system commands via the built-in **Command Executor Interface**.
@@ -71,6 +75,69 @@
 - **Email Notifications**: Automated SMTP email delivery with rich HTML reports and configurable triggers.
 - **Slack Integration**: Webhook-based notifications with structured messages and channel targeting.
 - **Exception Handling**: Robust mechanisms for capturing exceptions during test execution.
+
+---
+
+### 🤖 AI-Powered Features
+
+Ellithium ships a built-in AI engine and Healing System — all features configured via `ai-config.properties`.
+
+**🔧 AI Self-Healing** — When a locator breaks at runtime, Ellithium recovers automatically through a three-tier cascade:
+
+| Tier | Strategy | How |
+|:----:|:--------:|:----|
+| 1 | Algorithmic | Mutation heuristics + element fingerprint matching. Fully offline. |
+| 2 | Embedded Local Model | On-device model scores semantic similarity against the live DOM. |
+| 3 | LLM | Scrubbed DOM snapshot sent to your configured LLM; returns a replacement locator. |
+
+Supports `AUTO`, `SUGGEST_ONLY`, and `DISABLED` strategies — configured in `ai-config.properties`:
+
+```properties
+ai.healing.enabled=true
+ai.healing.strategy=AUTO    # AUTO | SUGGEST_ONLY | DISABLED
+ai.llm.provider=openai
+ai.llm.apiKey=sk-...
+ai.llm.model=gpt-4o
+```
+
+**🎥 Codegen Recorder** — Records browser interactions and generates ready-to-run code with uniqueness-verified, stability-ranked locators. Supports iframes, Shadow DOM, and Appium.
+
+| Option | Default | Description |
+|:------:|:-------:|-------------|
+| `--target` | `test` | `test` — runnable TestNG class · `pom` — reusable Page Object |
+| `--browser` | `chrome` | `chrome` · `edge` · `firefox` · `safari` |
+| `--assert` | `soft` | `soft` (collect + assertAll) · `hard` (fail-fast) |
+| `--output` | `src/test/java` | Output base directory |
+| `--save-storage` / `--load-storage` | — | Persist or restore cookies + localStorage across sessions |
+
+```bash
+mvn -q exec:java -Dexec.mainClass=Ellithium.core.ai.codegen.CodegenCli \
+    -Dexec.args="https://your-app.test --target test --output src/test/java --package pages"
+```
+
+**✍️ Live In-Session Test Extension** — Executes new test steps written in natural language against the currently open browser session, with locators resolved on the live DOM. No re-launch needed.
+
+```java
+EllithiumAIEngine.continueFrom(driver, llmProvider, "click the login button and verify the dashboard appears");
+```
+
+**🗂️ Manual Test Cases → Automated Scripts** — Converts JSON or plain-text manual test cases into Page Objects, TestNG tests, and BDD feature files in a single call. Idempotent across re-runs.
+
+```java
+EllithiumAIEngine engine = new EllithiumAIEngine(llmProvider);
+engine.generateFrom("src/test/resources/test-cases.json");
+// Produces: LoginPage.java · LoginTest.java · login.feature
+```
+
+**Supported LLM Providers:**
+
+| OpenAI | Anthropic | Gemini | DeepSeek | Groq | Qwen | Local / Ollama | Custom Endpoint |
+|:------:|:---------:|:------:|:--------:|:----:|:----:|:--------------:|:---------------:|
+| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+> 📖 Full configuration, examples and API reference — [**official documentation**](https://abdelrhman-ellithy.github.io/ellithium.github.io/)
+
+---
 
 ### 👨‍💻 Supported OS with OS Command Executor Interface for Desktop OS
 
@@ -90,9 +157,9 @@ Ellithium supports reading and writing data from various file formats, including
 ## 👨‍💻 Developed using:
 <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
   <a href="https://www.oracle.com/eg/java/technologies/downloads/" target="_blank"><img src="https://www.chrisjmendez.com/content/images/2019/01/Java_logo_icon.png" alt="Java" style="height:50px; width:auto; max-width:100px;"></a>
-  <a href="https://maven.apache.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/340px-Apache_Maven_logo.svg.png" alt="Maven" style="height:50px; width:auto; max-width:100px;"></a>
-  <a href="https://www.jetbrains.com/idea/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/IntelliJ_IDEA_Icon.svg/1200px-IntelliJ_IDEA_Icon.svg.png" alt="IntelliJ IDEA" style="height:50px; width:auto; max-width:100px;"></a>
-  <a href="https://code.visualstudio.com/" target="_blank"><img src="https://code.visualstudio.com/assets/images/code-stable.png" alt="VS Code" style="height:50px; width:auto; max-width:100px;"></a>
+  <a href="https://maven.apache.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Apache_Maven_logo.svg/320px-Apache_Maven_logo.svg.png" alt="Maven" style="height:50px; width:auto; max-width:100px;"></a>
+  <a href="https://www.jetbrains.com/idea/" target="_blank"><img src="https://resources.jetbrains.com/storage/products/intellij-idea/img/meta/intellij-idea_logo_300x300.png" alt="IntelliJ IDEA" style="height:50px; width:auto; max-width:100px;"></a>
+  <a href="https://code.visualstudio.com/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Visual_Studio_Code_1.35_icon.svg/512px-Visual_Studio_Code_1.35_icon.svg.png" alt="VS Code" style="height:50px; width:auto; max-width:100px;"></a>
 </div>
 <br/>
 
@@ -124,13 +191,12 @@ For comprehensive documentation and user guides, visit our official documentatio
 ### Prerequisites
 
 Ensure you have the following installed:
-- **Java Development Kit (JDK)**: 21 preferred
-- **Maven**: 3.8.1 or higher (last version 3.9.9 recommended)
+- **Java Development Kit (JDK)**: 25
+- **Maven**: 3.9.9 or higher (last version 3.9.16 recommended)
 
 ## 🏁 Getting Started
 
 - **Follow these steps to set up a new Maven project with Ellithium:**
-Here is the updated **Getting Started** section formatted for your README file:
 
 ---
 ### Step 1: Create a New Maven Project
@@ -164,8 +230,8 @@ Here is the updated **Getting Started** section formatted for your README file:
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.15.0</version>
         <configuration>
-            <source>21</source>
-            <target>21</target>
+            <source>25</source>
+            <target>25</target>
         </configuration>
     </plugin>
 
@@ -254,151 +320,101 @@ public class TestRunner extends BDDSetup {
 }
 ```
 
-### Step 2: To Create a BaseStepDefinitions Class.
+### Step 2: Create a BaseStepDefinitions Class
 
-- **Create a BaseStepDefinitions class that will be used to extend the other StepDefinitions Classes from it**.
+- **Create a BaseStepDefinitions class to share the driver across all step definition classes**.
 
 ```java
 package Base;
 
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.*;
 import org.openqa.selenium.WebDriver;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
+import java.net.URL;
 
 public class BaseStepDefinitions {
     protected WebDriver driver;
-
     protected AndroidDriver androidDriver;
     protected IOSDriver iosDriver;
 
     public BaseStepDefinitions() {
 
+        // Web — Local
+        DriverConfigBuilder config = new LocalDriverConfig(
+                LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.False,
+                PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
+        driver = DriverFactory.getNewDriver(config);
 
-        // for Local Machine Web Execution
-        driver= DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
-
-        // for Remote Machine Web Execution
-        driver= DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome,new URL("http://localhost:4723"),capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal,WebSecurityMode.SecureMode,SandboxMode.Sandbox);
-
-        // for Android Mobile
-        androidDriver= DriverFactory.getNewMobileDriver(MobileDriverType.Android,new URL("http://localhost:4723"),options);
-        
-        // for IOS Mobile
-        iosDriver=DriverFactory.getNewMobileDriver(MobileDriverType.IOS,new URL("http://localhost:4723"),options);
-        
-
-        // using config builder (after release 2.03)
-
-        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome, // same for RemoteDriverConfig, MobileDriverConfig
+        // Web — Remote (Selenium Grid)
+        DriverConfigBuilder remoteConfig = new RemoteDriverConfig(
+                RemoteDriverType.Remote_Chrome, new URL("http://localhost:4444"),
                 HeadlessMode.False, PrivateMode.False,
-                PageLoadStrategyMode.Normal,
-                WebSecurityMode.SecureMode,
-                SandboxMode.Sandbox);
-        driver=DriverFactory.getNewDriver(driverConfig);
+                PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
+        driver = DriverFactory.getNewDriver(remoteConfig);
 
-        // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
-       SQLDatabaseProvider db=new SQLDatabaseProvider(
-                SQLDBType.MY_SQL,
-                username,
-                password,
-                serverIp,
-                port,
-                dbName);
-    }
-        // for DB SQL Provider [SQLite]
-        SQLDatabaseProvider SQLitedb= SQLDatabaseProvider( SQLDBType.SQLITE, pathToSQLiteDataBase);
+        // Mobile — Android / iOS
+        androidDriver = DriverFactory.getNewMobileDriver(MobileDriverType.Android, new URL("http://localhost:4723"), options);
+        iosDriver     = DriverFactory.getNewMobileDriver(MobileDriverType.IOS,     new URL("http://localhost:4723"), options);
 
-        // for NoSQL DB Provider
-        CouchbaseDatabaseProvider couchDB=CouchbaseDatabaseProvider(connectionString,  username,  password,  bucketName);
-        MongoDatabaseProvider mongoDB=MongoDatabaseProvider( connectionString,  dbName);
-        RedisDatabaseProvider redisDB=RedisDatabaseProvider( connectionString);
+        // DB — SQL  [MY_SQL | SQL_SERVER | POSTGRES_SQL | ORACLE | IBM_DB2]
+        SQLDatabaseProvider db     = new SQLDatabaseProvider(SQLDBType.MY_SQL, username, password, serverIp, port, dbName);
+        SQLDatabaseProvider sqlite = new SQLDatabaseProvider(SQLDBType.SQLITE, pathToSQLiteDatabase);
+
+        // DB — NoSQL
+        CouchbaseDatabaseProvider couchDB  = new CouchbaseDatabaseProvider(connectionString, username, password, bucketName);
+        MongoDatabaseProvider     mongoDB  = new MongoDatabaseProvider(connectionString, dbName);
+        RedisDatabaseProvider     redisDB  = new RedisDatabaseProvider(connectionString);
     }
 }
-
-```
-- **The default values for WebDriver** if you **didn't pass all the paramaters** are:
-
-```java
-    @default("false") String HeadlessMode,      // can be true or false (Not Supported with Safari)
-    @default("Normal") String PageLoadStrategy, // can be Normal or Eager
-    @default("False") String PrivateMode,        // can be true or false
-    @default("Sandbox") String SandboxMode,     // can be Sandbox or NoSandbox (Not Supported with Safari)
-    @default("True") String WebSecurityMode     // can be True or False (Not Supported with Safari)
 ```
 
-### Option 2: default Mode
+**LocalDriverConfig defaults** (omitted params fall back to):
+
+| Parameter | Default |
+|-----------|---------|
+| `HeadlessMode` | `False` |
+| `PrivateMode` | `False` |
+| `PageLoadStrategyMode` | `Normal` |
+| `WebSecurityMode` | `SecureMode` |
+| `SandboxMode` | `Sandbox` |
+
+### Option 2: Non-BDD Mode
 - **[Demo-Project](https://github.com/Abdelrhman-Ellithy/The-Internet-Herokuapp) for setup use after follow the following steps**
+
 ### Step 1: Create a BaseTest Class
 
-- **Create a UI_BDD Package then create a new class named BaseTest that extends the `NonBDDSetup` class from Ellithium**.
+- **Create a BaseTests class that extends `NonBDDSetup` — all test classes extend from it**.
 
 ```java
 package UI_NonBDD;
 
-import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.base.NonBDDSetup;
+import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.*;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.*;
 
-public class BaseTests {
-    WebDriver driver;
+public class BaseTests extends NonBDDSetup {
+    protected WebDriver driver;
 
-    // with Web and the Same Logic for Other
     @BeforeClass
-    public void Setup() {
-
-        
-        // for Local Machine Web Execution
-        driver = DriverFactory.getNewLocalDriver(LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
-
-        // for Remote Machine Web Execution
-        driver = DriverFactory.getNewRemoteDriver(RemoteDriverType.Remote_Chrome, new URL("http://localhost:4723"), capabilities, HeadlessMode.False, PrivateMode.True, PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
-
-        // for Android Mobile
-        androidDriver = DriverFactory.getNewMobileDriver(MobileDriverType.Android, new URL("http://localhost:4723"), options);
-
-        // for IOS Mobile
-        iosDriver = DriverFactory.getNewMobileDriver(MobileDriverType.IOS, new URL("http://localhost:4723"), options);
-
-        // for DB SQL Provider [MY_SQL, SQL_SERVER, POSTGRES_SQL, ORACLE_SID, ORACLE_SERVICE_NAME, IBM_DB2]
-        SQLDatabaseProvider db = new SQLDatabaseProvider(
-                SQLDBType.MY_SQL,
-                username,
-                password,
-                serverIp,
-                port,
-                dbName);
-
-        
-        // using config builder (after release 2.03)
-
-        DriverConfigBuilder driverConfig=new LocalDriverConfig(LocalDriverType.Chrome, // same for RemoteDriverConfig, MobileDriverConfig
-                HeadlessMode.False, PrivateMode.False,
-                PageLoadStrategyMode.Normal,
-                WebSecurityMode.SecureMode,
-                SandboxMode.Sandbox);
-        driver=DriverFactory.getNewDriver(driverConfig);
-
+    public void setup() {
+        DriverConfigBuilder config = new LocalDriverConfig(
+                LocalDriverType.Chrome, HeadlessMode.False, PrivateMode.False,
+                PageLoadStrategyMode.Normal, WebSecurityMode.SecureMode, SandboxMode.Sandbox);
+        driver = DriverFactory.getNewDriver(config);
     }
 
-    // for DB SQL Provider [SQLite]
-    SQLDatabaseProvider SQLitedb = SQLDatabaseProvider(SQLDBType.SQLITE, pathToSQLiteDataBase);
-
-    // for NoSQL DB Provider
-    CouchbaseDatabaseProvider couchDB = CouchbaseDatabaseProvider(connectionString, username, password, bucketName);
-    MongoDatabaseProvider mongoDB = MongoDatabaseProvider(String connectionString, String dbName);
-    RedisDatabaseProvider redisDB = RedisDatabaseProvider(String connectionString);
-}
-
     @AfterClass
-    public void tareDown() {
+    public void tearDown() {
         DriverFactory.quitDriver();
     }
 }
 ```
-- **Complete your logic as you like here after that**
-- **this class will be used to extend the other classes from it**
-- **as here in step 2**
-### Step 2: Create a another Test Class and extend from the BaseTests class
+
+### Step 2: Create a Test Class extending BaseTests
 
 ```java
 package UI_BDD;
@@ -442,7 +458,7 @@ public class loginTests extends BaseTests {
     }
 }
 ```
-### Step 3: Use Driver Actions Class to Perform actions on Web and Mobile, as It handles many steps and syncronization
+### Step 3: Use DriverActions for Element Interactions and Synchronization
 
 ```java
 package Pages;
@@ -450,30 +466,35 @@ package Pages;
 import Ellithium.Utilities.interactions.DriverActions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+
 public class LoginPage {
-    WebDriver driver;
-    DriverActions driverActions;
+    private final WebDriver driver;
+    private final DriverActions driverActions;
+
     public LoginPage(WebDriver driver) {
-        this.driver=driver;
-        driverActions=new DriverActions(driver);
-    }
-    public void setUserName(String username){
-        //                     locator,         data      , timeout, polling time 
-        driverActions.elements().sendData(By.id("username"),username, 5,           200);
-    }
-    public void setPassword(String password){
-        //                     locator,         data      , timeout
-        driverActions.elements().sendData(By.id("password"),password, 5);
-    }
-    public SecureAreaPage clickLoginBtn(){
-                //                     locator
-        driverActions.elements().clickOnElement(By.tagName("button"));
-        return new SecureAreaPage(driver);
+        this.driver = driver;
+        driverActions = new DriverActions(driver);
     }
 
+    public void setUserName(String username) {
+        driverActions.elements().sendData(By.id("username"), username, 5);
+    }
+
+    public void setPassword(String password) {
+        driverActions.elements().sendData(By.id("password"), password, 5);
+    }
+
+    public void clickLoginBtn() {
+        driverActions.elements().clickOnElement(By.cssSelector("button[type='submit']"));
+    }
+
+    public String getAlertMessage() {
+        return driverActions.elements().getText(By.cssSelector(".flash"), 5);
+    }
 }
-
 ```
+
+`DriverActions` handles waits, retries, and synchronization automatically — no explicit `Thread.sleep()` or `WebDriverWait` needed.
 ### *This should cover the steps to get your **Ellithium** framework up and running in a new Maven project.*
 
 ## 📬 Contact
