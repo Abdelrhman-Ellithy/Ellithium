@@ -64,10 +64,18 @@ public class AnthropicProvider implements LLMProvider {
                 JSONObject jsonResponse = new JSONObject(response.body());
                 JSONArray contentArr = jsonResponse.optJSONArray("content");
                 if (contentArr != null && contentArr.length() > 0) {
-                    String rawText = contentArr.getJSONObject(0).getString("text");
-                    return stripMarkdownFences(rawText);
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < contentArr.length(); i++) {
+                        JSONObject block = contentArr.optJSONObject(i);
+                        if (block != null && "text".equals(block.optString("type")) && block.has("text")) {
+                            sb.append(block.optString("text"));
+                        }
+                    }
+                    if (!sb.isEmpty()) {
+                        return stripMarkdownFences(sb.toString());
+                    }
                 }
-                Reporter.log("Anthropic API returned empty content array (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
+                Reporter.log("Anthropic API returned no text block (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
                 Reporter.log("Anthropic API empty body: " + response.body(), LogLevel.DEBUG);
                 return null;
             } else {

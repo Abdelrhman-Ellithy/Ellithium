@@ -60,7 +60,19 @@ public final class StorageManager {
             Map<String, String> ls = readLocalStorage(driver);
             Path target = Paths.get(filePath);
             if (target.getParent() != null) Files.createDirectories(target.getParent());
-            Files.writeString(target, GSON.toJson(new StorageState(cookies, ls)));
+            Path tmp = Files.createTempFile(
+                    target.getParent() != null ? target.getParent() : Paths.get("."), "storage", ".tmp");
+            try {
+                Files.writeString(tmp, GSON.toJson(new StorageState(cookies, ls)));
+                try {
+                    Files.move(tmp, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                    Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(tmp);
+            }
             Reporter.log("StorageManager: saved " + cookies.size() + " cookies + " + ls.size()
                     + " localStorage entries to " + filePath, LogLevel.INFO_GREEN);
         } catch (Exception e) {

@@ -31,6 +31,7 @@ public class AIConfigLoader {
     private static double  semanticFallbackScore      = 0.65;
     private static boolean visionAllowMobile          = false;
     private static boolean visionAllowWeb             = false;
+    private static boolean liveAllowCrossOriginNavigate = true;
     private static int     llmHealMaxWaitMs           = 15_000;
     private static int     llmMaxRetries              = 3;
     private static int     telemetryMaxRecords        = 100_000;
@@ -81,6 +82,7 @@ public class AIConfigLoader {
             tier3BaselineMatchFloor     = parseDouble(p, "ai.healing.tier3BaselineMatchFloor", tier3BaselineMatchFloor);
             visionAllowMobile           = parseBool(p, "ai.vision.allowMobile", visionAllowMobile);
             visionAllowWeb              = parseBool(p, "ai.vision.allowWeb", visionAllowWeb);
+            liveAllowCrossOriginNavigate = parseBool(p, "ai.live.allowCrossOriginNavigate", liveAllowCrossOriginNavigate);
             baselineTtlDays             = parseInt(p, "ai.healing.baselineTtlDays", baselineTtlDays);
             semanticFallbackScore       = parseDouble(p, "ai.healing.semanticFallbackScore", semanticFallbackScore);
             llmHealMaxWaitMs            = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
@@ -185,6 +187,7 @@ public class AIConfigLoader {
     public static int    getOnnxHardCandidateLimit()            { return onnxHardCandidateLimit; }
     public static boolean isVisionAllowedOnMobile()             { return visionAllowMobile; }
     public static boolean isVisionAllowedOnWeb()                { return visionAllowWeb; }
+    public static boolean isLiveCrossOriginNavigateAllowed()    { return liveAllowCrossOriginNavigate; }
     public static int    getBaselineTtlDays()                   { return baselineTtlDays; }
     public static double getSemanticFallbackScore()             { return semanticFallbackScore; }
     public static int    getLlmHealMaxWaitMs()                  { return llmHealMaxWaitMs; }

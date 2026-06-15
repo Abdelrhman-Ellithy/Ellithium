@@ -82,7 +82,7 @@ class HealingContextBuilder {
             ctx.callSiteSource = readCallSiteSource(ctx.filePath, ctx.lineNumber);
         }
 
-        ctx.baseline = BaselineStore.getBaseline(brokenLocator.toString());
+        ctx.baseline = BaselineStore.getBaseline(driver, brokenLocator);
 
         ctx.semanticQuery = SemanticQueryBuilder.buildFromContext(
                 ctx.actionType, ctx.brokenLocatorStr, ctx.methodName, ctx.baseline);

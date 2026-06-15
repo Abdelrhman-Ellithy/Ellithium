@@ -488,8 +488,8 @@ public class EllithiumAIEngine {
                 return null;
             }
 
-            // Generate POM class
-            if (!new java.io.File(pomPath).exists()) {
+            boolean pomWasNew = !new java.io.File(pomPath).exists();
+            if (pomWasNew) {
                 PomClassGenerator.createPomClass(pomPath, pomPackage, pomClass, locatorFields, methodBodies);
             } else {
                 int max = Math.max(locatorFields.size(), methodBodies.size());
@@ -507,8 +507,6 @@ public class EllithiumAIEngine {
             }
 
             // Generate TestNG test class with PROPER scaffolding.
-            // Track whether the POM was freshly created so we can roll it back if test generation fails.
-            boolean pomWasNew = !new java.io.File(pomPath).exists();
             String targetUrl = testCase.hasTargetUrl() ? testCase.getTargetUrl() : null;
             boolean testWritten = generateTestClass(testPath, testPackage, testClass, testMethod, testBody,
                     pomPackage, pomClass, targetUrl);

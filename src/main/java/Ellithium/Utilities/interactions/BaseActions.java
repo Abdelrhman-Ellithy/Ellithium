@@ -68,7 +68,7 @@ class BaseActions<T extends WebDriver> {
         String callerMethod = extractCallerMethodName(stack);
         String fieldName    = extractFieldNameFromStack(stack, locator);
         String locatorValue = extractLocatorValue(locator);
-        ElementFingerprint baseline = BaselineStore.getBaseline(locator.toString());
+        ElementFingerprint baseline = BaselineStore.getBaseline(driver, locator);
         return new HealingRequest(driver, locator, stack, actionType, callerMethod,
                 fieldName, locatorValue, baseline);
     }

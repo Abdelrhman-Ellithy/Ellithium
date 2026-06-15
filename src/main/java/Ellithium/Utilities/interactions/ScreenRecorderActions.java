@@ -721,19 +721,24 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
                 final int frameCount = framesCopy.stream().mapToInt(e -> e.count).sum();
                 final long capturedDuration = durationMs;
-                videoCompilationExecutor.submit(() -> {
-                    activeCompilations.incrementAndGet();
-                    try {
-                        compileFramesToMP4(framesCopy, videoFile, capturedDuration);
-                        Logger.info("Video compiled asynchronously: " + videoFile.getName() +
-                                " (" + frameCount + " frames)");
-                    } catch (Exception e) {
-                        Logger.error("Async video compilation failed: " + e.getMessage());
-                    }
-                    finally {
-                        activeCompilations.decrementAndGet();
-                    }
-                });
+                activeCompilations.incrementAndGet();
+                try {
+                    videoCompilationExecutor.submit(() -> {
+                        try {
+                            compileFramesToMP4(framesCopy, videoFile, capturedDuration);
+                            Logger.info("Video compiled asynchronously: " + videoFile.getName() +
+                                    " (" + frameCount + " frames)");
+                        } catch (Exception e) {
+                            Logger.error("Async video compilation failed: " + e.getMessage());
+                        }
+                        finally {
+                            activeCompilations.decrementAndGet();
+                        }
+                    });
+                } catch (java.util.concurrent.RejectedExecutionException rex) {
+                    activeCompilations.decrementAndGet();
+                    Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
+                }
 
                 Reporter.log("Video compilation started in background (" + frameCount + " frames)",
                         LogLevel.INFO_BLUE);
@@ -1072,9 +1077,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
                     Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
                     0L, TimeUnit.MILLISECONDS,
-                    new java.util.concurrent.ArrayBlockingQueue<>(100),
-                    Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory(),
-                    new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+                    new java.util.concurrent.LinkedBlockingQueue<>(),
+                    Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory());
 
         static {
         Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("VideoCompilationShutdownHook").unstarted(() -> {

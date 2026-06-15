@@ -59,15 +59,18 @@ public class TraceabilityManager {
      */
     public static void saveRecord(TraceabilityRecord record) {
         synchronized (LOCK) {
-            List<TraceabilityRecord> records = loadAllRecordsInternal();
-
-            // Check if record exists, if so replace it
-            records.removeIf(r -> sameKey(r, record.getSource().getTestId(), record.getSource().getSourceFile()));
-
-            records.add(record);
-
             java.nio.file.Path target = java.nio.file.Paths.get(MAPPING_FILE_PATH);
-            try {
+            java.nio.file.Path lockFile = java.nio.file.Paths.get(MAPPING_FILE_PATH + ".lock");
+            try (java.nio.channels.FileChannel ch = java.nio.channels.FileChannel.open(
+                            lockFile,
+                            java.nio.file.StandardOpenOption.CREATE,
+                            java.nio.file.StandardOpenOption.WRITE);
+                 java.nio.channels.FileLock fileLock = ch.lock()) {
+
+                List<TraceabilityRecord> records = loadAllRecordsInternal();
+                records.removeIf(r -> sameKey(r, record.getSource().getTestId(), record.getSource().getSourceFile()));
+                records.add(record);
+
                 java.nio.file.Path tmp = java.nio.file.Files.createTempFile(
                         target.getParent() != null ? target.getParent() : java.nio.file.Paths.get("."),
                         "ellithium-ai-mappings", ".tmp");

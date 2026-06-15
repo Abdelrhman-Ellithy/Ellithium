@@ -259,7 +259,16 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
         try {
-            return waitForVisibilityAndFindElement(locator, timeout, pollingEvery).isEnabled();
+            getFluentWait(timeout, pollingEvery).until(d -> {
+                try {
+                    WebElement el = d.findElement(locator);
+                    return el.isDisplayed() && el.isEnabled();
+                } catch (org.openqa.selenium.NoSuchElementException
+                       | org.openqa.selenium.StaleElementReferenceException ex) {
+                    return false;
+                }
+            });
+            return true;
         } catch (org.openqa.selenium.TimeoutException e) {
             return false;
         }

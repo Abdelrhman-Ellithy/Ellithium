@@ -60,7 +60,7 @@ public class AISelfHealer {
         return pageContext(driver) + "##" + brokenLocator.toString();
     }
 
-    private static String pageContext(WebDriver driver) {
+    static String pageContext(WebDriver driver) {
         try {
             if (driver instanceof AppiumDriver) {
                 Object pkg = ((AppiumDriver) driver).getCapabilities().getCapability("appPackage");
@@ -395,7 +395,7 @@ public class AISelfHealer {
             return null;
         }
 
-        ElementFingerprint baseline = BaselineStore.getBaseline(brokenLocator.toString());
+        ElementFingerprint baseline = BaselineStore.getBaseline(driver, brokenLocator);
         By acceptedLocator = null;
         HealingResult acceptedResult = null;
 

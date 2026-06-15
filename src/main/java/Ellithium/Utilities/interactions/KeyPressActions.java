@@ -48,9 +48,11 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
                 Reporter.log("Long pressed key for " + durationMillis + "ms", LogLevel.INFO_BLUE);
             } catch (Exception e) {
                 Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
+                throw e;
             }
         } else {
             Reporter.log("longPressKey requires AndroidDriver" , LogLevel.ERROR);
+            throw new UnsupportedOperationException("longPressKey is only supported on AndroidDriver");
         }
     }
 

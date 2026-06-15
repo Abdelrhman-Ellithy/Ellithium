@@ -400,6 +400,11 @@ public class LiveContextGenerator {
 
         try {
             By locator = locatorExpr != null ? parseLocator(locatorExpr) : null;
+            if (locatorExpr != null && locator == null) {
+                Reporter.log("LiveContextGenerator: Step " + stepNumber
+                        + " — could not parse locator expression \"" + locatorExpr
+                        + "\"; locator-dependent step will be skipped", LogLevel.ERROR);
+            }
 
             switch (canonicalAction(action)) {
                 case "input" -> {
@@ -416,7 +421,16 @@ public class LiveContextGenerator {
                         driverActions.select().selectDropdownByText(locator, data);
                 }
                 case "navigate" -> {
-                    if (data != null) driverActions.navigation().navigateToUrl(data);
+                    if (data != null) {
+                        if (isNavigateAllowed(driver, data)) {
+                            driverActions.navigation().navigateToUrl(data);
+                        } else {
+                            Reporter.log("LiveContextGenerator: Step " + stepNumber
+                                    + " — blocked cross-origin navigate to \"" + data
+                                    + "\" (not same origin as current page; set ai.live.allowCrossOriginNavigate=true to allow)",
+                                    LogLevel.ERROR);
+                        }
+                    }
                 }
                 case "gettext" -> {
                     if (locator != null) {
@@ -482,7 +496,6 @@ public class LiveContextGenerator {
             java.util.Map.entry("open",             "navigate"),
             java.util.Map.entry("gettext",          "gettext"),
             java.util.Map.entry("read",             "gettext"),
-            java.util.Map.entry("verify",           "gettext"),
             java.util.Map.entry("hover",            "hover"),
             java.util.Map.entry("hoverover",        "hover"),
             java.util.Map.entry("mouseover",        "hover"),
@@ -513,6 +526,28 @@ public class LiveContextGenerator {
         return ACTION_ALIASES.getOrDefault(key, key);
     }
 
+    private static boolean isNavigateAllowed(WebDriver driver, String targetUrl) {
+        if (Ellithium.core.ai.config.AIConfigLoader.isLiveCrossOriginNavigateAllowed()) return true;
+        try {
+            return sameOrigin(driver.getCurrentUrl(), targetUrl);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean sameOrigin(String a, String b) {
+        if (a == null || b == null) return false;
+        try {
+            java.net.URI ua = java.net.URI.create(a.trim());
+            java.net.URI ub = java.net.URI.create(b.trim());
+            return ua.getScheme() != null && ua.getScheme().equalsIgnoreCase(ub.getScheme())
+                    && ua.getHost() != null && ua.getHost().equalsIgnoreCase(ub.getHost())
+                    && ua.getPort() == ub.getPort();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ──────────────────────── Locator Parsing ────────────────────────
 
     /**
@@ -523,12 +558,12 @@ public class LiveContextGenerator {
         if (expression == null || expression.isBlank()) return null;
 
         java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("By\\.(\\w+)\\(\"(.*?)\"\\)")
+                .compile("By\\.(\\w+)\\(\\s*([\"'])(.*)\\2\\s*\\)")
                 .matcher(expression.trim());
         if (!m.find()) return null;
 
         String method = m.group(1);
-        String value = m.group(2);
+        String value = m.group(3);
 
         return switch (method.toLowerCase()) {
             case "id" -> By.id(value);

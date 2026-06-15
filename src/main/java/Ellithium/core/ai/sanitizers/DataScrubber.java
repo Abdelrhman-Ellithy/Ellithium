@@ -29,9 +29,9 @@ public class DataScrubber {
             "(<input[^>]*value\\s*=\\s*\")([^\"]*)(\"[^>]*type\\s*=\\s*\"password\")",
             Pattern.CASE_INSENSITIVE);
 
-    // Credit-card numbers (13–16 digits, optional space/dash grouping)
+    // Credit-card numbers (13–19 digits, optional space/dash grouping)
     private static final Pattern CREDIT_CARD = Pattern.compile(
-            "(?<!\\d)(?:\\d[ -]?){13,16}(?!\\d)");
+            "(?<!\\d)(?:\\d[ -]?){13,19}(?!\\d)");
 
     // US Social Security numbers
     private static final Pattern SSN = Pattern.compile(

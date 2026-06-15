@@ -73,12 +73,23 @@ public class GeminiProvider implements LLMProvider {
                 JSONObject jsonResponse = new JSONObject(response.body());
                 JSONArray candidates = jsonResponse.optJSONArray("candidates");
                 if (candidates != null && candidates.length() > 0) {
-                     String rawText = candidates.getJSONObject(0)
-                            .getJSONObject("content")
-                            .getJSONArray("parts")
-                            .getJSONObject(0)
-                            .getString("text");
-                     return stripMarkdownFences(rawText);
+                    JSONObject candidate = candidates.optJSONObject(0);
+                    JSONObject content = candidate != null ? candidate.optJSONObject("content") : null;
+                    JSONArray parts = content != null ? content.optJSONArray("parts") : null;
+                    if (parts != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < parts.length(); i++) {
+                            JSONObject part = parts.optJSONObject(i);
+                            if (part != null && part.has("text")) sb.append(part.optString("text"));
+                        }
+                        if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
+                    }
+                    String finishReason = candidate != null ? candidate.optString("finishReason", "") : "";
+                    if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
+                        Reporter.log("Gemini API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
+                        Reporter.log("Gemini API body: " + response.body(), LogLevel.DEBUG);
+                        return null;
+                    }
                 }
                 Reporter.log("Gemini API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
                 Reporter.log("Gemini API empty body: " + response.body(), LogLevel.DEBUG);
@@ -141,12 +152,23 @@ public class GeminiProvider implements LLMProvider {
                 JSONObject jsonResponse = new JSONObject(response.body());
                 JSONArray candidates = jsonResponse.optJSONArray("candidates");
                 if (candidates != null && candidates.length() > 0) {
-                     String rawText = candidates.getJSONObject(0)
-                            .getJSONObject("content")
-                            .getJSONArray("parts")
-                            .getJSONObject(0)
-                            .getString("text");
-                     return stripMarkdownFences(rawText);
+                    JSONObject candidate = candidates.optJSONObject(0);
+                    JSONObject content = candidate != null ? candidate.optJSONObject("content") : null;
+                    JSONArray respParts = content != null ? content.optJSONArray("parts") : null;
+                    if (respParts != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < respParts.length(); i++) {
+                            JSONObject part = respParts.optJSONObject(i);
+                            if (part != null && part.has("text")) sb.append(part.optString("text"));
+                        }
+                        if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
+                    }
+                    String finishReason = candidate != null ? candidate.optString("finishReason", "") : "";
+                    if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
+                        Reporter.log("Gemini Vision API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
+                        Reporter.log("Gemini Vision API body: " + response.body(), LogLevel.DEBUG);
+                        return null;
+                    }
                 }
                 Reporter.log("Gemini Vision API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
                 Reporter.log("Gemini Vision API empty body: " + response.body(), LogLevel.DEBUG);

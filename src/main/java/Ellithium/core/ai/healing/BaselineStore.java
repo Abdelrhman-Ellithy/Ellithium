@@ -104,7 +104,7 @@ public class BaselineStore {
                         tier), LogLevel.DEBUG);
                 return;
             }
-            baselines.compute(fp.getLocatorKey(), (k, existing) -> {
+            baselines.compute(pageKey(driver, locator.toString()), (k, existing) -> {
                 List<ElementFingerprint> updated = new ArrayList<>();
                 if (existing != null && !existing.isEmpty()) {
                     int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
@@ -121,6 +121,10 @@ public class BaselineStore {
 
     // ──────────────────────── Lookup ────────────────────────
 
+    static String pageKey(WebDriver driver, String locatorString) {
+        return AISelfHealer.pageContext(driver) + "##" + locatorString;
+    }
+
     /**
      * Returns the most recent fingerprint for a locator key, or null if absent.
      */
@@ -129,6 +133,15 @@ public class BaselineStore {
         List<ElementFingerprint> history = baselines.get(locatorKey);
         if (history == null || history.isEmpty()) return null;
         return history.getLast();
+    }
+
+    /**
+     * Returns the most recent fingerprint for a locator on the driver's current page,
+     * or null if absent. Page-namespaced so the same locator string on two different
+     * pages/routes does not collide.
+     */
+    public static ElementFingerprint getBaseline(WebDriver driver, By locator) {
+        return getBaseline(pageKey(driver, locator.toString()));
     }
 
     /**
@@ -168,7 +181,7 @@ public class BaselineStore {
     public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator,
                                                   StackTraceElement[] stackTrace, String actionType) {
         ensureLoaded();
-        List<ElementFingerprint> history = baselines.get(brokenLocator.toString());
+        List<ElementFingerprint> history = baselines.get(pageKey(driver, brokenLocator.toString()));
         ElementFingerprint baseline = (history != null && !history.isEmpty())
                 ? history.getLast() : null;
 
@@ -540,7 +553,7 @@ public class BaselineStore {
                 // matches the map key — previously captured under bestLocator causing key mismatch.
                 ElementFingerprint updatedFp = ElementFingerprint.capture(driver, brokenLocator, healed);
                 if (updatedFp.computeDynamicMax() >= 15) {
-                    baselines.compute(brokenLocator.toString(), (k, existing) -> {
+                    baselines.compute(pageKey(driver, brokenLocator.toString()), (k, existing) -> {
                         List<ElementFingerprint> updated = new ArrayList<>();
                         if (existing != null && !existing.isEmpty()) {
                             int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
