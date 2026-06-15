@@ -74,36 +74,48 @@ public class ModelDecryptor {
         }
         try {
             String suffix = resourcePath.substring(resourcePath.lastIndexOf('.'));
-            java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
+            java.nio.file.Path tmp = createSecureTempFile(suffix);
             Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("ell-native-cleanup").unstarted(() -> {
                 try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
             }));
             try {
-                java.nio.file.attribute.PosixFileAttributeView posix =
-                        Files.getFileAttributeView(tmp, java.nio.file.attribute.PosixFileAttributeView.class);
-                if (posix != null) {
-                    posix.setPermissions(java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
-                }
-            } catch (Exception ignored) {}
-            try {
-                java.nio.file.attribute.AclFileAttributeView acl =
-                        Files.getFileAttributeView(tmp, java.nio.file.attribute.AclFileAttributeView.class);
-                if (acl != null) {
-                    java.nio.file.attribute.UserPrincipal owner = acl.getOwner();
-                    java.nio.file.attribute.AclEntry ownerOnly = java.nio.file.attribute.AclEntry.newBuilder()
-                            .setType(java.nio.file.attribute.AclEntryType.ALLOW)
-                            .setPrincipal(owner)
-                            .setPermissions(java.util.EnumSet.allOf(java.nio.file.attribute.AclEntryPermission.class))
-                            .build();
-                    acl.setAcl(java.util.List.of(ownerOnly));
-                }
-            } catch (Exception ignored) {}
-            Files.write(tmp, libBytes);
-            return loadLibraryFile(tmp.toFile());
+                Files.write(tmp, libBytes);
+                boolean loaded = loadLibraryFile(tmp.toFile());
+                try { Files.deleteIfExists(tmp); } catch (Exception ignored) {}
+                return loaded;
+            } finally {
+                java.util.Arrays.fill(libBytes, (byte) 0);
+            }
         } catch (IOException e) {
             Reporter.log("[TIER 2] ModelDecryptor: failed to write temp native library: " + e.getMessage(), LogLevel.WARN);
             return false;
         }
+    }
+
+    private static java.nio.file.Path createSecureTempFile(String suffix) throws IOException {
+        if (java.nio.file.FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            java.nio.file.attribute.FileAttribute<java.util.Set<java.nio.file.attribute.PosixFilePermission>> ownerOnly =
+                    java.nio.file.attribute.PosixFilePermissions.asFileAttribute(java.util.EnumSet.of(
+                            java.nio.file.attribute.PosixFilePermission.OWNER_READ,
+                            java.nio.file.attribute.PosixFilePermission.OWNER_WRITE,
+                            java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE));
+            return Files.createTempFile(NATIVE_BASE_NAME, suffix, ownerOnly);
+        }
+        java.nio.file.Path tmp = Files.createTempFile(NATIVE_BASE_NAME, suffix);
+        try {
+            java.nio.file.attribute.AclFileAttributeView acl =
+                    Files.getFileAttributeView(tmp, java.nio.file.attribute.AclFileAttributeView.class);
+            if (acl != null) {
+                java.nio.file.attribute.UserPrincipal owner = acl.getOwner();
+                java.nio.file.attribute.AclEntry ownerOnly = java.nio.file.attribute.AclEntry.newBuilder()
+                        .setType(java.nio.file.attribute.AclEntryType.ALLOW)
+                        .setPrincipal(owner)
+                        .setPermissions(java.util.EnumSet.allOf(java.nio.file.attribute.AclEntryPermission.class))
+                        .build();
+                acl.setAcl(java.util.List.of(ownerOnly));
+            }
+        } catch (Exception ignored) {}
+        return tmp;
     }
 
     private static boolean loadLibraryFile(File libFile) {

@@ -9,6 +9,12 @@ import io.appium.java_client.android.nativekey.KeyEvent;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.InvalidElementStateException;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.UnsupportedCommandException;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
@@ -17,6 +23,7 @@ import org.openqa.selenium.remote.RemoteWebElement;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -131,6 +138,103 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     }
 
     // ========================================================================================
+    // GESTURE EXECUTION & EXCEPTION HANDLING
+    // ========================================================================================
+
+    @FunctionalInterface
+    private interface ElementGesture {
+        void run(WebElement element);
+    }
+
+    /**
+     * Runs an element-targeted gesture with intelligent recovery:
+     * re-locates and retries once on a stale element, surfaces a missing/invisible
+     * target as its real exception, and classifies any backend failure rather than
+     * swallowing it.
+     */
+    private void performOnElement(String gestureName, By locator, ElementGesture gesture) {
+        StaleElementReferenceException stale = null;
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            WebElement element;
+            try {
+                element = waitForVisibilityAndFindElement(locator,
+                        WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+            } catch (NoSuchElementException | TimeoutException e) {
+                Reporter.log(gestureName + ": target element not found or not visible — " + e.getMessage(), LogLevel.ERROR);
+                throw e;
+            }
+            try {
+                gesture.run(element);
+                Reporter.log("Successfully performed " + gestureName, LogLevel.INFO_GREEN);
+                return;
+            } catch (StaleElementReferenceException e) {
+                stale = e;
+                Reporter.log(gestureName + ": element went stale — re-locating and retrying", LogLevel.INFO_BLUE);
+            } catch (Exception e) {
+                throw classifyGestureFailure(gestureName, e);
+            }
+        }
+        Reporter.log(gestureName + ": element still stale after retry", LogLevel.ERROR);
+        if (stale != null) throw stale;
+        throw new StaleElementReferenceException(gestureName + ": element still stale after retry");
+    }
+
+    /**
+     * Runs a coordinate/area/device gesture (no element), classifying any failure
+     * instead of swallowing it.
+     */
+    private void performGesture(String gestureName, Runnable gesture) {
+        try {
+            gesture.run();
+            Reporter.log("Successfully performed " + gestureName, LogLevel.INFO_GREEN);
+        } catch (Exception e) {
+            throw classifyGestureFailure(gestureName, e);
+        }
+    }
+
+    /**
+     * Maps a gesture failure to a typed, actionable exception. Unsupported backend
+     * commands become an {@link UnsupportedOperationException}; element-state, not-found
+     * and timeout failures are rethrown with their original Selenium type so callers and
+     * assertions see the true cause; anything else is wrapped with context.
+     */
+    private RuntimeException classifyGestureFailure(String gestureName, Exception e) {
+        if (isUnsupportedCommand(e)) {
+            Reporter.log(gestureName + " is not supported by the current Appium driver/automation backend — "
+                    + e.getMessage(), LogLevel.ERROR);
+            return new UnsupportedOperationException(
+                    gestureName + " is not supported on the current driver/backend", e);
+        }
+        if (e instanceof InvalidElementStateException) {
+            Reporter.log(gestureName + ": element is not in an interactable state — " + e.getMessage(), LogLevel.ERROR);
+            return (InvalidElementStateException) e;
+        }
+        if (e instanceof NoSuchElementException) {
+            Reporter.log(gestureName + ": target element not found — " + e.getMessage(), LogLevel.ERROR);
+            return (NoSuchElementException) e;
+        }
+        if (e instanceof TimeoutException) {
+            Reporter.log(gestureName + ": timed out — " + e.getMessage(), LogLevel.ERROR);
+            return (TimeoutException) e;
+        }
+        if (e instanceof WebDriverException) {
+            Reporter.log(gestureName + " failed: " + e.getMessage(), LogLevel.ERROR);
+            return (WebDriverException) e;
+        }
+        Reporter.log(gestureName + " failed: " + e.getMessage(), LogLevel.ERROR);
+        return new RuntimeException(gestureName + " failed", e);
+    }
+
+    private boolean isUnsupportedCommand(Throwable e) {
+        if (e instanceof UnsupportedCommandException) return true;
+        String m = e.getMessage();
+        if (m == null) return false;
+        String lm = m.toLowerCase(Locale.ROOT);
+        return lm.contains("is not implemented") || lm.contains("not supported")
+                || lm.contains("unknown command") || lm.contains("did not match a supported");
+    }
+
+    // ========================================================================================
     // TAP GESTURES (Cross-platform)
     // ========================================================================================
 
@@ -147,21 +251,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void tap(By locator) {
         Reporter.log("Performing tap gesture on element", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("tap gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: tap", params);
             } else {
                 driver.executeScript("mobile: tapGesture", params);
             }
-            Reporter.log("Successfully performed tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -178,20 +276,16 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void tap(double x, double y) {
         Reporter.log("Performing tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
-        try {
+        performGesture("tap gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("x", convertCoordinate(x));
             params.put("y", convertCoordinate(y));
-
             if (isIOS()) {
                 driver.executeScript("mobile: tap", params);
             } else {
                 driver.executeScript("mobile: tapGesture", params);
             }
-            Reporter.log("Successfully performed tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -211,21 +305,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void doubleTap(By locator) {
         Reporter.log("Performing double-tap gesture on element", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("double-tap gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
-            Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform double-tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -242,20 +330,16 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void doubleTap(double x, double y) {
         Reporter.log("Performing double-tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
-        try {
+        performGesture("double-tap gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("x", convertCoordinate(x));
             params.put("y", convertCoordinate(y));
-
             if (isIOS()) {
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
-            Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform double-tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -272,21 +356,16 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void doubleTap(By locator, double durationSeconds) {
         Reporter.log("Performing double-tap gesture on element with duration " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("double-tap gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-
             if (isIOS()) {
                 // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
-            Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform double-tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -304,21 +383,17 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void doubleTap(double x, double y, double durationSeconds) {
         Reporter.log("Performing double-tap gesture at coordinates (" + x + ", " + y + ") with duration " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
+        performGesture("double-tap gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("x", convertCoordinate(x));
             params.put("y", convertCoordinate(y));
-
             if (isIOS()) {
                 // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
-            Reporter.log("Successfully performed double-tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform double-tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -354,12 +429,9 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void longPress(By locator, double durationSeconds) {
         Reporter.log("Performing long press gesture on element for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("long press gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-
             if (isIOS()) {
                 params.put("duration", durationSeconds);
                 driver.executeScript("mobile: touchAndHold", params);
@@ -367,10 +439,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("duration", secondsToMillis(durationSeconds));
                 driver.executeScript("mobile: longClickGesture", params);
             }
-            Reporter.log("Successfully performed long press gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform long press gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -404,11 +473,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void longPress(double x, double y, double durationSeconds) {
         Reporter.log("Performing long press gesture at coordinates (" + x + ", " + y + ") for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
+        performGesture("long press gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("x", convertCoordinate(x));
             params.put("y", convertCoordinate(y));
-
             if (isIOS()) {
                 params.put("duration", durationSeconds);
                 driver.executeScript("mobile: touchAndHold", params);
@@ -416,10 +484,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("duration", secondsToMillis(durationSeconds));
                 driver.executeScript("mobile: longClickGesture", params);
             }
-            Reporter.log("Successfully performed long press gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform long press gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -440,23 +505,17 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void swipe(String direction, By locator) {
         Reporter.log("Performing swipe gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("swipe gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: swipe", params);
             } else {
                 params.put("percent", 0.5); // Default 50% swipe for Android
                 driver.executeScript("mobile: swipeGesture", params);
             }
-            Reporter.log("Successfully performed swipe gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform swipe gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -474,13 +533,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void swipe(By locator, String direction, double percent) {
         Reporter.log("Performing swipe gesture on element in direction " + direction + " with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("swipe gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: swipe", params);
                 if (percent != 0.5) {
@@ -490,10 +546,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("percent", percent);
                 driver.executeScript("mobile: swipeGesture", params);
             }
-            Reporter.log("Successfully performed swipe gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform swipe gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -513,19 +566,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void swipe(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing swipe gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
+        performGesture("swipe gesture", () -> {
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence swipe = new Sequence(finger, 1);
             swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
             swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
             swipe.addAction(finger.createPointerMove(Duration.ofMillis(secondsToMillis(durationSeconds)), PointerInput.Origin.viewport(), (int) endX, (int) endY));
             swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-            AppiumDriver d = (AppiumDriver) driver;
-            if (d != null) d.perform(Collections.singletonList(swipe));
-            Reporter.log("Successfully performed swipe gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform swipe gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+            driver.perform(Collections.singletonList(swipe));
+        });
     }
 
     /**
@@ -548,7 +597,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void swipeInArea(int left, int top, int width, int height, String direction, double percent) {
         validatePlatform("swipeInArea", false, true);
         Reporter.log("Performing swipe gesture in area (" + left + ", " + top + ", " + width + ", " + height + ") in direction " + direction + " with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
-        try {
+        performGesture("swipe gesture in area", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("left", left);
             params.put("top", top);
@@ -557,10 +606,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("direction", direction);
             params.put("percent", percent);
             driver.executeScript("mobile: swipeGesture", params);
-            Reporter.log("Successfully performed swipe gesture in area", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform swipe gesture in area: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -581,23 +627,17 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void scroll(By locator, String direction) {
         Reporter.log("Performing scroll gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("scroll gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: scroll", params);
             } else {
                 params.put("percent", 0.5);
                 driver.executeScript("mobile: scrollGesture", params);
             }
-            Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -615,13 +655,10 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void scroll(By locator, String direction, int percent) {
         Reporter.log("Performing scroll gesture on element in direction " + direction + " with " + percent + "%", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("scroll gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("direction", direction);
             putElement(params, element);
-
             if (isIOS()) {
                 driver.executeScript("mobile: scroll", params);
                 if (percent != 50) {
@@ -631,10 +668,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("percent", percent / 100.0);
                 driver.executeScript("mobile: scrollGesture", params);
             }
-            Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
@@ -653,19 +687,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void scroll(double startX, double startY, double endX, double endY) {
         Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ")", LogLevel.INFO_BLUE);
-        try {
+        performGesture("scroll gesture", () -> {
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence scroll = new Sequence(finger, 1);
             scroll.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
             scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
             scroll.addAction(finger.createPointerMove(Duration.ofMillis(600), PointerInput.Origin.viewport(), (int) endX, (int) endY));
             scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-            AppiumDriver d = (AppiumDriver) driver;
-            if (d != null) d.perform(Collections.singletonList(scroll));
-            Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+            driver.perform(Collections.singletonList(scroll));
+        });
     }
 
     /**
@@ -685,19 +715,15 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void scroll(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
+        performGesture("scroll gesture", () -> {
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence scroll = new Sequence(finger, 1);
             scroll.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), (int) startX, (int) startY));
             scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
             scroll.addAction(finger.createPointerMove(Duration.ofMillis(secondsToMillis(durationSeconds)), PointerInput.Origin.viewport(), (int) endX, (int) endY));
             scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-            AppiumDriver d = (AppiumDriver) driver;
-            if (d != null) d.perform(Collections.singletonList(scroll));
-            Reporter.log("Successfully performed scroll gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform scroll gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+            driver.perform(Collections.singletonList(scroll));
+        });
     }
 
     /**
@@ -720,7 +746,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void scrollInArea(int left, int top, int width, int height, String direction, int percent) {
         validatePlatform("scrollInArea", false, true);
         Reporter.log("Performing scroll gesture in area (" + left + ", " + top + ", " + width + ", " + height + ") in direction " + direction + " with " + percent + "%", LogLevel.INFO_BLUE);
-        try {
+        performGesture("scroll gesture in area", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("left", left);
             params.put("top", top);
@@ -729,30 +755,25 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("direction", direction);
             params.put("percent", percent / 100.0);
             driver.executeScript("mobile: scrollGesture", params);
-            Reporter.log("Successfully performed scroll gesture in area", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform scroll gesture in area: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Scrolls to an element using predicate string (iOS) or UiSelector (Android).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: scroll' command with predicateString</li>
      *   <li>Android: Uses 'mobile: scroll' command with UiSelector strategy</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the to scroll from (iOS only)
      * @param selector The predicate string (iOS) or UiSelector string (Android)
      * @param direction The direction to scroll
      */
     public void scrollToElement(By locator, String selector, String direction) {
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
-        try {
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-
+        performOnElement("scroll to element", locator, element -> {
             if (isIOS()) {
                 Map<String, Object> params = new HashMap<>();
                 putElement(params, element);
@@ -764,35 +785,27 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                     "new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector()." + selector + ")"
                 ));
             }
-            Reporter.log("Successfully scrolled to element", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to scroll to element: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Scrolls to an element using UiSelector (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: scroll' command with UiSelector strategy</li>
      * </ul>
-     * 
+     *
      * @param uiSelector The UiSelector string
      * @throws UnsupportedOperationException if called on iOS
      */
     public void scrollToElementBySelector(String uiSelector) {
         validatePlatform("scrollToElementBySelector", false, true);
         Reporter.log("Scrolling to element with UiSelector: " + uiSelector, LogLevel.INFO_BLUE);
-        try {
-            driver.findElement(AppiumBy.androidUIAutomator(
+        performGesture("scroll to element", () -> driver.findElement(AppiumBy.androidUIAutomator(
                 "new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector()." + uiSelector + ")"
-            ));
-            Reporter.log("Successfully scrolled to element", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to scroll to element: " + e.getMessage(), LogLevel.ERROR);
-        }
+        )));
     }
 
     // ========================================================================================
@@ -801,13 +814,13 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a drag gesture on an element to specified coordinates.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: dragFromToForDuration' command with element coordinates as start</li>
      *   <li>Android: Uses 'mobile: dragGesture' command</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to drag from
      * @param endX The end X coordinate
      * @param endY The end Y coordinate
@@ -818,13 +831,13 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a drag gesture on an element to specified coordinates with custom duration.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: dragFromToForDuration' command (duration in seconds)</li>
      *   <li>Android: Uses 'mobile: dragGesture' command (duration not supported, will be ignored)</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to drag from
      * @param endX The end X coordinate
      * @param endY The end Y coordinate
@@ -832,11 +845,9 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void drag(By locator, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture on element to coordinates (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("drag gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-
             if (isIOS()) {
                 // XCUITest: when "element" is present, fromX/fromY are ignored and element center is used as drag source
                 params.put("toX", endX);
@@ -851,21 +862,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                     Reporter.log("Note: Android does not support duration parameter for drag", LogLevel.INFO_BLUE);
                 }
             }
-            Reporter.log("Successfully performed drag gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform drag gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a drag gesture from one point to another.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: dragFromToForDuration' command (duration in seconds)</li>
      *   <li>Android: Uses 'mobile: dragGesture' command (duration not supported, will be ignored)</li>
      * </ul>
-     * 
+     *
      * @param startX The starting X coordinate
      * @param startY The starting Y coordinate
      * @param endX The ending X coordinate
@@ -877,13 +885,13 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a drag gesture from one point to another with custom duration.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: dragFromToForDuration' command (duration in seconds)</li>
      *   <li>Android: Uses 'mobile: dragGesture' command (duration not supported, will be ignored)</li>
      * </ul>
-     * 
+     *
      * @param startX The starting X coordinate
      * @param startY The starting Y coordinate
      * @param endX The ending X coordinate
@@ -892,9 +900,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      */
     public void drag(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
-        try {
+        performGesture("drag gesture", () -> {
             Map<String, Object> params = new HashMap<>();
-            
             if (isIOS()) {
                 params.put("fromX", startX);
                 params.put("fromY", startY);
@@ -912,10 +919,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                     Reporter.log("Note: Android does not support duration parameter for drag", LogLevel.INFO_BLUE);
                 }
             }
-            Reporter.log("Successfully performed drag gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform drag gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -924,25 +928,22 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a pinch gesture on an element.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: pinch' command with scale and velocity</li>
      *   <li>Android: Uses 'mobile: pinchOpenGesture' or 'mobile: pinchCloseGesture' based on zoomIn parameter</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to pinch
      * @param zoomIn true to zoom in (pinch open), false to zoom out (pinch close)
      * @param percent The pinch percentage (0.0 to 1.0) - Android only, ignored on iOS
      */
     public void pinch(By locator, boolean zoomIn, double percent) {
         Reporter.log("Performing pinch " + (zoomIn ? "open" : "close") + " gesture on element with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("pinch gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
-            
             if (isIOS()) {
                 // iOS uses scale and velocity
                 double scale = zoomIn ? 2.0 : 0.5; // Scale > 1 zooms in, < 1 zooms out
@@ -960,30 +961,25 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                     driver.executeScript("mobile: pinchCloseGesture", params);
                 }
             }
-            Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a pinch gesture on an element with custom scale and velocity.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: pinch' command with scale and velocity parameters</li>
      *   <li>Android: Uses 'mobile: pinchGesture' command if available, or pinchOpen/Close based on scale</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to pinch
      * @param scale The scale factor (> 1 zooms in, < 1 zooms out)
      * @param velocity The velocity of the pinch
      */
     public void pinch(By locator, double scale, double velocity) {
         Reporter.log("Performing pinch gesture on element with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("pinch gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             if (isIOS()) {
@@ -995,21 +991,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
                 driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
             }
-            Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a pinch gesture at specified coordinates.
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: pinch' command with x, y, scale, and velocity</li>
      *   <li>Android: Not directly supported - will throw UnsupportedOperationException</li>
      * </ul>
-     * 
+     *
      * @param x The X coordinate
      * @param y The Y coordinate
      * @param scale The scale factor
@@ -1019,28 +1012,25 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinch(double x, double y, double scale, double velocity) {
         validatePlatform("pinch at coordinates", true, false);
         Reporter.log("Performing pinch gesture at coordinates (" + x + ", " + y + ") with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
-        try {
+        performGesture("pinch gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("x", x);
             params.put("y", y);
             params.put("scale", scale);
             params.put("velocity", velocity);
             driver.executeScript("mobile: pinch", params);
-            Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a pinch close gesture in a specified area (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: pinchCloseGesture' command</li>
      * </ul>
-     * 
+     *
      * @param left The left coordinate
      * @param top The top coordinate
      * @param width The width
@@ -1051,7 +1041,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinchCloseInArea(int left, int top, int width, int height, double percent) {
         validatePlatform("pinchCloseInArea", false, true);
         Reporter.log("Performing pinch close gesture in area (" + left + ", " + top + ", " + width + ", " + height + ") with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
-        try {
+        performGesture("pinch close gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("left", left);
             params.put("top", top);
@@ -1059,21 +1049,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("height", height);
             params.put("percent", percent);
             driver.executeScript("mobile: pinchCloseGesture", params);
-            Reporter.log("Successfully performed pinch close gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch close gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a pinch open gesture in a specified area (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: pinchOpenGesture' command</li>
      * </ul>
-     * 
+     *
      * @param left The left coordinate
      * @param top The top coordinate
      * @param width The width
@@ -1084,7 +1071,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinchOpenInArea(int left, int top, int width, int height, double percent) {
         validatePlatform("pinchOpenInArea", false, true);
         Reporter.log("Performing pinch open gesture in area (" + left + ", " + top + ", " + width + ", " + height + ") with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
-        try {
+        performGesture("pinch open gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("left", left);
             params.put("top", top);
@@ -1092,21 +1079,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("height", height);
             params.put("percent", percent);
             driver.executeScript("mobile: pinchOpenGesture", params);
-            Reporter.log("Successfully performed pinch open gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch open gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a pinch gesture in a specified area with scale and velocity (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: pinchGesture' command with area parameters</li>
      * </ul>
-     * 
+     *
      * @param left The left coordinate
      * @param top The top coordinate
      * @param width The width
@@ -1118,7 +1102,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pinchInArea(int left, int top, int width, int height, double scale, double velocity) {
         validatePlatform("pinchInArea", false, true);
         Reporter.log("Performing pinch gesture in area (" + left + ", " + top + ", " + width + ", " + height + ") with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
-        try {
+        performGesture("pinch gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("left", left);
             params.put("top", top);
@@ -1126,10 +1110,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("height", height);
             params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
             driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
-            Reporter.log("Successfully performed pinch gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform pinch gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -1151,14 +1132,11 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void multiTouchGesture(Map<String, Object>[] actions) {
         validatePlatform("multiTouchGesture", false, true);
         Reporter.log("Performing multi-touch gesture with " + actions.length + " fingers", LogLevel.INFO_BLUE);
-        try {
+        performGesture("multi-touch gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("actions", actions);
             driver.executeScript("mobile: multiTouchGesture", params);
-            Reporter.log("Successfully performed multi-touch gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform multi-touch gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -1167,40 +1145,35 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a two-finger tap gesture on an element (iOS only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: twoFingerTap' command</li>
      *   <li>Android: Not supported - will throw UnsupportedOperationException</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to two-finger tap
      * @throws UnsupportedOperationException if called on Android
      */
     public void twoFingerTap(By locator) {
         validatePlatform("twoFingerTap", true, false);
         Reporter.log("Performing two-finger tap gesture on element", LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("two-finger tap gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("element", getElementId(element));
             driver.executeScript("mobile: twoFingerTap", params);
-            Reporter.log("Successfully performed two-finger tap gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform two-finger tap gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Handles iOS alerts (iOS only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: alert' command</li>
      *   <li>Android: Not supported - will throw UnsupportedOperationException</li>
      * </ul>
-     * 
+     *
      * @param action The action to perform (accept, dismiss)
      * @param buttonLabel The label of the button to click
      * @throws UnsupportedOperationException if called on Android
@@ -1208,15 +1181,12 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void handleAlert(String action, String buttonLabel) {
         validatePlatform("handleAlert", true, false);
         Reporter.log("Handling iOS alert with action: " + action + " and button: " + buttonLabel, LogLevel.INFO_BLUE);
-        try {
+        performGesture("iOS alert handling", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("action", action);
             params.put("buttonLabel", buttonLabel);
             driver.executeScript("mobile: alert", params);
-            Reporter.log("Successfully handled iOS alert", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to handle iOS alert: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -1225,13 +1195,13 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Performs a fling gesture on an element in the specified direction (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: flingGesture' command</li>
      * </ul>
-     * 
+     *
      * @param locator Locator to the element to fling
      * @param direction The direction to fling (up, down, left, right)
      * @throws UnsupportedOperationException if called on iOS
@@ -1239,28 +1209,23 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void fling(By locator, String direction) {
         validatePlatform("fling", false, true);
         Reporter.log("Performing fling gesture on element in direction: " + direction, LogLevel.INFO_BLUE);
-        try {
-            // Wait for element visibility before use to prevent premature AI healing on slow screens
-            WebElement element = waitForVisibilityAndFindElement(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        performOnElement("fling gesture", locator, element -> {
             Map<String, Object> params = new HashMap<>();
             params.put("elementId", getElementId(element));
             params.put("direction", direction);
             driver.executeScript("mobile: flingGesture", params);
-            Reporter.log("Successfully performed fling gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform fling gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     /**
      * Performs a fling gesture from specified coordinates (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses 'mobile: flingGesture' command</li>
      * </ul>
-     * 
+     *
      * @param startX The starting X coordinate
      * @param startY The starting Y coordinate
      * @param endX The ending X coordinate
@@ -1271,7 +1236,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void fling(int startX, int startY, int endX, int endY, int velocity) {
         validatePlatform("fling", false, true);
         Reporter.log("Performing fling gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") with velocity " + velocity, LogLevel.INFO_BLUE);
-        try {
+        performGesture("fling gesture", () -> {
             Map<String, Object> params = new HashMap<>();
             params.put("startX", startX);
             params.put("startY", startY);
@@ -1279,10 +1244,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("endY", endY);
             params.put("velocity", velocity);
             driver.executeScript("mobile: flingGesture", params);
-            Reporter.log("Successfully performed fling gesture", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to perform fling gesture: " + e.getMessage(), LogLevel.ERROR);
-        }
+        });
     }
 
     // ========================================================================================
@@ -1291,36 +1253,31 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Presses any key event on Android device (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses AndroidDriver.pressKey() method</li>
      * </ul>
-     * 
+     *
      * @param keyEvent KeyEvent to press
      * @throws UnsupportedOperationException if called on iOS
      */
     public void pressKey(KeyEvent keyEvent) {
         validatePlatform("pressKey", false, true);
         Reporter.log("Pressing key event on Android device", LogLevel.INFO_BLUE);
-        try {
-            ((AndroidDriver) driver).pressKey(keyEvent);
-            Reporter.log("Successfully pressed key event", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to press key event: " + e.getMessage(), LogLevel.ERROR);
-        }
+        performGesture("press key event", () -> ((AndroidDriver) driver).pressKey(keyEvent));
     }
 
     /**
      * Long presses any key event on Android device (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses AndroidDriver.longPressKey() method</li>
      * </ul>
-     * 
+     *
      * @param keyEvent KeyEvent to press
      * @param durationMillis Intended hold duration in milliseconds — not honored by Appium 10.1.1;
      *                       {@link io.appium.java_client.android.nativekey.KeyEvent} has no
@@ -1330,24 +1287,18 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void longPressKey(KeyEvent keyEvent, long durationMillis) {
         validatePlatform("longPressKey", false, true);
         Reporter.log("Long pressing key event for " + durationMillis + "ms on Android device", LogLevel.INFO_BLUE);
-        try {
-            AndroidDriver androidDriver = (AndroidDriver) driver;
-            androidDriver.longPressKey(keyEvent);
-            Reporter.log("Successfully long pressed key", LogLevel.INFO_GREEN);
-        } catch (Exception e) {
-            Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
-        }
+        performGesture("long press key event", () -> ((AndroidDriver) driver).longPressKey(keyEvent));
     }
 
     /**
      * Long presses an Android key (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses AndroidDriver.longPressKey() method</li>
      * </ul>
-     * 
+     *
      * @param key AndroidKey enum value
      * @param durationMillis Duration to hold the key in milliseconds
      * @throws UnsupportedOperationException if called on iOS
@@ -1358,13 +1309,13 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
 
     /**
      * Presses an Android key (Android only).
-     * 
+     *
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
      *   <li>Android: Uses AndroidDriver.pressKey() method</li>
      * </ul>
-     * 
+     *
      * @param key AndroidKey enum value
      * @throws UnsupportedOperationException if called on iOS
      */

@@ -84,9 +84,17 @@ class HealingResponseParser {
     }
 
     static String extractValue(String expression) {
-        int start = expression.indexOf('"') + 1;
-        int end = expression.lastIndexOf('"');
-        return expression.substring(start, end);
+        int open = expression.indexOf('(');
+        int close = expression.lastIndexOf(')');
+        if (open < 0 || close <= open) return "";
+        String inner = expression.substring(open + 1, close).trim();
+        if (inner.length() >= 2) {
+            char q = inner.charAt(0);
+            if ((q == '"' || q == '\'') && inner.charAt(inner.length() - 1) == q) {
+                return inner.substring(1, inner.length() - 1);
+            }
+        }
+        return inner;
     }
 
     static boolean isStableLocatorStrategy(By locator) {

@@ -16,11 +16,11 @@ public class LoginPage {
     }
 
     public void setUserName(String username) {
-        driverActions.elements().sendData(By.id("username"), username);
+        driverActions.elements().sendData(By.id("usenameemail"), username);
     }
 
     public void setPassword(String password) {
-        driverActions.elements().sendData(By.id("password"), password);
+        driverActions.elements().sendData(By.id("secret"), password);
     }
 
     public SecureAreaPage clickLoginBtn() {

@@ -1945,3 +1945,35 @@ The following locators failed during execution and were healed by the AI Engine.
 
 ---
 
+
+---
+
+## Run: 2026-06-15T11:48:17.2895957
+
+The following locators failed during execution and were healed by the AI Engine.
+
+| # | File | Method | Action | Broken Locator | Healed Locator | Confidence |
+|---|------|--------|--------|----------------|----------------|------------|
+| 1 | `src/test/java/Pages/LoginPage.java` | setUserName | sendData | `By.id: usenameemail` | `By.id("username")` | 0.91 |
+| 2 | `src/test/java/Pages/LoginPage.java` | setPassword | sendData | `By.id: secret` | `By.id("password")` | 0.89 |
+
+## Detailed Reasoning
+
+### 1. By.id: usenameemail
+- **Class:** `Pages.LoginPage`
+- **Method:** `setUserName`
+- **Line:** 19
+- **Healed to:** `By.id("username")`
+- **Reasoning:** [TIER 2]
+
+---
+
+### 2. By.id: secret
+- **Class:** `Pages.LoginPage`
+- **Method:** `setPassword`
+- **Line:** 23
+- **Healed to:** `By.id("password")`
+- **Reasoning:** [TIER 2]
+
+---
+
