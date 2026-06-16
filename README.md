@@ -35,15 +35,29 @@
 
 **Ellithium** is a Unified powerful, flexible, and scalable test automation framework designed to streamline and enhance the testing process. Leveraging tools such as **TestNG**, **Cucumber**, **Rest Assured**, and others, it provides an end-to-end solution for automated testing. With support for **BDD**, **cross-browser testing**, **parallel execution**, **headless testing**, and detailed **Allure reporting**, Ellithium aims to make your test automation faster, more reliable, and easier to maintain.  
 
-### Supported Testing PlatForms
-|Web |Mobile| API| DB|
-| :---: |:---: |:---: |:---: |
-| ✅  |✅  |✅   |✅  |
+<table border="0">
+<tr>
+<td>
 
-### Supported Cloud Mobile Device Test Labs
-|BrowserStack | LambdaTest | Sauce Labs |
-| :---: |:---: |:---: |
-| ✅  |✅  |✅   | 
+**Supported Testing Platforms**
+
+| Web | Mobile | API | DB |
+|:---:|:---:|:---:|:---:|
+| ✅ | ✅ | ✅ | ✅ |
+
+</td>
+<td width="40"></td>
+<td>
+
+**Supported Cloud Mobile Device Test Labs**
+
+| BrowserStack | LambdaTest | Sauce Labs |
+|:---:|:---:|:---:|
+| ✅ | ✅ | ✅ |
+
+</td>
+</tr>
+</table>
 
 ### Supported DB Types with Caching Mechanisms 🚀
 |Mongo | Couchebase |Redis | MY_SQL| SQL_SERVER | ORACLE | IBM_DB2| POSTGRES_SQL|SQLITE |
