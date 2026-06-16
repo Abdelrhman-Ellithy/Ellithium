@@ -60,7 +60,7 @@
 </table>
 
 ### Supported DB Types with Caching Mechanisms 🚀
-|Mongo | Couchebase |Redis | MY_SQL| SQL_SERVER | ORACLE | IBM_DB2| POSTGRES_SQL|SQLITE |
+|Mongo | Couchbase |Redis | MY_SQL| SQL_SERVER | ORACLE | IBM_DB2| POSTGRES_SQL|SQLITE |
 | :---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |:---: |
 | ✅  |✅  |✅   |✅  |✅  |✅  |✅   |✅  |✅  |
 
@@ -85,7 +85,7 @@
 - **Database Testing**: Extends coverage to both SQL and NoSQL databases, including MySQL, SQL Server, PostgreSQL, Oracle, IBM DB2, SQLite, Couchbase, MongoDB, and Redis, enabling comprehensive backend testing. 
 - **Mobile Testing**: Test native, hybrid, and mobile apps on Android and IOS, with Appium integration and support for real devices and emulators. 
 - **CI/CD Integration**: Seamless integration with popular CI/CD tools such as **Jenkins**, **GitHub Actions**, and **GitLab**.
-- **Cloud Mobile Device Test Labs**: Reliable exeuction with cloud platforms such as **BrowserStack**, **LambdaTest**, and **Sauce Labs** with mobile app uploader.
+- **Cloud Mobile Device Test Labs**: Reliable execution with cloud platforms such as **BrowserStack**, **LambdaTest**, and **Sauce Labs** with mobile app uploader.
 - **Automatic Video Recording**: Configurable Web and Mobile execution Recording in synchronous and asynchronous modes based on video recording attachment flag.
 - **Test Data Generation**: Dynamically generate test data using **Java Faker** for realistic names, emails, addresses, and more.
 - **Email Notifications**: Automated SMTP email delivery with rich HTML reports and configurable triggers.
@@ -106,11 +106,11 @@ Ellithium ships a built-in AI engine and Healing System — all features configu
 | 2 | Embedded Local Model | On-device model scores semantic similarity against the live DOM. |
 | 3 | LLM | Scrubbed DOM snapshot sent to your configured LLM; returns a replacement locator. |
 
-Supports `AUTO`, `SUGGEST_ONLY`, and `DISABLED` strategies — configured in `ai-config.properties`:
+Supports `HEAL_AND_NOTIFY`, `SUGGEST_ONLY`, and `DISABLED` strategies — configured in `ai-config.properties`:
 
 ```properties
 ai.healing.enabled=true
-ai.healing.strategy=AUTO    # AUTO | SUGGEST_ONLY | DISABLED
+ai.healing.strategy=HEAL_AND_NOTIFY    # HEAL_AND_NOTIFY | SUGGEST_ONLY | DISABLED
 ai.llm.provider=openai
 ai.llm.apiKey=sk-...
 ai.llm.model=gpt-4o
@@ -155,19 +155,29 @@ engine.generateFrom("src/test/resources/test-cases.json");
 
 ---
 
-### 👨‍💻 Supported OS with OS Command Executor Interface for Desktop OS
+<table border="0">
+<tr>
+<td>
 
-|Windows|Mac|Linux|Android|IOS|
-|:-----:|:--:|:--:|:--:|:--:|
-|✅     |✅  |✅  |✅  |✅  |
+**👨‍💻 Supported OS with OS Command Executor Interface**
 
-### 📄 Supported File Formats for Reading and Writing
+| Windows | Mac | Linux | Android | iOS |
+|:-------:|:---:|:-----:|:-------:|:---:|
+| ✅ | ✅ | ✅ | ✅ | ✅ |
 
-Ellithium supports reading and writing data from various file formats, including:
+</td>
+<td width="40"></td>
+<td>
 
-|JSON|CSV|Excel|Properties|Jar|PDF|Text|
-|:---:|:--:|:---:|:-----:|:--:|:--:|:--:|
-|✅   |✅  |✅   |    ✅     |✅  |✅  |✅  |
+**📄 Supported File Formats for Reading and Writing**
+
+| JSON | CSV | Excel | Properties | Jar | PDF | Text |
+|:----:|:---:|:-----:|:----------:|:---:|:---:|:----:|
+| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+</td>
+</tr>
+</table>
 
 
 ## 👨‍💻 Developed using:
@@ -282,7 +292,7 @@ Ensure you have the following installed:
         <version>3.6.3</version>
         <executions>
             <execution>
-                <id>intialize</id>
+                <id>initialize</id>
                 <phase>initialize</phase>
                 <goals>
                     <goal>java</goal>
@@ -309,7 +319,7 @@ Ensure you have the following installed:
 
 
 
-### Step 3: Open the Termenal in the Project directory then run this command
+### Step 3: Open the Terminal in the Project directory then run this command
    ```bash
    mvn clean test
    ```
@@ -433,7 +443,7 @@ public class BaseTests extends NonBDDSetup {
 ### Step 2: Create a Test Class extending BaseTests
 
 ```java
-package UI_BDD;
+package UI_NonBDD;
 
 import Base.BaseTests;
 import Ellithium.Utilities.assertion.AssertionExecutor;
@@ -500,8 +510,9 @@ public class LoginPage {
         driverActions.elements().sendData(By.id("password"), password, 5);
     }
 
-    public void clickLoginBtn() {
+    public SecureAreaPage clickLoginBtn() {
         driverActions.elements().clickOnElement(By.cssSelector("button[type='submit']"));
+        return new SecureAreaPage(driver);
     }
 
     public String getAlertMessage() {
