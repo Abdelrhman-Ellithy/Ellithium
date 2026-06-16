@@ -1,3 +1,5 @@
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=8a702946-9899-4a56-895b-82f8261a3c9a" width="0" height="0" style="display:none;" />
+
 # 🌀 Ellithium
 <table border="0" align="center">
   <tr>
