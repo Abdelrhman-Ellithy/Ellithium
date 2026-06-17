@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConfigContext {
 
     private static final String allureVersion      = "2.30.0";
-    private static final String EllithuiumVersion  = "3.0.0-beta";
+    private static final String EllithuiumVersion  = "3.0.0";
 
     public static String getAllureVersion()    { return allureVersion; }
     public static String getEllithuiumVersion(){ return EllithuiumVersion; }

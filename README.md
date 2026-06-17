@@ -239,7 +239,7 @@ Ensure you have the following installed:
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>3.0.0-beta</Ellithiumversion>
+    <Ellithiumversion>3.0.0</Ellithiumversion>
 </properties>
 <dependencies>
 <dependency>
