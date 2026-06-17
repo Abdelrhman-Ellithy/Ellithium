@@ -2,6 +2,7 @@ package Ellithium.Utilities.interactions;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.time.Duration;
@@ -25,8 +26,14 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
-        getFluentWait(timeout,pollingEvery)
-                .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+        try {
+            getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+        } catch (WebDriverException e) {
+            WebElement element = findWebElement(locator);
+            getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
+                    .until(ExpectedConditions.invisibilityOf(element));
+        }
     }
 
     /**
@@ -41,7 +48,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         try {
             return getFluentWait(timeout,pollingEvery)
                     .until(ExpectedConditions.elementToBeClickable(locator));
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             WebElement element = findWebElement(locator);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
         }
@@ -71,7 +78,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         try {
             return getFluentWait(timeout,pollingEvery)
                     .until(ExpectedConditions.presenceOfElementLocated(locator));
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             return findWebElement(locator);
         }
     }
@@ -90,7 +97,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             getFluentWait(timeout,pollingEvery)
                     .until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
             return findWebElement( locator);
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             WebElement element = findWebElement(locator);
             getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.textToBePresentInElement(element, text));
             return element;
@@ -110,7 +117,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         try {
             return getFluentWait( timeout, pollingEvery)
                     .until(ExpectedConditions.elementToBeSelected(locator));
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             WebElement element = findWebElement(locator);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeSelected(element));
         }
@@ -130,7 +137,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         try {
             return getFluentWait( timeout, pollingEvery)
                     .until(ExpectedConditions.attributeToBe(locator, attribute, value));
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             WebElement element = findWebElement(locator);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeToBe(element, attribute, value));
         }
@@ -150,7 +157,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         try {
             return getFluentWait( timeout, pollingEvery)
                     .until(ExpectedConditions.attributeContains(locator, attribute, value));
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             WebElement element = findWebElement(locator);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeContains(element, attribute, value));
         }
@@ -221,8 +228,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
+        return performFrameSwitch(locator, timeout, pollingEvery);
     }
 
     /**
@@ -271,8 +277,9 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                 }
             });
             return true;
-        } catch (org.openqa.selenium.TimeoutException e) {
-            return false;
+        } catch (WebDriverException e) {
+            WebElement healed = findWebElement(locator);
+            return healed.isDisplayed() && healed.isEnabled();
         }
     }
 
@@ -312,8 +319,14 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
+        try {
+            return getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
+        } catch (WebDriverException e) {
+            WebElement element = findWebElement(locator);
+            return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
+                    .until(ExpectedConditions.elementSelectionStateToBe(element, selected));
+        }
     }
 
     /**
@@ -326,8 +339,14 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
+        try {
+            return getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
+        } catch (WebDriverException e) {
+            WebElement element = findWebElement(locator);
+            return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
+                    .until(ExpectedConditions.textToBePresentInElementValue(element, text));
+        }
     }
 
     /**
@@ -353,9 +372,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
-        return size > number;
+        try {
+            int size = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
+            return size > number;
+        } catch (WebDriverException e) {
+            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() > number;
+        }
     }
 
     /**
@@ -368,9 +391,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
-        return size < number;
+        try {
+            int size = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
+            return size < number;
+        } catch (WebDriverException e) {
+            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() < number;
+        }
     }
 
     /**
@@ -383,8 +410,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
     }
 
     /**
@@ -397,9 +423,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        int size = getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
-        return size == number;
+        try {
+            int size = getFluentWait(timeout, pollingEvery)
+                    .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
+            return size == number;
+        } catch (WebDriverException e) {
+            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() == number;
+        }
     }
 
     /**

@@ -114,7 +114,7 @@ public class SelectActionsTest {
         } catch (org.openqa.selenium.NoSuchElementException expected) {
             // confirms selectByVisibleText was called and searched for the option
         }
-        verify(mockDriver).findElement(LOCATOR);
+        verify(mockDriver, atLeastOnce()).findElement(LOCATOR);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class SelectActionsTest {
         } catch (org.openqa.selenium.NoSuchElementException expected) {
             // confirms selectByValue was called and searched for the option
         }
-        verify(mockDriver).findElement(LOCATOR);
+        verify(mockDriver, atLeastOnce()).findElement(LOCATOR);
     }
 
     // ── deselectDropdownByIndex ───────────────────────────────────────────────

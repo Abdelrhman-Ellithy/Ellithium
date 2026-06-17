@@ -39,8 +39,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingTime Polling interval in milliseconds
      */
     public void switchToFrameByElement(By locator, int timeout, int pollingTime) {
-        getFluentWait(timeout, pollingTime)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
+        performFrameSwitch(locator, timeout, pollingTime);
     }
 
     /**
@@ -58,8 +57,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @return The WebDriver instance switched to the frame
      */
     public WebDriver waitForFrameToBeAvailableAndSwitchToIt(By locator, int timeout, int pollingEvery) {
-        return getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(locator));
+        return performFrameSwitch(locator, timeout, pollingEvery);
     }
 
     /**

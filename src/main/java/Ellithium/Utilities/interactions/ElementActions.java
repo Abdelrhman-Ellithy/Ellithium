@@ -65,8 +65,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
-                .stream().map(WebElement::getText).toList();
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
+        return mapElementsSafely(locator, WebElement::getText);
     }
 
     /**
@@ -79,8 +79,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getAttributeFromMultipleElements(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
-                .stream().map(el -> el.getDomAttribute(attribute)).toList();
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
+        return mapElementsSafely(locator, el -> el.getDomAttribute(attribute));
     }
     /**
      * Gets the value of a property from multiple elements.
@@ -92,8 +92,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
-        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery)
-                .stream().map(el -> el.getDomProperty(property)).toList();
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
+        return mapElementsSafely(locator, el -> el.getDomProperty(property));
     }
 
     /**
@@ -103,8 +103,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnMultipleElements(By locator, int timeout, int pollingEvery) {
-        getFluentWait(timeout, pollingEvery)
-                .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+        waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         Reporter.log("Clicking on multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         forEachElementSafely(locator, WebElement::click);
     }
@@ -342,21 +341,13 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if file does not exist
      */
     public void uploadFile(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
-        try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                throw new IllegalArgumentException("File does not exist: " + filePath);
-            }
-            
-            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
-
-            uploadElement.sendKeys(file.getAbsolutePath());
-            Reporter.log("File uploaded successfully: " + file.getName(), LogLevel.INFO_BLUE);
-        } catch (Exception e) {
-            Reporter.log("Failed to upload file: " + e.getMessage(), LogLevel.ERROR);
-            throw e;
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File does not exist: " + filePath);
         }
+        performWithStaleRetry(fileUploadLocator, timeout, pollingEvery,
+                el -> el.sendKeys(file.getAbsolutePath()));
+        Reporter.log("File uploaded successfully: " + file.getName(), LogLevel.INFO_BLUE);
     }
 
     /**
@@ -373,18 +364,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("uploadMultipleFiles: filePaths must not be null or empty", LogLevel.ERROR);
             throw new IllegalArgumentException("filePaths must not be null or empty");
         }
-        try {
-            String pathsString = buildFilePathsString(filePaths);
-            
-            WebElement uploadElement = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(fileUploadLocator));
-
-            uploadElement.sendKeys(pathsString);
-            Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
-        } catch (Exception e) {
-            Reporter.log("Failed to upload multiple files: " + e.getMessage(), LogLevel.ERROR);
-            throw e;
-        }
+        String pathsString = buildFilePathsString(filePaths);
+        performWithStaleRetry(fileUploadLocator, timeout, pollingEvery,
+                el -> el.sendKeys(pathsString));
+        Reporter.log("Multiple files uploaded successfully", LogLevel.INFO_BLUE);
     }
     
     private String buildFilePathsString(String[] filePaths) {
@@ -431,8 +414,14 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("Element is present: " + locator, LogLevel.INFO_BLUE);
             return true;
         } catch (TimeoutException e) {
-            Reporter.log("Element not present within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
+            try {
+                findWebElement(locator);
+                Reporter.log("Element is present (healed): " + locator, LogLevel.INFO_BLUE);
+                return true;
+            } catch (Exception ignored) {
+                Reporter.log("Element not present within timeout: " + locator, LogLevel.ERROR);
+                return false;
+            }
         } catch (Exception e) {
             Reporter.log("Failed to check element presence: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
             return false;
@@ -466,18 +455,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is displayed, false otherwise
      */
     public boolean isElementDisplayed(By locator, int timeout, int pollingEvery) {
-        try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
-            Reporter.log("Element is displayed: " + locator, LogLevel.INFO_BLUE);
-            return true;
-        } catch (TimeoutException e) {
-            Reporter.log("Element not displayed within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Failed to check element visibility: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Element is displayed check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isDisplayed, false);
     }
 
     /**
@@ -507,22 +486,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is enabled, false otherwise
      */
     public boolean isElementEnabled(By locator, int timeout, int pollingEvery) {
-        try {
-            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-            boolean enabled = element.isEnabled();
-            if (enabled) {
-                Reporter.log("Element is enabled: " + locator, LogLevel.INFO_BLUE);
-            } else {
-                Reporter.log("Element is disabled: " + locator, LogLevel.WARN);
-            }
-            return enabled;
-        } catch (TimeoutException e) {
-            Reporter.log("Element not found or not visible within timeout (enabled check): " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Failed to check if element is enabled: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Element is enabled check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isEnabled, false);
     }
 
     /**
@@ -552,22 +517,8 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is selected, false otherwise
      */
     public boolean isElementSelected(By locator, int timeout, int pollingEvery) {
-        try {
-            WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-            boolean selected = element.isSelected();
-            if (selected) {
-                Reporter.log("Element is selected: " + locator, LogLevel.INFO_BLUE);
-            } else {
-                Reporter.log("Element is not selected: " + locator, LogLevel.WARN);
-            }
-            return selected;
-        } catch (TimeoutException e) {
-            Reporter.log("Element not found or not visible within timeout (selected check): " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Failed to check if element is selected: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Element is selected check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isSelected, false);
     }
 
     /**
@@ -597,18 +548,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is clickable, false otherwise
      */
     public boolean isElementClickable(By locator, int timeout, int pollingEvery) {
-        try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.elementToBeClickable(locator));
-            Reporter.log("Element is clickable: " + locator, LogLevel.INFO_BLUE);
-            return true;
-        } catch (TimeoutException e) {
-            Reporter.log("Element not clickable within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Failed to check if element is clickable: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Element is clickable check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery,
+                el -> el.isDisplayed() && el.isEnabled(), false);
     }
 
     /**
@@ -675,23 +617,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
         requireJavascriptContext("scrollIntoView");
-        try {
-            WebElement element;
-            try {
-                element = getFluentWait(timeout, pollingEvery)
-                        .until(ExpectedConditions.presenceOfElementLocated(locator));
-            } catch (TimeoutException e) {
-                element = findWebElement(locator);
-            }
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
-            Reporter.log("Scrolled into view: " + locator, LogLevel.INFO_BLUE);
-        } catch (TimeoutException e) {
-            Reporter.log("Scroll failed – element not present within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            throw e;
-        } catch (Exception e) {
-            Reporter.log("Scroll failed: " + e.getMessage(), LogLevel.ERROR);
-            throw e;
-        }
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el));
+        Reporter.log("Scrolled into view: " + locator, LogLevel.INFO_BLUE);
     }
 
     /**
@@ -719,21 +647,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if text contains substring, false otherwise
      */
     public boolean isTextContains(By locator, String substring, int timeout, int pollingEvery) {
-        try {
-            String actual = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator))
-                    .getText();
-            boolean contains = actual.contains(substring);
-            Reporter.log((contains ? "Text contains" : "Text does NOT contain") + " '" + substring + "'",
-                    contains ? LogLevel.INFO_BLUE : LogLevel.WARN);
-            return contains;
-        } catch (TimeoutException e) {
-            Reporter.log("Text contains check timed out: " + locator, LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Text contains check failed: " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Text contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery,
+                el -> el.getText().contains(substring), false);
     }
 
     /**
@@ -766,21 +682,11 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if attribute contains substring, false otherwise
      */
     public boolean isAttributeContains(By locator, String attribute, String substring, int timeout, int pollingEvery) {
-        try {
-            String value = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator))
-                    .getDomAttribute(attribute);
-            boolean contains = value != null && value.contains(substring);
-            Reporter.log((contains ? "Attribute '" + attribute + "' contains" : "Attribute '" + attribute + "' does NOT contain") + " '" + substring + "'",
-                    contains ? LogLevel.INFO_BLUE : LogLevel.WARN);
-            return contains;
-        } catch (TimeoutException e) {
-            Reporter.log("Attribute contains check timed out: " + locator, LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Attribute contains check failed: " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Attribute '" + attribute + "' contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, el -> {
+            String v = el.getDomAttribute(attribute);
+            return v != null && v.contains(substring);
+        }, false);
     }
 
     /**
@@ -814,21 +720,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if text matches exactly, false otherwise
      */
     public boolean isTextEqual(By locator, String expected, int timeout, int pollingEvery) {
-        try {
-            String actual = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator))
-                    .getText();
-            boolean match = expected.equals(actual);
-            Reporter.log((match ? "Text matches" : "Text mismatch") + " – expected: '" + expected + "', actual: '" + actual + "'",
-                    match ? LogLevel.INFO_BLUE : LogLevel.WARN);
-            return match;
-        } catch (TimeoutException e) {
-            Reporter.log("Text equality check timed out: " + locator, LogLevel.ERROR);
-            return false;
-        } catch (Exception e) {
-            Reporter.log("Text equality check failed: " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        Reporter.log("Text equal '" + expected + "' check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery,
+                el -> expected.equals(el.getText()), false);
     }
 
     /**

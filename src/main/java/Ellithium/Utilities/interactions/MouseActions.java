@@ -5,9 +5,9 @@ import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 public class MouseActions<T extends WebDriver> extends BaseActions<T> {
     
     public MouseActions(T driver) {
@@ -47,13 +47,12 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param targetLocator Target element locator
      */
     public void dragAndDrop(By sourceLocator, By targetLocator) {
-        WebElement source = waitForVisibilityAndFindElement(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-        WebElement target = waitForVisibilityAndFindElement(targetLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-        Actions action = new Actions(driver);
-        action.clickAndHold(source)
-                .moveToElement(target)
-                .release()
-                .perform();
+        performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                source -> {
+                    WebElement target = waitForVisibilityAndFindElement(targetLocator,
+                            WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+                    new Actions(driver).clickAndHold(source).moveToElement(target).release().perform();
+                });
         Reporter.log("Drag and drop performed from " + sourceLocator + " to " + targetLocator, LogLevel.INFO_BLUE);
     }
 
@@ -64,14 +63,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param yOffset Y offset to move
      */
     public void dragAndDropByOffset(By sourceLocator, int xOffset, int yOffset) {
-        WebElement source = waitForVisibilityAndFindElement(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
-        Actions action = new Actions(driver);
-
-        action.clickAndHold(source)
-                .moveByOffset(xOffset, yOffset)
-                .release()
-                .perform();
-
+        performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                source -> new Actions(driver).clickAndHold(source).moveByOffset(xOffset, yOffset).release().perform());
         Reporter.log("Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
 
@@ -123,7 +116,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 if (raw == null || raw.isBlank()) continue;
                 if (Math.abs(Float.parseFloat(raw)) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_LEFT);
-            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            } catch (WebDriverException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
@@ -138,7 +131,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 if (raw == null || raw.isBlank()) continue;
                 if (Math.abs(Float.parseFloat(raw) - targetValue) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_RIGHT);
-            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+            } catch (WebDriverException e) {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
@@ -150,7 +143,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             float finalValue = Float.parseFloat(range.getText());
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
             return finalValue;
-        } catch (org.openqa.selenium.StaleElementReferenceException e) {
+        } catch (WebDriverException e) {
             float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
             return finalValue;
@@ -167,12 +160,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void moveSliderByOffset(By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
         Reporter.log("Waiting for slider to be visible: " + sliderLocator.toString(), LogLevel.INFO_BLUE);
-        WebElement slider = waitForVisibilityAndFindElement(sliderLocator, timeout, pollingEvery);
-        Actions action = new Actions(driver);
-        action.clickAndHold(slider)
-                .moveByOffset(xOffset, yOffset)
-                .release()
-                .perform();
+        performWithStaleRetry(sliderLocator, timeout, pollingEvery,
+                slider -> new Actions(driver).clickAndHold(slider).moveByOffset(xOffset, yOffset).release().perform());
         Reporter.log("Slider moved by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
 

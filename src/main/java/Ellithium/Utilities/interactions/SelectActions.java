@@ -5,13 +5,12 @@ import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 
 import java.util.List;
 
 public class SelectActions<T extends WebDriver> extends BaseActions<T> {
-    
+
     public SelectActions(T driver) {
         super(driver);
     }
@@ -24,8 +23,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void selectDropdownByText(By locator, String option, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).selectByVisibleText(option);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByVisibleText(option));
         Reporter.log("Selecting Dropdown Option By Text: " + option + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
@@ -37,8 +35,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void selectDropdownByValue(By locator, String value, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).selectByValue(value);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByValue(value));
         Reporter.log("Selecting Dropdown Option By Value: " + value + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
@@ -51,8 +48,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void selectDropdownByIndex(By locator, int index, int timeout, int pollingEvery) {
         Reporter.log("Selecting Dropdown Option By Index: " + index + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).selectByIndex(index);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByIndex(index));
     }
 
     /**
@@ -63,8 +59,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void deselectAll(By locator, int timeout, int pollingEvery) {
         Reporter.log("Deselecting All Options From Element: ", LogLevel.INFO_BLUE, locator.toString());
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).deselectAll();
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectAll());
     }
 
     /**
@@ -75,8 +70,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void deselectDropdownByText(By locator, String option, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).deselectByVisibleText(option);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByVisibleText(option));
         Reporter.log("Deselecting Dropdown Option By Text: " + option + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
@@ -88,8 +82,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void deselectDropdownByValue(By locator, String value, int timeout, int pollingEvery) {
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).deselectByValue(value);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByValue(value));
         Reporter.log("Deselecting Dropdown Option By Value: " + value + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
@@ -102,8 +95,7 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void deselectDropdownByIndex(By locator, int index, int timeout, int pollingEvery) {
         Reporter.log("Deselecting Dropdown Option By Index: " + index + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        new Select(element).deselectByIndex(index);
+        performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByIndex(index));
     }
 
     /**
@@ -115,8 +107,8 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      */
     public List<String> getDropdownSelectedOptions(By locator, int timeout, int pollingEvery) {
         Reporter.log("Getting Dropdown Selected Options: ", LogLevel.INFO_BLUE, locator.toString());
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        return new Select(element).getAllSelectedOptions().stream().map(WebElement::getText).toList();
+        return performAndGet(locator, timeout, pollingEvery,
+                el -> new Select(el).getAllSelectedOptions().stream().map(WebElement::getText).toList());
     }
 
     /**

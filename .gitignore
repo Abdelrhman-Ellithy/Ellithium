@@ -91,3 +91,4 @@ src/test/resources/TestData/MobileApps/browserstack.json
 .claude
 Test-Output/Reports/healing-report.md
 src/test/resources/TestData/samename.jar
+src/main/resources/properties/allure.properties

@@ -5,11 +5,10 @@ import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+
 import java.io.File;
 
-public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
+public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Creates a new DriverActions instance.
@@ -18,6 +17,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
     public JavaScriptActions(T driver) {
         super(driver);
     }
+
     /**
      * Clicks an element using JavaScript with specified timeout and polling interval.
      * @param locator Element locator
@@ -26,8 +26,8 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      */
     public void javascriptClick(By locator, int timeout, int pollingEvery) {
         requireJavascriptContext("javascriptClick");
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+        performWithStaleRetry(locator, timeout, pollingEvery,
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el));
         Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
@@ -35,60 +35,59 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * Clicks an element using JavaScript.
      * @param locator Element locator
      */
-    public  void javascriptClick( By locator) {
+    public void javascriptClick(By locator) {
         requireJavascriptContext("javascriptClick");
-        // Re-locate element right before JavaScript execution to avoid stale element
-        WebElement element = findWebElement( locator);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
-        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE,locator.toString());
+        performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el));
+        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
+
+    /**
+     * Clicks an element using JavaScript with specified timeout.
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     */
+    public void javascriptClick(By locator, int timeout) {
+        requireJavascriptContext("javascriptClick");
+        performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el));
+        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
+    }
+
     /**
      * Scrolls the page to bring an element into view.
      * @param locator Element locator
      */
     public void scrollToElement(By locator) {
         requireJavascriptContext("scrollToElement");
-        // Re-locate element right before JavaScript execution to avoid stale element
-        WebElement element = findWebElement( locator);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
-        Reporter.log("Scrolling To Element: ",LogLevel.INFO_BLUE,locator.toString());
+        performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el));
+        Reporter.log("Scrolling To Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
-    /**
-     * Clicks an element using JavaScript with specified timeout.
-     * @param locator Element locator
-     * @param timeout Maximum wait time in seconds
-     */
-    public  void javascriptClick( By locator, int timeout) {
-        requireJavascriptContext("javascriptClick");
-        WebElement element = waitForVisibilityAndFindElement(locator, timeout, WaitManager.getDefaultPollingTime());
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
-        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
-    }
+
     /**
      * Scrolls the page by offset.
      * @param xOffset X offset to scroll
      * @param yOffset Y offset to scroll
      */
-    public  void scrollByOffset( int xOffset, int yOffset) {
+    public void scrollByOffset(int xOffset, int yOffset) {
         requireJavascriptContext("scrollByOffset");
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
-
+        ((JavascriptExecutor) driver).executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
         Reporter.log("Scrolled by offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
     }
+
     /**
      * Sets the value of an element using JavaScript.
      * @param locator Element locator
      * @param value Value to set
      */
-    public  void setElementValueUsingJS( By locator, String value) {
+    public void setElementValueUsingJS(By locator, String value) {
         requireJavascriptContext("setElementValueUsingJS");
-        // Re-locate element right before JavaScript execution to avoid stale element
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        WebElement element = findWebElement( locator);
-        js.executeScript("arguments[0].value = arguments[1];", element, value);
+        performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", el, value));
         Reporter.log("Set value using JavaScript: " + value + " on element: " + locator.toString(), LogLevel.INFO_BLUE);
     }
+
     /**
      * Uploads a file using JavaScript with default timeout and polling time.
      * @param fileUploadLocator Locator for the file input element
@@ -97,6 +96,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
     public void uploadFileUsingJS(By fileUploadLocator, String filePath) {
         uploadFileUsingJS(fileUploadLocator, filePath, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
+
     /**
      * Uploads a file using JavaScript.
      * Useful when standard sendKeys method doesn't work.
@@ -107,22 +107,14 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T>{
      * @throws IllegalArgumentException if file does not exist
      */
     public void uploadFileUsingJS(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
-        try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                throw new IllegalArgumentException("File does not exist: " + filePath);
-            }
-
-            WebElement uploadElement = waitForVisibilityAndFindElement(fileUploadLocator, timeout, pollingEvery);
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            js.executeScript("arguments[0].style.display='block';", uploadElement);
-            // Re-locate again before sendKeys in case JS execution caused DOM change
-            uploadElement = findWebElement(fileUploadLocator);
-            uploadElement.sendKeys(file.getAbsolutePath());
-            Reporter.log("File uploaded successfully using JavaScript: " + file.getName(), LogLevel.INFO_BLUE);
-        } catch (Exception e) {
-            Reporter.log("Failed to upload file using JavaScript: " + e.getMessage(), LogLevel.ERROR);
-            throw e;
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File does not exist: " + filePath);
         }
+        performWithStaleRetry(fileUploadLocator, timeout, pollingEvery, el -> {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].style.display='block';", el);
+            el.sendKeys(file.getAbsolutePath());
+        });
+        Reporter.log("File uploaded successfully using JavaScript: " + file.getName(), LogLevel.INFO_BLUE);
     }
 }

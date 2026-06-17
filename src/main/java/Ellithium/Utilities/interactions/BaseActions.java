@@ -7,9 +7,9 @@ import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.spi.ElementHealingPort;
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -71,15 +71,13 @@ class BaseActions<T extends WebDriver> {
             WebElement element = driver.findElement(locator);
             BaselineStore.capture(driver, locator, element);
             return element;
-        } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException e) {
+        } catch (WebDriverException e) {
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.element() != null) {
                 return outcome.element();
             }
-            throw new NoSuchElementException("Element not found and could not be healed: " + locator
-                    + " | All healing tiers exhausted (Tier 1: Algorithmic baseline, "
-                    + "Tier 2: Local embedding ensemble, Tier 3: LLM)", e);
+            throw e;
         }
     }
 
@@ -105,7 +103,7 @@ class BaseActions<T extends WebDriver> {
             WebElement element = getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.visibilityOfElementLocated(effective));
             return element;
-        } catch (org.openqa.selenium.TimeoutException | org.openqa.selenium.InvalidSelectorException e) {
+        } catch (WebDriverException e) {
             return findWebElement(locator);
         }
     }
@@ -121,11 +119,13 @@ class BaseActions<T extends WebDriver> {
             getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(effective));
             return driver.findElements(effective);
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (WebDriverException e) {
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.reconstructedLocator() != null) {
-                return driver.findElements(outcome.reconstructedLocator());
+                try {
+                    return driver.findElements(outcome.reconstructedLocator());
+                } catch (WebDriverException ignored) {}
             }
             return new ArrayList<>();
         }
@@ -137,12 +137,21 @@ class BaseActions<T extends WebDriver> {
      * @param locator Element locator
      * @return List of found WebElements
      */
-    List<WebElement> findWebElements(By locator) {
-        By healed = HEALING_PORT.getCachedLocator(driver, locator);
-        if (healed != null) {
-            return driver.findElements(healed);
+    public List<WebElement> findWebElements(By locator) {
+        By effective = HEALING_PORT.getCachedLocator(driver, locator);
+        if (effective == null) effective = locator;
+        try {
+            return driver.findElements(effective);
+        } catch (WebDriverException e) {
+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+            HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+            if (outcome != null && outcome.reconstructedLocator() != null) {
+                try {
+                    return driver.findElements(outcome.reconstructedLocator());
+                } catch (WebDriverException ignored) {}
+            }
+            return new ArrayList<>();
         }
-        return driver.findElements(locator);
     }
 
     /**
@@ -157,26 +166,32 @@ class BaseActions<T extends WebDriver> {
         int currentIndex = 0;
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
-        
+
         while (true) {
             List<WebElement> currentElements = findWebElements(locator);
             if (currentIndex >= currentElements.size()) {
-                break; // No more elements or list shrunk
+                break;
             }
-            
+
             try {
                 WebElement element = currentElements.get(currentIndex);
                 action.accept(element);
                 currentIndex++;
-                consecutiveFailures = 0; // Reset on success
-            } catch (StaleElementReferenceException e) {
+                consecutiveFailures = 0;
+            } catch (WebDriverException e) {
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    Ellithium.core.reporting.Reporter.log(
-                            "Skipping element at index " + currentIndex + " after "
-                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
-                            Ellithium.core.logging.LogLevel.WARN);
-                    currentIndex++;
+                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+                    if (outcome != null && outcome.reconstructedLocator() != null) {
+                        locator = outcome.reconstructedLocator();
+                    } else {
+                        Ellithium.core.reporting.Reporter.log(
+                                "Skipping element at index " + currentIndex + " after "
+                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
+                                Ellithium.core.logging.LogLevel.WARN);
+                        currentIndex++;
+                    }
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -200,27 +215,33 @@ class BaseActions<T extends WebDriver> {
         int currentIndex = 0;
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
-        
+
         while (true) {
             List<WebElement> currentElements = findWebElements(locator);
             if (currentIndex >= currentElements.size()) {
                 break;
             }
-            
+
             try {
                 WebElement element = currentElements.get(currentIndex);
                 R result = mapper.apply(element);
                 results.add(result);
                 currentIndex++;
-                consecutiveFailures = 0; // Reset on success
-            } catch (StaleElementReferenceException e) {
+                consecutiveFailures = 0;
+            } catch (WebDriverException e) {
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    Ellithium.core.reporting.Reporter.log(
-                            "Skipping element at index " + currentIndex + " after "
-                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
-                            Ellithium.core.logging.LogLevel.WARN);
-                    currentIndex++;
+                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+                    if (outcome != null && outcome.reconstructedLocator() != null) {
+                        locator = outcome.reconstructedLocator();
+                    } else {
+                        Ellithium.core.reporting.Reporter.log(
+                                "Skipping element at index " + currentIndex + " after "
+                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
+                                Ellithium.core.logging.LogLevel.WARN);
+                        currentIndex++;
+                    }
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -272,9 +293,28 @@ class BaseActions<T extends WebDriver> {
         List<R> results = new ArrayList<>();
         int consecutiveFailures = 0;
         final int maxConsecutiveFailures = 3;
-        org.openqa.selenium.support.ui.Select dropDown =
-                new org.openqa.selenium.support.ui.Select(findWebElement(locator));
-        List<WebElement> options = dropDown.getOptions();
+        org.openqa.selenium.support.ui.Select dropDown;
+        List<WebElement> options;
+        try {
+            dropDown = new org.openqa.selenium.support.ui.Select(findWebElement(locator));
+            options = dropDown.getOptions();
+        } catch (WebDriverException e) {
+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+            HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+            if (outcome != null && outcome.element() != null) {
+                try {
+                    dropDown = new org.openqa.selenium.support.ui.Select(outcome.element());
+                    options = dropDown.getOptions();
+                } catch (WebDriverException healEx) {
+                    Ellithium.core.reporting.Reporter.log(
+                            "[HEAL] Select setup failed on healed element for " + locator + ": " + healEx.getMessage(),
+                            Ellithium.core.logging.LogLevel.WARN);
+                    return results;
+                }
+            } else {
+                return results;
+            }
+        }
         int i = 0;
         while (i < options.size()) {
             try {
@@ -282,7 +322,7 @@ class BaseActions<T extends WebDriver> {
                 results.add(result);
                 i++;
                 consecutiveFailures = 0;
-            } catch (StaleElementReferenceException | IndexOutOfBoundsException e) {
+            } catch (WebDriverException e) {
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     Ellithium.core.reporting.Reporter.log(
@@ -292,9 +332,15 @@ class BaseActions<T extends WebDriver> {
                     i++;
                     consecutiveFailures = 0;
                 } else {
-                    dropDown = new org.openqa.selenium.support.ui.Select(findWebElement(locator));
-                    options = dropDown.getOptions();
+                    try {
+                        dropDown = new org.openqa.selenium.support.ui.Select(findWebElement(locator));
+                        options = dropDown.getOptions();
+                    } catch (WebDriverException ignored) {
+                        break;
+                    }
                 }
+            } catch (IndexOutOfBoundsException e) {
+                break;
             }
         }
         return results;
@@ -325,14 +371,20 @@ class BaseActions<T extends WebDriver> {
                 action.accept(select);
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
-            } catch (StaleElementReferenceException e) {
+            } catch (WebDriverException e) {
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    Ellithium.core.reporting.Reporter.log(
-                            "Skipping select element at index " + currentIndex + " after "
-                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
-                            Ellithium.core.logging.LogLevel.WARN);
-                    currentIndex++;
+                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+                    if (outcome != null && outcome.reconstructedLocator() != null) {
+                        locator = outcome.reconstructedLocator();
+                    } else {
+                        Ellithium.core.reporting.Reporter.log(
+                                "Skipping select element at index " + currentIndex + " after "
+                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
+                                Ellithium.core.logging.LogLevel.WARN);
+                        currentIndex++;
+                    }
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -448,6 +500,44 @@ class BaseActions<T extends WebDriver> {
         return null;
     }
 
+    // ──────────────────────── Central healing-aware helpers ────────────────────────
+
+    /**
+     * Executes a probe function on an element and returns the result, or {@code defaultValue}
+     * if the element cannot be found or interacted with after all healing attempts.
+     * All probe methods (isDisplayed, isEnabled, isClickable, getText checks, etc.) delegate here
+     * instead of each having their own try/catch.
+     */
+    protected <R> R performAndGetOrDefault(By locator, int timeout, int pollingEvery,
+                                            Function<WebElement, R> action, R defaultValue) {
+        try {
+            return performAndGet(locator, timeout, pollingEvery, action);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Switches to a frame identified by a {@code By} locator.
+     * On {@link org.openqa.selenium.TimeoutException} or
+     * {@link org.openqa.selenium.NoSuchFrameException}, healing is triggered via
+     * {@link #findWebElement(By)} and the switch is retried on the healed element.
+     */
+    protected WebDriver performFrameSwitch(By locator, int timeout, int pollingEvery) {
+        try {
+            return getFluentWait(timeout, pollingEvery)
+                    .until(org.openqa.selenium.support.ui.ExpectedConditions
+                            .frameToBeAvailableAndSwitchToIt(locator));
+        } catch (WebDriverException e) {
+            WebElement frame = findWebElement(locator);
+            try {
+                return driver.switchTo().frame(frame);
+            } catch (WebDriverException ignored) {
+                throw e;
+            }
+        }
+    }
+
     // ──────────────────────── Stale-element retry helpers ────────────────────────
 
     protected static final int  STALE_MAX_RETRIES  = 2;
@@ -455,35 +545,70 @@ class BaseActions<T extends WebDriver> {
 
     void performWithStaleRetry(By locator, int timeout, int polling,
                                          Consumer<WebElement> action) {
+        WebDriverException lastException = null;
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
             try {
                 WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
                 action.accept(el);
                 return;
             } catch (StaleElementReferenceException e) {
-                if (attempt == STALE_MAX_RETRIES) throw e;
-                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted during stale-element retry", ie);
+                lastException = e;
+                if (attempt < STALE_MAX_RETRIES) {
+                    try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Interrupted during stale-element retry", ie);
+                    }
                 }
+            } catch (WebDriverException e) {
+                lastException = e;
+                break;
             }
         }
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+        if (outcome != null && outcome.element() != null) {
+            try {
+                action.accept(outcome.element());
+                return;
+            } catch (Exception healedEx) {
+                Ellithium.core.reporting.Reporter.log("[HEAL] Action failed on healed element for " + locator
+                        + ": " + healedEx.getMessage(), Ellithium.core.logging.LogLevel.WARN);
+            }
+        }
+        if (lastException != null) throw lastException;
     }
 
     <R> R performAndGet(By locator, int timeout, int polling,
                                    Function<WebElement, R> action) {
+        WebDriverException lastException = null;
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
             try {
                 WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
                 return action.apply(el);
             } catch (StaleElementReferenceException e) {
-                if (attempt == STALE_MAX_RETRIES) throw e;
-                try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted during stale-element retry", ie);
+                lastException = e;
+                if (attempt < STALE_MAX_RETRIES) {
+                    try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Interrupted during stale-element retry", ie);
+                    }
                 }
+            } catch (WebDriverException e) {
+                lastException = e;
+                break;
             }
         }
-        throw new IllegalStateException("performAndGet: retry loop exited without result or exception");
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+        if (outcome != null && outcome.element() != null) {
+            try {
+                return action.apply(outcome.element());
+            } catch (Exception healedEx) {
+                Ellithium.core.reporting.Reporter.log("[HEAL] Action failed on healed element for " + locator
+                        + ": " + healedEx.getMessage(), Ellithium.core.logging.LogLevel.WARN);
+            }
+        }
+        if (lastException != null) throw lastException;
+        throw new IllegalStateException("performAndGet: loop exited without result or exception");
     }
 }
