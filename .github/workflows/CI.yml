@@ -14,7 +14,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -32,7 +32,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -50,7 +50,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -68,7 +68,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -86,7 +86,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -105,7 +105,7 @@ jobs:
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -123,7 +123,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -141,7 +141,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -159,7 +159,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
@@ -177,7 +177,7 @@ jobs:
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java-version: 25
