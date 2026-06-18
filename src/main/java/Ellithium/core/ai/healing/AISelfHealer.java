@@ -34,10 +34,12 @@ public class AISelfHealer {
     static class CachedLocator {
         final By newLocator;
         final String originalField;
+        final double score;
         final long cachedAt;
-        CachedLocator(By newLocator, String originalField) {
+        CachedLocator(By newLocator, String originalField, double score) {
             this.newLocator = newLocator;
             this.originalField = originalField;
+            this.score = score;
             this.cachedAt = System.currentTimeMillis();
         }
         boolean isExpired() {
@@ -104,7 +106,7 @@ public class AISelfHealer {
             globalHealedCache.entrySet().removeIf(e -> e.getValue().isExpired());
         }
         globalHealedCache.putIfAbsent(key,
-                new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed"));
+                new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed", score));
     }
 
     public static void resetForSuite() {
@@ -327,7 +329,10 @@ public class AISelfHealer {
         String cacheKey = cacheKey(driver, brokenLocator);
         CachedLocator cached = globalHealedCache.get(cacheKey);
         if (cached != null) {
-            if (!cached.isExpired()) return cached.newLocator;
+            if (!cached.isExpired()) {
+                LAST_HEAL_CONFIDENCE.set(cached.score);
+                return cached.newLocator;
+            }
             globalHealedCache.remove(cacheKey);
         }
 
@@ -345,8 +350,13 @@ public class AISelfHealer {
         java.util.concurrent.CompletableFuture<By> existing = inFlight.putIfAbsent(cacheKey, mine);
         if (existing != null) {
             try {
-                return existing.get(AIConfigLoader.getLlmHealMaxWaitMs(),
+                By shared = existing.get(AIConfigLoader.getLlmHealMaxWaitMs(),
                         java.util.concurrent.TimeUnit.MILLISECONDS);
+                if (shared != null) {
+                    CachedLocator sharedCache = globalHealedCache.get(cacheKey);
+                    if (sharedCache != null) LAST_HEAL_CONFIDENCE.set(sharedCache.score);
+                }
+                return shared;
             } catch (Exception e) {
                 return null;
             }
@@ -468,7 +478,8 @@ public class AISelfHealer {
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
         if (acceptedResult.getConfidence() >= AIConfigLoader.getHealingStoreThreshold()) {
             globalHealedCache.put(cacheKey(driver, brokenLocator),
-                    new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown"));
+                    new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown",
+                            acceptedResult.getConfidence()));
         }
 
         AIHealingReporter.queueChange(

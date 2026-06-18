@@ -130,7 +130,12 @@ public class StartUpLoader {
             int v2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
             if (v1 != v2) return Integer.compare(v1, v2);
         }
-        return 0;
+        String q1 = version1.contains("-") ? version1.substring(version1.indexOf('-') + 1) : "";
+        String q2 = version2.contains("-") ? version2.substring(version2.indexOf('-') + 1) : "";
+        if (q1.isEmpty() && q2.isEmpty()) return 0;
+        if (q1.isEmpty()) return 1;
+        if (q2.isEmpty()) return -1;
+        return q1.compareToIgnoreCase(q2);
     }
     private static void TestOutputSolver(){
         boolean result;

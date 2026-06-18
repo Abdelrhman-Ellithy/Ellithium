@@ -104,11 +104,14 @@ public final class HealingOrchestrator implements ElementHealingPort {
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
 
+            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
+            if (guarded == null) continue;
+
             AISelfHealer.cacheHealedLocator(request.driver(), request.brokenLocator(),
                     locator, raw.score(), request.fieldName());
 
             if (!tier.persistsOwnHeal()) {
-                BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
+                BaselineStore.capture(request.driver(), request.brokenLocator(), guarded,
                         raw.score(), tier.order());
 
                 HealingContextBuilder.SourceLocation srcLoc =
@@ -131,8 +134,6 @@ public final class HealingOrchestrator implements ElementHealingPort {
                         request.actionType(),
                         srcLoc != null ? srcLoc.lineNumber : 0);
             }
-            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
-            if (guarded == null) continue;
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
         Reporter.log("[AI] All healing tiers exhausted for " + request.brokenLocator()

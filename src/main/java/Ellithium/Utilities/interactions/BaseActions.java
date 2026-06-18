@@ -7,16 +7,20 @@ import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.spi.ElementHealingPort;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementNotInteractableException;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.MoveTargetOutOfBoundsException;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -179,6 +183,9 @@ class BaseActions<T extends WebDriver> {
                 currentIndex++;
                 consecutiveFailures = 0;
             } catch (WebDriverException e) {
+                if (isScrollRecoverable(e) && currentIndex < currentElements.size()) {
+                    scrollElementIntoViewQuietly(currentElements.get(currentIndex));
+                }
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     StackTraceElement[] stack = Thread.currentThread().getStackTrace();
@@ -360,18 +367,22 @@ class BaseActions<T extends WebDriver> {
         final int maxConsecutiveFailures = 3;
         
         while (true) {
+            List<WebElement> currentElements = null;
             try {
-                List<WebElement> currentElements = findWebElements(locator);
+                currentElements = findWebElements(locator);
                 if (currentIndex >= currentElements.size()) {
                     break; // No more elements or list shrunk
                 }
-                
+
                 WebElement element = currentElements.get(currentIndex);
                 org.openqa.selenium.support.ui.Select select = new org.openqa.selenium.support.ui.Select(element);
                 action.accept(select);
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
             } catch (WebDriverException e) {
+                if (isScrollRecoverable(e) && currentElements != null && currentIndex < currentElements.size()) {
+                    scrollElementIntoViewQuietly(currentElements.get(currentIndex));
+                }
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     StackTraceElement[] stack = Thread.currentThread().getStackTrace();
@@ -396,6 +407,22 @@ class BaseActions<T extends WebDriver> {
     // ──────────────────────── Context Extraction for Tier 2 ────────────────────────
 
     /**
+     * Internal BaseActions plumbing method names that must never be reported as the user-facing
+     * action. Any of these can be on the captured stack when healing is triggered, so they are
+     * skipped to let the genuine interaction method (e.g. "clickOnElement", "clickOnMultipleElements")
+     * surface in the healing request sent to the model.
+     */
+    private static final Set<String> INTERNAL_STACK_METHODS = Set.of(
+            "findWebElement", "findWebElements",
+            "waitForVisibilityAndFindElement", "waitForVisibilityAndFindElements",
+            "getFluentWait", "extractActionFromStack", "buildHealingRequest",
+            "performWithStaleRetry", "performAndGet", "performAndGetOrDefault", "performFrameSwitch",
+            "forEachElementSafely", "mapElementsSafely",
+            "forEachSelectElementSafely", "mapSelectOptionsSafely",
+            "findElementByIndexSafely", "getElementCount",
+            "attemptInteractabilityRecovery", "scrollElementIntoViewQuietly", "isScrollRecoverable");
+
+    /**
      * Extracts the Ellithium interaction method name from the stack (e.g., "sendData", "clickOnElement").
      */
     private static String extractActionFromStack(StackTraceElement[] stack) {
@@ -403,12 +430,7 @@ class BaseActions<T extends WebDriver> {
             String cls = frame.getClassName();
             if (cls.startsWith("Ellithium.Utilities.interactions.")) {
                 String method = frame.getMethodName();
-                if (!method.equals("findWebElement") && !method.equals("waitForVisibilityAndFindElement")
-                        && !method.equals("getFluentWait") && !method.equals("findWebElements")
-                        && !method.equals("waitForVisibilityAndFindElements")
-                        && !method.equals("extractActionFromStack")
-                        && !method.equals("performWithStaleRetry")
-                        && !method.equals("performAndGet")) {
+                if (!INTERNAL_STACK_METHODS.contains(method)) {
                     return method;
                 }
             }
@@ -540,8 +562,48 @@ class BaseActions<T extends WebDriver> {
 
     // ──────────────────────── Stale-element retry helpers ────────────────────────
 
-    protected static final int  STALE_MAX_RETRIES  = 2;
-    protected static final long STALE_RETRY_WAIT_MS = 300L;
+    protected static final int STALE_MAX_RETRIES = 2;
+
+    /**
+     * Best-effort recovery for click-intercepted / not-interactable failures: scrolls the
+     * element to the viewport centre to clear sticky headers, footers or transient overlays,
+     * then dynamically waits for it to become clickable before the next attempt.
+     * No-op in a native mobile context or when the driver cannot execute JavaScript.
+     */
+    private void attemptInteractabilityRecovery(By locator, int timeout, int polling) {
+        if (isNativeMobileContext()) return;
+        if (!(driver instanceof JavascriptExecutor js)) return;
+        try {
+            WebElement el = driver.findElement(locator);
+            js.executeScript("arguments[0].scrollIntoView({block:'center',inline:'center'});", el);
+            getFluentWait(timeout, polling).until(ExpectedConditions.elementToBeClickable(locator));
+        } catch (WebDriverException ignored) {
+        }
+    }
+
+    /**
+     * True for failures that an in-viewport scroll can clear: click-intercepted, not-interactable
+     * or move-target-out-of-bounds. Such failures mean the element was found but a sticky
+     * header/footer, overlay or off-screen position blocked the interaction.
+     */
+    private boolean isScrollRecoverable(WebDriverException e) {
+        return e instanceof ElementNotInteractableException || e instanceof MoveTargetOutOfBoundsException;
+    }
+
+    /**
+     * Best-effort scroll of an already-resolved element to the viewport centre, so the next
+     * retry of a multi-element interaction can succeed. No-op in a native mobile context or
+     * when the driver cannot execute JavaScript.
+     */
+    private void scrollElementIntoViewQuietly(WebElement element) {
+        if (element == null) return;
+        if (isNativeMobileContext()) return;
+        if (!(driver instanceof JavascriptExecutor js)) return;
+        try {
+            js.executeScript("arguments[0].scrollIntoView({block:'center',inline:'center'});", element);
+        } catch (WebDriverException ignored) {
+        }
+    }
 
     void performWithStaleRetry(By locator, int timeout, int polling,
                                          Consumer<WebElement> action) {
@@ -553,11 +615,10 @@ class BaseActions<T extends WebDriver> {
                 return;
             } catch (StaleElementReferenceException e) {
                 lastException = e;
+            } catch (ElementNotInteractableException | MoveTargetOutOfBoundsException e) {
+                lastException = e;
                 if (attempt < STALE_MAX_RETRIES) {
-                    try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException("Interrupted during stale-element retry", ie);
-                    }
+                    attemptInteractabilityRecovery(locator, timeout, polling);
                 }
             } catch (WebDriverException e) {
                 lastException = e;
@@ -587,11 +648,10 @@ class BaseActions<T extends WebDriver> {
                 return action.apply(el);
             } catch (StaleElementReferenceException e) {
                 lastException = e;
+            } catch (ElementNotInteractableException | MoveTargetOutOfBoundsException e) {
+                lastException = e;
                 if (attempt < STALE_MAX_RETRIES) {
-                    try { Thread.sleep(STALE_RETRY_WAIT_MS); } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException("Interrupted during stale-element retry", ie);
-                    }
+                    attemptInteractabilityRecovery(locator, timeout, polling);
                 }
             } catch (WebDriverException e) {
                 lastException = e;
