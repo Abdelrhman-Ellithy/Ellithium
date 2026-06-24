@@ -11,6 +11,7 @@ import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
 import Ellithium.core.ai.spi.Tier3LLMHealer;
 import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.ai.dom.InteractiveElements;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -22,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 public final class HealingOrchestrator implements ElementHealingPort {
 
@@ -143,31 +143,9 @@ public final class HealingOrchestrator implements ElementHealingPort {
         return null;
     }
 
-    private static final Set<String> INTERACTIVE_TAGS =
-            Set.of("button", "a", "input", "select", "textarea", "option");
-
-    private static final Set<String> INTERACTIVE_ROLES =
-            Set.of("button", "link", "menuitem", "menuitemcheckbox",
-                    "menuitemradio", "tab", "option", "checkbox", "radio");
-
-    private static final String[] INNER_INTERACTIVE_SELECTORS = {
-            "button[type='submit']",
-            "input[type='submit']",
-            "button",
-            "input[type='button']",
-            "a"
-    };
-
-    private static boolean isClickLikeAction(String actionType) {
-        if (actionType == null || actionType.equals("unknown")) return false;
-        String lower = actionType.toLowerCase();
-        return lower.contains("click") || lower.contains("tap")
-                || lower.contains("press") || lower.contains("hover");
-    }
-
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
                                                         String tierLabel, WebDriver driver) {
-        if (healed == null || !isClickLikeAction(actionType)) return healed;
+        if (healed == null || !InteractiveElements.isClickLikeAction(actionType)) return healed;
         try {
             // Batch getTagName + getAttribute("role") into one JS round-trip instead of two.
             String tag, role;
@@ -185,11 +163,11 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 tag  = healed.getTagName().toLowerCase();
                 role = healed.getAttribute("role");
             }
-            if (INTERACTIVE_TAGS.contains(tag)) return healed;
+            if (InteractiveElements.TAGS.contains(tag)) return healed;
 
-            if (role != null && INTERACTIVE_ROLES.contains(role)) return healed;
+            if (role != null && InteractiveElements.ROLES.contains(role)) return healed;
 
-            for (String selector : INNER_INTERACTIVE_SELECTORS) {
+            for (String selector : InteractiveElements.INNER_SELECTORS) {
                 try {
                     WebElement inner = healed.findElement(By.cssSelector(selector));
                     if (inner.isDisplayed()) {

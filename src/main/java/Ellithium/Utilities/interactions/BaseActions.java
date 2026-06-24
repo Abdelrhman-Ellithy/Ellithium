@@ -5,15 +5,15 @@ import Ellithium.core.ai.healing.HealingOrchestrator;
 import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.dom.InteractiveElements;
 import Ellithium.core.ai.spi.ElementHealingPort;
 import org.openqa.selenium.By;
-import org.openqa.selenium.ElementNotInteractableException;
-import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.MoveTargetOutOfBoundsException;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -29,8 +29,10 @@ class BaseActions<T extends WebDriver> {
     private static final ElementHealingPort HEALING_PORT = HealingOrchestrator.get();
 
     protected final T driver;
+    final InteractionRecovery recovery;
     protected BaseActions(T driver) {
         this.driver = Objects.requireNonNull(driver, "driver must not be null");
+        this.recovery = new InteractionRecovery(this.driver);
     }
     /**
      * Gets a FluentWait instance with specified timeout and polling interval.
@@ -43,13 +45,7 @@ class BaseActions<T extends WebDriver> {
     }
 
     protected boolean isNativeMobileContext() {
-        if (!(driver instanceof io.appium.java_client.remote.SupportsContextSwitching ctxAware)) return false;
-        try {
-            String ctx = ctxAware.getContext();
-            return ctx == null || ctx.toUpperCase(java.util.Locale.ROOT).contains("NATIVE");
-        } catch (Exception e) {
-            return false;
-        }
+        return InteractionRecovery.isNativeMobileContext(driver);
     }
 
     protected void requireJavascriptContext(String operation) {
@@ -76,6 +72,12 @@ class BaseActions<T extends WebDriver> {
             BaselineStore.capture(driver, locator, element);
             return element;
         } catch (WebDriverException e) {
+            if (recoverContextOrAlert(e, locator)) {
+                WebElement recovered = driver.findElement(locator);
+                BaselineStore.capture(driver, locator, recovered);
+                return recovered;
+            }
+            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.element() != null) {
@@ -108,6 +110,8 @@ class BaseActions<T extends WebDriver> {
                     .until(ExpectedConditions.visibilityOfElementLocated(effective));
             return element;
         } catch (WebDriverException e) {
+            if (recoverContextOrAlert(e, locator)) return findWebElement(locator);
+            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
             return findWebElement(locator);
         }
     }
@@ -124,6 +128,11 @@ class BaseActions<T extends WebDriver> {
                     .until(ExpectedConditions.visibilityOfAllElementsLocatedBy(effective));
             return driver.findElements(effective);
         } catch (WebDriverException e) {
+            if (recoverContextOrAlert(e, locator)) {
+                try { return driver.findElements(locator); } catch (WebDriverException ignored) {}
+                return new ArrayList<>();
+            }
+            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.reconstructedLocator() != null) {
@@ -147,6 +156,11 @@ class BaseActions<T extends WebDriver> {
         try {
             return driver.findElements(effective);
         } catch (WebDriverException e) {
+            if (recoverContextOrAlert(e, locator)) {
+                try { return driver.findElements(locator); } catch (WebDriverException ignored) {}
+                return new ArrayList<>();
+            }
+            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.reconstructedLocator() != null) {
@@ -177,28 +191,28 @@ class BaseActions<T extends WebDriver> {
                 break;
             }
 
+            WebElement current = currentElements.get(currentIndex);
             try {
-                WebElement element = currentElements.get(currentIndex);
-                action.accept(element);
+                action.accept(current);
                 currentIndex++;
                 consecutiveFailures = 0;
             } catch (WebDriverException e) {
-                if (isScrollRecoverable(e) && currentIndex < currentElements.size()) {
-                    scrollElementIntoViewQuietly(currentElements.get(currentIndex));
-                }
+                recoverInListOrRethrow(e, current, locator);
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
-                    if (outcome != null && outcome.reconstructedLocator() != null) {
-                        locator = outcome.reconstructedLocator();
+                    if (InteractiveElements.isPlainClick(extractActionFromStack(Thread.currentThread().getStackTrace()))
+                            && recovery.jsClick(current)) {
+                        Ellithium.core.reporting.Reporter.log(
+                                "[RECOVER] JS-clicked element at index " + currentIndex
+                                + " after native click was blocked for: " + locator,
+                                Ellithium.core.logging.LogLevel.INFO_YELLOW);
                     } else {
                         Ellithium.core.reporting.Reporter.log(
-                                "Skipping element at index " + currentIndex + " after "
-                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
+                                "[RECOVER] Skipping element at index " + currentIndex + " after "
+                                + maxConsecutiveFailures + " interaction failures for: " + locator,
                                 Ellithium.core.logging.LogLevel.WARN);
-                        currentIndex++;
                     }
+                    currentIndex++;
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -229,26 +243,20 @@ class BaseActions<T extends WebDriver> {
                 break;
             }
 
+            WebElement current = currentElements.get(currentIndex);
             try {
-                WebElement element = currentElements.get(currentIndex);
-                R result = mapper.apply(element);
-                results.add(result);
+                results.add(mapper.apply(current));
                 currentIndex++;
                 consecutiveFailures = 0;
             } catch (WebDriverException e) {
+                recoverInListOrRethrow(e, current, locator);
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
-                    if (outcome != null && outcome.reconstructedLocator() != null) {
-                        locator = outcome.reconstructedLocator();
-                    } else {
-                        Ellithium.core.reporting.Reporter.log(
-                                "Skipping element at index " + currentIndex + " after "
-                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
-                                Ellithium.core.logging.LogLevel.WARN);
-                        currentIndex++;
-                    }
+                    Ellithium.core.reporting.Reporter.log(
+                            "[RECOVER] Skipping element at index " + currentIndex + " after "
+                            + maxConsecutiveFailures + " interaction failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
+                    currentIndex++;
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -330,11 +338,12 @@ class BaseActions<T extends WebDriver> {
                 i++;
                 consecutiveFailures = 0;
             } catch (WebDriverException e) {
+                if (SeleniumFailurePolicy.isTerminal(e)) throw e;
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     Ellithium.core.reporting.Reporter.log(
-                            "Skipping select option at index " + i + " after "
-                            + maxConsecutiveFailures + " consecutive stale failures for: " + locator,
+                            "[RECOVER] Skipping select option at index " + i + " after "
+                            + maxConsecutiveFailures + " consecutive failures for: " + locator,
                             Ellithium.core.logging.LogLevel.WARN);
                     i++;
                     consecutiveFailures = 0;
@@ -380,22 +389,17 @@ class BaseActions<T extends WebDriver> {
                 currentIndex++;
                 consecutiveFailures = 0; // Reset on success
             } catch (WebDriverException e) {
-                if (isScrollRecoverable(e) && currentElements != null && currentIndex < currentElements.size()) {
-                    scrollElementIntoViewQuietly(currentElements.get(currentIndex));
-                }
+                recoverInListOrRethrow(e,
+                        currentElements != null && currentIndex < currentElements.size()
+                                ? currentElements.get(currentIndex) : null,
+                        locator);
                 consecutiveFailures++;
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-                    HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
-                    if (outcome != null && outcome.reconstructedLocator() != null) {
-                        locator = outcome.reconstructedLocator();
-                    } else {
-                        Ellithium.core.reporting.Reporter.log(
-                                "Skipping select element at index " + currentIndex + " after "
-                                + maxConsecutiveFailures + " consecutive failures for: " + locator,
-                                Ellithium.core.logging.LogLevel.WARN);
-                        currentIndex++;
-                    }
+                    Ellithium.core.reporting.Reporter.log(
+                            "[RECOVER] Skipping select element at index " + currentIndex + " after "
+                            + maxConsecutiveFailures + " interaction failures for: " + locator,
+                            Ellithium.core.logging.LogLevel.WARN);
+                    currentIndex++;
                     consecutiveFailures = 0;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -407,32 +411,32 @@ class BaseActions<T extends WebDriver> {
     // ──────────────────────── Context Extraction for Tier 2 ────────────────────────
 
     /**
-     * Internal BaseActions plumbing method names that must never be reported as the user-facing
-     * action. Any of these can be on the captured stack when healing is triggered, so they are
-     * skipped to let the genuine interaction method (e.g. "clickOnElement", "clickOnMultipleElements")
-     * surface in the healing request sent to the model.
+     * Infrastructure classes whose methods are internal plumbing and must NEVER be reported as the
+     * user-facing action sent to the healing model. Excluding by class (not by method name) means
+     * every current and future helper in these classes is automatically kept out of the stack trace
+     * — no manual maintenance, no leak risk when a new helper is added.
      */
-    private static final Set<String> INTERNAL_STACK_METHODS = Set.of(
-            "findWebElement", "findWebElements",
-            "waitForVisibilityAndFindElement", "waitForVisibilityAndFindElements",
-            "getFluentWait", "extractActionFromStack", "buildHealingRequest",
-            "performWithStaleRetry", "performAndGet", "performAndGetOrDefault", "performFrameSwitch",
-            "forEachElementSafely", "mapElementsSafely",
-            "forEachSelectElementSafely", "mapSelectOptionsSafely",
-            "findElementByIndexSafely", "getElementCount",
-            "attemptInteractabilityRecovery", "scrollElementIntoViewQuietly", "isScrollRecoverable");
+    private static final Set<String> INFRA_CLASSES = Set.of(
+            "Ellithium.Utilities.interactions.BaseActions",
+            "Ellithium.Utilities.interactions.InteractionRecovery",
+            "Ellithium.Utilities.interactions.SeleniumFailurePolicy");
+
+    private static boolean isInfraFrame(String className) {
+        for (String infra : INFRA_CLASSES) {
+            if (className.equals(infra) || className.startsWith(infra + "$")) return true;
+        }
+        return false;
+    }
 
     /**
-     * Extracts the Ellithium interaction method name from the stack (e.g., "sendData", "clickOnElement").
+     * Extracts the Ellithium interaction method name from the stack (e.g., "sendData", "clickOnElement"),
+     * skipping all infrastructure-class frames so only the genuine user-facing action surfaces.
      */
-    private static String extractActionFromStack(StackTraceElement[] stack) {
+    static String extractActionFromStack(StackTraceElement[] stack) {
         for (StackTraceElement frame : stack) {
             String cls = frame.getClassName();
-            if (cls.startsWith("Ellithium.Utilities.interactions.")) {
-                String method = frame.getMethodName();
-                if (!INTERNAL_STACK_METHODS.contains(method)) {
-                    return method;
-                }
+            if (cls.startsWith("Ellithium.Utilities.interactions.") && !isInfraFrame(cls)) {
+                return frame.getMethodName();
             }
         }
         return "unknown";
@@ -565,75 +569,118 @@ class BaseActions<T extends WebDriver> {
     protected static final int STALE_MAX_RETRIES = 2;
 
     /**
-     * Best-effort recovery for click-intercepted / not-interactable failures: scrolls the
-     * element to the viewport centre to clear sticky headers, footers or transient overlays,
-     * then dynamically waits for it to become clickable before the next attempt.
-     * No-op in a native mobile context or when the driver cannot execute JavaScript.
+     * Visibility-waited find with NO healing, respecting a previously cached healed locator.
+     * On a visibility timeout it returns the present element if the locator still resolves — so the
+     * caller's recovery path can handle a hidden/obscured element — otherwise it surfaces
+     * {@link NoSuchElementException} for the heal path.
      */
-    private void attemptInteractabilityRecovery(By locator, int timeout, int polling) {
-        if (isNativeMobileContext()) return;
-        if (!(driver instanceof JavascriptExecutor js)) return;
+    private WebElement rawVisibleElement(By locator, int timeout, int polling) {
+        By effective = HEALING_PORT.getCachedLocator(driver, locator);
+        if (effective == null) effective = locator;
         try {
-            WebElement el = driver.findElement(locator);
-            js.executeScript("arguments[0].scrollIntoView({block:'center',inline:'center'});", el);
-            getFluentWait(timeout, polling).until(ExpectedConditions.elementToBeClickable(locator));
-        } catch (WebDriverException ignored) {
+            return getFluentWait(timeout, polling)
+                    .until(ExpectedConditions.visibilityOfElementLocated(effective));
+        } catch (TimeoutException te) {
+            List<WebElement> present = driver.findElements(effective);
+            if (!present.isEmpty()) return present.get(0);
+            throw new NoSuchElementException("No element located by " + locator, te);
         }
     }
 
     /**
-     * True for failures that an in-viewport scroll can clear: click-intercepted, not-interactable
-     * or move-target-out-of-bounds. Such failures mean the element was found but a sticky
-     * header/footer, overlay or off-screen position blocked the interaction.
+     * The single locator-healing call used by the retry helpers, fired at most once per operation.
+     * Returns the healed element, or {@code null} when healing did not resolve one.
      */
-    private boolean isScrollRecoverable(WebDriverException e) {
-        return e instanceof ElementNotInteractableException || e instanceof MoveTargetOutOfBoundsException;
+    private WebElement healOnce(By locator) {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
+        return outcome != null ? outcome.element() : null;
     }
 
     /**
-     * Best-effort scroll of an already-resolved element to the viewport centre, so the next
-     * retry of a multi-element interaction can succeed. No-op in a native mobile context or
-     * when the driver cannot execute JavaScript.
+     * Per-element recovery for the multi-element loops: rethrows terminal failures
+     * (session/alert/context) immediately, scrolls the current element into view for a
+     * recoverable interaction failure, and is a no-op otherwise (the loop re-finds or skips).
+     * Never heals — a non-empty list means the locator already resolved.
      */
-    private void scrollElementIntoViewQuietly(WebElement element) {
-        if (element == null) return;
-        if (isNativeMobileContext()) return;
-        if (!(driver instanceof JavascriptExecutor js)) return;
-        try {
-            js.executeScript("arguments[0].scrollIntoView({block:'center',inline:'center'});", element);
-        } catch (WebDriverException ignored) {
+    private void recoverInListOrRethrow(WebDriverException e, WebElement current, By locator) {
+        if (recoverContextOrAlert(e, locator)) return;
+        if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+        if (SeleniumFailurePolicy.classify(e) == SeleniumFailurePolicy.FailureClass.RECOVER_INTERACTION) {
+            recovery.scrollToCenter(current);
         }
+    }
+
+    /**
+     * Active recovery for the non-healable context failures: clears a blocking alert ({@code ALERT})
+     * or restores a lost frame/window context ({@code CONTEXT}) so the original action can be retried.
+     * Returns true only when such a failure was handled — the caller should then retry; otherwise the
+     * caller proceeds with its normal heal/rethrow logic.
+     */
+    private boolean recoverContextOrAlert(WebDriverException e, By locator) {
+        SeleniumFailurePolicy.FailureClass fc = SeleniumFailurePolicy.classify(e);
+        if (fc == SeleniumFailurePolicy.FailureClass.ALERT) return recovery.handleUnexpectedAlert();
+        if (fc == SeleniumFailurePolicy.FailureClass.CONTEXT) return recovery.recoverContext(locator, e);
+        return false;
     }
 
     void performWithStaleRetry(By locator, int timeout, int polling,
                                          Consumer<WebElement> action) {
         WebDriverException lastException = null;
+        boolean healed = false;
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
+            WebElement el;
             try {
-                WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
+                el = rawVisibleElement(locator, timeout, polling);
+            } catch (StaleElementReferenceException e) {
+                lastException = e;
+                continue;
+            } catch (WebDriverException e) {
+                lastException = e;
+                if (recoverContextOrAlert(e, locator)) continue;
+                if (!SeleniumFailurePolicy.shouldHeal(e)) throw e;
+                if (healed) continue;
+                healed = true;
+                el = healOnce(locator);
+                if (el == null) continue;
+            }
+            try {
                 action.accept(el);
                 return;
             } catch (StaleElementReferenceException e) {
                 lastException = e;
-            } catch (ElementNotInteractableException | MoveTargetOutOfBoundsException e) {
-                lastException = e;
-                if (attempt < STALE_MAX_RETRIES) {
-                    attemptInteractabilityRecovery(locator, timeout, polling);
-                }
             } catch (WebDriverException e) {
                 lastException = e;
-                break;
+                SeleniumFailurePolicy.FailureClass fc = SeleniumFailurePolicy.classify(e);
+                if (fc == SeleniumFailurePolicy.FailureClass.RECOVER_INTERACTION) {
+                    WebElement target = recovery.resolveInteractable(locator, timeout, polling);
+                    if (target != null) {
+                        try { action.accept(target); return; }
+                        catch (WebDriverException retryEx) { lastException = retryEx; }
+                    } else if (!healed) {
+                        healed = true;
+                        WebElement healedEl = healOnce(locator);
+                        if (healedEl != null) {
+                            try { action.accept(healedEl); return; }
+                            catch (WebDriverException he) { lastException = he; }
+                        }
+                    }
+                } else if (fc == SeleniumFailurePolicy.FailureClass.ALERT
+                        || fc == SeleniumFailurePolicy.FailureClass.CONTEXT) {
+                    if (!recoverContextOrAlert(e, locator)) throw e;
+                } else if (fc != SeleniumFailurePolicy.FailureClass.RELOCATE) {
+                    throw e;
+                }
             }
         }
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
-        if (outcome != null && outcome.element() != null) {
-            try {
-                action.accept(outcome.element());
+        if (InteractiveElements.isPlainClick(extractActionFromStack(Thread.currentThread().getStackTrace()))) {
+            WebElement target = recovery.resolveInteractable(locator, timeout, polling);
+            if (target == null && !healed) target = healOnce(locator);
+            if (recovery.jsClick(target)) {
+                Ellithium.core.reporting.Reporter.log(
+                        "[RECOVER] JS-clicked after native click was blocked for " + locator,
+                        Ellithium.core.logging.LogLevel.INFO_YELLOW);
                 return;
-            } catch (Exception healedEx) {
-                Ellithium.core.reporting.Reporter.log("[HEAL] Action failed on healed element for " + locator
-                        + ": " + healedEx.getMessage(), Ellithium.core.logging.LogLevel.WARN);
             }
         }
         if (lastException != null) throw lastException;
@@ -642,30 +689,49 @@ class BaseActions<T extends WebDriver> {
     <R> R performAndGet(By locator, int timeout, int polling,
                                    Function<WebElement, R> action) {
         WebDriverException lastException = null;
+        boolean healed = false;
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
+            WebElement el;
             try {
-                WebElement el = waitForVisibilityAndFindElement(locator, timeout, polling);
+                el = rawVisibleElement(locator, timeout, polling);
+            } catch (StaleElementReferenceException e) {
+                lastException = e;
+                continue;
+            } catch (WebDriverException e) {
+                lastException = e;
+                if (recoverContextOrAlert(e, locator)) continue;
+                if (!SeleniumFailurePolicy.shouldHeal(e)) throw e;
+                if (healed) continue;
+                healed = true;
+                el = healOnce(locator);
+                if (el == null) continue;
+            }
+            try {
                 return action.apply(el);
             } catch (StaleElementReferenceException e) {
                 lastException = e;
-            } catch (ElementNotInteractableException | MoveTargetOutOfBoundsException e) {
-                lastException = e;
-                if (attempt < STALE_MAX_RETRIES) {
-                    attemptInteractabilityRecovery(locator, timeout, polling);
-                }
             } catch (WebDriverException e) {
                 lastException = e;
-                break;
-            }
-        }
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
-        if (outcome != null && outcome.element() != null) {
-            try {
-                return action.apply(outcome.element());
-            } catch (Exception healedEx) {
-                Ellithium.core.reporting.Reporter.log("[HEAL] Action failed on healed element for " + locator
-                        + ": " + healedEx.getMessage(), Ellithium.core.logging.LogLevel.WARN);
+                SeleniumFailurePolicy.FailureClass fc = SeleniumFailurePolicy.classify(e);
+                if (fc == SeleniumFailurePolicy.FailureClass.RECOVER_INTERACTION) {
+                    WebElement target = recovery.resolveInteractable(locator, timeout, polling);
+                    if (target != null) {
+                        try { return action.apply(target); }
+                        catch (WebDriverException retryEx) { lastException = retryEx; }
+                    } else if (!healed) {
+                        healed = true;
+                        WebElement healedEl = healOnce(locator);
+                        if (healedEl != null) {
+                            try { return action.apply(healedEl); }
+                            catch (WebDriverException he) { lastException = he; }
+                        }
+                    }
+                } else if (fc == SeleniumFailurePolicy.FailureClass.ALERT
+                        || fc == SeleniumFailurePolicy.FailureClass.CONTEXT) {
+                    if (!recoverContextOrAlert(e, locator)) throw e;
+                } else if (fc != SeleniumFailurePolicy.FailureClass.RELOCATE) {
+                    throw e;
+                }
             }
         }
         if (lastException != null) throw lastException;

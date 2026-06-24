@@ -18,15 +18,15 @@ public class LoginPage {
     // I will broke the locators to trigger self healing and commit to enable healing and correcting the locators
     // I must commit the file after change to enable healing and correcting the locators
     public void setUserName(String username) {
-        driverActions.elements().sendData(By.id("username"), username);
+        driverActions.elements().sendData(By.id("emmmmailll"), username);
     }
 
     public void setPassword(String password) {
-        driverActions.elements().sendData(By.id("password"), password);
+        driverActions.elements().sendData(By.id("secret"), password);
     }
 
     public SecureAreaPage clickLoginBtn() {
-        driverActions.elements().clickOnElement(By.xpath("//button[normalize-space(.)='Login' and @type='submit']"));
+        driverActions.elements().clickOnElement(By.id("//button[normalize-space(.)='Login' and @type='submit']"));
         return new SecureAreaPage(driver);
     }
 }

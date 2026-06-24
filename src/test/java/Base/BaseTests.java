@@ -13,7 +13,8 @@ public class BaseTests {
     @BeforeClass
     public void Setup()  {
         LocalDriverConfig driverConfig=new LocalDriverConfig(LocalDriverType.Chrome,
-                HeadlessMode.False, PrivateMode.True,
+                HeadlessMode.False,
+                PrivateMode.True,
                 PageLoadStrategyMode.Normal,
                 WebSecurityMode.SecureMode,
                 SandboxMode.Sandbox);

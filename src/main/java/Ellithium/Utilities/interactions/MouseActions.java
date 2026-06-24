@@ -117,6 +117,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 if (Math.abs(Float.parseFloat(raw)) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_LEFT);
             } catch (WebDriverException e) {
+                if (SeleniumFailurePolicy.isTerminal(e)) throw e;
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
@@ -132,6 +133,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 if (Math.abs(Float.parseFloat(raw) - targetValue) <= EPSILON) break;
                 slider.sendKeys(Keys.ARROW_RIGHT);
             } catch (WebDriverException e) {
+                if (SeleniumFailurePolicy.isTerminal(e)) throw e;
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
@@ -144,6 +146,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
             return finalValue;
         } catch (WebDriverException e) {
+            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
             float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
             return finalValue;
