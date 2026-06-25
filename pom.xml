@@ -84,7 +84,7 @@
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
-        <AllureJVMVersion>2.35.2</AllureJVMVersion>
+        <AllureJVMVersion>2.35.3</AllureJVMVersion>
         <HikariCPVersion>7.1.0</HikariCPVersion>
         <caffineVersion>3.2.4</caffineVersion>
         <mysqlVersion>9.7.0</mysqlVersion>
