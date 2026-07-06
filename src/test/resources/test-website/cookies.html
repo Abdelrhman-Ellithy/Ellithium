@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookies &amp; Storage — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .cookie-row {
+      display:grid; grid-template-columns:1fr 1fr auto;
+      gap:8px; align-items:center; padding:8px 12px;
+      background:var(--bg-primary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); font-size:0.78rem;
+      transition:var(--transition);
+    }
+    .cookie-row:hover { border-color:var(--border-bright); }
+    .cookie-name { color:var(--accent-cyan); font-family:'Courier New',monospace; font-weight:700; }
+    .cookie-val  { color:var(--text-secondary); font-family:'Courier New',monospace; word-break:break-all; }
+    .storage-display {
+      background:#020408; border:1px solid #1a2a40; border-radius:var(--radius-sm);
+      padding:10px 14px; font-family:'Courier New',monospace; font-size:0.75rem;
+      color:var(--accent-green); min-height:100px; max-height:200px; overflow-y:auto;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Cookies &amp; Storage</div>
+    </div>
+  </header>
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link active" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);">🍪</div>
+      <div>
+        <h1 class="page-title">Cookies &amp; Web Storage</h1>
+        <p class="page-subtitle">Full coverage of <code>CookieActions</code>: add, get by name, get all, delete named, delete object, delete all. Includes Secure/SameSite/HttpOnly attributes and localStorage/sessionStorage management via JS executor.</p>
+        <div class="mt-2">
+          <span class="etag etag-amber">CookieActions.addCookie</span>
+          <span class="etag etag-amber">CookieActions.getCookieNamed</span>
+          <span class="etag etag-amber">CookieActions.getCookies</span>
+          <span class="etag etag-amber">CookieActions.deleteCookieNamed</span>
+          <span class="etag etag-amber">CookieActions.deleteCookie</span>
+          <span class="etag etag-amber">CookieActions.deleteAllCookies</span>
+          <span class="etag etag-amber">JavaScriptActions (localStorage/sessionStorage)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- Add Cookie -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">➕ Add Cookie (CookieActions.addCookie)</div><div class="card-desc">Creates a new cookie via <code>driver.manage().addCookie()</code>. Fill name and value, then inspect the result with getCookieNamed.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label class="ctrl-label" for="cookie-name-input">Cookie Name</label>
+            <input type="text" id="cookie-name-input" data-id="cookie-name-input" class="ctrl-input" placeholder="e.g. session_token" value="session_token" />
+          </div>
+          <div class="form-group">
+            <label class="ctrl-label" for="cookie-value-input">Cookie Value</label>
+            <input type="text" id="cookie-value-input" data-id="cookie-value-input" class="ctrl-input" placeholder="e.g. abc123" value="abc123xyz" />
+          </div>
+          <div class="form-group">
+            <label class="ctrl-label" for="cookie-path-input">Path (optional)</label>
+            <input type="text" id="cookie-path-input" data-id="cookie-path-input" class="ctrl-input" placeholder="/" value="/" />
+          </div>
+          <label class="inline-label">
+            <input type="checkbox" id="cookie-secure" data-id="cookie-secure" />
+            Secure flag (note: requires HTTPS for true browser security)
+          </label>
+          <label class="inline-label">
+            <input type="checkbox" id="cookie-samesite" data-id="cookie-samesite" />
+            SameSite=Strict
+          </label>
+          <button id="add-cookie-btn" data-id="add-cookie-btn" class="btn btn-green" onclick="addCookie()">➕ Add Cookie</button>
+          <div id="add-cookie-status" class="status status-info" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Get / Read Cookies -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔍 Get Cookies (getCookieNamed / getCookies)</div><div class="card-desc">Read a specific cookie by name, or retrieve all cookies as a Set. Mirrors <code>CookieActions.getCookieNamed(name)</code> and <code>getCookies()</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label class="ctrl-label" for="get-cookie-name">Cookie Name to Fetch</label>
+            <div class="row gap-2">
+              <input type="text" id="get-cookie-name" data-id="get-cookie-name" class="ctrl-input" placeholder="session_token" value="session_token" />
+              <button id="get-cookie-btn" data-id="get-cookie-btn" class="btn btn-blue btn-sm" onclick="getCookieNamed()" style="white-space:nowrap;">🔍 Get</button>
+            </div>
+          </div>
+          <div id="get-cookie-result" class="status status-info" style="display:none;"></div>
+          <div class="divider"></div>
+          <button id="get-all-cookies-btn" data-id="get-all-cookies-btn" class="btn btn-cyan btn-sm" onclick="getAllCookies()">📋 Get All Cookies</button>
+          <div id="all-cookies-list" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Delete Cookies -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗑 Delete Cookies (deleteCookieNamed / deleteAllCookies)</div><div class="card-desc">Tests <code>CookieActions.deleteCookieNamed(name)</code> and <code>CookieActions.deleteAllCookies()</code>. After deletion, <code>getCookieNamed</code> returns null.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label class="ctrl-label" for="delete-cookie-name">Cookie Name to Delete</label>
+            <div class="row gap-2">
+              <input type="text" id="delete-cookie-name" data-id="delete-cookie-name" class="ctrl-input" placeholder="session_token" value="session_token" />
+              <button id="delete-named-cookie-btn" data-id="delete-named-cookie-btn" class="btn btn-amber btn-sm" onclick="deleteCookieNamed()" style="white-space:nowrap;">🗑 Delete</button>
+            </div>
+          </div>
+          <div id="delete-cookie-status" class="status status-info" style="display:none;"></div>
+          <div class="divider"></div>
+          <button id="delete-all-cookies-btn" data-id="delete-all-cookies-btn" class="btn btn-red btn-sm" onclick="deleteAllCookies()">💥 Delete ALL Cookies</button>
+          <div id="delete-all-status" class="status status-info" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Pre-seeded Cookies -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🌱 Pre-Seeded Test Cookies</div><div class="card-desc">These cookies are written on page load. They represent known cookie states that test scripts can assert against using <code>getCookieNamed</code> immediately.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:8px;">
+          <div class="cookie-row">
+            <span class="cookie-name">ellithium_auth</span>
+            <span class="cookie-val">token_qa_12345</span>
+            <span class="badge badge-green">auth</span>
+          </div>
+          <div class="cookie-row">
+            <span class="cookie-name">ellithium_role</span>
+            <span class="cookie-val">QA_ENGINEER</span>
+            <span class="badge badge-blue">role</span>
+          </div>
+          <div class="cookie-row">
+            <span class="cookie-name">ellithium_pref</span>
+            <span class="cookie-val">dark_mode=true</span>
+            <span class="badge badge-violet">pref</span>
+          </div>
+          <div class="cookie-row">
+            <span class="cookie-name">ellithium_session_id</span>
+            <span class="cookie-val" id="session-id-display">generating…</span>
+            <span class="badge badge-amber">session</span>
+          </div>
+          <button id="verify-seeds-btn" data-id="verify-seeds-btn" class="btn btn-ghost btn-sm mt-2" onclick="verifySeedCookies()">✅ Verify Seed Cookies Exist</button>
+          <div id="seed-verify-status" class="status status-info" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- LocalStorage -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">💾 LocalStorage (via JS Executor)</div><div class="card-desc">Access via <code>JavascriptExecutor.executeScript("return localStorage.getItem(key)")</code>. Set via <code>executeScript("localStorage.setItem(key, value)")</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="row gap-2">
+            <input type="text" id="ls-key"   data-id="ls-key"   class="ctrl-input" placeholder="key"   value="ellithium_ls_key" />
+            <input type="text" id="ls-value" data-id="ls-value" class="ctrl-input" placeholder="value" value="test_value_123" />
+          </div>
+          <div class="row gap-2">
+            <button id="ls-set-btn"    data-id="ls-set-btn"    class="btn btn-green btn-sm"  onclick="lsSet()">Set</button>
+            <button id="ls-get-btn"    data-id="ls-get-btn"    class="btn btn-blue btn-sm"   onclick="lsGet()">Get</button>
+            <button id="ls-remove-btn" data-id="ls-remove-btn" class="btn btn-amber btn-sm"  onclick="lsRemove()">Remove</button>
+            <button id="ls-clear-btn"  data-id="ls-clear-btn"  class="btn btn-red btn-sm"    onclick="lsClear()">Clear All</button>
+          </div>
+          <div id="ls-status" class="status status-info" style="display:none;"></div>
+          <div class="section-label">Current LocalStorage</div>
+          <div class="storage-display" id="ls-display">// Click Get or Set to see content</div>
+        </div>
+      </div>
+
+      <!-- SessionStorage -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🕒 SessionStorage (via JS Executor)</div><div class="card-desc">Session-scoped storage cleared on tab close. Access via <code>executeScript("return sessionStorage.getItem(key)")</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="row gap-2">
+            <input type="text" id="ss-key"   data-id="ss-key"   class="ctrl-input" placeholder="key"   value="ellithium_ss_key" />
+            <input type="text" id="ss-value" data-id="ss-value" class="ctrl-input" placeholder="value" value="session_data_456" />
+          </div>
+          <div class="row gap-2">
+            <button id="ss-set-btn"    data-id="ss-set-btn"    class="btn btn-green btn-sm"  onclick="ssSet()">Set</button>
+            <button id="ss-get-btn"    data-id="ss-get-btn"    class="btn btn-blue btn-sm"   onclick="ssGet()">Get</button>
+            <button id="ss-remove-btn" data-id="ss-remove-btn" class="btn btn-amber btn-sm"  onclick="ssRemove()">Remove</button>
+            <button id="ss-clear-btn"  data-id="ss-clear-btn"  class="btn btn-red btn-sm"    onclick="ssClear()">Clear All</button>
+          </div>
+          <div id="ss-status" class="status status-info" style="display:none;"></div>
+          <div class="section-label">Current SessionStorage</div>
+          <div class="storage-display" id="ss-display">// Click Get or Set to see content</div>
+        </div>
+      </div>
+
+      <!-- Cookie Assertions Table -->
+      <div class="card span-2">
+        <div class="card-header"><div class="card-title">📋 Cookie Assertion Reference</div><div class="card-desc">Expected values for each pre-seeded cookie — use in test assertions against <code>CookieActions.getCookieNamed(name).getValue()</code>.</div></div>
+        <div class="tbl-wrap mt-3">
+          <table class="data-table">
+            <thead><tr><th>Cookie Name</th><th>Expected Value</th><th>Selenium Call</th><th>Assert</th></tr></thead>
+            <tbody>
+              <tr><td><code>ellithium_auth</code></td><td><code>token_qa_12345</code></td><td><code>getCookieNamed("ellithium_auth").getValue()</code></td><td><span class="badge badge-green">assertEquals</span></td></tr>
+              <tr><td><code>ellithium_role</code></td><td><code>QA_ENGINEER</code></td><td><code>getCookieNamed("ellithium_role").getValue()</code></td><td><span class="badge badge-green">assertEquals</span></td></tr>
+              <tr><td><code>ellithium_pref</code></td><td><code>dark_mode=true</code></td><td><code>getCookieNamed("ellithium_pref").getValue()</code></td><td><span class="badge badge-green">assertEquals</span></td></tr>
+              <tr><td><code>ellithium_session_id</code></td><td>random UUID pattern</td><td><code>getCookieNamed("ellithium_session_id").getValue()</code></td><td><span class="badge badge-amber">assertNotNull</span></td></tr>
+              <tr><td><code>session_token</code></td><td>user-added</td><td><code>getCookieNamed("session_token")</code></td><td><span class="badge badge-red">assertNull after delete</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Cookies &amp; Storage</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+/* Seed cookies on load */
+(function seedCookies(){
+  var seeds = [
+    {name:'ellithium_auth',       value:'token_qa_12345'},
+    {name:'ellithium_role',       value:'QA_ENGINEER'},
+    {name:'ellithium_pref',       value:'dark_mode=true'},
+    {name:'ellithium_session_id', value:'sess-' + Math.random().toString(36).substring(2)},
+  ];
+  seeds.forEach(function(c){ document.cookie = c.name + '=' + c.value + '; path=/; SameSite=Lax'; });
+  var sid = getCookieValue('ellithium_session_id');
+  var el = document.getElementById('session-id-display');
+  if (el) el.textContent = sid || '(failed)';
+})();
+
+function getCookieValue(name) {
+  var match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function addCookie() {
+  var name  = document.getElementById('cookie-name-input').value.trim();
+  var value = document.getElementById('cookie-value-input').value.trim();
+  var path  = document.getElementById('cookie-path-input').value.trim() || '/';
+  var secure = document.getElementById('cookie-secure').checked;
+  var same   = document.getElementById('cookie-samesite').checked;
+  if (!name) { setStatus('add-cookie-status','error','Cookie name is required'); document.getElementById('add-cookie-status').style.display='flex'; return; }
+  var parts = [name + '=' + encodeURIComponent(value), 'path=' + path, 'SameSite=' + (same?'Strict':'Lax')];
+  if (secure) parts.push('Secure');
+  document.cookie = parts.join('; ');
+  setStatus('add-cookie-status','ok','✅ Cookie added: ' + name + '=' + value);
+  document.getElementById('add-cookie-status').style.display = 'flex';
+}
+
+function getCookieNamed() {
+  var name = document.getElementById('get-cookie-name').value.trim();
+  var val  = getCookieValue(name);
+  var st   = document.getElementById('get-cookie-result');
+  st.style.display = 'flex';
+  if (val !== null) {
+    setStatus('get-cookie-result','ok','✅ getCookieNamed("' + name + '") = "' + val + '"');
+  } else {
+    setStatus('get-cookie-result','error','✗ getCookieNamed("' + name + '") returned null — not found');
+  }
+}
+
+function getAllCookies() {
+  var list = document.getElementById('all-cookies-list');
+  list.innerHTML = '';
+  if (!document.cookie) {
+    list.innerHTML = '<div class="status status-warn">No cookies found</div>';
+    return;
+  }
+  document.cookie.split(';').forEach(function(pair){
+    var parts = pair.trim().split('=');
+    var name  = parts[0];
+    var value = parts.slice(1).join('=');
+    var row = document.createElement('div');
+    row.className = 'cookie-row';
+    row.innerHTML = '<span class="cookie-name">' + name + '</span><span class="cookie-val">' + decodeURIComponent(value||'') + '</span><span class="badge badge-blue">found</span>';
+    list.appendChild(row);
+  });
+}
+
+function deleteCookieNamed() {
+  var name = document.getElementById('delete-cookie-name').value.trim();
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  var st = document.getElementById('delete-cookie-status');
+  st.style.display = 'flex';
+  setStatus('delete-cookie-status','ok','🗑 deleteCookieNamed("' + name + '") executed. getCookieNamed now returns null.');
+}
+
+function deleteAllCookies() {
+  document.cookie.split(';').forEach(function(c){
+    var name = c.trim().split('=')[0];
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  });
+  var st = document.getElementById('delete-all-status');
+  st.style.display = 'flex';
+  setStatus('delete-all-status','ok','💥 deleteAllCookies() executed. getCookies() should now return empty Set.');
+}
+
+function verifySeedCookies() {
+  var expected = {ellithium_auth:'token_qa_12345', ellithium_role:'QA_ENGINEER', ellithium_pref:'dark_mode=true'};
+  var allOk = true; var results = [];
+  Object.keys(expected).forEach(function(name){
+    var val = getCookieValue(name);
+    if (val === expected[name]) { results.push('✅ ' + name + ' OK'); }
+    else { results.push('✗ ' + name + ' MISSING or WRONG (got: ' + val + ')'); allOk = false; }
+  });
+  var ss = document.getElementById('seed-verify-status');
+  ss.style.display = 'flex';
+  setStatus('seed-verify-status', allOk?'ok':'error', results.join(' | '));
+}
+
+/* LocalStorage helpers */
+function lsRefresh() {
+  var disp = document.getElementById('ls-display');
+  if (!localStorage.length) { disp.textContent = '(empty)'; return; }
+  var lines = [];
+  for (var i=0; i<localStorage.length; i++) {
+    var k = localStorage.key(i);
+    lines.push(k + ' = ' + localStorage.getItem(k));
+  }
+  disp.textContent = lines.join('\n');
+}
+function lsSet()    { localStorage.setItem(document.getElementById('ls-key').value, document.getElementById('ls-value').value); setStatus('ls-status','ok','✅ localStorage.setItem executed'); document.getElementById('ls-status').style.display='flex'; lsRefresh(); }
+function lsGet()    { var v = localStorage.getItem(document.getElementById('ls-key').value); setStatus('ls-status', v!==null?'ok':'error', v!==null?'✅ Value: "'+v+'"':'✗ Key not found'); document.getElementById('ls-status').style.display='flex'; lsRefresh(); }
+function lsRemove() { localStorage.removeItem(document.getElementById('ls-key').value); setStatus('ls-status','ok','🗑 localStorage.removeItem executed'); document.getElementById('ls-status').style.display='flex'; lsRefresh(); }
+function lsClear()  { localStorage.clear(); setStatus('ls-status','ok','💥 localStorage.clear() executed'); document.getElementById('ls-status').style.display='flex'; lsRefresh(); }
+
+/* SessionStorage helpers */
+function ssRefresh() {
+  var disp = document.getElementById('ss-display');
+  if (!sessionStorage.length) { disp.textContent = '(empty)'; return; }
+  var lines = [];
+  for (var i=0; i<sessionStorage.length; i++) {
+    var k = sessionStorage.key(i);
+    lines.push(k + ' = ' + sessionStorage.getItem(k));
+  }
+  disp.textContent = lines.join('\n');
+}
+function ssSet()    { sessionStorage.setItem(document.getElementById('ss-key').value, document.getElementById('ss-value').value); setStatus('ss-status','ok','✅ sessionStorage.setItem executed'); document.getElementById('ss-status').style.display='flex'; ssRefresh(); }
+function ssGet()    { var v = sessionStorage.getItem(document.getElementById('ss-key').value); setStatus('ss-status', v!==null?'ok':'error', v!==null?'✅ Value: "'+v+'"':'✗ Key not found'); document.getElementById('ss-status').style.display='flex'; ssRefresh(); }
+function ssRemove() { sessionStorage.removeItem(document.getElementById('ss-key').value); setStatus('ss-status','ok','🗑 sessionStorage.removeItem executed'); document.getElementById('ss-status').style.display='flex'; ssRefresh(); }
+function ssClear()  { sessionStorage.clear(); setStatus('ss-status','ok','💥 sessionStorage.clear() executed'); document.getElementById('ss-status').style.display='flex'; ssRefresh(); }
+
+lsRefresh(); ssRefresh();
+</script>
+</body>
+</html>

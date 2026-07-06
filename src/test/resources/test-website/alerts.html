@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alerts &amp; Modals — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .alert-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--radius-lg); padding:1.5rem;
+      display:flex; flex-direction:column; align-items:center;
+      gap:12px; text-align:center; transition:var(--transition);
+    }
+    .alert-card:hover { background:var(--bg-card-hover); border-color:var(--border-bright); }
+    .alert-icon { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; }
+    .countdown-ring { width:80px; height:80px; position:relative; }
+    .countdown-ring svg { transform:rotate(-90deg); }
+    .countdown-ring circle { fill:none; stroke-width:6; stroke-linecap:round; }
+    .countdown-ring .track { stroke:var(--border); }
+    .countdown-ring .progress { stroke:var(--accent-red); stroke-dasharray:226; stroke-dashoffset:226; transition:stroke-dashoffset 1s linear; }
+    .countdown-ring .label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; color:var(--accent-red); font-family:'Courier New',monospace; }
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--bg-card); border:1px solid var(--border-bright); border-radius:var(--radius-xl); padding:2rem; width:90%; max-width:460px; position:relative; box-shadow:0 24px 80px rgba(0,0,0,0.6); animation:modalIn 0.2s ease; }
+    @keyframes modalIn { from{opacity:0;transform:scale(0.94) translateY(14px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal-close-btn { position:absolute; top:14px; right:14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:3px 9px; color:var(--accent-red); cursor:pointer; font-size:0.8rem; }
+    .nested-modal-box { background:var(--bg-secondary); border:1px solid var(--accent-violet); border-radius:var(--radius-lg); padding:1.5rem; width:90%; max-width:340px; box-shadow:0 24px 80px rgba(0,0,0,0.9); animation:modalIn 0.2s ease; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- Custom Modal -->
+  <div id="custom-modal-overlay" class="modal-overlay" onclick="overlayClick(event,'custom-modal-overlay')">
+    <div id="custom-modal" class="modal-box" role="dialog" aria-modal="true" data-id="custom-modal">
+      <button class="modal-close-btn" id="modal-close-btn" data-id="modal-close-btn" onclick="closeModal('custom-modal-overlay')">✕ Close</button>
+      <h2 class="modal-title">🗂 Custom HTML Modal</h2>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem;">DOM-based modal — NOT a browser dialog. Interact with elements inside. Tests focus-trap and overlay-click dismissal.</p>
+      <div class="form-group">
+        <label class="ctrl-label" for="modal-input">Input Inside Modal</label>
+        <input type="text" id="modal-input" data-id="modal-input" class="ctrl-input" placeholder="Type inside the modal…" />
+      </div>
+      <div class="row gap-2 mt-3">
+        <button id="modal-confirm-btn" data-id="modal-confirm-btn" class="btn btn-green" onclick="confirmModal()">✅ Confirm</button>
+        <button id="modal-cancel-btn"  data-id="modal-cancel-btn"  class="btn btn-ghost" onclick="closeModal('custom-modal-overlay')">Cancel</button>
+      </div>
+      <div id="modal-result" class="status status-ok mt-3" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Nested Modal -->
+  <div id="nested-modal-overlay" class="modal-overlay" style="z-index:8500;background:rgba(0,0,0,0.5);">
+    <div class="nested-modal-box" id="nested-modal" data-id="nested-modal" role="dialog">
+      <h3 style="color:var(--accent-violet);margin-bottom:8px;">🪆 Nested Modal</h3>
+      <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;">Two stacked modals. Z-index management required. Focus must be inside this overlay.</p>
+      <input type="text" id="nested-modal-input" data-id="nested-modal-input" class="ctrl-input" placeholder="Nested modal input" style="margin-bottom:10px;" />
+      <button id="nested-modal-close" data-id="nested-modal-close" class="btn btn-ghost btn-sm btn-full" onclick="closeModal('nested-modal-overlay')">Close Nested Modal</button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Alerts &amp; Modals</div>
+    </div>
+  </header>
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link active" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(236,72,153,0.1);border:1px solid rgba(236,72,153,0.3);">🔔</div>
+      <div>
+        <h1 class="page-title">Alerts &amp; Modals</h1>
+        <p class="page-subtitle">Browser native dialogs (alert, confirm, prompt) with immediate and delayed firing, plus DOM-based modals with focus trapping and z-index stacking. Tests the complete <code>AlertActions</code> suite and <code>WaitActions.waitForAlertPresence</code>.</p>
+        <div class="mt-2">
+          <span class="etag">UnhandledAlertException</span>
+          <span class="etag">NoAlertPresentException</span>
+          <span class="etag etag-violet">AlertActions.accept</span>
+          <span class="etag etag-violet">AlertActions.dismiss</span>
+          <span class="etag etag-violet">AlertActions.getText</span>
+          <span class="etag etag-violet">AlertActions.sendData</span>
+          <span class="etag etag-violet">WaitActions.waitForAlertPresence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Immediate Dialogs -->
+    <div class="section-label">Immediate Native Browser Dialogs</div>
+    <div class="grid grid-3" style="margin-bottom:1.5rem;">
+
+      <div class="alert-card">
+        <div class="alert-icon" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);">🔔</div>
+        <div style="font-weight:700;font-size:0.9rem;">Simple Alert</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);"><code>window.alert()</code> — fires immediately</div>
+        <button id="trigger-alert-btn" data-id="trigger-alert-btn" class="btn btn-blue btn-full" onclick="doAlert()">▶ Trigger alert()</button>
+        <div id="alert-result" style="font-size:0.75rem;color:var(--text-muted);">Not triggered</div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-icon" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);">✅</div>
+        <div style="font-weight:700;font-size:0.9rem;">Confirm Dialog</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);"><code>window.confirm()</code> — fires immediately</div>
+        <button id="trigger-confirm-btn" data-id="trigger-confirm-btn" class="btn btn-amber btn-full" onclick="doConfirm()">▶ Trigger confirm()</button>
+        <div id="confirm-result" style="font-size:0.75rem;color:var(--text-muted);">Not triggered</div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-icon" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);">✏</div>
+        <div style="font-weight:700;font-size:0.9rem;">Prompt Dialog</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);"><code>window.prompt()</code> — fires immediately</div>
+        <button id="trigger-prompt-btn" data-id="trigger-prompt-btn" class="btn btn-violet btn-full" onclick="doPrompt()">▶ Trigger prompt()</button>
+        <div id="prompt-result" style="font-size:0.75rem;color:var(--text-muted);">Not triggered</div>
+      </div>
+
+    </div>
+
+    <!-- Delayed Dialogs -->
+    <div class="section-label">Delayed Dialogs — waitForAlertPresence Required</div>
+    <div class="grid grid-auto" style="margin-bottom:1.5rem;">
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">⏰ 3-Second Delayed Confirm</div><div class="card-desc"><code>switchTo().alert()</code> before 3s throws <code>NoAlertPresentException</code>. Correct: <code>WaitActions.waitForAlertPresence(10, 500)</code> after click.</div></div>
+        <div class="mt-3">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div class="countdown-ring" id="cd-ring-confirm" style="display:none;">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="track"    cx="40" cy="40" r="36"/>
+                <circle class="progress" cx="40" cy="40" r="36" id="cd-progress-confirm"/>
+              </svg>
+              <div class="label" id="cd-label-confirm">3</div>
+            </div>
+            <div style="flex:1;">
+              <button id="trigger-delayed-alert-btn" data-id="trigger-delayed-alert-btn" class="btn btn-red" onclick="triggerDelayed('confirm')">⏰ Start 3s Alert Timer</button>
+              <div id="delayed-alert-status" class="status status-info mt-2">Not started</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">⏰ 3-Second Delayed Prompt</div><div class="card-desc">Same timing trap but with <code>window.prompt()</code>. Tests <code>AlertActions.sendData(text)</code> after waiting for presence.</div></div>
+        <div class="mt-3">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div class="countdown-ring" id="cd-ring-prompt" style="display:none;">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="track"    cx="40" cy="40" r="36"/>
+                <circle class="progress" cx="40" cy="40" r="36" id="cd-progress-prompt"/>
+              </svg>
+              <div class="label" id="cd-label-prompt">3</div>
+            </div>
+            <div style="flex:1;">
+              <button id="trigger-delayed-prompt-btn" data-id="trigger-delayed-prompt-btn" class="btn btn-violet" onclick="triggerDelayed('prompt')">⏰ Start 3s Prompt Timer</button>
+              <div id="delayed-prompt-status" class="status status-info mt-2">Not started</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚠ Auto-Alert on Blur</div><div class="card-desc">An alert fires when you tab out of this field. Tests that the framework catches unexpected alerts during normal interactions.</div></div>
+        <div class="mt-3">
+          <label class="ctrl-label" for="blur-alert-input">Type here, then click elsewhere</label>
+          <input type="text" id="blur-alert-input" data-id="blur-alert-input" class="ctrl-input" placeholder="Tab out to trigger alert…" />
+          <label class="inline-label mt-3">
+            <input type="checkbox" id="arm-blur-alert" data-id="arm-blur-alert" onchange="armBlurAlert(this)" />
+            Arm blur alert trap
+          </label>
+          <div id="blur-alert-status" class="status status-info mt-2">Blur alert: DISARMED</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DOM Modals + Log -->
+    <div class="section-label">DOM-Based Modals (not browser dialogs)</div>
+    <div class="grid grid-auto">
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗂 Custom HTML Modal</div><div class="card-desc">DOM-based modal with input inside. Tests interaction within overlay context. Close via button or overlay-click.</div></div>
+        <div class="row gap-2 mt-3">
+          <button id="open-modal-btn"        data-id="open-modal-btn"        class="btn btn-cyan"         onclick="openModal('custom-modal-overlay')">▶ Open Modal</button>
+          <button id="open-nested-modal-btn" data-id="open-nested-modal-btn" class="btn btn-violet btn-sm" onclick="openNestedModal()">🪆 Open Nested Modal</button>
+        </div>
+        <div id="modal-open-status" class="status status-info mt-2">No modal open</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 Alert Interaction Log</div><div class="card-desc">Real-time log of all alert interactions on this page.</div></div>
+        <div class="row gap-2 mt-2">
+          <button class="btn btn-ghost btn-sm" onclick="ArenaLog.clear('alert-log')">🗑 Clear</button>
+        </div>
+        <div id="alert-log" class="console-box mt-2" style="height:200px;">// Alert events logged here…</div>
+      </div>
+
+    </div>
+
+    <!-- Known text assertions -->
+    <div class="card mt-4" style="margin-top:1.25rem;">
+      <div class="card-header"><div class="card-title">📝 AlertActions.getText() — Known Text Assertions</div><div class="card-desc">Each button fires an alert with a <strong>known, predictable text</strong> that the test can assert via <code>AlertActions.getText()</code>.</div></div>
+      <div class="grid grid-3 mt-3" style="gap:12px;">
+        <div>
+          <button id="alert-text-a-btn" data-id="alert-text-a-btn" class="btn btn-blue btn-full btn-sm" onclick="doAlertText('ELLITHIUM_ALERT_A')">🔔 Fire Alert A</button>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;font-family:'Courier New',monospace;">Expected: "ELLITHIUM_ALERT_A"</div>
+        </div>
+        <div>
+          <button id="alert-text-b-btn" data-id="alert-text-b-btn" class="btn btn-green btn-full btn-sm" onclick="doAlertText('ELLITHIUM_CONFIRM_B')">🔔 Fire Alert B</button>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;font-family:'Courier New',monospace;">Expected: "ELLITHIUM_CONFIRM_B"</div>
+        </div>
+        <div>
+          <button id="alert-text-c-btn" data-id="alert-text-c-btn" class="btn btn-amber btn-full btn-sm" onclick="doAlertText('ELLITHIUM_PROMPT_C')">🔔 Fire Alert C</button>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;font-family:'Courier New',monospace;">Expected: "ELLITHIUM_PROMPT_C"</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Alerts &amp; Modals</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+function doAlert() {
+  window.alert('ELLITHIUM_SIMPLE_ALERT\n\nUse AlertActions.accept(timeout) to dismiss.\nAssert via AlertActions.getText().');
+  document.getElementById('alert-result').textContent = '✅ alert() dismissed at ' + ts();
+  ArenaLog.ok('alert-log','alert() dismissed');
+}
+function doConfirm() {
+  var r = window.confirm('ELLITHIUM_CONFIRM\n\nAccept: AlertActions.accept()\nDismiss: AlertActions.dismiss()');
+  document.getElementById('confirm-result').textContent = (r ? '✅ Accepted' : '❌ Dismissed') + ' at ' + ts();
+  ArenaLog.ok('alert-log','confirm() result: ' + (r?'accepted':'dismissed'));
+}
+function doPrompt() {
+  var r = window.prompt('ELLITHIUM_PROMPT\n\nUse AlertActions.sendData(text) then accept().', 'Ellithium');
+  document.getElementById('prompt-result').textContent = r !== null ? '✅ Input: "' + r + '"' : '❌ Cancelled';
+  ArenaLog.ok('alert-log','prompt() result: ' + (r!==null?'"'+r+'"':'cancelled'));
+}
+function doAlertText(text) {
+  window.alert(text);
+  ArenaLog.info('alert-log','Alert getText() should return: "' + text + '"');
+}
+
+var delayTimers = {};
+function triggerDelayed(type) {
+  var ringId      = 'cd-ring-' + type;
+  var progressId  = 'cd-progress-' + type;
+  var labelId     = 'cd-label-' + type;
+  var statusId    = type==='confirm' ? 'delayed-alert-status' : 'delayed-prompt-status';
+  var btnId       = type==='confirm' ? 'trigger-delayed-alert-btn' : 'trigger-delayed-prompt-btn';
+  document.getElementById(ringId).style.display = 'block';
+  document.getElementById(btnId).disabled = true;
+  var cd = 3; var total = 3; var circumference = 2 * Math.PI * 36;
+  var progressEl = document.getElementById(progressId);
+  progressEl.style.strokeDashoffset = circumference;
+  document.getElementById(labelId).textContent = cd;
+  setStatus(statusId,'warn','⏳ ' + type + '() fires in ' + cd + 's — NoAlertPresentException if you switch now!');
+  ArenaLog.warn('alert-log', type + '() armed — fires in 3s');
+  var tick = setInterval(function(){
+    cd--;
+    document.getElementById(labelId).textContent = cd;
+    progressEl.style.strokeDashoffset = circumference * (cd / total);
+    if(cd <= 0) clearInterval(tick);
+  }, 1000);
+  delayTimers[type] = setTimeout(function(){
+    document.getElementById(ringId).style.display = 'none';
+    document.getElementById(btnId).disabled = false;
+    var result;
+    if(type==='confirm') {
+      result = window.confirm('ELLITHIUM_DELAYED_CONFIRM\n\nThis fired after 3s.\nWas WaitActions.waitForAlertPresence used?');
+      setStatus(statusId, result?'ok':'error', result ? '✅ Accepted at ' + ts() : '❌ Dismissed');
+      ArenaLog.ok('alert-log','Delayed confirm() result: ' + (result?'accepted':'dismissed'));
+    } else {
+      result = window.prompt('ELLITHIUM_DELAYED_PROMPT\n\nThis fired after 3s.\nSendData: AlertActions.sendData(text)', 'test-input');
+      setStatus(statusId, result!==null?'ok':'error', result!==null ? '✅ Input: "' + result + '"' : '❌ Cancelled');
+      ArenaLog.ok('alert-log','Delayed prompt() result: ' + (result!==null?'"'+result+'"':'cancelled'));
+    }
+  }, 3000);
+}
+
+var blurArmed = false;
+function armBlurAlert(cb) {
+  blurArmed = cb.checked;
+  setStatus('blur-alert-status', blurArmed?'warn':'info', blurArmed ? '💣 Blur alert ARMED — tab out to trigger' : 'Blur alert: DISARMED');
+}
+document.getElementById('blur-alert-input').addEventListener('blur', function(){
+  if(!blurArmed) return;
+  setTimeout(function(){
+    window.alert('ELLITHIUM_BLUR_ALERT\n\nTriggered by blur event on #blur-alert-input');
+    ArenaLog.warn('alert-log','blur alert fired from onblur event');
+  }, 100);
+});
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  setStatus('modal-open-status','ok','Modal open: #' + id);
+  ArenaLog.info('alert-log','DOM modal opened: #' + id);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  setStatus('modal-open-status','info','Modal closed');
+}
+function overlayClick(e, id) {
+  if(e.target === document.getElementById(id)) closeModal(id);
+}
+function openNestedModal() {
+  openModal('custom-modal-overlay');
+  setTimeout(function(){ openModal('nested-modal-overlay'); }, 200);
+}
+function confirmModal() {
+  var val = document.getElementById('modal-input').value;
+  var r = document.getElementById('modal-result');
+  r.style.display='flex'; r.textContent='✅ Confirmed: "' + (val||'(empty)') + '" at ' + ts();
+  ArenaLog.ok('alert-log','Modal confirmed with input: "' + val + '"');
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){ closeModal('custom-modal-overlay'); closeModal('nested-modal-overlay'); }
+});
+</script>
+</body>
+</html>

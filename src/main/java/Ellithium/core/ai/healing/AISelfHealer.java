@@ -109,6 +109,23 @@ public class AISelfHealer {
                 new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed", score));
     }
 
+    /**
+     * Force-caches a (possibly non-unique, repeating) healed locator, OVERWRITING any existing
+     * entry. Used by multi-element set-healing: the orchestrator first caches the single anchor's
+     * unique locator, then the set-heal replaces it with the repeating selector that matches the
+     * whole renamed set, so later multi-element finds reuse the set — not one element.
+     */
+    public static void overrideHealedLocator(WebDriver driver, By brokenLocator,
+                                             By healedLocator, double score, String fieldLabel) {
+        if (healedLocator == null) return;
+        String key = cacheKey(driver, brokenLocator);
+        if (globalHealedCache.size() >= HEALED_CACHE_MAX) {
+            globalHealedCache.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
+        globalHealedCache.put(key,
+                new CachedLocator(healedLocator, fieldLabel != null ? fieldLabel : "healed-set", score));
+    }
+
     public static void resetForSuite() {
         globalHealedCache.clear();
         inFlight.clear();
@@ -295,6 +312,17 @@ public class AISelfHealer {
     // ──────────────────────── Main Entry Points ────────────────────────
 
     public static WebElement attemptHeal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace) {
+        return attemptHeal(driver, brokenLocator, stackTrace, null);
+    }
+
+    /**
+     * As {@link #attemptHeal(WebDriver, By, StackTraceElement[])}, additionally passing the
+     * cross-tier candidate shortlist ({@code hints}, may be null) so the LLM prompt can present
+     * the finalists earlier tiers narrowed to but could not differentiate — a far easier and
+     * cheaper task for the model than open-ended DOM search.
+     */
+    public static WebElement attemptHeal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace,
+                                         Ellithium.core.ai.models.HealingHints hints) {
         if (getEffectiveStrategy() == HealingStrategy.DISABLED || getEffectiveProvider() == null) {
             return null;
         }
@@ -302,7 +330,7 @@ public class AISelfHealer {
 
         Reporter.log("[TIER 3] triggered: " + brokenLocator, LogLevel.INFO_YELLOW);
 
-        By newLocator = healLocator(driver, brokenLocator, stackTrace);
+        By newLocator = healLocator(driver, brokenLocator, stackTrace, hints);
 
         if (newLocator != null) {
             CachedLocator cached = globalHealedCache.get(cacheKey(driver, brokenLocator));
@@ -322,6 +350,11 @@ public class AISelfHealer {
     }
 
     static By healLocator(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace) {
+        return healLocator(driver, brokenLocator, stackTrace, null);
+    }
+
+    static By healLocator(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace,
+                          Ellithium.core.ai.models.HealingHints hints) {
         HealingStrategy strategy = getEffectiveStrategy();
         LLMProvider provider = getEffectiveProvider();
         if (strategy == HealingStrategy.DISABLED || provider == null) return null;
@@ -362,7 +395,7 @@ public class AISelfHealer {
             }
         }
         try {
-            By result = healLocatorInternal(driver, brokenLocator, stackTrace, strategy, provider);
+            By result = healLocatorInternal(driver, brokenLocator, stackTrace, strategy, provider, hints);
             if (result == null) knownUnhealable.put(cacheKey, System.currentTimeMillis());
             mine.complete(result);
             return result;
@@ -378,13 +411,21 @@ public class AISelfHealer {
     }
 
     private static By healLocatorInternal(WebDriver driver, By brokenLocator, StackTraceElement[] stackTrace,
-                                           HealingStrategy strategy, LLMProvider provider) {
+                                           HealingStrategy strategy, LLMProvider provider,
+                                           Ellithium.core.ai.models.HealingHints hints) {
         LAST_HEAL_CONFIDENCE.set(0.0);
         HealingContextBuilder.HealingContext ctx =
                 HealingContextBuilder.build(driver, brokenLocator, stackTrace, provider, strategy);
 
         String systemPrompt = HealingPromptBuilder.buildSystemPrompt(ctx.isMobile);
         String userPrompt = HealingPromptBuilder.buildUserPrompt(ctx);
+        if (hints != null && !hints.isEmpty()) {
+            userPrompt = userPrompt
+                    + "\n\nPRIOR-TIER CANDIDATE SHORTLIST — earlier healing tiers narrowed the target"
+                    + " to these finalists but could not differentiate them; strongly prefer one of"
+                    + " these unless the DOM clearly contradicts all of them:\n"
+                    + hints.describe();
+        }
 
         int maxRetries = AIConfigLoader.isCI() ? 1 : AIConfigLoader.getLlmMaxRetries();
         String llmResponse;

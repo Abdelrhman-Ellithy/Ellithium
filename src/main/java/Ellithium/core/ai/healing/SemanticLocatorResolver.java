@@ -53,7 +53,9 @@ public class SemanticLocatorResolver {
     }
 
     /**
-     * Attempts to find the broken element using semantic strategies.
+     * Fans out ALL semantic strategies and returns every matching live element with its tier weight
+     * (gold=1.0, silver=0.75, bronze=0.5, iron=0.3). Side-effect-free — the ensemble's job to commit
+     * the winner. The mutation pre-pass is included as a synthetic high-confidence hit (weight 0.95).
      *
      * @param driver     The WebDriver instance
      * @param methodName The POM method name (e.g., "setUserEmail")
@@ -61,12 +63,7 @@ public class SemanticLocatorResolver {
      * @param actionType The Ellithium action (e.g., "sendData", "clickOnElement")
      * @param locatorValue The broken locator's original value (e.g., "email_input")
      * @param baseline   The stored fingerprint for cross-validation, may be null
-     * @return The matched WebElement, or null if no confident match was found
-     */
-    /**
-     * Fans out ALL semantic strategies and returns every matching live element with its tier weight
-     * (gold=1.0, silver=0.75, bronze=0.5, iron=0.3). Side-effect-free — the ensemble's job to commit
-     * the winner. The mutation pre-pass is included as a synthetic high-confidence hit (weight 0.95).
+     * @return Every matching live element found, each with its tier weight; empty if none found
      */
     public static List<Ellithium.core.ai.models.SemanticHit> findSemanticHits(WebDriver driver,
                                                                                String methodName, String fieldName,
@@ -360,12 +357,6 @@ public class SemanticLocatorResolver {
         return candidateDesc;
     }
 
-    /**
-     * Cross-validates a candidate pool with ONE batched attribute read (0 extra WebDriver round-trips)
-     * and returns the HIGHEST-scoring candidate above {@code cvThreshold}, early-exiting at a
-     * near-perfect 0.90 (same bar as Tier 1). When no baseline is available to rank against, falls
-     * back to the original first-visible-match short-circuit.
-     */
     private static final String VISIBILITY_BATCH_SCRIPT =
             "return arguments[0].map(function(el){"
             + "try{var r=el.getBoundingClientRect(),cs=getComputedStyle(el);"
@@ -387,6 +378,12 @@ public class SemanticLocatorResolver {
         return null;
     }
 
+    /**
+     * Cross-validates a candidate pool with ONE batched attribute read (0 extra WebDriver round-trips)
+     * and returns the HIGHEST-scoring candidate above {@code cvThreshold}, early-exiting at a
+     * near-perfect 0.90 (same bar as Tier 1). When no baseline is available to rank against, falls
+     * back to the original first-visible-match short-circuit.
+     */
     private static Scored pickBest(WebDriver driver,
                                    java.util.LinkedHashMap<WebElement, String> candidateDesc,
                                    ElementFingerprint baseline, double cvThreshold) {
@@ -682,6 +679,8 @@ public class SemanticLocatorResolver {
     }
 
     private static void addTestAttrStrategies(List<LocatorAttempt> out, String lower) {
+        out.add(attempt(By.cssSelector("[data-id='"  + lower + "']"), "[data-id='" + lower + "']"));
+        out.add(attempt(By.cssSelector("[data-id*='" + lower + "']"), "[data-id*='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-testid='"  + lower + "']"), "[data-testid='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-testid*='" + lower + "']"), "[data-testid*='" + lower + "']"));
         out.add(attempt(By.cssSelector("[data-test='"    + lower + "']"), "[data-test='" + lower + "']"));

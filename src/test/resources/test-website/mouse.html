@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mouse &amp; Keyboard — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .hover-menu { position:relative; display:inline-block; }
+    .hover-trigger {
+      padding:10px 22px; background:var(--accent-violet); color:#fff;
+      border-radius:var(--radius-sm); cursor:pointer; font-size:0.85rem; font-weight:600;
+      box-shadow:var(--glow-violet); user-select:none;
+    }
+    .hover-submenu {
+      display:none; position:absolute; top:100%; left:0;
+      background:var(--bg-secondary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); min-width:210px; z-index:50;
+      box-shadow:0 8px 32px rgba(0,0,0,0.4); overflow:hidden;
+    }
+    .hover-menu:hover .hover-submenu { display:block; animation:fadeSlideIn 0.18s ease; }
+    @keyframes fadeSlideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .hover-submenu a {
+      display:flex; align-items:center; gap:8px; padding:10px 16px;
+      font-size:0.82rem; color:var(--text-secondary); text-decoration:none;
+      border-bottom:1px solid rgba(30,45,74,0.4); transition:var(--transition);
+    }
+    .hover-submenu a:last-child { border-bottom:none; }
+    .hover-submenu a:hover { background:rgba(139,92,246,0.1); color:var(--accent-violet); }
+    .dbl-click-zone {
+      padding:28px; border:2px dashed var(--accent-amber);
+      border-radius:var(--radius-md); text-align:center; cursor:pointer;
+      transition:var(--transition); user-select:none; color:var(--text-muted);
+      font-size:0.88rem; font-weight:600;
+    }
+    .dbl-click-zone.activated {
+      background:rgba(245,158,11,0.08); border-style:solid;
+      color:var(--accent-amber);
+    }
+    .ctx-menu {
+      display:none; position:fixed; z-index:9999;
+      background:var(--bg-secondary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); min-width:180px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5); overflow:hidden;
+    }
+    .ctx-item {
+      padding:10px 16px; font-size:0.82rem; cursor:pointer;
+      display:flex; align-items:center; gap:8px;
+      color:var(--text-secondary); transition:var(--transition);
+    }
+    .ctx-item:hover { background:rgba(59,130,246,0.1); color:var(--accent-blue); }
+    .ctx-sep { height:1px; background:var(--border); }
+    .drag-item {
+      padding:12px 18px; border-radius:var(--radius-sm);
+      background:linear-gradient(135deg,rgba(6,182,212,0.12),rgba(59,130,246,0.08));
+      border:1px solid rgba(6,182,212,0.3); color:var(--accent-cyan);
+      font-size:0.83rem; font-weight:600; cursor:grab;
+      display:flex; align-items:center; gap:8px; transition:var(--transition);
+    }
+    .drag-item:hover { transform:translateY(-2px); box-shadow:var(--glow-cyan); }
+    .drag-item.dragging { opacity:0.4; cursor:grabbing; }
+    .drop-zone {
+      padding:24px; border:2px dashed var(--border-bright);
+      border-radius:var(--radius-sm); text-align:center;
+      color:var(--text-muted); font-size:0.82rem; transition:var(--transition);
+      min-height:80px; display:flex; align-items:center; justify-content:center;
+    }
+    .drop-zone.dragover { border-color:var(--accent-green); background:rgba(16,185,129,0.06); color:var(--accent-green); }
+    .drop-zone.dropped  { border-color:var(--accent-green); border-style:solid; }
+    .scroll-container {
+      height:200px; overflow-y:auto; border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:12px;
+    }
+    .scroll-spacer { height:120px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.78rem; }
+    .tooltip-target {
+      padding:14px 18px; background:rgba(59,130,246,0.08);
+      border:1px solid rgba(59,130,246,0.3); border-radius:var(--radius-sm);
+      color:var(--accent-blue); font-weight:600; font-size:0.85rem;
+      cursor:pointer; position:relative; transition:var(--transition);
+    }
+    .tooltip-target:hover { background:rgba(59,130,246,0.14); }
+    .tooltip-popup {
+      display:none; position:absolute; bottom:calc(100% + 8px); left:50%;
+      transform:translateX(-50%); background:#1e293b; color:var(--text-primary);
+      font-size:0.75rem; padding:6px 12px; border-radius:6px; white-space:nowrap;
+      box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:50; pointer-events:none; font-weight:400;
+    }
+    .tooltip-target:hover .tooltip-popup { display:block; animation:fadeSlideIn 0.15s ease; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div id="custom-ctx-menu" class="ctx-menu">
+    <div class="ctx-item" id="ctx-copy"    onclick="ctxAction('copy')">📋 Copy</div>
+    <div class="ctx-item" id="ctx-paste"   onclick="ctxAction('paste')">📲 Paste</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctx-inspect" onclick="ctxAction('inspect')">🔍 Inspect</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctx-close"   onclick="hideCtx()">✕ Close</div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Mouse &amp; Keys</div>
+    </div>
+  </header>
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link active" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);">🖱</div>
+      <div>
+        <h1 class="page-title">Advanced Mouse &amp; Keyboard Actions</h1>
+        <p class="page-subtitle">Every MouseActions method tested with real browser mechanics: hover menus requiring <code>moveToElement</code>, drag-and-drop via HTML5 API, double-click gates, right-click context menus, scroll targets, and keyboard event logging.</p>
+        <div class="mt-2">
+          <span class="etag etag-blue">MouseActions.hoverOverElement</span>
+          <span class="etag etag-blue">MouseActions.dragAndDrop</span>
+          <span class="etag etag-blue">MouseActions.doubleClick</span>
+          <span class="etag etag-blue">MouseActions.rightClick</span>
+          <span class="etag etag-blue">JavaScriptActions.scrollByOffset</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-auto">
+
+      <!-- Hover Menu -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">👅 Hover Menu (mouseover only)</div><div class="card-desc">Sub-links only appear on CSS <code>:hover</code>. Must use <code>Actions.moveToElement(trigger)</code> before clicking a sub-link.</div></div>
+        <div class="mt-4">
+          <div class="hover-menu" id="hover-menu" data-id="hover-menu">
+            <div class="hover-trigger" id="hover-menu-trigger" data-id="hover-menu-trigger">⬇ Test Suites (hover me)</div>
+            <div class="hover-submenu" id="hover-submenu" data-id="hover-submenu">
+              <a href="#" id="hover-smoke"       data-id="hover-smoke"       onclick="return hoverClick('Smoke')"> 🔥 Smoke Tests</a>
+              <a href="#" id="hover-regression"  data-id="hover-regression"  onclick="return hoverClick('Regression')">🔁 Regression</a>
+              <a href="#" id="hover-integration" data-id="hover-integration" onclick="return hoverClick('Integration')">🔗 Integration</a>
+              <a href="#" id="hover-performance" data-id="hover-performance" onclick="return hoverClick('Performance')">⚡ Performance</a>
+            </div>
+          </div>
+          <div id="hover-status" class="status status-info mt-3">Hover menu — awaiting hover+click</div>
+        </div>
+      </div>
+
+      <!-- Double Click -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">👆👆 Double-Click Target</div><div class="card-desc">Single click does nothing. Only <code>Actions.doubleClick(element)</code> activates this target. Tests <code>MouseActions.doubleClick</code>.</div></div>
+        <div class="mt-4">
+          <div id="dbl-click-target" data-id="dbl-click-target" class="dbl-click-zone" ondblclick="activateDbl()">
+            👆 Double-Click Me to Activate
+          </div>
+          <div id="dbl-click-status" class="status status-warn mt-3">⏳ Awaiting double-click…</div>
+          <button id="reset-dbl-btn" class="btn btn-ghost btn-sm mt-2" onclick="resetDbl()">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Right Click -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🖱️ Right-Click Context Menu</div><div class="card-desc">Right-click (<code>Actions.contextClick(element)</code>) opens a custom DOM context menu. Tests <code>MouseActions.rightClick</code>.</div></div>
+        <div class="mt-4">
+          <div id="right-click-target" data-id="right-click-target"
+            style="padding:36px;border:2px dashed var(--accent-red);border-radius:8px;text-align:center;cursor:context-menu;color:var(--text-muted);font-size:0.88rem;user-select:none;"
+            oncontextmenu="showCtx(event)">
+            🖱 Right-Click Here
+          </div>
+          <div id="ctx-status" class="status status-info mt-3">Awaiting right-click…</div>
+        </div>
+      </div>
+
+      <!-- Drag & Drop -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">✋ Drag &amp; Drop (HTML5 API)</div><div class="card-desc">Uses <code>draggable</code> + HTML5 drag events. Use <code>Actions.dragAndDrop(source, target)</code> or <code>MouseActions.dragAndDrop</code>.</div></div>
+        <div class="mt-4">
+          <div class="row gap-3">
+            <div class="col">
+              <div class="section-label">Sources</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div id="drag-source"   data-id="drag-source"   class="drag-item" draggable="true" ondragstart="startDrag(event,'drag-source','Alpha Block')">📦 Alpha Block</div>
+                <div id="drag-source-2" data-id="drag-source-2" class="drag-item" draggable="true" ondragstart="startDrag(event,'drag-source-2','Beta Block')">📦 Beta Block</div>
+                <div id="drag-source-3" data-id="drag-source-3" class="drag-item" draggable="true" ondragstart="startDrag(event,'drag-source-3','Gamma Block')">📦 Gamma Block</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="section-label">Targets</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div id="drop-target-a" data-id="drop-target-a" class="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event,'drop-target-a')">Drop Zone A</div>
+                <div id="drop-target-b" data-id="drop-target-b" class="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event,'drop-target-b')">Drop Zone B</div>
+              </div>
+            </div>
+          </div>
+          <div class="row gap-2 mt-3">
+            <button id="reset-dnd-btn" data-id="reset-dnd-btn" class="btn btn-ghost btn-sm" onclick="resetDnD()">↺ Reset DnD</button>
+          </div>
+          <div id="dnd-status" class="status status-info mt-2">No items dropped yet</div>
+        </div>
+      </div>
+
+      <!-- Keyboard Events -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">⌨ Keyboard Event Logger</div><div class="card-desc">Focus the input and press any key combo. Tests <code>Actions.sendKeys()</code>, <code>Keys.chord()</code>, tab-order navigation.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label class="ctrl-label" for="keyboard-input">Keyboard Interaction Input</label>
+            <input type="text" id="keyboard-input" data-id="keyboard-input" class="ctrl-input" placeholder="Focus me and press key combos…" onkeydown="logKey(event)" />
+          </div>
+          <div id="key-log" data-id="key-log" class="console-box" style="height:130px;">// Key events appear here…</div>
+          <div class="section-label">Tab Order (tabindex 1→3)</div>
+          <div class="row gap-2">
+            <button id="tab-stop-1" data-id="tab-stop-1" class="btn btn-ghost btn-sm" tabindex="1" onfocus="setStatus('hover-status','info','Focus on Tab Stop 1')">Tab Stop 1</button>
+            <button id="tab-stop-2" data-id="tab-stop-2" class="btn btn-ghost btn-sm" tabindex="2" onfocus="setStatus('hover-status','info','Focus on Tab Stop 2')">Tab Stop 2</button>
+            <button id="tab-stop-3" data-id="tab-stop-3" class="btn btn-ghost btn-sm" tabindex="3" onfocus="setStatus('hover-status','info','Focus on Tab Stop 3')">Tab Stop 3</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="ArenaLog.clear('key-log')">🗑 Clear Log</button>
+        </div>
+      </div>
+
+      <!-- Scroll -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📜 Scroll &amp; Viewport</div><div class="card-desc">A scrollable container with a button deep below the visible viewport. Tests <code>JavaScriptActions.scrollByOffset</code> and <code>moveToElement</code> + <code>scrollIntoView</code>.</div></div>
+        <div class="mt-3">
+          <div class="scroll-container" id="scroll-container" data-id="scroll-container">
+            <div class="scroll-spacer">⬆ Scroll down to reach the button</div>
+            <div class="scroll-spacer">Middle — still not there</div>
+            <button id="scroll-target-btn" data-id="scroll-target-btn" class="btn btn-blue btn-full btn-sm" onclick="scrollBtnClicked()">🎯 Click me (requires scrolling)</button>
+            <div style="height:40px;"></div>
+          </div>
+          <div class="row gap-2 mt-3">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('scroll-container').scrollTop=0">⬆ Reset Scroll</button>
+            <button id="scroll-to-btn-btn" data-id="scroll-to-btn-btn" class="btn btn-blue btn-sm" onclick="scrollToBtn()">JS: scrollIntoView</button>
+          </div>
+          <div id="scroll-status" class="status status-info mt-2">Scroll to bottom to reveal button</div>
+        </div>
+      </div>
+
+      <!-- Tooltip -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">💬 Tooltip Hover (moveToElement)</div><div class="card-desc">Tooltip only appears on mouse hover. Requires <code>Actions.moveToElement(element)</code> to reveal, then assert tooltip text.</div></div>
+        <div class="mt-4" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="tooltip-target" id="tooltip-trigger" data-id="tooltip-trigger">
+            Hover me to see tooltip
+            <div class="tooltip-popup" id="tooltip-popup" data-id="tooltip-popup">💬 Ellithium: Actions.moveToElement() worked!</div>
+          </div>
+          <div class="tooltip-target" id="tooltip-trigger-2" data-id="tooltip-trigger-2" style="background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.3);color:var(--accent-violet);">
+            Another Hover Target
+            <div class="tooltip-popup" style="background:#2d1b69;" id="tooltip-popup-2" data-id="tooltip-popup-2">🔮 Second tooltip — different text per element</div>
+          </div>
+          <div id="tooltip-status" class="status status-info mt-2">Hover over a target to reveal tooltip</div>
+        </div>
+      </div>
+
+      <!-- Click and Hold -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗻 Click-and-Hold (Actions.clickAndHold)</div><div class="card-desc">Progress bar fills while you hold the mouse button. Tests <code>Actions.clickAndHold(element)</code> + <code>release()</code>. Hold for 2s to complete.</div></div>
+        <div class="mt-3">
+          <div id="hold-target" data-id="hold-target"
+            style="padding:20px;border:2px solid var(--border-bright);border-radius:8px;text-align:center;cursor:pointer;user-select:none;font-size:0.85rem;font-weight:600;color:var(--text-muted);"
+            onmousedown="startHold()" onmouseup="endHold()" onmouseleave="endHold()">
+            🗻 Hold Mouse Button Down (2s)
+          </div>
+          <div class="progress-bar-wrap mt-3">
+            <div class="progress-bar-fill" id="hold-progress" style="background:var(--accent-blue);width:0%;transition:none;"></div>
+          </div>
+          <div id="hold-status" class="status status-info mt-2">Hold to fill progress (2s)</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Mouse &amp; Keyboard</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+function hoverClick(name) {
+  setStatus('hover-status','ok','✅ Hover link clicked: ' + name + ' at ' + ts());
+  return false;
+}
+
+function activateDbl() {
+  var t = document.getElementById('dbl-click-target');
+  t.classList.add('activated');
+  t.textContent = '✅ Double-Click Received!';
+  setStatus('dbl-click-status','ok','✅ MouseActions.doubleClick confirmed at ' + ts());
+}
+function resetDbl() {
+  var t = document.getElementById('dbl-click-target');
+  t.classList.remove('activated');
+  t.textContent = '👆 Double-Click Me to Activate';
+  setStatus('dbl-click-status','warn','⏳ Awaiting double-click…');
+}
+
+document.addEventListener('click', function(e){
+  if (!document.getElementById('custom-ctx-menu').contains(e.target)) hideCtx();
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') hideCtx(); });
+function showCtx(e) {
+  e.preventDefault();
+  var m = document.getElementById('custom-ctx-menu');
+  m.style.display = 'block'; m.style.left = e.clientX+'px'; m.style.top = e.clientY+'px';
+  setStatus('ctx-status','ok','🖱 Context menu opened at ('+e.clientX+','+e.clientY+')');
+}
+function hideCtx() { document.getElementById('custom-ctx-menu').style.display = 'none'; }
+function ctxAction(act) {
+  setStatus('ctx-status','ok','✅ Context action: '+act+' at '+ts());
+  hideCtx();
+}
+
+var dragData = {};
+function startDrag(e, id, label) {
+  dragData = {id:id, label:label};
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+  document.getElementById(id).classList.add('dragging');
+}
+function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function dragLeave(e) { e.currentTarget.classList.remove('dragover'); }
+function handleDrop(e, zoneId) {
+  e.preventDefault();
+  var zone = document.getElementById(zoneId);
+  zone.classList.remove('dragover'); zone.classList.add('dropped');
+  var id = e.dataTransfer.getData('text/plain') || dragData.id;
+  var label = dragData.label || id;
+  if (id) { var src = document.getElementById(id); if(src) src.classList.remove('dragging'); }
+  zone.innerHTML = '✅ Dropped: ' + label;
+  zone.style.color = 'var(--accent-green)';
+  setStatus('dnd-status','ok','✅ dragAndDrop: "' + label + '" → ' + zoneId + ' at ' + ts());
+}
+function resetDnD() {
+  ['drag-source','drag-source-2','drag-source-3'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.classList.remove('dragging');
+  });
+  ['drop-target-a','drop-target-b'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.classList.remove('dropped','dragover');
+    el.innerHTML = id==='drop-target-a'?'Drop Zone A':'Drop Zone B';
+    el.style.color='';
+  });
+  dragData = {};
+  setStatus('dnd-status','info','No items dropped yet');
+}
+
+function logKey(e) {
+  var keys=[];
+  if(e.ctrlKey)  keys.push('Ctrl');
+  if(e.shiftKey) keys.push('Shift');
+  if(e.altKey)   keys.push('Alt');
+  if(e.metaKey)  keys.push('Meta');
+  var k = e.key==='' ? 'Space' : e.key;
+  if(!['Control','Shift','Alt','Meta'].includes(k)) keys.push(k);
+  ArenaLog.info('key-log', '[' + keys.join('+') + '] code:' + e.code + ' keyCode:' + e.keyCode);
+}
+
+function scrollBtnClicked() {
+  setStatus('scroll-status','ok','✅ scroll-target-btn clicked at ' + ts());
+}
+function scrollToBtn() {
+  document.getElementById('scroll-target-btn').scrollIntoView({behavior:'smooth', block:'center'});
+  setStatus('scroll-status','ok','✅ JS scrollIntoView on #scroll-target-btn executed');
+}
+
+['tooltip-trigger','tooltip-trigger-2'].forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('mouseenter', function(){ setStatus('tooltip-status','ok','✅ moveToElement triggered: tooltip visible on #' + id); });
+  el.addEventListener('mouseleave', function(){ setStatus('tooltip-status','info','Mouse left tooltip target'); });
+});
+
+var holdTimer = null; var holdStart = null; var holdDuration = 2000;
+function startHold() {
+  var prog = document.getElementById('hold-progress');
+  holdStart = Date.now();
+  prog.style.width = '0%';
+  setStatus('hold-status','warn','🗻 Holding… keep holding for 2s');
+  holdTimer = setInterval(function(){
+    var elapsed = Date.now() - holdStart;
+    var pct = Math.min(100, (elapsed/holdDuration)*100);
+    prog.style.width = pct + '%';
+    if(pct >= 100){
+      clearInterval(holdTimer); holdTimer = null;
+      setStatus('hold-status','ok','✅ Hold completed (2s)! clickAndHold().pause(2000).release() confirmed.');
+    }
+  }, 50);
+}
+function endHold() {
+  if(holdTimer) {
+    clearInterval(holdTimer); holdTimer = null;
+    var pct = parseFloat(document.getElementById('hold-progress').style.width)||0;
+    if(pct < 100) {
+      setStatus('hold-status','warn','⚠ Released early at ' + pct.toFixed(0) + '%. Hold full 2s.');
+      document.getElementById('hold-progress').style.width = '0%';
+    }
+  }
+}
+</script>
+</body>
+</html>

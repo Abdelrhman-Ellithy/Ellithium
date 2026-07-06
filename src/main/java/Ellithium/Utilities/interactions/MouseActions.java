@@ -3,11 +3,13 @@ package Ellithium.Utilities.interactions;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import java.time.Duration;
 public class MouseActions<T extends WebDriver> extends BaseActions<T> {
     
     public MouseActions(T driver) {
@@ -51,6 +53,14 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 source -> {
                     WebElement target = waitForVisibilityAndFindElement(targetLocator,
                             WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+                    // clickAndHold(source) only auto-scrolls to source; if target isn't also in view,
+                    // the mid-drag scroll to reach it is unreliable, so fit both in view up front here
+                    // (behavior:'instant' so a page's scroll-behavior:smooth can't leave this mid-animation).
+                    ((JavascriptExecutor) driver).executeScript(
+                            "var a=arguments[0].getBoundingClientRect(),b=arguments[1].getBoundingClientRect();" +
+                            "var top=Math.min(a.top,b.top),bottom=Math.max(a.bottom,b.bottom);" +
+                            "window.scrollBy({top:(top+bottom)/2 - window.innerHeight/2, left:0, behavior:'instant'});",
+                            source, target);
                     new Actions(driver).clickAndHold(source).moveToElement(target).release().perform();
                 });
         Reporter.log("Drag and drop performed from " + sourceLocator + " to " + targetLocator, LogLevel.INFO_BLUE);
@@ -89,8 +99,11 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void doubleClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
+        // Explicit click-pause-click instead of the composite Actions.doubleClick(): under heavy CPU
+        // contention its zero-gap press/release pairs can land too close together for the browser to
+        // register a genuine dblclick, so a small deliberate gap here is more reliable than none.
         performWithStaleRetry(locator, timeout, pollingEvery,
-                el -> new Actions(driver).doubleClick(el).perform());
+                el -> new Actions(driver).click(el).pause(Duration.ofMillis(50)).click(el).perform());
         Reporter.log("Double-clicked on element: " + locator, LogLevel.INFO_BLUE);
     }
 

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Navigation Actions — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .history-box {
+      background: var(--bg-primary); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.8rem;
+      color: var(--text-secondary); min-height: 50px;
+    }
+    .url-display {
+      font-family: 'Courier New', monospace; font-size: 0.82rem;
+      color: var(--accent-cyan); word-break: break-all;
+    }
+    .anchor-section {
+      padding: 80px 0 40px;
+      border-top: 1px solid var(--border);
+    }
+    #hash-target-alpha, #hash-target-beta, #hash-target-gamma {
+      scroll-margin-top: 120px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Navigation Module</div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link active" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);">🧭</div>
+      <div>
+        <h1 class="page-title">Navigation Actions</h1>
+        <p class="page-subtitle">Tests NavigationActions (navigateTo, back, forward, refresh) and WaitActions for URL/title conditions. Includes hash navigation, beforeunload traps, and URL redirect chains.</p>
+        <div class="mt-2">
+          <span class="etag etag-amber">NavigationActions</span>
+          <span class="etag etag-amber">WaitActions.waitForTitleContains</span>
+          <span class="etag etag-amber">WaitActions.waitForUrlContains</span>
+          <span class="etag etag-amber">WaitActions.waitForUrlToBe</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- Current URL / Title info -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📡 Live URL &amp; Title Assertions</div><div class="card-desc">Real-time display of current URL and title — used with waitForTitleIs / waitForUrlContains.</div></div>
+        <div class="form-group">
+          <label class="ctrl-label">Current URL</label>
+          <div class="history-box url-display" id="current-url"></div>
+        </div>
+        <div class="form-group">
+          <label class="ctrl-label">Page Title</label>
+          <div class="history-box" id="current-title" style="font-size:0.85rem;color:var(--text-primary);"></div>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button class="btn btn-blue btn-sm" onclick="refreshDisplay()" id="refresh-display-btn">🔄 Refresh Display</button>
+          <button class="btn btn-ghost btn-sm" id="copy-url-btn" onclick="copyUrl()">📋 Copy URL</button>
+        </div>
+        <div id="url-copy-status" class="status status-info mt-2" style="display:none;"></div>
+      </div>
+
+      <!-- Navigate to URL -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🌐 Navigate to URL</div><div class="card-desc">Simulates NavigationActions.navigateToUrl(). Navigates within the arena pages, setting up title/URL assertion targets.</div></div>
+        <div class="form-group">
+          <label class="ctrl-label">Destination Page</label>
+          <select id="nav-destination" class="ctrl-input">
+            <option value="index.html">Home (index.html)</option>
+            <option value="waits.html">Wait Traps (waits.html)</option>
+            <option value="forms.html">Complex Forms (forms.html)</option>
+            <option value="alerts.html">Alert Tests (alerts.html)</option>
+            <option value="cookies.html">Cookie Tests (cookies.html)</option>
+          </select>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button class="btn btn-blue" id="navigate-to-btn" onclick="navigateTo()">➜ Navigate</button>
+          <button class="btn btn-ghost btn-sm" id="nav-back-btn" onclick="history.back()">← Back</button>
+          <button class="btn btn-ghost btn-sm" id="nav-forward-btn" onclick="history.forward()">Forward →</button>
+        </div>
+        <div id="nav-status" class="status status-info mt-2">Ready to navigate</div>
+      </div>
+
+      <!-- Refresh traps -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔁 Page Refresh Traps</div><div class="card-desc">Tests NavigationActions.refreshPage(). Form data is lost on refresh — verifies framework handles post-refresh state correctly.</div></div>
+        <div class="form-group">
+          <label class="ctrl-label" for="pre-refresh-input">Pre-Refresh Input (lost after refresh)</label>
+          <input type="text" id="pre-refresh-input" data-id="pre-refresh-input" class="ctrl-input" placeholder="Type something — it disappears on refresh" />
+        </div>
+        <div class="form-group">
+          <label class="ctrl-label">Refresh Counter (survives via sessionStorage)</label>
+          <div class="history-box" style="text-align:center; font-size:1.5rem; font-weight:700; color:var(--accent-blue);">
+            <span id="refresh-counter" data-id="refresh-counter">0</span>
+          </div>
+        </div>
+        <button class="btn btn-amber btn-full mt-3" id="refresh-page-btn" onclick="refreshPage()">🔁 Refresh Page</button>
+        <div id="refresh-status" class="status status-warn mt-2">Page refreshed: <strong id="refresh-count-display">0</strong> time(s)</div>
+      </div>
+
+      <!-- Title change trap -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏷 Dynamic Title Change</div><div class="card-desc">Title changes after a delay — tests WaitActions.waitForTitleContains and waitForTitleIs.</div></div>
+        <div class="form-group">
+          <label class="ctrl-label" for="title-target">Target Title Fragment</label>
+          <input type="text" id="title-target" data-id="title-target" class="ctrl-input" value="READY" placeholder="Title must contain this" />
+        </div>
+        <div class="row gap-2 mt-3">
+          <button class="btn btn-violet" id="change-title-btn" data-id="change-title-btn" onclick="changeTitleAfterDelay()">⏱ Change Title (3s delay)</button>
+          <button class="btn btn-ghost btn-sm" id="reset-title-btn" onclick="resetTitle()">↺ Reset</button>
+        </div>
+        <div id="title-change-status" class="status status-info mt-2">Original title active</div>
+      </div>
+
+      <!-- Hash / Anchor Navigation -->
+      <div class="card span-2">
+        <div class="card-header"><div class="card-title">⚓ Hash / Anchor Navigation Traps</div><div class="card-desc">Tests URL hash changes (window.location.hash). Sections appear far below — requires scrollIntoView or Actions.moveToElement.</div></div>
+        <div class="row gap-2 mt-3">
+          <a href="#hash-target-alpha" class="btn btn-cyan btn-sm" id="scroll-to-alpha" data-id="scroll-to-alpha">⬇ Scroll to Alpha</a>
+          <a href="#hash-target-beta"  class="btn btn-violet btn-sm" id="scroll-to-beta"  data-id="scroll-to-beta">⬇ Scroll to Beta</a>
+          <a href="#hash-target-gamma" class="btn btn-amber btn-sm"  id="scroll-to-gamma" data-id="scroll-to-gamma">⬇ Scroll to Gamma</a>
+          <button class="btn btn-ghost btn-sm" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆ Back to Top</button>
+        </div>
+        <div id="hash-status" class="status status-info mt-2">No hash anchor clicked yet</div>
+
+        <div id="hash-target-alpha" class="anchor-section">
+          <div class="card" style="background:rgba(6,182,212,0.06);border-color:rgba(6,182,212,0.3);">
+            <div class="card-title" style="color:var(--accent-cyan);">⚓ Anchor Alpha — id: hash-target-alpha</div>
+            <div class="card-desc">This element is reachable via <code>#hash-target-alpha</code>. URL becomes <code>navigation.html#hash-target-alpha</code>.</div>
+            <button class="btn btn-cyan btn-sm mt-3" id="alpha-action-btn" data-id="alpha-action-btn" onclick="alphaAction()">✅ Perform Alpha Action</button>
+            <div id="alpha-result" class="status status-ok mt-2" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div id="hash-target-beta" class="anchor-section">
+          <div class="card" style="background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.3);">
+            <div class="card-title" style="color:var(--accent-violet);">⚓ Anchor Beta — id: hash-target-beta</div>
+            <div class="card-desc">Reachable via <code>#hash-target-beta</code>. Tests scroll + interact after navigation.</div>
+            <div class="form-group mt-3">
+              <label class="ctrl-label" for="beta-input">Beta Input (requires scrolling to reach)</label>
+              <input type="text" id="beta-input" data-id="beta-input" class="ctrl-input" placeholder="Type after scrolling here" />
+            </div>
+            <button class="btn btn-violet btn-sm" id="beta-submit-btn" data-id="beta-submit-btn" onclick="betaSubmit()">Submit Beta</button>
+            <div id="beta-result" class="status status-violet mt-2" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div id="hash-target-gamma" class="anchor-section">
+          <div class="card" style="background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.3);">
+            <div class="card-title" style="color:var(--accent-amber);">⚓ Anchor Gamma — id: hash-target-gamma</div>
+            <div class="card-desc">Deepest anchor. Tests WaitActions.waitForUrlContains("#hash-target-gamma").</div>
+            <button class="btn btn-amber btn-sm mt-3" id="gamma-action-btn" data-id="gamma-action-btn" onclick="gammaAction()">⚡ Gamma Action</button>
+            <div id="gamma-result" class="status status-warn mt-2" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BeforeUnload trap -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚠ BeforeUnload Guard</div><div class="card-desc">Activating this trap sets a <code>beforeunload</code> handler that fires when navigating away. Requires handling the confirm dialog before navigation proceeds.</div></div>
+        <div class="form-group mt-3">
+          <label class="inline-label">
+            <input type="checkbox" id="beforeunload-toggle" data-id="beforeunload-toggle" onchange="toggleBeforeUnload(this)" />
+            Arm beforeunload guard
+          </label>
+        </div>
+        <div id="beforeunload-status" class="status status-info mt-2">BeforeUnload: DISARMED</div>
+      </div>
+
+      <!-- Redirect chain -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔀 JavaScript Redirect Chain</div><div class="card-desc">Simulates a 2-step redirect chain using <code>window.location.href</code> after delays. Tests URL assertion timing.</div></div>
+        <div class="form-group mt-3">
+          <label class="ctrl-label">Redirect Destination</label>
+          <select id="redirect-dest" data-id="redirect-dest" class="ctrl-input">
+            <option value="cookies.html">Cookies page</option>
+            <option value="forms.html">Forms page</option>
+            <option value="mouse.html">Mouse page</option>
+          </select>
+        </div>
+        <button class="btn btn-red btn-full mt-3" id="start-redirect-btn" data-id="start-redirect-btn" onclick="startRedirectChain()">🔀 Start 3s Redirect Chain</button>
+        <div id="redirect-status" class="status status-warn mt-2">No redirect initiated</div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Navigation Module</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+// Refresh counter
+(function(){
+  var c = parseInt(sessionStorage.getItem('nav-refresh-count') || '0', 10);
+  document.getElementById('refresh-counter').textContent = c;
+  document.getElementById('refresh-count-display').textContent = c;
+})();
+
+function refreshDisplay() {
+  document.getElementById('current-url').textContent   = location.href;
+  document.getElementById('current-title').textContent = document.title;
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(location.href).then(function(){
+    setStatus('url-copy-status','ok','✅ URL copied to clipboard');
+  });
+}
+
+function navigateTo() {
+  var dest = document.getElementById('nav-destination').value;
+  setStatus('nav-status','info','Navigating to ' + dest + '…');
+  setTimeout(function(){ location.href = dest; }, 300);
+}
+
+function refreshPage() {
+  var c = parseInt(sessionStorage.getItem('nav-refresh-count') || '0', 10) + 1;
+  sessionStorage.setItem('nav-refresh-count', c);
+  location.reload();
+}
+
+var originalTitle = document.title;
+var titleTimer = null;
+function changeTitleAfterDelay() {
+  if (titleTimer) clearTimeout(titleTimer);
+  var frag = document.getElementById('title-target').value || 'READY';
+  document.getElementById('change-title-btn').disabled = true;
+  setStatus('title-change-status','warn','⏳ Title changes in 3s to contain "' + frag + '"…');
+  titleTimer = setTimeout(function(){
+    document.title = 'Ellithium Arena — ' + frag + ' — ' + ts();
+    setStatus('title-change-status','ok','✅ Title changed to: ' + document.title);
+    document.getElementById('change-title-btn').disabled = false;
+  }, 3000);
+}
+function resetTitle() {
+  if (titleTimer) clearTimeout(titleTimer);
+  document.title = originalTitle;
+  setStatus('title-change-status','info','Title reset to original');
+  document.getElementById('change-title-btn').disabled = false;
+}
+
+window.addEventListener('hashchange', function(){
+  setStatus('hash-status','ok','Hash changed to: ' + location.hash);
+});
+
+function alphaAction() {
+  var r = document.getElementById('alpha-result');
+  r.style.display = 'flex'; r.textContent = '✅ Alpha action performed at ' + ts();
+}
+function betaSubmit() {
+  var v = document.getElementById('beta-input').value;
+  var r = document.getElementById('beta-result');
+  r.style.display = 'flex'; r.textContent = '✅ Beta submitted: "' + v + '" at ' + ts();
+}
+function gammaAction() {
+  var r = document.getElementById('gamma-result');
+  r.style.display = 'flex'; r.textContent = '⚡ Gamma action performed at ' + ts();
+}
+
+var beforeUnloadActive = false;
+var beforeUnloadFn = function(e){ e.preventDefault(); e.returnValue = ''; };
+function toggleBeforeUnload(cb) {
+  if (cb.checked) {
+    window.addEventListener('beforeunload', beforeUnloadFn);
+    beforeUnloadActive = true;
+    setStatus('beforeunload-status','warn','⚠ BeforeUnload: ARMED — navigating away will prompt');
+  } else {
+    window.removeEventListener('beforeunload', beforeUnloadFn);
+    beforeUnloadActive = false;
+    setStatus('beforeunload-status','info','BeforeUnload: DISARMED');
+  }
+}
+
+function startRedirectChain() {
+  var dest = document.getElementById('redirect-dest').value;
+  setStatus('redirect-status','warn','⏳ Redirecting in 3s… (waitForUrlContains required)');
+  document.getElementById('start-redirect-btn').disabled = true;
+  var cd = 3;
+  var t = setInterval(function(){
+    cd--;
+    setStatus('redirect-status','warn','⏳ Redirecting in ' + cd + 's…');
+    if (cd <= 0) {
+      clearInterval(t);
+      window.location.href = dest;
+    }
+  }, 1000);
+}
+
+refreshDisplay();
+</script>
+</body>
+</html>

@@ -47,15 +47,35 @@ public class LocatorMutationEngine {
      */
     public static WebElement tryMutations(By brokenLocator, WebDriver driver,
                                           ElementFingerprint baseline) {
+        return tryMutations(brokenLocator, driver, baseline, null);
+    }
+
+    /**
+     * As {@link #tryMutations(By, WebDriver, ElementFingerprint)}, additionally collecting the
+     * near-miss candidates this pass had to abstain on into {@code hints} (token-vote ties and
+     * cross-validation failures) so a later tier can differentiate them instead of rescanning
+     * the page from scratch. {@code hints} may be null.
+     */
+    public static WebElement tryMutations(By brokenLocator, WebDriver driver,
+                                          ElementFingerprint baseline,
+                                          Ellithium.core.ai.models.HealingHints hints) {
         List<By> mutations = generateMutations(brokenLocator);
         if (mutations.isEmpty()) return null;
+
+        List<List<By>> deferredGroups = (baseline == null) ? coldStartTokenGroups(brokenLocator) : List.of();
+        java.util.Set<By> deferredSet = new java.util.HashSet<>();
+        for (List<By> group : deferredGroups) deferredSet.addAll(group);
 
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             for (By mutation : mutations) {
+                if (deferredSet.contains(mutation)) continue;
                 try {
                     WebElement found = driver.findElement(mutation);
-                    if (baseline != null && !mutationCrossValidates(driver, baseline, found)) continue;
+                    if (baseline != null && !mutationCrossValidates(driver, baseline, found)) {
+                        if (hints != null) hints.add(found, mutation, 0.0, "mutation resolved, cross-validation failed", 1);
+                        continue;
+                    }
                     Ellithium.core.execution.listener.seleniumListener.resumeLogging();
                     Reporter.log("[TIER 1] mutation: " + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
                     return found;
@@ -70,10 +90,120 @@ public class LocatorMutationEngine {
                     } catch (Exception ignored) {}
                 } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException ignored) {}
             }
+            if (!deferredGroups.isEmpty()) {
+                WebElement agreed = resolveByTokenAgreement(driver, deferredGroups, hints);
+                if (agreed != null) {
+                    Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                    By agreedLocator = safeReconstruct(agreed);
+                    Reporter.log("[TIER 1] mutation (token-agreement): " + brokenLocator + " → "
+                            + (agreedLocator != null ? agreedLocator : "(element)"), LogLevel.INFO_GREEN);
+                    return agreed;
+                }
+            }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
         return null;
+    }
+
+    /**
+     * The {@code [id*=…]} / {@code [data-id*=…]} contains-fallbacks for an {@code id} locator
+     * (mirrors {@link #addIdMutations}): the full value as one group, plus one group per token for
+     * multi-token values, so the voter counts each piece of evidence exactly once. ALL contains
+     * mutations are ambiguous by construction (a substring can match several elements), so at
+     * cold-start none of them may resolve by blind first-match — a full-value substring like
+     * {@code email} matching two real inputs must abstain, not pick DOM order. Empty for other
+     * locator types, which do not emit contains-fallback mutations on id/data-id.
+     */
+    private static List<List<By>> coldStartTokenGroups(By brokenLocator) {
+        Matcher m = BY_PARSE.matcher(brokenLocator.toString());
+        if (!m.find() || !"id".equals(m.group(1))) return List.of();
+        String value = m.group(2).trim();
+        if (value.isEmpty()) return List.of();
+        List<List<By>> out = new ArrayList<>();
+        String escValue = cssEscape(value);
+        out.add(List.of(By.cssSelector("[id*='" + escValue + "']"),
+                        By.cssSelector("[data-id*='" + escValue + "']")));
+        List<String> tokens = tokenize(value);
+        if (tokens.size() >= 2) {
+            for (String t : tokens) {
+                if (t.length() < 3) continue;
+                String esc = cssEscape(t);
+                out.add(List.of(By.cssSelector("[id*='" + esc + "']"),
+                                By.cssSelector("[data-id*='" + esc + "']")));
+            }
+        }
+        return out;
+    }
+
+    private static final int COMMON_TOKEN_MAX = 3;
+
+    /** Two weighted votes within this epsilon are considered equal (a tie). */
+    private static final double VOTE_EPSILON = 1e-6;
+
+    /**
+     * Resolves the per-token contains groups by inverse-frequency-weighted voting: each token whose
+     * selectors match a small, discriminative element set (each selector ≤ {@link #COMMON_TOKEN_MAX}
+     * matches) contributes {@code 1/matchCount} to every distinct element it matches — a token
+     * unique to one element ("named" → open-named-btn) outweighs a token shared by two
+     * ("window" → two other buttons), exactly like IDF. An element carrying both {@code id} and
+     * {@code data-id} is not double-counted against an {@code id}-only sibling. The element with
+     * the strict-maximum weight wins; a tie (within {@link #VOTE_EPSILON}) means the tokens carry
+     * genuinely equal evidence, so this returns null and hands the tied finalists to the next tier
+     * via {@code hints}. Overly-common tokens (more than {@link #COMMON_TOKEN_MAX} matches) carry
+     * no signal.
+     */
+    private static WebElement resolveByTokenAgreement(WebDriver driver, List<List<By>> tokenGroups,
+                                                      Ellithium.core.ai.models.HealingHints hints) {
+        java.util.Map<WebElement, Double> votes = new java.util.HashMap<>();
+        for (List<By> group : tokenGroups) {
+            java.util.Set<WebElement> tokenMatches = new java.util.LinkedHashSet<>();
+            for (By sel : group) {
+                List<WebElement> found;
+                try {
+                    found = driver.findElements(sel);
+                } catch (Exception ignored) {
+                    continue;
+                }
+                if (found.isEmpty() || found.size() > COMMON_TOKEN_MAX) continue;
+                tokenMatches.addAll(found);
+            }
+            if (tokenMatches.isEmpty()) continue;
+            double weight = 1.0 / tokenMatches.size();
+            for (WebElement el : tokenMatches) {
+                votes.merge(el, weight, Double::sum);
+            }
+        }
+        WebElement best = null;
+        double bestVotes = 0.0;
+        boolean tie = false;
+        for (java.util.Map.Entry<WebElement, Double> e : votes.entrySet()) {
+            if (e.getValue() > bestVotes + VOTE_EPSILON) {
+                bestVotes = e.getValue();
+                best = e.getKey();
+                tie = false;
+            } else if (Math.abs(e.getValue() - bestVotes) <= VOTE_EPSILON) {
+                tie = true;
+            }
+        }
+        if (tie && hints != null && bestVotes > 0.0) {
+            for (java.util.Map.Entry<WebElement, Double> e : votes.entrySet()) {
+                if (Math.abs(e.getValue() - bestVotes) <= VOTE_EPSILON) {
+                    hints.add(e.getKey(), safeReconstruct(e.getKey()), e.getValue(),
+                            String.format(java.util.Locale.ROOT,
+                                    "token-vote tie (weight %.2f)", e.getValue()), 1);
+                }
+            }
+        }
+        return tie ? null : best;
+    }
+
+    private static By safeReconstruct(WebElement el) {
+        try {
+            return ElementFingerprint.reconstructLocator(el);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -153,6 +283,7 @@ public class LocatorMutationEngine {
             case "cssSelector" -> addCssMutations(mutations, value);
             case "xpath" -> addXpathMutations(mutations, value);
             case "className" -> addClassMutations(mutations, value);
+            case "linkText", "partialLinkText" -> addLinkTextMutations(mutations, value);
             default -> addGenericMutations(mutations, value);
         }
         List<By> immut = List.copyOf(mutations);
@@ -219,17 +350,28 @@ public class LocatorMutationEngine {
             if (!v.isBlank()) out.add(By.name(v));
         }
         // id → data-testid (common refactor in modern apps)
-        out.add(By.cssSelector("[data-testid='" + value + "']"));
+        out.add(By.cssSelector("[data-testid='" + cssEscape(value) + "']"));
         for (String v : variants) {
-            if (!v.isBlank()) out.add(By.cssSelector("[data-testid='" + v + "']"));
+            if (!v.isBlank()) out.add(By.cssSelector("[data-testid='" + cssEscape(v) + "']"));
         }
         // id → aria-label
-        out.add(By.cssSelector("[aria-label='" + value + "']"));
-        // Contains fallback
-        out.add(By.cssSelector("[id*='" + value + "']"));
+        out.add(By.cssSelector("[aria-label='" + cssEscape(value) + "']"));
+        // id → class (id demoted to a class during a refactor)
+        if (isCssIdentifier(value)) out.add(By.className(value));
+        for (String v : variants) {
+            if (isCssIdentifier(v)) out.add(By.className(v));
+        }
+        // Contains fallback — full value and each distinctive token, on id and data-id.
+        out.add(By.cssSelector("[id*='" + cssEscape(value) + "']"));
+        out.add(By.cssSelector("[data-id*='" + cssEscape(value) + "']"));
         List<String> tokens = tokenize(value);
         if (tokens.size() >= 2) {
-            out.add(By.cssSelector("[id*='" + tokens.get(0) + "']"));
+            for (String t : tokens) {
+                if (t.length() < 3) continue;
+                String esc = cssEscape(t);
+                out.add(By.cssSelector("[id*='" + esc + "']"));
+                out.add(By.cssSelector("[data-id*='" + esc + "']"));
+            }
         }
     }
 
@@ -244,9 +386,9 @@ public class LocatorMutationEngine {
             if (!v.isBlank()) out.add(By.id(v));
         }
         // name → data-testid
-        out.add(By.cssSelector("[data-testid='" + value + "']"));
+        out.add(By.cssSelector("[data-testid='" + cssEscape(value) + "']"));
         // Contains fallback
-        out.add(By.cssSelector("[name*='" + value + "']"));
+        out.add(By.cssSelector("[name*='" + cssEscape(value) + "']"));
     }
 
     private static void addCssMutations(List<By> out, String value) {
@@ -257,10 +399,10 @@ public class LocatorMutationEngine {
             for (String v : variants) {
                 if (!v.isBlank()) out.add(By.cssSelector("." + v));
             }
-            out.add(By.cssSelector("[class*='" + cls + "']"));
+            out.add(By.cssSelector("[class*='" + cssEscape(cls) + "']"));
             List<String> tokens = tokenize(cls);
             if (!tokens.isEmpty()) {
-                out.add(By.cssSelector("[class*='" + tokens.get(0) + "']"));
+                out.add(By.cssSelector("[class*='" + cssEscape(tokens.get(0)) + "']"));
             }
             return;
         }
@@ -273,17 +415,17 @@ public class LocatorMutationEngine {
             String attrVal = am.group(2);
             List<String> variants = generateValueMutations(attrVal);
             for (String v : variants) {
-                if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + v + "']"));
+                if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + cssEscape(v) + "']"));
             }
             // Contains fallback
-            out.add(By.cssSelector("[" + attr + "*='" + attrVal + "']"));
+            out.add(By.cssSelector("[" + attr + "*='" + cssEscape(attrVal) + "']"));
             // Attribute swap
             if (attr.equals("data-testid")) {
-                out.add(By.cssSelector("[data-test='" + attrVal + "']"));
-                out.add(By.cssSelector("[data-cy='" + attrVal + "']"));
+                out.add(By.cssSelector("[data-test='" + cssEscape(attrVal) + "']"));
+                out.add(By.cssSelector("[data-cy='" + cssEscape(attrVal) + "']"));
                 out.add(By.id(attrVal));
             } else if (attr.equals("id")) {
-                out.add(By.cssSelector("[data-testid='" + attrVal + "']"));
+                out.add(By.cssSelector("[data-testid='" + cssEscape(attrVal) + "']"));
                 out.add(By.name(attrVal));
             }
         }
@@ -313,10 +455,10 @@ public class LocatorMutationEngine {
             out.add(By.xpath(value.replace(
                     "contains(@" + attr + ",'" + attrVal + "')",
                     "@" + attr + "='" + attrVal + "'")));
-            out.add(By.cssSelector("[" + attr + "='" + attrVal + "']"));
+            out.add(By.cssSelector("[" + attr + "='" + cssEscape(attrVal) + "']"));
             List<String> variants = generateValueMutations(attrVal);
             for (String v : variants) {
-                if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + v + "']"));
+                if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + cssEscape(v) + "']"));
             }
         }
     }
@@ -325,9 +467,25 @@ public class LocatorMutationEngine {
         // By.className("login-btn") → try variants
         List<String> variants = generateValueMutations(value);
         for (String v : variants) {
-            if (!v.isBlank()) out.add(By.className(v));
+            if (isCssIdentifier(v)) out.add(By.className(v));
         }
-        out.add(By.cssSelector("[class*='" + value + "']"));
+        out.add(By.cssSelector("[class*='" + cssEscape(value) + "']"));
+    }
+
+    /**
+     * {@code linkText} requires an exact match and does not tolerate incidental leading/trailing
+     * whitespace (a common copy-paste artifact from a rendered page); {@code partialLinkText} is
+     * the natural fallback for either flavor when the exact text has drifted slightly.
+     */
+    private static void addLinkTextMutations(List<By> out, String value) {
+        // value is already trimmed by generateMutations before dispatch — the whitespace-drift case
+        // (By.linkText(" Sign In ") vs rendered "Sign In") is fixed for free by that shared trim; what
+        // was missing is trying linkText/partialLinkText mutations AT ALL instead of falling to the
+        // generic id/name-style guesses, which never apply to a link-text locator. Both forms are
+        // tried regardless of which strategy the broken locator used.
+        if (value.isBlank()) return;
+        out.add(By.linkText(value));
+        out.add(By.partialLinkText(value));
     }
 
     private static void addGenericMutations(List<By> out, String value) {
@@ -344,6 +502,31 @@ public class LocatorMutationEngine {
     }
 
     // ──────────────────────── String Utilities ────────────────────────
+
+    /**
+     * Escapes a value for interpolation inside a single-quoted CSS attribute selector
+     * ({@code [attr='value']}), so a value containing {@code '} or {@code \} produces a valid
+     * selector instead of an {@link org.openqa.selenium.InvalidSelectorException} that silently
+     * drops the mutation.
+     */
+    static String cssEscape(String value) {
+        if (value == null || value.isEmpty()) return value;
+        return value.replace("\\", "\\\\").replace("'", "\\'");
+    }
+
+    /**
+     * Whether {@code value} is usable as a bare CSS class identifier for {@link By#className} —
+     * non-blank, does not start with a digit, and contains only letters, digits, {@code -} or
+     * {@code _} (a dot, space, or quote would form a compound/invalid selector).
+     */
+    static boolean isCssIdentifier(String value) {
+        if (value == null || value.isEmpty() || Character.isDigit(value.charAt(0))) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '-' || c == '_')) return false;
+        }
+        return true;
+    }
 
     /**
      * Splits an identifier into lowercase tokens.

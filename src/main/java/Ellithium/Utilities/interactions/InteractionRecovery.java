@@ -58,7 +58,7 @@ final class InteractionRecovery {
      * viewport centre and awaited clickable. Returns {@code null} when no correct interactable target
      * exists (the located element is wrong), signalling the caller to escalate to healing.
      */
-    WebElement resolveInteractable(By locator, int timeout, int polling) {
+    WebElement resolveInteractable(By locator, long timeoutMillis, int polling) {
         try {
             List<WebElement> matches = driver.findElements(locator);
             WebElement chosen = null;
@@ -73,7 +73,7 @@ final class InteractionRecovery {
             }
             if (chosen == null) return null;
             scrollToCenter(chosen);
-            awaitClickable(chosen, timeout, polling);
+            awaitClickable(chosen, timeoutMillis, polling);
             return chosen;
         } catch (WebDriverException e) {
             return null;
@@ -108,10 +108,10 @@ final class InteractionRecovery {
         }
     }
 
-    void awaitClickable(WebElement el, int timeout, int polling) {
+    void awaitClickable(WebElement el, long timeoutMillis, int polling) {
         if (el == null) return;
         try {
-            WaitManager.getFluentWait(driver, timeout, polling)
+            WaitManager.getFluentWaitMillis(driver, timeoutMillis, polling)
                     .until(ExpectedConditions.elementToBeClickable(el));
         } catch (WebDriverException ignored) {
         }

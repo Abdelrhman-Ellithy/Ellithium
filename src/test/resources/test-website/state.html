@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>State & Interactivity Traps — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .overlay-trap-wrapper { position:relative; display:inline-block; }
+    #z-index-overlay {
+      position:absolute; inset:0; z-index:10;
+      background:transparent; cursor:default;
+    }
+    #covered-btn { position:relative; z-index:1; }
+    #offscreen-element {
+      position:fixed; left:-9999px; top:50px;
+      background:var(--accent-violet); color:#fff;
+      padding:8px 18px; border-radius:6px; font-size:0.82rem; font-weight:600;
+      white-space:nowrap;
+    }
+    .mutation-display {
+      padding:16px; border-radius:var(--radius-md); border:2px solid var(--border);
+      text-align:center; font-weight:700; font-size:0.95rem;
+      transition:all 0.35s ease; min-height:60px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .recovery-test-area {
+      padding:20px; border:2px dashed var(--border-bright);
+      border-radius:var(--radius-md); position:relative;
+    }
+    .stacked-btns { display:flex; flex-direction:column; gap:8px; }
+    .intercepted-wrap { position:relative; }
+    .intercepted-overlay {
+      position:absolute; inset:0; background:rgba(239,68,68,0.08);
+      border:1px dashed rgba(239,68,68,0.4); border-radius:var(--radius-sm);
+      display:flex; align-items:center; justify-content:center;
+      color:rgba(239,68,68,0.6); font-size:0.72rem; font-weight:700;
+      pointer-events:none; letter-spacing:1px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div id="offscreen-element" data-id="offscreen-element">⚠ Offscreen Element (left:-9999px)</div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>State Traps Module</div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link active" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);">🚫</div>
+      <div>
+        <h1 class="page-title">State &amp; Interactivity Traps</h1>
+        <p class="page-subtitle">Elements that are unclickable due to z-index overlays, disabled/readonly state, off-screen positioning, and rapid attribute mutation cycles. Each scenario maps to a specific Selenium exception that the Ellithium InteractionRecovery layer must handle.</p>
+        <div class="mt-2">
+          <span class="etag">ElementNotInteractableException</span>
+          <span class="etag">InvalidElementStateException</span>
+          <span class="etag">ElementClickInterceptedException</span>
+          <span class="etag etag-violet">InteractionRecovery.resolveInteractable</span>
+          <span class="etag etag-violet">InteractionRecovery.jsClick</span>
+          <span class="etag etag-violet">InteractionRecovery.handleUnexpectedAlert</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- 2A: Z-Index Overlay -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔒 Transparent Z-Index Overlay Trap</div>
+          <div class="card-desc">A fully transparent <code>div</code> sits on top of the button with a higher <code>z-index</code>. Selenium's <code>click()</code> will throw <code>ElementClickInterceptedException</code>. Use <code>JavascriptExecutor</code> to bypass or remove the overlay first.</div>
+        </div>
+        <div class="mt-4">
+          <div class="overlay-trap-wrapper">
+            <div id="z-index-overlay" data-id="z-index-overlay" title="I am blocking the button"></div>
+            <button id="covered-btn" data-id="covered-btn" class="btn btn-red" onclick="coveredClicked()">🔒 I Am Covered — Click Will Fail</button>
+          </div>
+          <div id="covered-status" class="status status-warn mt-3">⚠ Overlay present — ElementClickInterceptedException expected</div>
+          <div class="row gap-2 mt-3">
+            <button id="remove-overlay-btn" data-id="remove-overlay-btn" class="btn btn-ghost btn-sm" onclick="toggleOverlay()">🔓 Remove Overlay</button>
+            <button id="js-click-covered-btn" data-id="js-click-covered-btn" class="btn btn-violet btn-sm" onclick="jsClickCovered()">⚡ JS Click (bypasses overlay)</button>
+          </div>
+          <div id="covered-result" class="status status-ok mt-2" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- 2B: Disabled / ReadOnly -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔐 Disabled &amp; ReadOnly Inputs</div>
+          <div class="card-desc">Fields start locked. Toggling the checkbox enables them. Tests <code>InvalidElementStateException</code> when attempting to clear/type into a disabled or readonly field.</div>
+        </div>
+        <div class="mt-3">
+          <label class="inline-label mb-4" style="margin-bottom:12px;">
+            <input type="checkbox" id="unlock-cb" data-id="unlock-cb" onchange="toggleLock(this)" />
+            Unlock all fields (check to enable)
+          </label>
+          <div class="form-group">
+            <label class="ctrl-label">Disabled Input</label>
+            <input type="text" id="disabled-input" data-id="disabled-input" class="ctrl-input" disabled value="Cannot type here" placeholder="disabled" />
+          </div>
+          <div class="form-group">
+            <label class="ctrl-label">ReadOnly Input</label>
+            <input type="text" id="readonly-input" data-id="readonly-input" class="ctrl-input" readonly value="Cannot edit (readonly)" />
+          </div>
+          <div class="form-group">
+            <label class="ctrl-label">Disabled Select</label>
+            <select id="disabled-select" data-id="disabled-select" class="ctrl-input" disabled>
+              <option value="">-- Disabled --</option>
+              <option value="a">Option Alpha</option>
+              <option value="b">Option Beta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="ctrl-label">Disabled Button</label>
+            <button id="disabled-btn" data-id="disabled-btn" class="btn btn-blue btn-full" disabled onclick="disabledBtnClicked()">🔒 Disabled Button</button>
+          </div>
+          <div id="lock-status" class="status status-warn mt-2">🔒 All fields locked</div>
+        </div>
+      </div>
+
+      <!-- 2C: Off-Screen Element -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📡 Off-Screen Element (left:-9999px)</div>
+          <div class="card-desc">The element <code>#offscreen-element</code> permanently lives at <code>left:-9999px</code>. <code>findElement</code> succeeds but any interaction throws <code>ElementNotInteractableException</code>. Use <code>JavascriptExecutor.scrollIntoView</code> to bring it on-screen.</div>
+        </div>
+        <div class="mt-3">
+          <div class="status status-info">
+            <code>#offscreen-element</code> is always at <code>position:fixed; left:-9999px</code>
+          </div>
+          <div class="row gap-2 mt-3">
+            <button id="reveal-offscreen-btn" data-id="reveal-offscreen-btn" class="btn btn-violet btn-sm" onclick="revealOffscreen()">👁 Reveal Off-Screen Element</button>
+            <button id="interact-offscreen-btn" data-id="interact-offscreen-btn" class="btn btn-red btn-sm" onclick="interactOffscreen()">💥 Try Interact (will fail)</button>
+          </div>
+          <div id="offscreen-status" class="status status-warn mt-3">Element at left:-9999px — not interactable in current state</div>
+        </div>
+      </div>
+
+      <!-- 2D: Attribute Mutation Cycle -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔀 Rapid Attribute Mutation Cycle</div>
+          <div class="card-desc">Element cycles through states every 1.5s: ENABLED → DISABLED → HIDDEN → ACTIVE. Each cycle changes <code>data-state</code>, <code>class</code>, <code>aria-disabled</code>, and CSS. Tests recovery logic and attribute-based waits.</div>
+        </div>
+        <div class="mt-3">
+          <div id="mutating-el" data-id="mutating-el" data-state="idle" class="mutation-display">IDLE</div>
+          <div class="row gap-2 mt-3">
+            <button id="start-mutation-btn" data-id="start-mutation-btn" class="btn btn-amber" onclick="startMutation()">▶ Start Mutation Cycle</button>
+            <button id="stop-mutation-btn" data-id="stop-mutation-btn" class="btn btn-ghost btn-sm" onclick="stopMutation()" style="display:none;">⏹ Stop</button>
+          </div>
+          <div id="mutation-status" class="status status-info mt-2">Cycle not started</div>
+        </div>
+      </div>
+
+      <!-- 2E: InteractionRecovery Drill -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 resolveInteractable — Multi-Candidate Drill</div>
+          <div class="card-desc">Multiple elements share the same class. Some are disabled, some hidden, one is fully interactive. Tests <code>InteractionRecovery.resolveInteractable</code> which picks the first displayed+enabled match.</div>
+        </div>
+        <div class="mt-3 stacked-btns">
+          <button class="btn btn-ghost btn-sm add" data-id="candidate-0" disabled style="opacity:0.3;">Candidate 0 — disabled</button>
+          <button class="btn btn-ghost btn-sm add" data-id="candidate-1" style="display:none;">Candidate 1 — hidden</button>
+          <button class="btn btn-ghost btn-sm add" data-id="candidate-2" style="opacity:0.4;" disabled>Candidate 2 — disabled</button>
+          <button class="btn btn-green btn-sm add" data-id="candidate-3" onclick="candidateClicked(3)">Candidate 3 — ✅ INTERACTABLE (click me)</button>
+          <button class="btn btn-ghost btn-sm add" data-id="candidate-4" disabled>Candidate 4 — disabled</button>
+        </div>
+        <div id="candidate-status" class="status status-info mt-3">resolveInteractable(By.cssSelector(".add")) should pick Candidate 3</div>
+      </div>
+
+      <!-- 2F: JS Click Recovery -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚡ jsClick Recovery — Covered vs. JS Bypass</div>
+          <div class="card-desc">Tests <code>InteractionRecovery.jsClick(element)</code>. The intercepted button can only be clicked via JS execution. Normal click fails due to the stacked overlay. Three layers of coverage.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="intercepted-wrap">
+            <div class="intercepted-overlay">INTERCEPTED</div>
+            <button id="js-only-btn-1" data-id="js-only-btn-1" class="btn btn-blue btn-full" onclick="jsOnlyClicked(1)">Layer 1 — Normal Click Blocked</button>
+          </div>
+          <div class="intercepted-wrap">
+            <div class="intercepted-overlay">INTERCEPTED</div>
+            <button id="js-only-btn-2" data-id="js-only-btn-2" class="btn btn-violet btn-full" onclick="jsOnlyClicked(2)">Layer 2 — Normal Click Blocked</button>
+          </div>
+          <button id="js-click-layer1-btn" data-id="js-click-layer1-btn" class="btn btn-ghost btn-sm" onclick="simulateJsClick('js-only-btn-1')">⚡ Execute JS Click on Layer 1</button>
+          <button id="js-click-layer2-btn" data-id="js-click-layer2-btn" class="btn btn-ghost btn-sm" onclick="simulateJsClick('js-only-btn-2')">⚡ Execute JS Click on Layer 2</button>
+        </div>
+        <div id="js-click-status" class="status status-info mt-2">Awaiting JS click execution</div>
+      </div>
+
+      <!-- 2G: Unexpected Alert Trap -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🚨 Unexpected Alert Trap (handleUnexpectedAlert)</div>
+          <div class="card-desc">An alert fires automatically 2s after clicking. If framework doesn't handle it, the next driver command throws <code>UnhandledAlertException</code>. Tests <code>InteractionRecovery.handleUnexpectedAlert()</code>.</div>
+        </div>
+        <div class="mt-3">
+          <button id="arm-alert-trap-btn" data-id="arm-alert-trap-btn" class="btn btn-red btn-full" onclick="armAlertTrap()">💣 Arm Alert Trap (fires in 2s)</button>
+          <div id="alert-trap-status" class="status status-warn mt-3">Alert trap not armed</div>
+          <div class="mt-3">
+            <label class="ctrl-label" for="post-alert-input">Post-Alert Input (type AFTER alert is handled)</label>
+            <input type="text" id="post-alert-input" data-id="post-alert-input" class="ctrl-input" placeholder="This will fail if alert not handled first" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 2H: ReadOnly edge cases -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Edge Case Input States</div>
+          <div class="card-desc">Inputs with unusual states: tabindex=-1 (not keyboard-focusable), pointer-events:none (CSS blocked), aria-hidden:true, inert attribute.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label class="ctrl-label">tabindex="-1" (unfocusable via Tab)</label>
+            <input type="text" id="no-tab-input" data-id="no-tab-input" class="ctrl-input" tabindex="-1" placeholder="tabindex=-1" value="Not reachable via Tab" />
+          </div>
+          <div>
+            <label class="ctrl-label">pointer-events:none (CSS blocked)</label>
+            <input type="text" id="pointer-events-none-input" data-id="pointer-events-none-input" class="ctrl-input" style="pointer-events:none;" placeholder="CSS blocked" value="CSS pointer-events:none" />
+          </div>
+          <div>
+            <label class="ctrl-label">aria-hidden="true" (accessible but hidden from AT)</label>
+            <input type="text" id="aria-hidden-input" data-id="aria-hidden-input" class="ctrl-input" aria-hidden="true" placeholder="aria-hidden" value="aria-hidden but interactable" />
+          </div>
+          <div>
+            <label class="ctrl-label">inert (HTML inert attribute — fully blocked)</label>
+            <div inert id="inert-container" data-id="inert-container">
+              <input type="text" id="inert-input" data-id="inert-input" class="ctrl-input" placeholder="inert input" value="I am inert" />
+            </div>
+          </div>
+          <div id="edge-status" class="status status-info mt-2">Attempt interaction with each input type above</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — State &amp; Interactivity Traps</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+/* 2A: Overlay */
+var overlayActive = true;
+function toggleOverlay() {
+  var ov  = document.getElementById('z-index-overlay');
+  var st  = document.getElementById('covered-status');
+  var btn = document.getElementById('remove-overlay-btn');
+  overlayActive = !overlayActive;
+  ov.style.display = overlayActive ? 'block' : 'none';
+  if (overlayActive) {
+    st.className = 'status status-warn mt-3';
+    st.textContent = '⚠ Overlay restored — ElementClickInterceptedException expected';
+    btn.textContent = '🔓 Remove Overlay';
+  } else {
+    st.className = 'status status-ok mt-3';
+    st.textContent = '✅ Overlay removed — button now interactable';
+    btn.textContent = '🔒 Re-add Overlay';
+  }
+}
+function coveredClicked() {
+  var r = document.getElementById('covered-result');
+  r.style.display = 'flex';
+  r.textContent = '✅ Direct click received on covered-btn at ' + ts();
+}
+function jsClickCovered() {
+  document.getElementById('covered-btn').click();
+  setStatus('js-click-status','ok','✅ JS click executed on covered button — bypasses overlay.');
+}
+
+/* 2B: Lock/Unlock */
+function toggleLock(cb) {
+  var els = ['disabled-input','disabled-select','disabled-btn'];
+  var ro  = document.getElementById('readonly-input');
+  if (cb.checked) {
+    els.forEach(function(id){
+      var el = document.getElementById(id);
+      el.removeAttribute('disabled');
+    });
+    ro.removeAttribute('readonly');
+    setStatus('lock-status','ok','🔓 Fields unlocked — now interactable');
+  } else {
+    els.forEach(function(id){
+      document.getElementById(id).setAttribute('disabled','');
+    });
+    ro.setAttribute('readonly','');
+    setStatus('lock-status','warn','🔒 Fields locked');
+  }
+}
+function disabledBtnClicked() {
+  setStatus('lock-status','ok','✅ Disabled button clicked (now enabled) at ' + ts());
+}
+
+/* 2C: Offscreen */
+var offscreenRevealed = false;
+function revealOffscreen() {
+  var el = document.getElementById('offscreen-element');
+  offscreenRevealed = !offscreenRevealed;
+  el.style.left = offscreenRevealed ? '20px' : '-9999px';
+  setStatus('offscreen-status', offscreenRevealed ? 'ok' : 'warn',
+    offscreenRevealed
+      ? '✅ Element moved on-screen. Now at left:20px — interactable.'
+      : 'Element back at left:-9999px — not interactable.');
+  document.getElementById('reveal-offscreen-btn').textContent = offscreenRevealed ? '🙈 Hide Again' : '👁 Reveal Off-Screen Element';
+}
+function interactOffscreen() {
+  if (!offscreenRevealed) {
+    setStatus('offscreen-status','error','✗ ElementNotInteractableException would be thrown — element is off-screen at left:-9999px');
+  } else {
+    document.getElementById('offscreen-element').style.background = 'var(--accent-green)';
+    setStatus('offscreen-status','ok','✅ Interaction succeeded (element was on-screen)');
+  }
+}
+
+/* 2D: Mutation Cycle */
+var mutStates = [
+  { text:'ENABLED',  bg:'rgba(16,185,129,0.12)',  bc:'var(--accent-green)',  color:'var(--accent-green)',  state:'enabled',  aria:'false' },
+  { text:'DISABLED', bg:'rgba(239,68,68,0.1)',    bc:'var(--accent-red)',    color:'var(--accent-red)',    state:'disabled', aria:'true'  },
+  { text:'LOADING',  bg:'rgba(245,158,11,0.1)',   bc:'var(--accent-amber)',  color:'var(--accent-amber)',  state:'loading',  aria:'false' },
+  { text:'HIDDEN',   bg:'rgba(139,92,246,0.1)',   bc:'var(--accent-violet)', color:'var(--accent-violet)', state:'hidden',   aria:'true'  },
+  { text:'ACTIVE',   bg:'rgba(59,130,246,0.1)',   bc:'var(--accent-blue)',   color:'var(--accent-blue)',   state:'active',   aria:'false' },
+];
+var mutIdx = 0; var mutInterval = null;
+function startMutation() {
+  if (mutInterval) return;
+  document.getElementById('start-mutation-btn').disabled = true;
+  document.getElementById('stop-mutation-btn').style.display = 'inline-flex';
+  mutInterval = setInterval(function(){
+    var s = mutStates[mutIdx % mutStates.length];
+    var el = document.getElementById('mutating-el');
+    el.dataset.state = s.state;
+    el.setAttribute('aria-disabled', s.aria);
+    el.className = 'mutation-display mut-' + s.state;
+    el.style.background = s.bg;
+    el.style.borderColor = s.bc;
+    el.style.color = s.color;
+    el.textContent = s.text + ' [cycle ' + mutIdx + ']';
+    el.dataset.cycle = mutIdx;
+    setStatus('mutation-status','info','Cycle ' + mutIdx + ' | state: ' + s.state + ' | aria-disabled: ' + s.aria);
+    mutIdx++;
+  }, 1500);
+}
+function stopMutation() {
+  clearInterval(mutInterval); mutInterval = null; mutIdx = 0;
+  document.getElementById('start-mutation-btn').disabled = false;
+  document.getElementById('stop-mutation-btn').style.display = 'none';
+  var el = document.getElementById('mutating-el');
+  el.textContent = 'IDLE'; el.style.background = ''; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)';
+  setStatus('mutation-status','info','Cycle stopped');
+}
+
+/* 2E: Candidate */
+function candidateClicked(n) {
+  setStatus('candidate-status','ok','✅ Candidate ' + n + ' clicked — resolveInteractable correctly identified the interactable element.');
+}
+
+/* 2F: JS Click */
+function simulateJsClick(id) {
+  var el = document.getElementById(id);
+  if (el) el.click();
+  setStatus('js-click-status','ok','✅ arguments[0].click() executed on #' + id + ' via JavaScript executor.');
+}
+function jsOnlyClicked(n) {
+  setStatus('js-click-status','ok','✅ JS click landed on Layer ' + n + ' at ' + ts());
+}
+
+/* 2G: Alert Trap */
+function armAlertTrap() {
+  var btn = document.getElementById('arm-alert-trap-btn');
+  btn.disabled = true;
+  setStatus('alert-trap-status','warn','💣 Alert fires in 2s. Any driver command before handling it → UnhandledAlertException');
+  setTimeout(function(){
+    setStatus('alert-trap-status','error','🚨 Alert firing NOW!');
+    setTimeout(function(){
+      alert('🚨 Unexpected Alert!\n\nThis fired automatically.\nIf not handled, the next driver command will throw UnhandledAlertException.\n\nRecovery: InteractionRecovery.handleUnexpectedAlert() → alert.accept()');
+      setStatus('alert-trap-status','ok','✅ Alert dismissed. Post-alert input is now safe to interact with.');
+      btn.disabled = false;
+    }, 100);
+  }, 2000);
+}
+</script>
+</body>
+</html>

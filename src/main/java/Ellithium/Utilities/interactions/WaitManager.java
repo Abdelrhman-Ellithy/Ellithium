@@ -92,14 +92,23 @@ public class WaitManager <T extends WebDriver>{
     }
 
     public static <T> FluentWait<T> getFluentWait(T driver, int timeoutInSeconds, int pollingEveryInMillis) {
+        return getFluentWaitMillis(driver, timeoutInSeconds * 1000L, pollingEveryInMillis);
+    }
+
+    /**
+     * Millisecond-granularity FluentWait. {@link FluentWait} timeout is a {@link Duration}, so a
+     * sub-second budget (e.g. a per-attempt slice of a divided total) is honored exactly without
+     * collapsing to whole seconds.
+     */
+    public static <T> FluentWait<T> getFluentWaitMillis(T driver, long timeoutMillis, int pollingEveryInMillis) {
         if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
             return  new AppiumFluentWait<>(driver)
-                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .withTimeout(Duration.ofMillis(timeoutMillis))
                     .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
                     .ignoreAll(expectedExceptions);
         } else {
             return  new FluentWait<>(driver)
-                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))
+                    .withTimeout(Duration.ofMillis(timeoutMillis))
                     .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
                     .ignoreAll(expectedExceptions);
         }

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ellithium Testing Arena — Home</title>
+  <meta name="description" content="Ellithium Selenium Testing Arena — a multi-page minefield for stress-testing WebDriver frameworks." />
+  <link rel="stylesheet" href="_shared.css" />
+</head>
+<body>
+<div class="page-wrapper">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html">
+        <div class="logo-icon">⚡</div>
+        <div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div>
+      </a>
+      <div class="header-right">
+        <div class="header-badge"><div class="badge-dot"></div>9 Modules Active</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link active" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(139,92,246,0.15));border:1px solid rgba(59,130,246,0.3);">⚡</div>
+      <div>
+        <h1 class="page-title">Ellithium Testing Arena</h1>
+        <p class="page-subtitle">A multi-page, self-contained HTML minefield built to stress-test every capability of the Ellithium Selenium framework — real waits, real DOM mutations, real browser mechanics. No mocks, no shortcuts.</p>
+        <div class="mt-3">
+          <span class="etag etag-blue">WaitActions</span>
+          <span class="etag etag-blue">MouseActions</span>
+          <span class="etag etag-blue">SelectActions</span>
+          <span class="etag etag-blue">AlertActions</span>
+          <span class="etag etag-blue">FrameActions</span>
+          <span class="etag etag-blue">WindowActions</span>
+          <span class="etag etag-blue">CookieActions</span>
+          <span class="etag etag-blue">NavigationActions</span>
+          <span class="etag etag-blue">JavaScriptActions</span>
+          <span class="etag etag-blue">InteractionRecovery</span>
+          <span class="etag">StaleElementReferenceException</span>
+          <span class="etag">NoSuchElementException</span>
+          <span class="etag">TimeoutException</span>
+          <span class="etag">ElementNotInteractableException</span>
+          <span class="etag">NoAlertPresentException</span>
+          <span class="etag">NoSuchFrameException</span>
+          <span class="etag">NoSuchWindowException</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module Grid -->
+    <div class="grid grid-3" style="gap:1.25rem;">
+
+      <a href="waits.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+          <div class="card-title">Wait &amp; Rendering Traps</div>
+          <div class="card-desc">DOM injection spinners, delayed visibility, attribute polling, lazy image src, element count thresholds.</div>
+        </div>
+        <div class="mt-3"><span class="etag">TimeoutException</span><span class="etag">NoSuchElementException</span></div>
+        <div class="status status-info mt-3" style="font-size:0.75rem;">→ WaitActions full coverage</div>
+      </a>
+
+      <a href="state.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🚫</div>
+          <div class="card-title">State &amp; Interactivity Traps</div>
+          <div class="card-desc">Z-index overlay, disabled/readonly inputs, offscreen elements, rapid attribute mutation cycles.</div>
+        </div>
+        <div class="mt-3"><span class="etag">ElementNotInteractableException</span><span class="etag">InvalidElementStateException</span></div>
+        <div class="status status-warn mt-3" style="font-size:0.75rem;">→ InteractionRecovery coverage</div>
+      </a>
+
+      <a href="stale.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">♻</div>
+          <div class="card-title">Stale &amp; Shadow DOM</div>
+          <div class="card-desc">Full tbody destruction on refresh, open Shadow DOM with content replacement, nested shadow piercing.</div>
+        </div>
+        <div class="mt-3"><span class="etag">StaleElementReferenceException</span><span class="etag">DetachedShadowRootException</span></div>
+        <div class="status status-error mt-3" style="font-size:0.75rem;">→ Recovery &amp; Staleness coverage</div>
+      </a>
+
+      <a href="frames.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🖼</div>
+          <div class="card-title">Frames &amp; Windows</div>
+          <div class="card-desc">3-second delayed iframe injection, nested iframe chains, popup windows, window handle enumeration.</div>
+        </div>
+        <div class="mt-3"><span class="etag">NoSuchFrameException</span><span class="etag">NoSuchWindowException</span></div>
+        <div class="status status-violet mt-3" style="font-size:0.75rem;">→ FrameActions &amp; WindowActions</div>
+      </a>
+
+      <a href="forms.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">📝</div>
+          <div class="card-title">Complex Forms</div>
+          <div class="card-desc">File upload, native select, custom div dropdown, multi-select, range, date, color, contenteditable.</div>
+        </div>
+        <div class="mt-3"><span class="etag etag-green">SelectActions</span><span class="etag etag-green">File Input</span></div>
+        <div class="status status-ok mt-3" style="font-size:0.75rem;">→ SelectActions full coverage</div>
+      </a>
+
+      <a href="mouse.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🖱</div>
+          <div class="card-title">Mouse &amp; Keyboard</div>
+          <div class="card-desc">Hover menus, drag-and-drop, double-click, right-click context menu, scroll zones, keyboard combos.</div>
+        </div>
+        <div class="mt-3"><span class="etag etag-blue">MouseActions</span><span class="etag etag-blue">KeyActions</span></div>
+        <div class="status status-info mt-3" style="font-size:0.75rem;">→ MouseActions full coverage</div>
+      </a>
+
+      <a href="alerts.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🔔</div>
+          <div class="card-title">Alerts &amp; Modals</div>
+          <div class="card-desc">Immediate alert/confirm/prompt, 3-second delayed dialogs, DOM modal with focus trap, nested modals.</div>
+        </div>
+        <div class="mt-3"><span class="etag">UnhandledAlertException</span><span class="etag">NoAlertPresentException</span></div>
+        <div class="status status-error mt-3" style="font-size:0.75rem;">→ AlertActions full coverage</div>
+      </a>
+
+      <a href="navigation.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🧭</div>
+          <div class="card-title">Navigation</div>
+          <div class="card-desc">Back/Forward history traps, URL manipulation, page refresh with state loss, title &amp; URL wait assertions.</div>
+        </div>
+        <div class="mt-3"><span class="etag etag-amber">NavigationActions</span><span class="etag etag-amber">WaitActions</span></div>
+        <div class="status status-warn mt-3" style="font-size:0.75rem;">→ NavigationActions coverage</div>
+      </a>
+
+      <a href="cookies.html" class="card" style="text-decoration:none;cursor:pointer;">
+        <div class="card-header">
+          <div style="font-size:2rem;margin-bottom:10px;">🍪</div>
+          <div class="card-title">Cookies &amp; Storage</div>
+          <div class="card-desc">Add, delete, read, clear cookies. Secure, HttpOnly, SameSite variations. LocalStorage and SessionStorage.</div>
+        </div>
+        <div class="mt-3"><span class="etag etag-amber">CookieActions</span></div>
+        <div class="status status-warn mt-3" style="font-size:0.75rem;">→ CookieActions full coverage</div>
+      </a>
+
+    </div>
+
+    <!-- Quick Reference Table -->
+    <div class="mt-6 card">
+      <div class="card-title" style="margin-bottom:16px;">📋 Element ID Reference — Quick Locator Map</div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead><tr><th>Page</th><th>Element ID</th><th>Type</th><th>Tests</th></tr></thead>
+          <tbody>
+            <tr><td><code>waits.html</code></td><td><code>trigger-spinner-btn</code></td><td>button</td><td>WaitActions.waitForElementPresence after 5s injection</td></tr>
+            <tr><td><code>waits.html</code></td><td><code>injected-form</code></td><td>form</td><td>waitForElementToBeVisible, waitForTextToBePresentInElement</td></tr>
+            <tr><td><code>waits.html</code></td><td><code>delayed-el-1/2/3</code></td><td>div</td><td>waitForElementToBeVisible (random 2-7s)</td></tr>
+            <tr><td><code>waits.html</code></td><td><code>polling-counter</code></td><td>div</td><td>waitForTextToBePresentInElement (text="DONE")</td></tr>
+            <tr><td><code>waits.html</code></td><td><code>lazy-image</code></td><td>img</td><td>waitForElementAttributeToBe (src!='')</td></tr>
+            <tr><td><code>state.html</code></td><td><code>covered-btn</code></td><td>button</td><td>ElementClickInterceptedException / z-index overlay</td></tr>
+            <tr><td><code>state.html</code></td><td><code>disabled-input</code></td><td>input</td><td>InvalidElementStateException when disabled</td></tr>
+            <tr><td><code>state.html</code></td><td><code>offscreen-element</code></td><td>div</td><td>ElementNotInteractableException (left:-9999px)</td></tr>
+            <tr><td><code>stale.html</code></td><td><code>stale-tbody</code></td><td>tbody</td><td>StaleElementReferenceException on refresh</td></tr>
+            <tr><td><code>stale.html</code></td><td><code>shadow-host</code></td><td>div</td><td>Open shadow DOM — shadowRoot access</td></tr>
+            <tr><td><code>frames.html</code></td><td><code>dynamic-iframe</code></td><td>iframe</td><td>NoSuchFrameException before 3s, FrameActions after</td></tr>
+            <tr><td><code>frames.html</code></td><td><code>iframe-username</code></td><td>input</td><td>Inside iframe — switchTo().frame() required</td></tr>
+            <tr><td><code>forms.html</code></td><td><code>file-upload</code></td><td>input[file]</td><td>JavaScriptActions.uploadFileUsingJS</td></tr>
+            <tr><td><code>forms.html</code></td><td><code>native-select</code></td><td>select</td><td>SelectActions all methods</td></tr>
+            <tr><td><code>mouse.html</code></td><td><code>hover-menu-trigger</code></td><td>div</td><td>MouseActions.hoverOverElement</td></tr>
+            <tr><td><code>mouse.html</code></td><td><code>dbl-click-target</code></td><td>div</td><td>MouseActions.doubleClick</td></tr>
+            <tr><td><code>mouse.html</code></td><td><code>right-click-target</code></td><td>div</td><td>MouseActions.rightClick</td></tr>
+            <tr><td><code>mouse.html</code></td><td><code>drag-source</code></td><td>div</td><td>MouseActions.dragAndDrop</td></tr>
+            <tr><td><code>alerts.html</code></td><td><code>trigger-alert-btn</code></td><td>button</td><td>AlertActions.accept / getText</td></tr>
+            <tr><td><code>alerts.html</code></td><td><code>trigger-delayed-alert-btn</code></td><td>button</td><td>WaitActions.waitForAlertPresence (3s delay)</td></tr>
+            <tr><td><code>cookies.html</code></td><td><code>add-cookie-btn</code></td><td>button</td><td>CookieActions.addCookie</td></tr>
+            <tr><td><code>navigation.html</code></td><td><code>navigate-to-btn</code></td><td>button</td><td>NavigationActions.navigateToUrl</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <strong>Ellithium</strong> Testing Arena &mdash; 9 pages &bull; 60+ exception traps &bull; Zero mocks &bull; Real browser mechanics
+  </footer>
+</div>
+<script src="_shared.js"></script>
+</body>
+</html>

@@ -28,7 +28,7 @@ public final class Tier2EnsembleHealer implements HealingTier {
         if (EnsembleHealer.isAvailable()) {
             return EnsembleHealer.tryEnsembleHeal(request.driver(), request.brokenLocator(),
                     request.actionType(), request.callerMethod(), request.fieldName(),
-                    request.locatorValue(), request.baseline());
+                    request.locatorValue(), request.baseline(), request.hints());
         }
         WebElement el = SemanticLocatorResolver.trySemanticHeal(request.driver(),
                 request.callerMethod(), request.fieldName(),

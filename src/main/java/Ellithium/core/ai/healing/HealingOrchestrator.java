@@ -78,6 +78,7 @@ public final class HealingOrchestrator implements ElementHealingPort {
         for (HealingTier tier : tiers) {
             if (!tier.isAvailable()) continue;
 
+            HealingTelemetryStore.markAttemptStart();
             HealOutcome raw;
             try {
                 raw = tier.heal(request);
@@ -92,7 +93,17 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 Reporter.log("[TIER " + tier.order() + "] cause: "
                         + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
                         LogLevel.DEBUG);
+                if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+                    HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(),
+                            null, 0.0, false, null, null, "backstop-exception");
+                }
                 continue;
+            }
+            // Structural backstop: guarantees a minimum telemetry entry for every tier attempted,
+            // even if the tier's own internal code path skips record() on some exit.
+            if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+                HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(), null, 0.0,
+                        raw != null && raw.element() != null, null, null, "backstop");
             }
             if (raw == null || raw.element() == null) continue;
 

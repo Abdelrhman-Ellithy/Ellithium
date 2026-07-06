@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stale Element &amp; Shadow DOM — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    #shadow-host {
+      background:linear-gradient(135deg,rgba(139,92,246,0.06),rgba(236,72,153,0.04));
+      border:1px dashed var(--accent-violet);
+      border-radius:var(--radius-md); padding:1rem; min-height:80px;
+    }
+    .stale-badge {
+      display:inline-block; font-size:0.68rem; font-weight:700;
+      padding:1px 8px; border-radius:99px; margin-left:4px;
+    }
+    .stale-new   { background:rgba(16,185,129,0.15); color:var(--accent-green); border:1px solid rgba(16,185,129,0.3); }
+    .stale-stale { background:rgba(239,68,68,0.15);  color:var(--accent-red);   border:1px solid rgba(239,68,68,0.3); }
+    .flash-row { animation:flashRow 0.5s ease; }
+    @keyframes flashRow { 0%{background:rgba(59,130,246,0.2)} 100%{background:transparent} }
+    .dom-tree {
+      background:var(--bg-primary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:10px 14px;
+      font-family:'Courier New',monospace; font-size:0.75rem;
+      color:var(--text-secondary); min-height:60px;
+    }
+    .tree-el { color:var(--accent-cyan); }
+    .tree-attr { color:var(--accent-amber); }
+    .tree-val  { color:var(--accent-green); }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Stale &amp; Shadow DOM</div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link active" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);">♻</div>
+      <div>
+        <h1 class="page-title">Stale Element &amp; Shadow DOM Traps</h1>
+        <p class="page-subtitle">Full DOM destruction/recreation on refresh, open Shadow Root with content replacement that detaches references, nested shadow DOM piercing, and MutationObserver-based detection. Every refresh here creates a real <code>StaleElementReferenceException</code>.</p>
+        <div class="mt-2">
+          <span class="etag">StaleElementReferenceException</span>
+          <span class="etag">DetachedShadowRootException</span>
+          <span class="etag etag-violet">waitForElementStaleness</span>
+          <span class="etag etag-violet">InteractionRecovery.recoverContext</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stale Table -->
+    <div class="card mb-6" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <div class="card-title">📊 Dynamic Data Table — Full tbody Destruction on Refresh</div>
+        <div class="card-desc">Every click of Refresh Data calls <code>tbody.parentNode.removeChild(tbody)</code> and creates a brand-new <code>&lt;tbody&gt;</code>. Any element reference obtained before the refresh is now stale. <code>StaleElementReferenceException</code> is guaranteed if you reuse old refs without re-fetching. Auto-refresh every 2s pushes the challenge further.</div>
+      </div>
+      <div class="row gap-2 mt-3">
+        <button id="refresh-table-btn" data-id="refresh-table-btn" class="btn btn-blue" onclick="refreshTable()">🔄 Refresh Data (destroys tbody)</button>
+        <button id="auto-refresh-btn"  data-id="auto-refresh-btn"  class="btn btn-red btn-sm" onclick="startAutoRefresh()">⚡ Auto-Refresh Every 2s</button>
+        <button id="stop-auto-refresh-btn" data-id="stop-auto-refresh-btn" class="btn btn-ghost btn-sm" onclick="stopAutoRefresh()" style="display:none;">⏹ Stop Auto</button>
+        <span id="refresh-count-badge" class="badge badge-blue" style="align-self:center;">Refreshes: 0</span>
+      </div>
+      <div class="tbl-wrap mt-3">
+        <table class="data-table" id="stale-table">
+          <thead>
+            <tr>
+              <th>Agent ID</th><th>Name</th><th>Endpoint</th><th>Latency</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stale-tbody" data-id="stale-tbody">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="stale-status" class="status status-info mt-2"></div>
+    </div>
+
+    <div class="grid grid-2">
+
+      <!-- Shadow DOM -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🌑 Open Shadow DOM — Content Replacement Trap</div>
+          <div class="card-desc">A Web Component with <code>mode:'open'</code>. Clicking the button inside the shadow root replaces the <em>entire</em> shadow root innerHTML, detaching all previously referenced shadow nodes. Access via <code>element.shadowRoot</code> (JS) or <code>driver.executeScript("return arguments[0].shadowRoot", host)</code>.</div>
+        </div>
+        <div id="shadow-host" data-id="shadow-host" class="mt-3"></div>
+        <div class="row gap-2 mt-3">
+          <button id="reset-shadow-btn" data-id="reset-shadow-btn" class="btn btn-ghost btn-sm" onclick="resetShadow()">↺ Reset Shadow Root</button>
+          <button id="add-nested-shadow-btn" data-id="add-nested-shadow-btn" class="btn btn-violet btn-sm" onclick="addNestedShadow()">🪆 Add Nested Shadow</button>
+        </div>
+        <div id="shadow-status" class="status status-info mt-2">Shadow DOM generation 1 active</div>
+      </div>
+
+      <!-- DOM Observer / staleness detection -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔬 MutationObserver — DOM Change Log</div>
+          <div class="card-desc">A MutationObserver watches the table for childList changes. Each tbody destruction/creation is logged here. Use this to confirm when staleness is triggered.</div>
+        </div>
+        <div class="mt-3">
+          <div class="row gap-2 mb-4" style="margin-bottom:10px;">
+            <button class="btn btn-ghost btn-sm" onclick="ArenaLog.clear('mutation-log')">🗑 Clear Log</button>
+          </div>
+          <div id="mutation-log" class="console-box" style="height:220px;">// Waiting for DOM mutations…
+          </div>
+        </div>
+      </div>
+
+      <!-- Stale ref demo -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚠ Stale Reference Demo</div>
+          <div class="card-desc">Click "Capture Row" to save a reference to row 1. Then click "Refresh Table". Then click "Access Stale Ref" to simulate what happens when you use the old reference — it mirrors a <code>StaleElementReferenceException</code>.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <button id="capture-ref-btn" data-id="capture-ref-btn" class="btn btn-blue" onclick="captureRef()">📌 Capture Row 1 Reference</button>
+          <button id="access-stale-btn" data-id="access-stale-btn" class="btn btn-red" onclick="accessStaleRef()" disabled>💥 Access Stale Reference</button>
+        </div>
+        <div id="stale-ref-status" class="status status-info mt-3">No reference captured yet</div>
+        <div id="dom-tree" class="dom-tree mt-3" style="display:none;"></div>
+      </div>
+
+      <!-- waitForStaleness -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🕐 waitForElementStaleness Target</div>
+          <div class="card-desc">This element will be replaced (detached+reattached) 3 seconds after clicking. Tests <code>WaitActions.waitForElementStaleness(element)</code>. After the element is detached, <code>isEnabled()</code> throws <code>StaleElementReferenceException</code>.</div>
+        </div>
+        <div class="mt-3">
+          <div id="staleness-target" data-id="staleness-target"
+            style="padding:16px;border:2px solid var(--border-bright);border-radius:8px;text-align:center;font-weight:700;color:var(--text-secondary);">
+            I will become stale in 3s (after button click)
+          </div>
+          <div class="row gap-2 mt-3">
+            <button id="trigger-staleness-btn" data-id="trigger-staleness-btn" class="btn btn-amber" onclick="triggerStaleness()">⏱ Trigger Staleness (3s)</button>
+          </div>
+          <div id="staleness-status" class="status status-info mt-2">Element not yet stale</div>
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+  </main>
+
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Stale Element &amp; Shadow DOM</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+/* ── Stale Table ── */
+var tableAgents = [
+  {id:'AGT-001',name:'Alpha Crawler',   ep:'/api/v1/alpha',   status:'active'},
+  {id:'AGT-002',name:'Beta Probe',      ep:'/api/v1/beta',    status:'idle'},
+  {id:'AGT-003',name:'Gamma Sentinel',  ep:'/api/v1/gamma',   status:'active'},
+  {id:'AGT-004',name:'Delta Harvester', ep:'/api/v1/delta',   status:'offline'},
+  {id:'AGT-005',name:'Epsilon Watcher', ep:'/api/v1/epsilon', status:'idle'},
+  {id:'AGT-006',name:'Zeta Scanner',    ep:'/api/v1/zeta',    status:'active'},
+];
+var refreshCount = 0;
+var autoRefreshTimer = null;
+
+function refreshTable() {
+  refreshCount++;
+  var table = document.getElementById('stale-table');
+  var oldTbody = document.getElementById('stale-tbody');
+  if (oldTbody) table.removeChild(oldTbody); // DESTROYS all row refs
+
+  var tbody = document.createElement('tbody');
+  tbody.id = 'stale-tbody';
+  tbody.dataset.id = 'stale-tbody';
+  tbody.dataset.generation = refreshCount;
+  tbody.dataset.createdAt = ts();
+
+  tableAgents.forEach(function(a, i) {
+    var lat  = Math.floor(Math.random()*500)+5;
+    var bcls = a.status==='active'?'badge-green':a.status==='idle'?'badge-amber':'badge-red';
+    var tr = document.createElement('tr');
+    tr.id = 'table-row-' + i;
+    tr.dataset.id = 'table-row-' + i;
+    tr.dataset.agentId = a.id;
+    tr.dataset.generation = refreshCount;
+    tr.classList.add('flash-row');
+    tr.innerHTML = [
+      '<td><code>' + a.id + '</code></td>',
+      '<td>' + a.name + '</td>',
+      '<td><code>' + a.ep + '</code></td>',
+      '<td id="lat-' + i + '" data-id="lat-' + i + '">' + lat + 'ms</td>',
+      '<td><span class="badge ' + bcls + '">' + a.status + '</span></td>',
+      '<td><button class="btn btn-ghost btn-xs" data-id="ping-btn-' + i + '" onclick="pingAgent(' + i + ',this)">Ping</button></td>'
+    ].join('');
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  document.getElementById('refresh-count-badge').textContent = 'Refreshes: ' + refreshCount;
+  setStatus('stale-status','info','🔄 tbody rebuilt [gen ' + refreshCount + '] at ' + ts() + ' — old refs are stale');
+  ArenaLog.info('mutation-log', 'tbody DESTROYED+RECREATED (generation ' + refreshCount + '). Old element refs are stale.');
+}
+
+function pingAgent(i, btn) {
+  btn.disabled = true; btn.textContent = '⏳…';
+  setTimeout(function(){
+    var lat = Math.floor(Math.random()*300)+10;
+    btn.textContent = '✅ ' + lat + 'ms';
+    btn.disabled = false;
+    var latEl = document.getElementById('lat-' + i);
+    if (latEl) latEl.textContent = lat + 'ms';
+  }, randInt(500, 1800));
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) return;
+  document.getElementById('auto-refresh-btn').style.display = 'none';
+  document.getElementById('stop-auto-refresh-btn').style.display = 'inline-flex';
+  refreshTable();
+  autoRefreshTimer = setInterval(refreshTable, 2000);
+}
+function stopAutoRefresh() {
+  clearInterval(autoRefreshTimer); autoRefreshTimer = null;
+  document.getElementById('auto-refresh-btn').style.display = 'inline-flex';
+  document.getElementById('stop-auto-refresh-btn').style.display = 'none';
+}
+
+/* MutationObserver */
+document.addEventListener('DOMContentLoaded', function(){
+  refreshTable();
+  var observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if (m.type==='childList') {
+        m.removedNodes.forEach(function(n){ if(n.tagName==='TBODY') ArenaLog.warn('mutation-log','REMOVED: <tbody> — ' + m.removedNodes.length + ' node(s) detached'); });
+        m.addedNodes.forEach(function(n){   if(n.tagName==='TBODY') ArenaLog.ok('mutation-log','ADDED: new <tbody id="' + n.id + '"> gen=' + n.dataset.generation); });
+      }
+    });
+  });
+  var table = document.getElementById('stale-table');
+  if (table) observer.observe(table, {childList:true, subtree:true});
+});
+
+/* ── Shadow DOM ── */
+var shadowRoot = null;
+var shadowGen  = 0;
+
+function initShadow() {
+  var host = document.getElementById('shadow-host');
+  if (!host.shadowRoot) {
+    shadowRoot = host.attachShadow({mode:'open'});
+  } else {
+    shadowRoot = host.shadowRoot;
+  }
+  renderShadow(++shadowGen);
+}
+
+function renderShadow(gen) {
+  shadowRoot.innerHTML = [
+    '<style>',
+    ':host{display:block;font-family:system-ui,sans-serif;}',
+    '.s-box{padding:14px;} .s-badge{font-size:0.68rem;font-weight:700;padding:2px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#8b5cf6;border-radius:99px;margin-bottom:10px;display:inline-block;}',
+    '.s-title{color:#8b5cf6;font-weight:700;font-size:0.9rem;margin-bottom:6px;}',
+    '.s-desc{color:#94a3b8;font-size:0.78rem;margin-bottom:12px;}',
+    '.s-input{width:100%;padding:8px 12px;background:#0f1526;border:1px solid #1e2d4a;border-radius:6px;color:#e2e8f0;font-size:0.82rem;margin-bottom:10px;}',
+    '.s-btn{padding:8px 16px;border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;font-weight:600;margin-right:8px;}',
+    '.s-btn-danger{background:#ef4444;color:#fff;} .s-btn-normal{background:#8b5cf6;color:#fff;}',
+    '.s-status{font-family:monospace;font-size:0.73rem;color:#94a3b8;margin-top:8px;}',
+    '</style>',
+    '<div class="s-box">',
+    '  <div class="s-badge">Shadow DOM — Generation ' + gen + ' | mode:open</div>',
+    '  <div class="s-title">🌑 Open Shadow Root</div>',
+    '  <div class="s-desc">Pierce via: <code>host.shadowRoot.querySelector("#shadow-input")</code><br/>or JS: <code>driver.executeScript("return arguments[0].shadowRoot", host)</code></div>',
+    '  <input id="shadow-input" type="text" class="s-input" placeholder="Shadow DOM input — pierce required" />',
+    '  <div>',
+    '    <button id="shadow-replace-btn" class="s-btn s-btn-danger" onclick="replaceShadow()">💥 Replace Shadow Root (detaches all refs)</button>',
+    '    <button id="shadow-click-btn" class="s-btn s-btn-normal" onclick="shadowNormalClick()">✅ Normal Shadow Click</button>',
+    '  </div>',
+    '  <div class="s-status" id="shadow-inner-status">Gen ' + gen + ' | Ready</div>',
+    '</div>'
+  ].join('');
+}
+
+function replaceShadow() {
+  renderShadow(++shadowGen);
+  setStatus('shadow-status','warn','💥 Shadow root replaced — gen ' + shadowGen + '. All prior shadowRoot references are detached (DetachedShadowRootException).');
+  ArenaLog.warn('mutation-log','Shadow root REPLACED → generation ' + shadowGen + '. Old node refs detached.');
+}
+function shadowNormalClick() {
+  var st = shadowRoot ? shadowRoot.getElementById('shadow-inner-status') : null;
+  if (st) st.textContent = '✅ Clicked at ' + ts();
+  setStatus('shadow-status','ok','✅ Shadow button clicked successfully (gen ' + shadowGen + ')');
+}
+function resetShadow() {
+  shadowGen = 0;
+  renderShadow(++shadowGen);
+  setStatus('shadow-status','info','↺ Shadow root reset to generation 1');
+}
+function addNestedShadow() {
+  var existing = shadowRoot.querySelector('#nested-shadow-host');
+  if (existing) { existing.remove(); setStatus('shadow-status','info','Nested shadow removed'); return; }
+  var ns = document.createElement('div');
+  ns.id = 'nested-shadow-host';
+  var cont = shadowRoot.querySelector('.s-box');
+  if (cont) cont.appendChild(ns);
+  var nestedRoot = ns.attachShadow({mode:'open'});
+  nestedRoot.innerHTML = '<style>:host{display:block;}.n{padding:10px;background:rgba(236,72,153,0.1);border:1px solid rgba(236,72,153,0.3);border-radius:6px;color:#ec4899;font-size:0.78rem;font-weight:600;margin-top:10px;}</style><div class="n">🪆 Nested Shadow DOM<br/><small>Requires: host.shadowRoot.querySelector("#nested-shadow-host").shadowRoot</small><br/><button id="nested-btn" data-id="nested-btn" style="margin-top:8px;padding:4px 10px;background:#ec4899;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.72rem;">Nested Click</button></div>';
+  setStatus('shadow-status','info','🪆 Nested shadow added — two-level piercing required.');
+}
+
+/* ── Stale Ref Demo ── */
+var capturedRef = null;
+var capturedGen = -1;
+function captureRef() {
+  var tbody = document.getElementById('stale-tbody');
+  capturedRef = tbody ? tbody.querySelector('tr') : null;
+  capturedGen = tbody ? parseInt(tbody.dataset.generation) : -1;
+  var btn = document.getElementById('access-stale-btn');
+  btn.disabled = false;
+  setStatus('stale-ref-status','ok','📌 Row 1 ref captured (gen ' + capturedGen + '). Now refresh the table, then click Access Stale Ref.');
+  var tree = document.getElementById('dom-tree');
+  tree.style.display = 'block';
+  tree.innerHTML = capturedRef
+    ? '<span class="tree-el">&lt;tr</span> <span class="tree-attr">id</span>=<span class="tree-val">"' + capturedRef.id + '"</span> <span class="tree-attr">data-generation</span>=<span class="tree-val">"' + capturedGen + '"</span><span class="tree-el">&gt;</span>\n  <span class="tree-el">&lt;td&gt;</span><span class="tree-val">' + (capturedRef.dataset.agentId||'?') + '</span><span class="tree-el">&lt;/td&gt;</span>\n<span class="tree-el">&lt;/tr&gt;</span>'
+    : 'No row found';
+}
+function accessStaleRef() {
+  if (!capturedRef) { setStatus('stale-ref-status','error','No ref captured'); return; }
+  var currGen = parseInt((document.getElementById('stale-tbody')||{dataset:{generation:-99}}).dataset.generation);
+  if (currGen !== capturedGen) {
+    setStatus('stale-ref-status','error','⚠ STALE! Captured gen=' + capturedGen + ', current gen=' + currGen + '. → StaleElementReferenceException would be thrown!');
+    ArenaLog.err('mutation-log','StaleElementReferenceException: element from gen ' + capturedGen + ' accessed after gen ' + currGen + ' rebuild');
+  } else {
+    setStatus('stale-ref-status','ok','✅ Reference still valid (same generation ' + capturedGen + '). No stale exception.');
+  }
+}
+
+/* ── waitForStaleness target ── */
+function triggerStaleness() {
+  var btn = document.getElementById('trigger-staleness-btn');
+  btn.disabled = true;
+  setStatus('staleness-status','warn','⏳ Element detaches in 3s — waitForElementStaleness(element) should detect.');
+  setTimeout(function(){
+    var el = document.getElementById('staleness-target');
+    var parent = el.parentNode;
+    parent.removeChild(el);
+    setStatus('staleness-status','error','💥 Element detached from DOM at ' + ts() + '. StaleElementReferenceException on any subsequent el.isEnabled() call.');
+    ArenaLog.warn('mutation-log','#staleness-target REMOVED from DOM → element is now stale');
+    setTimeout(function(){
+      var newEl = document.createElement('div');
+      newEl.id = 'staleness-target';
+      newEl.dataset.id = 'staleness-target';
+      newEl.dataset.regeneratedAt = ts();
+      newEl.style.cssText = 'padding:16px;border:2px solid var(--accent-green);border-radius:8px;text-align:center;font-weight:700;color:var(--accent-green);';
+      newEl.textContent = '🔄 Regenerated at ' + ts() + ' — this is a NEW element';
+      parent.appendChild(newEl);
+      btn.disabled = false;
+      setStatus('staleness-status','ok','✅ New element reinjected. Old ref is stale, this is a fresh node.');
+      ArenaLog.ok('mutation-log','NEW #staleness-target injected — old stale ref is still detached');
+    }, 1500);
+  }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', initShadow);
+</script>
+</body>
+</html>

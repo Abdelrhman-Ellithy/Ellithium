@@ -51,6 +51,23 @@ public class HealingTelemetryStore {
     private static final ThreadLocal<String> CURRENT_TEST = new ThreadLocal<>();
     private static final String CLEARED = "";
 
+    // Per-thread backstop marker: HealingOrchestrator clears this before invoking a tier and checks
+    // it after, so a tier whose internal code path forgets to call record() on some exit still gets
+    // a minimum telemetry entry — closing the "silent Tier-2 failure" class of bug structurally
+    // instead of relying on every early-return in every tier remembering to record. ThreadLocal is
+    // safe here because one thread only ever runs one heal() attempt at a time (never nested).
+    private static final ThreadLocal<Boolean> RECORDED_THIS_ATTEMPT = ThreadLocal.withInitial(() -> false);
+
+    /** Call before invoking a tier's heal() so a later {@link #wasRecordedSinceMark()} can detect it. */
+    public static void markAttemptStart() {
+        RECORDED_THIS_ATTEMPT.set(false);
+    }
+
+    /** True if {@code record(...)} was called on this thread since the last {@link #markAttemptStart()}. */
+    public static boolean wasRecordedSinceMark() {
+        return RECORDED_THIS_ATTEMPT.get();
+    }
+
     /** Sets the test identifier for the current thread so subsequent heals are attributed to it. */
     public static void setCurrentTest(String testId) {
         CURRENT_TEST.set(testId == null ? CLEARED : testId);
@@ -72,7 +89,7 @@ public class HealingTelemetryStore {
      */
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success) {
-        record(tier, brokenLocator, healedLocator, score, success, null, null);
+        record(tier, brokenLocator, healedLocator, score, success, null, null, null);
     }
 
     /**
@@ -83,6 +100,18 @@ public class HealingTelemetryStore {
      */
     public static void record(int tier, String brokenLocator, String healedLocator,
                                double score, boolean success, String query, String category) {
+        record(tier, brokenLocator, healedLocator, score, success, query, category, null);
+    }
+
+    /**
+     * As the 7-arg overload, additionally tagging WHICH scoring path within the tier produced this
+     * record (e.g. Tier 2's {@code "shortlist-single"} / {@code "shortlist-clear"} / {@code "full-scan"}
+     * / {@code "backstop"}) as a structured field, instead of encoding it as a suffix on {@code query}.
+     */
+    public static void record(int tier, String brokenLocator, String healedLocator,
+                               double score, boolean success, String query, String category,
+                               String path) {
+        RECORDED_THIS_ATTEMPT.set(true);
         int max = Ellithium.core.ai.config.AIConfigLoader.getTelemetryMaxRecords();
         String manual = CURRENT_TEST.get();
         String testId;
@@ -94,7 +123,7 @@ public class HealingTelemetryStore {
             testId = manual;
         }
         TelemetryRecord rec = new TelemetryRecord(tier, brokenLocator, healedLocator, score, success,
-                query, category, testId);
+                query, category, testId, path);
         records.add(rec);
         if (rec.testId != null) {
             byTestId.computeIfAbsent(rec.testId,
@@ -276,9 +305,11 @@ public class HealingTelemetryStore {
         public volatile boolean suspectWrongHeal; // set by markTestFailed when the owning test failed
         public final String threadName;
         public final String timestamp;
+        public final String path;            // which scoring path within the tier produced this record
+                                              // (e.g. "shortlist-single", "full-scan", "backstop"), may be null
 
         TelemetryRecord(int tier, String brokenLocator, String healedLocator, double score,
-                        boolean success, String query, String category, String testId) {
+                        boolean success, String query, String category, String testId, String path) {
             this.tier = tier;
             this.brokenLocator = brokenLocator;
             this.healedLocator = healedLocator;
@@ -290,6 +321,7 @@ public class HealingTelemetryStore {
             this.suspectWrongHeal = false;
             this.threadName = Thread.currentThread().getName();
             this.timestamp = Instant.now().toString();
+            this.path = path;
         }
     }
 

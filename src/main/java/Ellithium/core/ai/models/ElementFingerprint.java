@@ -204,7 +204,6 @@ public class ElementFingerprint {
                     batchedOk = true;
                 }
             } catch (Exception ignored) {
-                // JS not available or failed — fall through to sequential
             }
         }
 
@@ -369,7 +368,7 @@ public class ElementFingerprint {
                 dataDynamicMaxContrib += 30;
                 if (e.getValue().equals(safeGetAttribute(candidate, e.getKey()))) score += 30;
             }
-            dynamicMax += Math.min(dataDynamicMaxContrib, 150); // group cap: max 150 pts
+            dynamicMax += Math.min(dataDynamicMaxContrib, 150);
         }
 
         // id: 25 pts exact, 12 pts token-Jaccard ≥ 0.5
@@ -801,7 +800,7 @@ public class ElementFingerprint {
         if (ta.size() == tb.size() && ta.containsAll(tb)) return 1.0;
         int inter = 0;
         for (String t : ta) if (tb.contains(t)) inter++;
-        return inter / (double) (ta.size() + tb.size() - inter);   // |∩| / |∪| without extra sets
+        return inter / (double) (ta.size() + tb.size() - inter);
     }
 
     private static java.util.Set<String> tokenSet(String s) {
@@ -871,6 +870,11 @@ public class ElementFingerprint {
         return s != null && !s.isBlank();
     }
 
+    /** Escapes a value for interpolation inside a single-quoted CSS attribute selector. */
+    private static String cssEsc(String v) {
+        return v.replace("\\", "\\\\").replace("'", "\\'");
+    }
+
     /**
      * Reconstructs the best possible By locator for a given WebElement.
      * Priority: id > name > data-testid > css class > xpath.
@@ -895,16 +899,16 @@ public class ElementFingerprint {
             if (isNonBlank(name)) return By.name(name);
 
             String dataTestId = safeGetAttribute(element, "data-testid");
-            if (isNonBlank(dataTestId)) return By.cssSelector("[data-testid='" + dataTestId + "']");
+            if (isNonBlank(dataTestId)) return By.cssSelector("[data-testid='" + cssEsc(dataTestId) + "']");
             String dataTest = safeGetAttribute(element, "data-test");
-            if (isNonBlank(dataTest)) return By.cssSelector("[data-test='" + dataTest + "']");
+            if (isNonBlank(dataTest)) return By.cssSelector("[data-test='" + cssEsc(dataTest) + "']");
             String dataCy = safeGetAttribute(element, "data-cy");
-            if (isNonBlank(dataCy)) return By.cssSelector("[data-cy='" + dataCy + "']");
+            if (isNonBlank(dataCy)) return By.cssSelector("[data-cy='" + cssEsc(dataCy) + "']");
             String dataQa = safeGetAttribute(element, "data-qa");
-            if (isNonBlank(dataQa)) return By.cssSelector("[data-qa='" + dataQa + "']");
+            if (isNonBlank(dataQa)) return By.cssSelector("[data-qa='" + cssEsc(dataQa) + "']");
 
             String ariaLabel = safeGetAttribute(element, "aria-label");
-            if (isNonBlank(ariaLabel)) return By.cssSelector("[aria-label='" + ariaLabel + "']");
+            if (isNonBlank(ariaLabel)) return By.cssSelector("[aria-label='" + cssEsc(ariaLabel) + "']");
 
             // Native widget classes are case-sensitive (android.widget.Button, XCUIElementTypeButton),
             // so read the RAW tag — never the lowercased web tag — and emit xpath-by-class

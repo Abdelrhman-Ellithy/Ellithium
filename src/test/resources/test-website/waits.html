@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wait &amp; Rendering Traps — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .spinner-overlay {
+      display:none; position:fixed; inset:0; z-index:9000;
+      background:rgba(10,14,26,0.9); backdrop-filter:blur(8px);
+      flex-direction:column; align-items:center; justify-content:center; gap:20px;
+    }
+    .spinner-overlay.active { display:flex; }
+    #injected-form {
+      background:linear-gradient(135deg,rgba(59,130,246,0.05),rgba(139,92,246,0.05));
+      border:1px solid var(--border-bright); border-radius:var(--radius-md); padding:1.2rem; margin-top:12px;
+    }
+    .delayed-pill {
+      padding:9px 16px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600;
+      background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); color:var(--accent-cyan);
+      display:none; align-items:center; gap:8px; margin-top:6px;
+    }
+    .delayed-pill.visible { display:flex; animation:fadeUp 0.4s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .attr-box {
+      background:var(--bg-primary); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:12px; font-family:'Courier New',monospace; font-size:0.78rem; margin-top:8px;
+    }
+    .attr-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(30,45,74,0.4); }
+    .attr-row:last-child { border-bottom:none; }
+    .attr-key { color:var(--accent-amber); }
+    .attr-val { color:var(--text-secondary); }
+    .counter-display {
+      font-size:3rem; font-weight:900; color:var(--accent-blue);
+      font-family:'Courier New',monospace; text-align:center; padding:20px;
+      background:var(--bg-primary); border:1px solid var(--border); border-radius:var(--radius-sm);
+      transition:color 0.3s ease;
+    }
+    .counter-display.done { color:var(--accent-green); animation:glow-pulse 0.6s ease; }
+    @keyframes glow-pulse { 0%,100%{box-shadow:none} 50%{box-shadow:var(--glow-green)} }
+    .element-group { display:flex; flex-direction:column; gap:8px; }
+    .wait-progress { height:4px; background:var(--border); border-radius:99px; overflow:hidden; margin-top:8px; }
+    .wait-progress-fill { height:100%; background:var(--accent-blue); border-radius:99px; width:0%; transition:width 1s linear; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- Spinner Overlay -->
+  <div class="spinner-overlay" id="global-spinner">
+    <div class="spinner-ring spinner-ring-lg"></div>
+    <div style="color:var(--text-secondary);font-size:0.9rem;">DOM injection in progress…</div>
+    <div style="color:var(--accent-blue);font-size:1.8rem;font-weight:900;font-family:'Courier New',monospace;" id="spinner-countdown">5</div>
+    <div class="wait-progress" style="width:280px;"><div class="wait-progress-fill" id="spinner-progress"></div></div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Wait &amp; Rendering Module</div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link active" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);">⏳</div>
+      <div>
+        <h1 class="page-title">Wait &amp; Rendering Traps</h1>
+        <p class="page-subtitle">Real browser wait scenarios: spinner-blocked DOM injection, random visibility delays, attribute polling, element counts, text polling, frame availability, selection states, and lazy image src assignment. Every element here has a real timing challenge.</p>
+        <div class="mt-2">
+          <span class="etag">TimeoutException</span>
+          <span class="etag">NoSuchElementException</span>
+          <span class="etag etag-blue">waitForElementPresence</span>
+          <span class="etag etag-blue">waitForElementToBeVisible</span>
+          <span class="etag etag-blue">waitForElementToBeClickable</span>
+          <span class="etag etag-blue">waitForElementToDisappear</span>
+          <span class="etag etag-blue">waitForTextToBePresentInElement</span>
+          <span class="etag etag-blue">waitForElementAttributeToBe</span>
+          <span class="etag etag-blue">waitForNumberOfElementsToBeMoreThan</span>
+          <span class="etag etag-blue">waitForElementStaleness</span>
+          <span class="etag etag-blue">waitForElementSelectionStateToBe</span>
+          <span class="etag etag-blue">waitForElementToBeEnabled</span>
+          <span class="etag etag-blue">waitForFrameToBeAvailableAndSwitchToIt</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- 1A: Spinner + DOM Injection -->
+      <div class="card span-2">
+        <div class="card-header">
+          <div class="card-title">🔄 5-Second Spinner → DOM Injection</div>
+          <div class="card-desc">Clicking the button shows a full-screen blocking spinner for exactly 5 seconds. Elements like <code>#injected-form</code>, <code>#injected-first-name</code>, <code>#injected-submit-btn</code> do NOT exist in DOM until injection completes. A <code>NoSuchElementException</code> is guaranteed if you don't wait.</div>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button id="trigger-spinner-btn" data-id="trigger-spinner-btn" class="btn btn-blue" onclick="startSpinner()">▶ Trigger 5s Spinner &amp; Inject Form</button>
+          <button id="reset-injection-btn" data-id="reset-injection-btn" class="btn btn-ghost btn-sm" onclick="resetInjection()">↺ Reset</button>
+        </div>
+        <div id="injected-form-container" class="mt-3">
+          <div id="no-form-placeholder" style="padding:20px;color:var(--text-muted);font-size:0.82rem;border:1px dashed var(--border);border-radius:8px;text-align:center;">
+            ⚠ Form does not exist in DOM — trigger spinner first
+          </div>
+        </div>
+        <div id="injection-status" class="status status-info mt-2" style="display:none;"></div>
+      </div>
+
+      <!-- 1B: Delayed Visibility (random) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👁 Delayed Visibility (Random 2–7s)</div>
+          <div class="card-desc">All three elements exist in DOM as <code>display:none</code>. Each becomes visible after a random delay between 2 and 7 seconds. Tests <code>waitForElementToBeVisible</code>.</div>
+        </div>
+        <button id="trigger-delayed-btn" data-id="trigger-delayed-btn" class="btn btn-cyan btn-full mt-3" onclick="triggerDelayed()">▶ Start Random Delay Timers</button>
+        <div class="element-group mt-3">
+          <div id="delayed-el-1" class="delayed-pill" data-id="delayed-el-1">✅ Element Alpha appeared</div>
+          <div id="delayed-el-2" class="delayed-pill" data-id="delayed-el-2">✅ Element Beta appeared</div>
+          <div id="delayed-el-3" class="delayed-pill" data-id="delayed-el-3">✅ Element Gamma appeared</div>
+        </div>
+        <div id="delayed-status" class="status status-info mt-3" style="display:none;"></div>
+      </div>
+
+      <!-- 1C: Text/Counter Polling -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔢 Text Polling Counter (waitForTextToBePresentInElement)</div>
+          <div class="card-desc">Counter increments 1→10, then shows "DONE". Tests <code>waitForTextToBePresentInElement(By.id("polling-counter"), "DONE")</code>.</div>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button id="start-counter-btn" data-id="start-counter-btn" class="btn btn-violet" onclick="startCounter()">▶ Start Counter</button>
+          <button id="reset-counter-btn" class="btn btn-ghost btn-sm" onclick="resetCounter()">↺ Reset</button>
+        </div>
+        <div class="counter-display mt-3" id="polling-counter" data-id="polling-counter">IDLE</div>
+      </div>
+
+      <!-- 1D: Lazy Image src -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🖼 Lazy Image src (waitForElementAttributeToBe)</div>
+          <div class="card-desc">An <code>&lt;img&gt;</code> with empty <code>src</code> attribute gets its src set after 4 seconds. Tests <code>waitForElementAttributeToBe(locator, "src", "...")</code>.</div>
+        </div>
+        <button id="trigger-lazy-btn" data-id="trigger-lazy-btn" class="btn btn-amber btn-full mt-3" onclick="triggerLazy()">▶ Load Image (4s delay)</button>
+        <div style="margin-top:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;height:90px;display:flex;align-items:center;justify-content:center;overflow:hidden;" id="lazy-wrap">
+          <img id="lazy-image" data-id="lazy-image" src="" alt="" style="max-width:100%;max-height:100%;display:none;" />
+          <span id="lazy-placeholder" style="color:var(--text-muted);font-size:0.8rem;">src="" (empty)</span>
+        </div>
+        <div id="lazy-status" class="status status-info mt-2" style="display:none;"></div>
+      </div>
+
+      <!-- 1E: Element Count Thresholds -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔢 Element Count Thresholds</div>
+          <div class="card-desc">Tests <code>waitForNumberOfElementsToBeMoreThan</code>, <code>waitForNumberOfElementsToBeLessThan</code>, and <code>waitForNumberOfElementsToBe</code>. Items appear one-by-one at 1s intervals.</div>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button id="add-items-btn" data-id="add-items-btn" class="btn btn-green btn-sm" onclick="addDynItems()">+ Add Items (1/s)</button>
+          <button id="remove-items-btn" data-id="remove-items-btn" class="btn btn-red btn-sm" onclick="removeDynItems()">− Remove Items (1/s)</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearDynItems()">↺ Clear</button>
+        </div>
+        <div id="dyn-items-container" data-id="dyn-items-container" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;min-height:60px;"></div>
+        <div id="item-count-status" class="status status-info mt-2">Item count: 0</div>
+      </div>
+
+      <!-- 1F: Visibility of All Elements -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👁 Visibility of All Elements (waitForVisibilityOfAllElements)</div>
+          <div class="card-desc">A list of elements hidden one at a time, then each reveals itself after individual delays. Tests <code>waitForVisibilityOfAllElements</code>.</div>
+        </div>
+        <button id="reveal-all-btn" data-id="reveal-all-btn" class="btn btn-blue btn-full mt-3" onclick="revealAll()">▶ Stagger-Reveal All Elements</button>
+        <div id="reveal-container" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+          <div id="reveal-el-0" class="delayed-pill" data-id="reveal-el-0" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:var(--accent-blue);">🔵 Element 0</div>
+          <div id="reveal-el-1" class="delayed-pill" data-id="reveal-el-1" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);color:var(--accent-violet);">🟣 Element 1</div>
+          <div id="reveal-el-2" class="delayed-pill" data-id="reveal-el-2" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:var(--accent-green);">🟢 Element 2</div>
+          <div id="reveal-el-3" class="delayed-pill" data-id="reveal-el-3" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:var(--accent-amber);">🟡 Element 3</div>
+          <div id="reveal-el-4" class="delayed-pill" data-id="reveal-el-4" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--accent-red);">🔴 Element 4</div>
+        </div>
+        <div id="reveal-status" class="status status-info mt-2" style="display:none;"></div>
+      </div>
+
+      <!-- 1G: Selection State Wait -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">☑ Selection State (waitForElementSelectionStateToBe)</div>
+          <div class="card-desc">A checkbox auto-toggles after 3s. Tests <code>waitForElementSelectionStateToBe(locator, true/false)</code> and <code>waitForElementToBeSelected</code>.</div>
+        </div>
+        <div class="mt-3 form-group">
+          <label class="inline-label">
+            <input type="checkbox" id="auto-toggle-cb" data-id="auto-toggle-cb" onchange="cbChanged(this)" />
+            Checkbox (auto-toggles after 3s)
+          </label>
+          <label class="inline-label mt-2">
+            <input type="radio" id="radio-opt-a" name="wait-radio" value="a" data-id="radio-opt-a" onchange="radioChanged('A')" />
+            Radio A (deselected → selected after 4s)
+          </label>
+          <label class="inline-label">
+            <input type="radio" id="radio-opt-b" name="wait-radio" value="b" data-id="radio-opt-b" onchange="radioChanged('B')" />
+            Radio B
+          </label>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button id="start-toggle-cb-btn" data-id="start-toggle-cb-btn" class="btn btn-violet btn-sm" onclick="autoToggleCb()">⏱ Auto-toggle CB in 3s</button>
+          <button id="auto-select-radio-btn" data-id="auto-select-radio-btn" class="btn btn-cyan btn-sm" onclick="autoSelectRadio()">⏱ Auto-select Radio A in 4s</button>
+        </div>
+        <div id="selection-status" class="status status-info mt-2">Awaiting interaction</div>
+      </div>
+
+      <!-- 1H: Enable/Disable Wait -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔓 Enable State (waitForElementToBeEnabled)</div>
+          <div class="card-desc">Button is disabled. After 5s it becomes enabled. Tests <code>waitForElementToBeEnabled</code>. Also tests <code>waitForElementToDisappear</code> for the loading indicator.</div>
+        </div>
+        <div class="mt-3 form-group">
+          <button id="enable-me-btn" data-id="enable-me-btn" class="btn btn-green btn-full" disabled onclick="enableBtnClicked()">🔒 Locked — enables in 5s</button>
+          <div id="enable-spinner" data-id="enable-spinner" class="status status-warn mt-2" style="display:none;">⏳ Loading (disappears when ready)…</div>
+        </div>
+        <button id="trigger-enable-btn" data-id="trigger-enable-btn" class="btn btn-blue btn-full" onclick="triggerEnable()">▶ Start Enable Timer</button>
+        <div id="enable-status" class="status status-info mt-2">Button not yet enabled</div>
+      </div>
+
+      <!-- 1I: Attribute wait -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏷 Attribute Change (waitForElementAttributeContains)</div>
+          <div class="card-desc">The element's <code>data-state</code> and <code>class</code> attributes change after clicking. Tests <code>waitForElementAttributeToBe</code> and <code>waitForElementAttributeContains</code>.</div>
+        </div>
+        <div class="mt-3">
+          <div id="attr-target-el" data-id="attr-target-el" data-state="idle"
+            style="padding:16px;border:2px solid var(--border);border-radius:8px;text-align:center;font-weight:700;transition:all 0.4s ease;color:var(--text-muted);">
+            data-state: idle
+          </div>
+          <div class="attr-box mt-2">
+            <div class="attr-row"><span class="attr-key">data-state</span><span class="attr-val" id="attr-state-display">idle</span></div>
+            <div class="attr-row"><span class="attr-key">class</span><span class="attr-val" id="attr-class-display">—</span></div>
+            <div class="attr-row"><span class="attr-key">aria-disabled</span><span class="attr-val" id="attr-aria-display">false</span></div>
+          </div>
+          <div class="row gap-2 mt-3">
+            <button id="set-attr-loading-btn" data-id="set-attr-loading-btn" class="btn btn-amber btn-sm" onclick="setAttrState('loading','state-loading',true)">→ loading</button>
+            <button id="set-attr-ready-btn"   data-id="set-attr-ready-btn"   class="btn btn-green btn-sm" onclick="setAttrState('ready','state-ready',false)">→ ready</button>
+            <button id="set-attr-error-btn"   data-id="set-attr-error-btn"   class="btn btn-red btn-sm"   onclick="setAttrState('error','state-error',false)">→ error</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+  </main>
+
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Wait &amp; Rendering Module</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+/* ── 1A: Spinner + Injection ── */
+var spinnerInterval = null;
+var spinnerRunning  = false;
+
+function startSpinner() {
+  if (spinnerRunning) return;
+  spinnerRunning = true;
+  var overlay  = document.getElementById('global-spinner');
+  var cdEl     = document.getElementById('spinner-countdown');
+  var progEl   = document.getElementById('spinner-progress');
+  var trigBtn  = document.getElementById('trigger-spinner-btn');
+  var ph       = document.getElementById('no-form-placeholder');
+  var existing = document.getElementById('injected-form');
+  if (existing) existing.remove();
+  if (ph) ph.style.display = 'block';
+  trigBtn.disabled = true;
+  document.getElementById('injection-status').style.display = 'none';
+  overlay.classList.add('active');
+  var secs = 5; cdEl.textContent = secs;
+  progEl.style.width = '0%';
+  spinnerInterval = setInterval(function() {
+    secs--;
+    cdEl.textContent = secs;
+    progEl.style.width = ((5 - secs) / 5 * 100) + '%';
+    if (secs <= 0) {
+      clearInterval(spinnerInterval);
+      overlay.classList.remove('active');
+      doInjectForm();
+      spinnerRunning = false;
+      trigBtn.disabled = false;
+    }
+  }, 1000);
+}
+
+function doInjectForm() {
+  var container = document.getElementById('injected-form-container');
+  var ph = document.getElementById('no-form-placeholder');
+  if (ph) ph.style.display = 'none';
+  var injectedAt = ts();
+  var form = document.createElement('div');
+  form.id = 'injected-form';
+  form.dataset.id = 'injected-form';
+  form.dataset.injectedAt = injectedAt;
+  form.innerHTML = [
+    '<div style="color:var(--accent-green);font-size:0.82rem;font-weight:700;margin-bottom:12px;">✅ Form injected at ' + injectedAt + '</div>',
+    '<div class="grid grid-2" style="gap:10px;">',
+    '  <div class="form-group"><label class="ctrl-label" for="injected-first-name">First Name</label><input type="text" id="injected-first-name" data-id="injected-first-name" class="ctrl-input" placeholder="John" /></div>',
+    '  <div class="form-group"><label class="ctrl-label" for="injected-last-name">Last Name</label><input type="text" id="injected-last-name" data-id="injected-last-name" class="ctrl-input" placeholder="Doe" /></div>',
+    '  <div class="form-group"><label class="ctrl-label" for="injected-email">Email</label><input type="email" id="injected-email" data-id="injected-email" class="ctrl-input" placeholder="john@example.com" /></div>',
+    '  <div class="form-group"><label class="ctrl-label" for="injected-role">Role</label><select id="injected-role" data-id="injected-role" class="ctrl-input"><option value="">-- Select --</option><option value="qa">QA Engineer</option><option value="dev">Developer</option><option value="pm">PM</option></select></div>',
+    '</div>',
+    '<button id="injected-submit-btn" data-id="injected-submit-btn" class="btn btn-green btn-sm mt-3" onclick="submitInjected()">✅ Submit</button>',
+    '<div id="injected-result" class="status status-ok mt-2" style="display:none;"></div>'
+  ].join('');
+  container.appendChild(form);
+  var st = document.getElementById('injection-status');
+  st.textContent = '✅ Form injected. Now findable via By.id("injected-form") — wasn\'t there before.';
+  st.style.display = 'flex';
+}
+function submitInjected() {
+  var fn = document.getElementById('injected-first-name').value;
+  var r  = document.getElementById('injected-result');
+  r.style.display = 'flex'; r.textContent = '📤 Submitted: ' + fn;
+}
+function resetInjection() {
+  if (spinnerInterval) clearInterval(spinnerInterval);
+  spinnerRunning = false;
+  document.getElementById('global-spinner').classList.remove('active');
+  var form = document.getElementById('injected-form');
+  if (form) form.remove();
+  var ph = document.getElementById('no-form-placeholder');
+  if (ph) ph.style.display = 'block';
+  document.getElementById('injection-status').style.display = 'none';
+  document.getElementById('trigger-spinner-btn').disabled = false;
+}
+
+/* ── 1B: Delayed Visibility ── */
+var delayTimers = [];
+function triggerDelayed() {
+  delayTimers.forEach(clearTimeout);
+  delayTimers = [];
+  ['delayed-el-1','delayed-el-2','delayed-el-3'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.classList.remove('visible');
+    el.style.display = 'none';
+  });
+  var st = document.getElementById('delayed-status');
+  st.style.display = 'flex'; st.className = 'status status-info mt-2';
+  st.textContent = '⏳ Elements hidden. Each reveals at a random 2–7s delay…';
+  document.getElementById('trigger-delayed-btn').disabled = true;
+  ['delayed-el-1','delayed-el-2','delayed-el-3'].forEach(function(id, i) {
+    var delay = randInt(2000, 7000);
+    var t = setTimeout(function() {
+      var el = document.getElementById(id);
+      el.style.display = 'flex';
+      requestAnimationFrame(function() { el.classList.add('visible'); });
+      el.dataset.appearedAt = ts();
+    }, delay);
+    delayTimers.push(t);
+  });
+  setTimeout(function() { document.getElementById('trigger-delayed-btn').disabled = false; }, 7500);
+}
+
+/* ── 1C: Counter polling ── */
+var counterInterval = null;
+function startCounter() {
+  if (counterInterval) return;
+  var el  = document.getElementById('polling-counter');
+  var btn = document.getElementById('start-counter-btn');
+  btn.disabled = true;
+  el.classList.remove('done');
+  var c = 0; el.textContent = c;
+  counterInterval = setInterval(function() {
+    c++;
+    if (c < 10) { el.textContent = c; }
+    else {
+      el.textContent = 'DONE';
+      el.classList.add('done');
+      clearInterval(counterInterval);
+      counterInterval = null;
+      btn.disabled = false;
+    }
+  }, 1000);
+}
+function resetCounter() {
+  if (counterInterval) clearInterval(counterInterval);
+  counterInterval = null;
+  var el = document.getElementById('polling-counter');
+  el.textContent = 'IDLE'; el.classList.remove('done');
+  document.getElementById('start-counter-btn').disabled = false;
+}
+
+/* ── 1D: Lazy Image ── */
+function triggerLazy() {
+  var btn = document.getElementById('trigger-lazy-btn');
+  var img = document.getElementById('lazy-image');
+  var ph  = document.getElementById('lazy-placeholder');
+  btn.disabled = true; ph.textContent = '⏳ 4s delay…';
+  setStatus('lazy-status','info','⏳ Waiting 4s before setting src attribute…');
+  setTimeout(function() {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="80"><rect width="260" height="80" fill="#131929"/><rect x="8" y="8" width="244" height="64" rx="6" fill="#1e2d4a"/><text x="130" y="32" font-family="sans-serif" font-size="11" fill="#3b82f6" text-anchor="middle">✅ Lazy Image Loaded</text><text x="130" y="52" font-family="monospace" font-size="9" fill="#06b6d4" text-anchor="middle">src set after 4000ms delay</text><text x="130" y="67" font-family="monospace" font-size="8" fill="#475569" text-anchor="middle">data-id: lazy-image</text></svg>';
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    img.dataset.loadedAt = ts();
+    img.style.display = 'block'; ph.style.display = 'none';
+    setStatus('lazy-status','ok','✅ src attribute set. waitForElementAttributeToBe(By.id("lazy-image"), "src", <value>) should pass now.');
+    btn.disabled = false; btn.textContent = '↺ Reload Image';
+  }, 4000);
+}
+
+/* ── 1E: Element Count ── */
+var itemCount = 0;
+var addInterval = null; var removeInterval = null;
+function addDynItems() {
+  if (addInterval) return;
+  if (removeInterval) { clearInterval(removeInterval); removeInterval = null; }
+  addInterval = setInterval(function() {
+    if (itemCount >= 8) { clearInterval(addInterval); addInterval = null; return; }
+    itemCount++;
+    var el = document.createElement('div');
+    el.id = 'dyn-item-' + itemCount;
+    el.dataset.id = 'dyn-item-' + itemCount;
+    el.className = 'delayed-pill visible';
+    el.textContent = '📦 Dynamic Item ' + itemCount;
+    el.style.background = 'rgba(16,185,129,0.1)';
+    el.style.borderColor = 'rgba(16,185,129,0.3)';
+    el.style.color = 'var(--accent-green)';
+    document.getElementById('dyn-items-container').appendChild(el);
+    document.getElementById('item-count-status').textContent = 'Item count: ' + itemCount + ' (waitForNumberOfElementsToBeMoreThan([class="delayed-pill visible"], ' + (itemCount-1) + '))';
+  }, 1000);
+}
+function removeDynItems() {
+  if (removeInterval) return;
+  if (addInterval) { clearInterval(addInterval); addInterval = null; }
+  removeInterval = setInterval(function() {
+    var cont = document.getElementById('dyn-items-container');
+    if (cont.children.length === 0) { clearInterval(removeInterval); removeInterval = null; return; }
+    cont.removeChild(cont.lastChild);
+    itemCount = Math.max(0, itemCount - 1);
+    document.getElementById('item-count-status').textContent = 'Item count: ' + itemCount;
+  }, 1000);
+}
+function clearDynItems() {
+  if (addInterval) clearInterval(addInterval);
+  if (removeInterval) clearInterval(removeInterval);
+  addInterval = removeInterval = null;
+  document.getElementById('dyn-items-container').innerHTML = '';
+  itemCount = 0;
+  document.getElementById('item-count-status').textContent = 'Item count: 0';
+}
+
+/* ── 1F: Reveal All ── */
+function revealAll() {
+  for (var i = 0; i < 5; i++) {
+    document.getElementById('reveal-el-' + i).classList.remove('visible');
+    document.getElementById('reveal-el-' + i).style.display = 'none';
+  }
+  var st = document.getElementById('reveal-status');
+  st.style.display = 'flex'; st.className = 'status status-info mt-2';
+  st.textContent = '⏳ Elements revealing with staggered delays…';
+  document.getElementById('reveal-all-btn').disabled = true;
+  for (var j = 0; j < 5; j++) {
+    (function(idx) {
+      setTimeout(function() {
+        var el = document.getElementById('reveal-el-' + idx);
+        el.style.display = 'flex';
+        requestAnimationFrame(function() { el.classList.add('visible'); });
+        if (idx === 4) {
+          st.className = 'status status-ok mt-2';
+          st.textContent = '✅ All 5 elements visible. waitForVisibilityOfAllElements should pass.';
+          document.getElementById('reveal-all-btn').disabled = false;
+        }
+      }, (idx + 1) * 1500);
+    })(j);
+  }
+}
+
+/* ── 1G: Selection State ── */
+function cbChanged(cb) {
+  setStatus('selection-status','info','Checkbox isSelected: ' + cb.checked);
+}
+function radioChanged(opt) {
+  setStatus('selection-status','ok','Radio ' + opt + ' selected');
+}
+function autoToggleCb() {
+  setStatus('selection-status','warn','⏳ Checkbox toggles in 3s…');
+  document.getElementById('start-toggle-cb-btn').disabled = true;
+  setTimeout(function() {
+    var cb = document.getElementById('auto-toggle-cb');
+    cb.checked = !cb.checked;
+    setStatus('selection-status','ok','✅ Checkbox toggled to: ' + cb.checked + '. waitForElementSelectionStateToBe should detect.');
+    document.getElementById('start-toggle-cb-btn').disabled = false;
+  }, 3000);
+}
+function autoSelectRadio() {
+  setStatus('selection-status','warn','⏳ Radio A selects in 4s…');
+  document.getElementById('auto-select-radio-btn').disabled = true;
+  setTimeout(function() {
+    document.getElementById('radio-opt-a').checked = true;
+    setStatus('selection-status','ok','✅ Radio A auto-selected. waitForElementToBeSelected(By.id("radio-opt-a")) should pass.');
+    document.getElementById('auto-select-radio-btn').disabled = false;
+  }, 4000);
+}
+
+/* ── 1H: Enable/Disable Wait ── */
+var enableTimer = null;
+function triggerEnable() {
+  var btn   = document.getElementById('enable-me-btn');
+  var spn   = document.getElementById('enable-spinner');
+  var tBtn  = document.getElementById('trigger-enable-btn');
+  btn.disabled = true;
+  btn.textContent = '🔒 Locked — enables in 5s';
+  spn.style.display = 'flex';
+  tBtn.disabled = true;
+  setStatus('enable-status','warn','⏳ Button is disabled. waitForElementToBeEnabled should wait…');
+  var cd = 5;
+  enableTimer = setInterval(function() {
+    cd--;
+    btn.textContent = '🔒 Locked — enables in ' + cd + 's';
+    if (cd <= 0) {
+      clearInterval(enableTimer);
+      btn.disabled = false;
+      btn.textContent = '✅ I am now enabled — click me!';
+      spn.style.display = 'none';
+      tBtn.disabled = false;
+      setStatus('enable-status','ok','✅ Button enabled. waitForElementToBeEnabled should return true. waitForElementToDisappear(#enable-spinner) should also pass.');
+    }
+  }, 1000);
+}
+function enableBtnClicked() {
+  setStatus('enable-status','ok','✅ Enabled button clicked successfully at ' + ts());
+}
+
+/* ── 1I: Attribute Change ── */
+var attrColors = {
+  'loading': { bg:'rgba(245,158,11,0.12)', bc:'var(--accent-amber)', color:'var(--accent-amber)', text:'data-state: loading' },
+  'ready':   { bg:'rgba(16,185,129,0.12)', bc:'var(--accent-green)',  color:'var(--accent-green)',  text:'data-state: ready' },
+  'error':   { bg:'rgba(239,68,68,0.12)',  bc:'var(--accent-red)',    color:'var(--accent-red)',    text:'data-state: error' },
+};
+function setAttrState(state, cls, disabled) {
+  var el = document.getElementById('attr-target-el');
+  var s = attrColors[state];
+  el.dataset.state = state;
+  el.className = 'attr-el ' + cls;
+  el.setAttribute('aria-disabled', String(disabled));
+  el.style.background = s.bg;
+  el.style.borderColor = s.bc;
+  el.style.color = s.color;
+  el.textContent = s.text;
+  document.getElementById('attr-state-display').textContent = state;
+  document.getElementById('attr-class-display').textContent = cls;
+  document.getElementById('attr-aria-display').textContent = String(disabled);
+}
+</script>
+</body>
+</html>
