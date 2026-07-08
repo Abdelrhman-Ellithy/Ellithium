@@ -24,7 +24,7 @@ public final class UniqueLocatorGenerator {
         int matchCount(By by);
     }
 
-    private static final double W_TESTID = 1.00, W_ID = 0.90, W_NAME = 0.85, W_ARIA = 0.80,
+    static final double W_TESTID = 1.00, W_ID = 0.90, W_NAME = 0.85, W_ARIA = 0.80,
             W_TEXT = 0.78, W_DATA = 0.70, W_CSS = 0.60, W_XPATH = 0.40;
     private static final double NON_UNIQUE_FACTOR = 0.35;
     private static final double DYNAMIC_FACTOR = 0.70;

@@ -42,59 +42,32 @@ public class StartUpLoader {
     }
     private static void initializePropertyFiles(String propertyFileType) {
         switch (propertyFileType) {
-            case "allure":
-                if (!checkFileExists(allurePath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/allure.properties", new File(allurePath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            case "config":
-                if (!checkFileExists(configPath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/config.properties", new File(configPath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            case "log4j2":
-                if (!checkFileExists(logPath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/log4j2.properties", new File(logPath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            case "notifications":
-                if (!checkFileExists(notificationPath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/notifications.properties", new File(notificationPath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            case "ai-config":
-                if (!checkFileExists(aiPath)) {
-                    File jarFile = findJarFile();
-                    if (jarFile != null) {
-                        extractFileFromJar(jarFile, "properties/ai-config.properties", new File(aiPath));
-                    } else {
-                        System.err.println("JAR file not found.");
-                    }
-                }
-                break;
-            default:
-                System.err.println("Unknown property file type: " + propertyFileType);
-                break;
+            case "allure"        -> syncOrExtract(allurePath, "properties/allure.properties");
+            case "config"        -> syncOrExtract(configPath, "properties/config.properties");
+            case "log4j2"        -> syncOrExtract(logPath, "properties/log4j2.properties");
+            case "notifications" -> syncOrExtract(notificationPath, "properties/notifications.properties");
+            case "ai-config"     -> syncOrExtract(aiPath, "properties/ai-config.properties");
+            default -> System.err.println("Unknown property file type: " + propertyFileType);
+        }
+    }
+
+    /**
+     * Extracts the bundled default file when the target doesn't exist yet (first run), or —
+     * when the user already has their own copy — appends any property key that a newer
+     * Ellithium version added but this file predates, so upgrading never leaves a config file
+     * silently missing a key it doesn't know exists.
+     */
+    private static void syncOrExtract(String targetPath, String jarEntryPath) {
+        File jarFile = findJarFile();
+        if (jarFile == null) {
+            if (!checkFileExists(targetPath)) System.err.println("JAR file not found.");
+            return;
+        }
+        if (!checkFileExists(targetPath)) {
+            extractFileFromJar(jarFile, jarEntryPath, new File(targetPath));
+        } else {
+            PropertyFileSynchronizer.syncMissingKeys(jarFile, jarEntryPath, targetPath,
+                    ConfigContext.getEllithuiumVersion());
         }
     }
     private static boolean checkFileExists(String filePath) {

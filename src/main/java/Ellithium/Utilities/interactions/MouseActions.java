@@ -134,7 +134,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
-                Reporter.log("moveSliderTo: non-numeric slider value during reset: " + range.getText(), LogLevel.WARN);
+                Reporter.log("moveSliderTo: non-numeric slider value during reset: " + e.getMessage(), LogLevel.WARN);
             }
         }
         if (steps > 5000) Reporter.log("moveSliderTo: reset loop exhausted without reaching zero", LogLevel.WARN);
@@ -150,7 +150,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                 slider = findWebElement(sliderLocator);
                 range  = findWebElement(rangeLocator);
             } catch (NumberFormatException e) {
-                Reporter.log("moveSliderTo: non-numeric slider value during seek: " + range.getText(), LogLevel.WARN);
+                Reporter.log("moveSliderTo: non-numeric slider value during seek: " + e.getMessage(), LogLevel.WARN);
             }
         }
         if (steps > 5000) Reporter.log("moveSliderTo: target loop exhausted without reaching " + targetValue, LogLevel.WARN);
@@ -160,6 +160,10 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             return finalValue;
         } catch (WebDriverException e) {
             if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+            float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
+            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+            return finalValue;
+        } catch (NumberFormatException e) {
             float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
             Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
             return finalValue;
