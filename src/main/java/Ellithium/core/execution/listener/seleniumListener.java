@@ -165,10 +165,72 @@ public class seleniumListener implements WebDriverListener {
     /** Returns true if logging is currently suppressed. */
     private static boolean isSuppressed() { return ListenerLogSuppression.isSuppressed(); }
 
+    // Recorded by the generic beforeAnyXCall hooks below and consumed by the matching afterXxx
+    // method so each step's reported duration is the real elapsed time of that WebDriver call.
+    private static final ThreadLocal<Long> OP_START = new ThreadLocal<>();
+
+    private static long takeStart() {
+        Long s = OP_START.get();
+        OP_START.remove();
+        return s != null ? s : System.currentTimeMillis();
+    }
+
+    @Override public void beforeAnyWebDriverCall(WebDriver driver, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyWebElementCall(WebElement element, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyNavigationCall(WebDriver.Navigation navigation, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyAlertCall(Alert alert, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyOptionsCall(WebDriver.Options options, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyTimeoutsCall(WebDriver.Timeouts timeouts, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyWindowCall(WebDriver.Window window, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+    @Override public void beforeAnyTargetLocatorCall(WebDriver.TargetLocator targetLocator, java.lang.reflect.Method method, Object[] args) {
+        OP_START.set(System.currentTimeMillis());
+    }
+
+    // Safety net: clears OP_START even when the specific afterXxx hook is suppressed/skipped and
+    // never calls takeStart() itself, so a later unrelated call can never consume a stale start time.
+    @Override public void afterAnyWebDriverCall(WebDriver driver, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyWebElementCall(WebElement element, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyNavigationCall(WebDriver.Navigation navigation, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyAlertCall(Alert alert, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyOptionsCall(WebDriver.Options options, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyTimeoutsCall(WebDriver.Timeouts timeouts, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyWindowCall(WebDriver.Window window, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+    @Override public void afterAnyTargetLocatorCall(WebDriver.TargetLocator targetLocator, java.lang.reflect.Method method, Object[] args, Object result) {
+        OP_START.remove();
+    }
+
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
         String sentData = buildSentDataString(keysToSend);
-        Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE);
+        Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE, "", takeStart());
         if (RECORDING.get()) {
             RECORDED.get().add(new RecordedInteraction("sendData", reconstructLocatorExpression(element),
                     sentData, recordedElementName(element), recordedTag(element)));
@@ -189,59 +251,59 @@ public class seleniumListener implements WebDriverListener {
     }
    @Override
    public void afterGet(WebDriver driver, String url) {
-       Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url);
+       Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url, takeStart());
    }
    @Override
     public void afterGetCurrentUrl(WebDriver driver, String url) {
         if (isSuppressed()) return;
-        Reporter.log("Current URL retrieved: " + url, LogLevel.DEBUG);
+        Reporter.log("Current URL retrieved: " + url, LogLevel.DEBUG, "", takeStart());
     }
     @Override
     public void afterDefaultContent(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-        Reporter.log("Switched Back To Default Content From Frame" , LogLevel.INFO_BLUE);
+        Reporter.log("Switched Back To Default Content From Frame" , LogLevel.INFO_BLUE, "", takeStart());
     }
    @Override
    public void afterGetTitle(WebDriver driver, String title) {
-       Reporter.log("Page title retrieved: " + title, LogLevel.DEBUG);
+       Reporter.log("Page title retrieved: " + title, LogLevel.DEBUG, "", takeStart());
    }
    @Override
     public void afterGetPageSource(WebDriver driver, String source) {
         if (isSuppressed()) return;
-        Reporter.log("Page source retrieved", LogLevel.DEBUG);
+        Reporter.log("Page source retrieved", LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterClose(WebDriver driver) {
-       Reporter.log("WebDriver closed", LogLevel.INFO_BLUE);
+       Reporter.log("WebDriver closed", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterQuit(WebDriver driver) {
-       Reporter.log("WebDriver quit", LogLevel.INFO_BLUE);
+       Reporter.log("WebDriver quit", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetWindowHandles(WebDriver driver, Set<String> result) {
-       Reporter.log("Window handles retrieved: " + result, LogLevel.DEBUG);
+       Reporter.log("Window handles retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
    public void afterGetWindowHandle(WebDriver driver, String result) {
-       Reporter.log("Window handle retrieved: " + result, LogLevel.DEBUG);
+       Reporter.log("Window handle retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
     public void afterExecuteScript(WebDriver driver, String script, Object[] args, Object result) {
         if (isSuppressed()) return;
-        Reporter.log("Executed script (" + scriptLen(script) + " chars)", LogLevel.DEBUG);
+        Reporter.log("Executed script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterExecuteAsyncScript(WebDriver driver, String script, Object[] args, Object result) {
        if (isSuppressed()) return;
-       Reporter.log("Executed async script (" + scriptLen(script) + " chars)", LogLevel.DEBUG);
+       Reporter.log("Executed async script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
    }
 
    private static int scriptLen(String script) { return script != null ? script.length() : 0; }
    @Override
    public void afterClick(WebElement element) {
-       Reporter.log("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE);
+       Reporter.log("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("click", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
@@ -250,7 +312,7 @@ public class seleniumListener implements WebDriverListener {
    }
    @Override
    public void afterSubmit(WebElement element) {
-       Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE);
+       Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("submit", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
@@ -260,42 +322,42 @@ public class seleniumListener implements WebDriverListener {
     @Override
     public void afterGetTagName(WebElement element, String result) {
         if (isSuppressed()) return;
-        Reporter.log("Tag name retrieved: " + result, LogLevel.DEBUG);
+        Reporter.log("Tag name retrieved: " + result, LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterGetAttribute(WebElement element, String name, String result) {
        if (isSuppressed()) return;
-       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.DEBUG);
+       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
    public void afterIsSelected(WebElement element, boolean result) {
-       Reporter.log("Element selected: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Element selected: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterIsEnabled(WebElement element, boolean result) {
-       Reporter.log("Element enabled: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Element enabled: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetLocation(WebElement element, Point result) {
-       Reporter.log("Location retrieved: " + result.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Location retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetSize(WebElement element, Dimension result) {
-       Reporter.log("Size retrieved: " + result.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCssValue(WebElement element, String propertyName, String result) {
-       Reporter.log("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.DEBUG);
+       Reporter.log("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
 
    @Override
    public void afterTo(WebDriver.Navigation navigation, String url) {
        if (isSuppressed()) return;
-       Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
+       Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("navigate", null, url, null, null));
            updateRecordingToolbar();
@@ -304,142 +366,142 @@ public class seleniumListener implements WebDriverListener {
 
    @Override
    public void afterBack(WebDriver.Navigation navigation) {
-       Reporter.log("Navigated back", LogLevel.INFO_BLUE);
+       Reporter.log("Navigated back", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterForward(WebDriver.Navigation navigation) {
-       Reporter.log("Navigated forward", LogLevel.INFO_BLUE);
+       Reporter.log("Navigated forward", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterRefresh(WebDriver.Navigation navigation) {
-       Reporter.log("Page refreshed", LogLevel.INFO_BLUE);
+       Reporter.log("Page refreshed", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterAccept(Alert alert) {
-       Reporter.log("Accepted alert", LogLevel.INFO_BLUE);
+       Reporter.log("Accepted alert", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDismiss(Alert alert) {
-       Reporter.log("Dismissed alert", LogLevel.INFO_BLUE);
+       Reporter.log("Dismissed alert", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetText(Alert alert, String result) {
-       Reporter.log("Alert text retrieved: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Alert text retrieved: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSendKeys(Alert alert, String text) {
-       Reporter.log("Sent keys to alert: " + text, LogLevel.INFO_BLUE);
+       Reporter.log("Sent keys to alert: " + text, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterAddCookie(WebDriver.Options options, Cookie cookie) {
-       Reporter.log("Added cookie: " + cookie.getName(), LogLevel.INFO_BLUE);
+       Reporter.log("Added cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteCookieNamed(WebDriver.Options options, String name) {
-       Reporter.log("Deleted cookie by name: " + name, LogLevel.INFO_BLUE);
+       Reporter.log("Deleted cookie by name: " + name, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteCookie(WebDriver.Options options, Cookie cookie) {
-       Reporter.log("Deleted cookie: " + cookie.getName(), LogLevel.INFO_BLUE);
+       Reporter.log("Deleted cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteAllCookies(WebDriver.Options options) {
-       Reporter.log("Deleted all cookies", LogLevel.INFO_BLUE);
+       Reporter.log("Deleted all cookies", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCookies(WebDriver.Options options, Set<Cookie> result) {
-       Reporter.log("Retrieved cookies: " + result.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Retrieved cookies: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCookieNamed(WebDriver.Options options, String name, Cookie result) {
-       Reporter.log("Retrieved cookie by name: " + name + ", Result: " + result, LogLevel.INFO_BLUE);
+       Reporter.log("Retrieved cookie by name: " + name + ", Result: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterImplicitlyWait(WebDriver.Timeouts timeouts, Duration duration) {
-       Reporter.log("Set implicit wait timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills");
+       Reporter.log("Set implicit wait timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
    }
 
    @Override
    public void afterPageLoadTimeout(WebDriver.Timeouts timeouts, Duration duration) {
-       Reporter.log("Set page load timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills");
+       Reporter.log("Set page load timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
    }
 
    @Override
    public void afterGetSize(WebDriver.Window window, Dimension result) {
-       Reporter.log("Window size retrieved: " + result.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Window size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSetSize(WebDriver.Window window, Dimension size) {
-       Reporter.log("Window size set to: " + size.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Window size set to: " + size.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetPosition(WebDriver.Window window, Point result) {
-       Reporter.log("Window position retrieved: " + result.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Window position retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSetPosition(WebDriver.Window window, Point position) {
-       Reporter.log("Window position set to: " + position.toString(), LogLevel.INFO_BLUE);
+       Reporter.log("Window position set to: " + position.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterMaximize(WebDriver.Window window) {
-       Reporter.log("Window maximized", LogLevel.INFO_BLUE);
+       Reporter.log("Window maximized", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFullscreen(WebDriver.Window window) {
-       Reporter.log("Window set to fullscreen", LogLevel.INFO_BLUE);
+       Reporter.log("Window set to fullscreen", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, int index, WebDriver driver) {
-       Reporter.log("Switched to frame by index: " + index, LogLevel.INFO_BLUE);
+       Reporter.log("Switched to frame by index: " + index, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, String nameOrId, WebDriver driver) {
-       Reporter.log("Switched to frame by name or ID: " + nameOrId, LogLevel.INFO_BLUE);
+       Reporter.log("Switched to frame by name or ID: " + nameOrId, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, WebElement frameElement, WebDriver driver) {
-       Reporter.log("Switched to frame by element: " + nameOf(frameElement), LogLevel.INFO_BLUE);
+       Reporter.log("Switched to frame by element: " + nameOf(frameElement), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterParentFrame(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-       Reporter.log("Switched to parent frame", LogLevel.INFO_BLUE);
+       Reporter.log("Switched to parent frame", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterWindow(WebDriver.TargetLocator targetLocator, String nameOrHandle, WebDriver driver) {
-       Reporter.log("Switched to window: " + nameOrHandle, LogLevel.INFO_BLUE);
+       Reporter.log("Switched to window: " + nameOrHandle, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterNewWindow(WebDriver.TargetLocator targetLocator, WindowType typeHint, WebDriver driver) {
-       Reporter.log("New window opened with type: " + typeHint, LogLevel.INFO_BLUE);
+       Reporter.log("New window opened with type: " + typeHint, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterActiveElement(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-       Reporter.log("Switched to active element", LogLevel.INFO_BLUE);
+       Reporter.log("Switched to active element", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
@@ -448,13 +510,13 @@ public class seleniumListener implements WebDriverListener {
    }
     @Override
     public void afterClear(WebElement element) {
-        Reporter.log("Cleared element: " + nameOf(element), LogLevel.INFO_BLUE);
+        Reporter.log("Cleared element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterGetText(WebElement element, String result) {
         if (isSuppressed()) return;
-        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.DEBUG);
+        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.DEBUG, "", takeStart());
     }
 
 //    @Override
@@ -464,38 +526,38 @@ public class seleniumListener implements WebDriverListener {
 
     @Override
     public  <X> void afterGetScreenshotAs(WebElement element, OutputType<X> target, X result) {
-        Reporter.log("Screenshot taken of element: " + nameOf(element), LogLevel.INFO_BLUE);
+        Reporter.log("Screenshot taken of element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
     }
 
     public  <X> void afterGetScreenshotAs(WebDriver
                                                   driver, OutputType<X> target, X result) {
-        Reporter.log("Full page screenshot taken", LogLevel.INFO_BLUE);
+        Reporter.log("Full page screenshot taken", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterPerform(WebDriver driver, Collection<Sequence> actions) {
-        Reporter.log("Actions performed (e.g., drag-drop, hover, etc.)", LogLevel.INFO_BLUE);
+        Reporter.log("Actions performed (e.g., drag-drop, hover, etc.)", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterResetInputState(WebDriver driver) {
-        Reporter.log("Input state reset", LogLevel.INFO_BLUE);
+        Reporter.log("Input state reset", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterScriptTimeout(WebDriver.Timeouts timeouts, Duration duration) {
-        Reporter.log("Script timeout set to: " + duration.toMillis() + " ms", LogLevel.INFO_BLUE);
+        Reporter.log("Script timeout set to: " + duration.toMillis() + " ms", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterAlert(WebDriver.TargetLocator targetLocator, Alert alert) {
-        Reporter.log("Switched to alert", LogLevel.INFO_BLUE);
+        Reporter.log("Switched to alert", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterTo(WebDriver.Navigation navigation, URL url) {
         if (isSuppressed()) return;
-        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE);
+        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
     }
     private String nameOf(WebElement element) {
         if (element == null) return "";

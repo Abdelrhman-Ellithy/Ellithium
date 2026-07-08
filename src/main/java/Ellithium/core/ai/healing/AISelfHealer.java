@@ -100,13 +100,6 @@ public class AISelfHealer {
     public static void cacheHealedLocator(WebDriver driver, By brokenLocator,
                                            By healedLocator, double score, String fieldLabel) {
         if (healedLocator == null) return;
-        // Reusing this heal for the rest of the CURRENT run is lower-stakes than persisting it as a
-        // permanent baseline/source patch (BaselineStore.capture gates that separately, at
-        // getHealingStoreThreshold) — a heal already deemed confident enough to accept and use once
-        // is confident enough to reuse for the identical broken locator later in the same run.
-        // Gating this session cache at the higher persistence bar instead just forces every
-        // 0.70-0.85-confidence heal to re-pay a full re-heal (LLM round trip, for Tier 3) on every
-        // repeat occurrence.
         if (score < AIConfigLoader.getConfidenceThreshold()) return;
         String key = cacheKey(driver, brokenLocator);
         if (globalHealedCache.size() >= HEALED_CACHE_MAX) {

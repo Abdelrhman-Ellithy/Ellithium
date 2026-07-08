@@ -716,6 +716,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             compileFramesToMP4(framesCopy, videoFile, capturedDuration);
                             Logger.info("Video compiled asynchronously: " + videoFile.getName() +
                                     " (" + frameCount + " frames)");
+                            // needsAttachment was already false when this task was queued, and that
+                            // decision (isAttachmentEnabled()) is the same check handleVideoAttachment
+                            // makes later — so this file is guaranteed to never be attached. Delete it
+                            // here instead of leaving it for handleVideoAttachment's delete, which would
+                            // otherwise race this still-in-flight compilation and silently no-op.
+                            try { java.nio.file.Files.deleteIfExists(videoFile.toPath()); } catch (Exception ignored) {}
                         } catch (Exception e) {
                             Logger.error("Async video compilation failed: " + e.getMessage());
                         }
@@ -920,7 +926,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             encoder.encodeImage(img);
                             successfulFrames++;
                         }
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                        Reporter.log("Failed to encode frame " + i + ": " + e.getMessage(), LogLevel.DEBUG);
+                    }
                 }
 
                 processedBatch.clear();
@@ -935,7 +943,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             double expectedDuration = (double) successfulFrames / outputFPS;
             Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
-                    " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)", LogLevel.INFO_GREEN);
+                    " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)",
+                    successfulFrames < totalFrames ? LogLevel.WARN : LogLevel.INFO_GREEN);
 
             return outputFile.getAbsolutePath();
 

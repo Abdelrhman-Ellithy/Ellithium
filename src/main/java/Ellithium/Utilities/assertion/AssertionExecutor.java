@@ -464,301 +464,390 @@ public class AssertionExecutor {
         }
 
         public void assertNull(Object object, String message) {
+            boolean pass = object == null;
             softAssert.assertNull(object, message);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Object is null: " + object + " - " + message);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Object is null: " + object + " - " + message);
         }
 
         public void assertNull(Object object) {
+            boolean pass = object == null;
             softAssert.assertNull(object, "Object should be null but was not");
-            Reporter.log("Soft Assert: Object is null", LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert: Object is null", pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertNotNull(Object object, String message) {
+            boolean pass = object != null;
             softAssert.assertNotNull(object, message);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Object is not null: " + object + " - " + message);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Object is not null: " + object + " - " + message);
         }
 
         public void assertNotNull(Object object) {
+            boolean pass = object != null;
             softAssert.assertNotNull(object, "Object should not be null but was");
-            Reporter.log("Soft Assert: Object is not null", LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert: Object is not null", pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertSame(Object actual, Object expected, String message) {
+            boolean pass = actual == expected;
             softAssert.assertSame(actual, expected, message);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Objects are the same - Expected: " + expected + ", Actual: " + actual + " - " + message);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Objects are the same - Expected: " + expected + ", Actual: " + actual + " - " + message);
         }
 
         public void assertSame(Object actual, Object expected) {
+            boolean pass = actual == expected;
             softAssert.assertSame(actual, expected, "Expected and actual objects should be the same but were not");
-            Reporter.log("Soft Assert Same - Expected: " + expected + " - Actual: " + actual, LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert Same - Expected: " + expected + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertNotSame(Object actual, Object expected, String message) {
+            boolean pass = actual != expected;
             softAssert.assertNotSame(actual, expected, message);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Objects are not the same - Expected: " + expected + ", Actual: " + actual + " - " + message);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Objects are not the same - Expected: " + expected + ", Actual: " + actual + " - " + message);
         }
 
         public void assertNotSame(Object actual, Object expected) {
+            boolean pass = actual != expected;
             softAssert.assertNotSame(actual, expected, "Expected and actual objects should not be the same but were");
-            Reporter.log("Soft Assert Not Same - Expected: " + expected + " - Actual: " + actual, LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert Not Same - Expected: " + expected + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertEquals(Object actual, Object expected) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, "Expected: " + expected + " but got: " + actual);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Objects are equal - Expected: " + expected + ", Actual: " + actual);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Objects are equal - Expected: " + expected + ", Actual: " + actual);
         }
 
         public void assertEquals(Object actual, Object expected, String message) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Objects are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Objects are equal");
         }
 
         public void assertEquals(String actual, String expected, String message) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Strings are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Strings are equal");
         }
 
         public void assertEquals(long actual, long expected, String message) {
+            boolean pass = actual == expected;
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Long values are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Long values are equal");
         }
 
         public void assertEquals(boolean actual, boolean expected, String message) {
+            boolean pass = actual == expected;
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Boolean values are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Boolean values are equal");
         }
 
         public void assertEquals(double actual, double expected, String message) {
+            boolean pass = actual == expected;
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Double values are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Double values are equal");
         }
 
         public void assertEquals(double actual, double expected) {
+            boolean pass = actual == expected;
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - Double values are equal");
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Double values are equal");
         }
 
         public void assertEquals(double actual, double expected, double delta, String message) {
+            boolean pass = Math.abs(actual - expected) <= delta;
             softAssert.assertEquals(actual, expected, delta, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN,
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN,
                 String.format(" - Values are equal within delta %f", delta));
         }
 
         public void assertEquals(byte[] actual, byte[] expected, String message) {
+            boolean pass = Arrays.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Byte values are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Byte values are equal");
         }
 
         public void assertEquals(byte[] actual, byte[] expected) {
+            boolean pass = Arrays.equals(actual, expected);
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - Byte values are equal");
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Byte values are equal");
         }
 
         public void assertEquals(List<?> actual, List<?> expected, String message) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - List values are equal");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - List values are equal");
         }
 
         public void assertEquals(List<?> actual, List<?> expected) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - List values are equal");
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - List values are equal");
         }
 
         public void assertContains(Object container, Object value) {
             if (container instanceof String) {
-                softAssert.assertTrue(((String) container).contains(String.valueOf(value)),
-                        "Container does not contain value: " + value);
-                Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "String contains value - Container: " + container + ", Value: " + value);
+                boolean pass = ((String) container).contains(String.valueOf(value));
+                softAssert.assertTrue(pass, "Container does not contain value: " + value);
+                Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "String contains value - Container: " + container + ", Value: " + value);
             } else if (container instanceof Collection) {
-                softAssert.assertTrue(((Collection<?>) container).contains(value),
-                        "Container does not contain value: " + value);
-                Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Collection contains value - Container: " + container + ", Value: " + value);
+                boolean pass = ((Collection<?>) container).contains(value);
+                softAssert.assertTrue(pass, "Container does not contain value: " + value);
+                Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Collection contains value - Container: " + container + ", Value: " + value);
             } else {
                 softAssert.fail("assertContains requires String or Collection, got: " +
                         (container == null ? "null" : container.getClass().getSimpleName()));
+                Reporter.log("Soft Assert: assertContains requires String or Collection, got: " +
+                        (container == null ? "null" : container.getClass().getSimpleName()), LogLevel.WARN);
             }
         }
 
         public void assertContains(Object container, Object value, String message) {
+            boolean pass;
             if (container instanceof String) {
-                softAssert.assertTrue(((String) container).contains(String.valueOf(value)), message);
+                pass = ((String) container).contains(String.valueOf(value));
+                softAssert.assertTrue(pass, message);
             } else if (container instanceof Collection) {
-                softAssert.assertTrue(((Collection<?>) container).contains(value), message);
+                pass = ((Collection<?>) container).contains(value);
+                softAssert.assertTrue(pass, message);
             } else {
+                pass = false;
                 softAssert.fail(message + " - Unsupported container type");
             }
-            Reporter.log("Soft Assert Contains - Container: " + container + " contains Value: " + value, LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert Contains - Container: " + container + " contains Value: " + value, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public <T> void assertContains(List<T> actual, T value) {
-            softAssert.assertTrue(actual.contains(value), "List does not contain expected value: " + value);
-            Reporter.log("Soft Assert: List contains value: " + value, LogLevel.INFO_GREEN, " - Actual List: " + actual);
+            boolean pass = actual != null && actual.contains(value);
+            softAssert.assertTrue(pass, actual == null ? "List is null" : "List does not contain expected value: " + value);
+            Reporter.log("Soft Assert: List contains value: " + value, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Actual List: " + actual);
         }
 
         public <T> void assertContains(List<T> actual, T value, String message) {
-            softAssert.assertTrue(actual.contains(value), message);
-            Reporter.log("Soft Assert Contains - List: " + actual + " contains Value: " + value, LogLevel.INFO_GREEN);
+            boolean pass = actual != null && actual.contains(value);
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert Contains - List: " + actual + " contains Value: " + value, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertListEquals(List<?> actual, List<?> expected) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, "Expected list: " + expected + " but got: " + actual);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, "Lists are equal - Expected: " + expected + ", Actual: " + actual);
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, "Lists are equal - Expected: " + expected + ", Actual: " + actual);
         }
 
         public void assertListEquals(List<?> actual, List<?> expected, String message) {
+            boolean pass = Objects.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert List Equals - Expected: " + expected + " - Actual: " + actual, LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert List Equals - Expected: " + expected + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertListContainsAll(List<?> actual, List<?> expected) {
-            softAssert.assertTrue(new HashSet<>(actual).containsAll(expected), "Actual list does not contain all expected elements.");
-            Reporter.log("Soft Assert: Actual list contains all expected elements - Actual: " + actual, LogLevel.INFO_GREEN, ", Expected: " + expected);
+            boolean pass = actual != null && expected != null && new HashSet<>(actual).containsAll(expected);
+            softAssert.assertTrue(pass, "Actual list does not contain all expected elements.");
+            Reporter.log("Soft Assert: Actual list contains all expected elements - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, ", Expected: " + expected);
         }
 
         public void assertListContainsAll(List<?> actual, List<?> expected, String message) {
-            softAssert.assertTrue(new HashSet<>(actual).containsAll(expected), message);
-            Reporter.log("Soft Assert List Contains All - Actual: " + actual + " - Expected Elements: " + expected, LogLevel.INFO_BLUE);
+            boolean pass = actual != null && expected != null && new HashSet<>(actual).containsAll(expected);
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert List Contains All - Actual: " + actual + " - Expected Elements: " + expected, pass ? LogLevel.INFO_BLUE : LogLevel.WARN);
         }
 
         public void assertGreaterThan(double actual, double expected, String message) {
-            softAssert.assertTrue(actual > expected, message);
-            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, LogLevel.INFO_GREEN, " > Expected: " + expected);
+            boolean pass = actual > expected;
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " > Expected: " + expected);
         }
 
         public void assertGreaterThan(int actual, int expected, String message) {
-            softAssert.assertTrue(actual > expected, message);
-            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, LogLevel.INFO_GREEN, " > Expected: " + expected);
+            boolean pass = actual > expected;
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " > Expected: " + expected);
         }
 
         public void assertLessThan(double actual, double expected, String message) {
-            softAssert.assertTrue(actual < expected, message);
-            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, LogLevel.INFO_GREEN, " < Expected: " + expected);
+            boolean pass = actual < expected;
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " < Expected: " + expected);
         }
 
         public void assertLessThan(int actual, int expected, String message) {
-            softAssert.assertTrue(actual < expected, message);
-            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, LogLevel.INFO_GREEN, " < Expected: " + expected);
+            boolean pass = actual < expected;
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " < Expected: " + expected);
         }
 
         public void assertEmpty(Object container, String message) {
+            boolean pass;
             if (container instanceof String) {
-                softAssert.assertTrue(((String) container).isEmpty(), message);
+                pass = ((String) container).isEmpty();
+                softAssert.assertTrue(pass, message);
             } else if (container instanceof Collection) {
-                softAssert.assertTrue(((Collection<?>) container).isEmpty(), message);
+                pass = ((Collection<?>) container).isEmpty();
+                softAssert.assertTrue(pass, message);
             } else {
+                pass = false;
                 softAssert.fail(message + " - Unsupported container type: " +
                         (container == null ? "null" : container.getClass().getSimpleName()));
             }
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Container is empty: " + container);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Container is empty: " + container);
         }
 
         public void assertNotEmpty(Object container, String message) {
+            boolean pass;
             if (container instanceof String) {
-                softAssert.assertTrue(!((String) container).isEmpty(), message);
+                pass = !((String) container).isEmpty();
+                softAssert.assertTrue(pass, message);
             } else if (container instanceof Collection) {
-                softAssert.assertTrue(!((Collection<?>) container).isEmpty(), message);
+                pass = !((Collection<?>) container).isEmpty();
+                softAssert.assertTrue(pass, message);
             } else {
+                pass = false;
                 softAssert.fail(message + " - Unsupported container type: " +
                         (container == null ? "null" : container.getClass().getSimpleName()));
             }
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Container is not empty: " + container);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Container is not empty: " + container);
         }
 
         public void assertInstanceOf(Object object, Class<?> clazz, String message) {
-            softAssert.assertTrue(clazz.isInstance(object), message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Object: " + object + " is an instance of: " + clazz.getName());
+            boolean pass = clazz.isInstance(object);
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Object: " + object + " is an instance of: " + clazz.getName());
         }
 
         public void assertContainsIgnoreCase(String actual, String expected) {
+            boolean pass;
             if (actual == null || expected == null) {
+                pass = false;
                 softAssert.fail("assertContainsIgnoreCase: actual and expected must not be null");
             } else {
-                softAssert.assertTrue(actual.toLowerCase().contains(expected.toLowerCase()),
-                        "String does not contain expected value: " + expected);
+                pass = actual.toLowerCase().contains(expected.toLowerCase());
+                softAssert.assertTrue(pass, "String does not contain expected value: " + expected);
             }
-            Reporter.log("Soft Assert: Actual string contains expected string (ignore case) - Actual: " + actual, LogLevel.INFO_GREEN, ", Expected: " + expected);
+            Reporter.log("Soft Assert: Actual string contains expected string (ignore case) - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, ", Expected: " + expected);
         }
 
         public void assertContainsIgnoreCase(String actual, String expected, String message) {
+            boolean pass;
             if (actual == null || expected == null) {
+                pass = false;
                 softAssert.fail(message + " - actual and expected must not be null");
             } else {
-                softAssert.assertTrue(actual.toLowerCase().contains(expected.toLowerCase()), message);
+                pass = actual.toLowerCase().contains(expected.toLowerCase());
+                softAssert.assertTrue(pass, message);
             }
-            Reporter.log("Soft Assert Contains Ignore Case - Actual: " + actual + " contains Expected: " + expected, LogLevel.INFO_BLUE);
+            Reporter.log("Soft Assert Contains Ignore Case - Actual: " + actual + " contains Expected: " + expected, pass ? LogLevel.INFO_BLUE : LogLevel.WARN);
         }
 
         public void assertBetween(int value, int lowerBound, int upperBound, String message) {
-            softAssert.assertTrue(value >= lowerBound && value <= upperBound, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN,
+            boolean pass = value >= lowerBound && value <= upperBound;
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN,
                 " - Value " + value + " is within range [" + lowerBound + ", " + upperBound + "]");
         }
 
         public void assertMatches(String actual, String regex, String message) {
+            boolean pass;
             if (actual == null) {
+                pass = false;
                 softAssert.fail(message + " - actual string must not be null");
             } else {
-                softAssert.assertTrue(actual.matches(regex), message);
+                pass = actual.matches(regex);
+                softAssert.assertTrue(pass, message);
             }
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - String matches the regex pattern");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - String matches the regex pattern");
         }
 
         public void assertSameSize(List<?> actual, List<?> expected, String message) {
+            if (actual == null || expected == null) {
+                softAssert.fail(message + " - actual and expected must not be null");
+                Reporter.log("Soft Assert: " + message, LogLevel.WARN, " - actual or expected list is null");
+                return;
+            }
+            boolean pass = actual.size() == expected.size();
             softAssert.assertEquals(actual.size(), expected.size(), message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Lists have the same size");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Lists have the same size");
         }
 
         public void assertArrayEquals(int[] actual, int[] expected) {
+            boolean pass = Arrays.equals(actual, expected);
             softAssert.assertEquals(actual, expected, "Arrays are not equal");
-            Reporter.log("Soft Assert: Integer arrays are equal - Expected: " + Arrays.toString(expected), LogLevel.INFO_GREEN, ", Actual: " + Arrays.toString(actual));
+            Reporter.log("Soft Assert: Integer arrays are equal - Expected: " + Arrays.toString(expected), pass ? LogLevel.INFO_GREEN : LogLevel.WARN, ", Actual: " + Arrays.toString(actual));
         }
 
         public void assertArrayEquals(int[] actual, int[] expected, String message) {
+            boolean pass = Arrays.equals(actual, expected);
             softAssert.assertEquals(actual, expected, message);
-            Reporter.log("Soft Assert Array Equals (int[]) - Expected: " + Arrays.toString(expected) + " - Actual: " + Arrays.toString(actual), LogLevel.INFO_GREEN);
+            Reporter.log("Soft Assert Array Equals (int[]) - Expected: " + Arrays.toString(expected) + " - Actual: " + Arrays.toString(actual), pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
         }
 
         public void assertArrayEquals(double[] actual, double[] expected, double delta) {
+            if (actual == null || expected == null) {
+                softAssert.fail("Arrays must not be null");
+                Reporter.log("Soft Assert Fail: array is null", LogLevel.WARN);
+                return;
+            }
             if (actual.length != expected.length) {
                 softAssert.fail("Arrays have different lengths: expected " + expected.length + ", actual " + actual.length);
                 Reporter.log("Soft Assert Fail: Arrays have different lengths - Expected: " + expected.length, LogLevel.ERROR, ", Actual: " + actual.length);
                 return;
             }
             for (int i = 0; i < actual.length; i++) {
-                softAssert.assertTrue(Math.abs(actual[i] - expected[i]) <= delta,
+                boolean pass = Math.abs(actual[i] - expected[i]) <= delta;
+                softAssert.assertTrue(pass,
                         "Array elements at index " + i + " differ by more than " + delta +
                         ". Expected: " + expected[i] + ", Actual: " + actual[i]);
-                Reporter.log("Soft Assert: Array element at index " + i + " - Expected: " + expected[i], LogLevel.INFO_GREEN, ", Actual: " + actual[i] + ", Tolerance: " + delta);
+                Reporter.log("Soft Assert: Array element at index " + i + " - Expected: " + expected[i], pass ? LogLevel.INFO_GREEN : LogLevel.WARN, ", Actual: " + actual[i] + ", Tolerance: " + delta);
             }
         }
 
         public void assertArrayEquals(double[] actual, double[] expected, double delta, String message) {
+            if (actual == null || expected == null) {
+                softAssert.fail(message + " - arrays must not be null");
+                Reporter.log("Soft Assert Fail: " + message + " - array is null", LogLevel.WARN);
+                return;
+            }
             if (actual.length != expected.length) {
                 softAssert.fail("Arrays have different lengths: expected " + expected.length + ", actual " + actual.length);
                 Reporter.log("Soft Assert Fail: Arrays have different lengths", LogLevel.ERROR, " - Expected: " + expected.length + ", Actual: " + actual.length);
                 return;
             }
             for (int i = 0; i < actual.length; i++) {
-                softAssert.assertTrue(Math.abs(actual[i] - expected[i]) <= delta,
+                boolean pass = Math.abs(actual[i] - expected[i]) <= delta;
+                softAssert.assertTrue(pass,
                         message + " Array elements at index " + i + " differ by more than " + delta +
                         ". Expected: " + expected[i] + ", Actual: " + actual[i]);
-                Reporter.log("Soft Assert: " + message + " Array element at index " + i + " within tolerance: " + delta, LogLevel.INFO_GREEN);
+                Reporter.log("Soft Assert: " + message + " Array element at index " + i + " within tolerance: " + delta, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
             }
         }
 
         public void assertEqualsNoOrder(Object[] actual, Object[] expected, String message) {
+            boolean pass = sameElementsIgnoringOrder(actual, expected);
             softAssert.assertEqualsNoOrder(actual, expected, message);
-            Reporter.log("Soft Assert: " + message, LogLevel.INFO_GREEN, " - Arrays are equal (ignoring order)");
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Arrays are equal (ignoring order)");
+        }
+
+        private static boolean sameElementsIgnoringOrder(Object[] actual, Object[] expected) {
+            if (actual == null || expected == null) return actual == expected;
+            if (actual.length != expected.length) return false;
+            Map<Object, Integer> counts = new HashMap<>();
+            for (Object o : actual) counts.merge(o, 1, Integer::sum);
+            for (Object o : expected) {
+                Integer remaining = counts.merge(o, -1, Integer::sum);
+                if (remaining < 0) return false;
+            }
+            return true;
         }
 
         public void assertNotEquals(int actual, int expected, String message) {
+            boolean pass = actual != expected;
             softAssert.assertNotEquals(actual, expected, message);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - values are not equal");
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - values are not equal");
         }
 
         public void assertNotEquals(int actual, int expected) {
+            boolean pass = actual != expected;
             softAssert.assertNotEquals(actual, expected);
-            Reporter.log("Soft Assert: ", LogLevel.INFO_GREEN, " - values are not equal");
+            Reporter.log("Soft Assert: ", pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - values are not equal");
         }
 
         public void fail(String message) {

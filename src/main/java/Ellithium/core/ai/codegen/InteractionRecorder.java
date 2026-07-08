@@ -119,7 +119,9 @@ public final class InteractionRecorder {
                 checkNewTabs();
                 if (stopRequested()) { recording = false; break; }
                 if (changed || freshInject) render();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Reporter.log("InteractionRecorder: drain iteration failed: " + e, LogLevel.DEBUG);
+            }
             sleep(POLL_MS);
         }
     }
@@ -405,7 +407,9 @@ public final class InteractionRecorder {
         try {
             js.executeScript(CAPTURE_SCRIPT, options.pickModeDefault());
             return Boolean.TRUE.equals(js.executeScript(OVERLAY_SCRIPT));
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Reporter.log("InteractionRecorder: toolbar injection failed (page may block scripts via CSP): " + e, LogLevel.DEBUG);
+        }
         return false;
     }
 

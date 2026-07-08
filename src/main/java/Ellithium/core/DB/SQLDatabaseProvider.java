@@ -222,12 +222,7 @@ public class SQLDatabaseProvider implements SQLProvider {
     /**
      * Rolls back and closes a transaction left open on the calling thread by a prior
      * {@link #beginTransaction()} that never reached {@link #commitTransaction()} or
-     * {@link #rollbackTransaction()} (e.g. a test assertion threw in between). A pooled
-     * connection otherwise stays checked out until this thread happens to call
-     * {@code beginTransaction()} again, which can starve the pool for unrelated tests in the
-     * meantime. Call this from an {@code @AfterMethod} when using the manual transaction API
-     * directly; {@link #executeInTransaction} already guarantees this via try/finally. No-op if
-     * there is no leaked transaction on this thread.
+     * {@link #rollbackTransaction()}. No-op if there is no open transaction on this thread.
      */
     public void releaseLeakedTransaction() {
         Connection stale = transactionConnection.get();

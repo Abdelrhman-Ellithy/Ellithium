@@ -80,6 +80,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles scenario start - initializes context and counts steps
      */
     private void testStartedHandler(TestCaseStarted event) {
+        Reporter.flushPendingStep();
         String name = event.getTestCase().getName();
         String scenarioId = getScenarioIdentifier(event.getTestCase());
         List<TestStep> allSteps = event.getTestCase().getTestSteps();
@@ -95,6 +96,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles step start - starts recording on first step and clears logs
      */
     private void stepStartedHandler(TestStepStarted event) {
+        Reporter.flushPendingStep();
         if (!(event.getTestStep() instanceof PickleStepTestStep)) {
             return;
         }
@@ -173,12 +175,10 @@ public class CucumberListener extends AllureCucumber7Jvm {
             context.paramAdded = true;
         }
         boolean isLastStep = context.currentStepIndex >= context.totalSteps;
-        DriverConfiguration driverConfiguration=DriverFactory.getCurrentDriverConfiguration();
-        boolean isNotMobileCloud= (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
-        boolean shouldRecord=isShouldCapture()&&isNotMobileCloud;
-        if (isLastStep && context.recordingStarted &&shouldRecord) {
+        if (isLastStep && context.recordingStarted) {
             stopRecording(context);
         }
+        Reporter.flushPendingStep();
     }
 
     private static boolean isShouldCapture() {
@@ -219,6 +219,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             Logger.warn(YELLOW+"Failed to collect Cucumber test result: " + e.getMessage()+RESET);
         }
         scenarioContext.remove();
+        Reporter.flushPendingStep();
     }
 
     /**

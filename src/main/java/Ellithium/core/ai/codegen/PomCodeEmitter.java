@@ -42,9 +42,6 @@ public final class PomCodeEmitter {
 
     public static EmitResult build(List<RecordedStep> steps, String className,
                                    boolean parameterize, boolean soft) {
-        // Sanitized here (not just at the CLI) since build()/previewSource() are public API a
-        // programmatic caller can reach directly, bypassing CodegenCli's own sanitization —
-        // className is embedded verbatim into "public class <name>" below.
         String name = CodegenCli.sanitizeClassName(className);
         String jsonPath = TEST_DATA_DIR + name + ".json";
 

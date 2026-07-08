@@ -161,7 +161,7 @@ public class VideoRecordingManager {
             String recordingId = UUID.randomUUID().toString();
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
             String recordingName = sanitizeFileName(testName) + "_" +
-                    TestDataGenerator.getTimeStamp();
+                    TestDataGenerator.getTimeStamp() + "_" + recordingId.substring(0, 8);
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);

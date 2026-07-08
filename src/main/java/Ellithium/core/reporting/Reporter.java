@@ -7,12 +7,14 @@ import Ellithium.core.logging.LogLevel;
 import io.qameta.allure.Allure;
 import io.qameta.allure.model.Parameter;
 import io.qameta.allure.model.Status;
+import io.qameta.allure.model.StepResult;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import static Ellithium.core.logging.LogLevel.*;
 import static Ellithium.core.logging.Logger.*;
 
@@ -41,6 +43,9 @@ public class Reporter {
             Map.entry(DEBUG, Status.PASSED)
     );
 
+    private record PendingStep(String uuid, long start) {}
+    private static final ThreadLocal<PendingStep> PENDING_STEP = new ThreadLocal<>();
+
     /**
      * Logs a message with specified log level and additional parameter.
      * @param message The main message to log
@@ -50,10 +55,58 @@ public class Reporter {
     public static void log(String message, LogLevel logLevel, String additionalParameter) {
         String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
         logByLevel(logLevel, coloredMessage);
-        // Only attach to Allure report if the log level is at or above the configured threshold.
-        // This prevents DEBUG/TRACE internal framework logs from polluting the test report.
         if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
-            Allure.step(message + additionalParameter, allureStatusMap.get(logLevel));
+            long now = System.currentTimeMillis();
+            closePendingStep(now);
+            openPendingStep(message + additionalParameter, logLevel, now);
+        }
+    }
+
+    /**
+     * As {@link #log(String, LogLevel, String)}, but records the step with an explicit start
+     * time, so its reported duration is the real elapsed time since {@code startMillis}.
+     */
+    public static void log(String message, LogLevel logLevel, String additionalParameter, long startMillis) {
+        String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
+        logByLevel(logLevel, coloredMessage);
+        if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
+            closePendingStep(startMillis);
+            String uuid = UUID.randomUUID().toString();
+            StepResult result = new StepResult()
+                    .setName(message + additionalParameter)
+                    .setStatus(allureStatusMap.get(logLevel));
+            // AllureLifecycle#startStep unconditionally overwrites StepResult.start with "now" —
+            // any pre-set value is silently discarded — so the real start time must be restored
+            // afterward via updateStep, which applies the given mutation directly with no such override.
+            Allure.getLifecycle().startStep(uuid, result);
+            Allure.getLifecycle().updateStep(uuid, sr -> sr.setStart(startMillis));
+            Allure.getLifecycle().stopStep(uuid);
+        }
+    }
+
+    private static void openPendingStep(String name, LogLevel logLevel, long start) {
+        String uuid = UUID.randomUUID().toString();
+        StepResult result = new StepResult().setName(name).setStatus(allureStatusMap.get(logLevel));
+        Allure.getLifecycle().startStep(uuid, result);
+        Allure.getLifecycle().updateStep(uuid, sr -> sr.setStart(start));
+        PENDING_STEP.set(new PendingStep(uuid, start));
+    }
+
+    private static void closePendingStep(long stopAt) {
+        PendingStep pending = PENDING_STEP.get();
+        if (pending == null) return;
+        PENDING_STEP.remove();
+        Allure.getLifecycle().updateStep(pending.uuid(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
+        Allure.getLifecycle().stopStep(pending.uuid());
+    }
+
+    /**
+     * Closes any step left open by {@link #log(String, LogLevel, String)} on the calling thread,
+     * without opening a new one. Call at fixture/test/step boundaries.
+     */
+    public static void flushPendingStep() {
+        if (ConfigContext.isOnExecution()) {
+            closePendingStep(System.currentTimeMillis());
         }
     }
 
@@ -127,6 +180,10 @@ public class Reporter {
      */
     public static void attachScreenshotToReport(File screenshot, String name, String description ){
         try (FileInputStream fis = new FileInputStream(screenshot)) {
+            // Without this, the attachment lands on whatever step log() last left open/pending
+            // (this call has no log() of its own to open a step for it), instead of at the
+            // current test/fixture level.
+            flushPendingStep();
             Allure.addAttachment(name + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, ".png");
         }catch (IOException e) {
             Logger.logException(e);
@@ -156,6 +213,7 @@ public class Reporter {
             if (dotIndex != -1) {
                 extension = fileName.substring(dotIndex); // includes the dot
             }
+            flushPendingStep();
             Allure.addAttachment(name, mimeType, fis, extension);
         } catch (IOException e) {
             Logger.logException(e);
