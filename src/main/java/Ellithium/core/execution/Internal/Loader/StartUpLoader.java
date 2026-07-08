@@ -214,7 +214,7 @@ public class StartUpLoader {
                     System.err.println("Failed to Automatically create the json file: " + checkerFile+ " Due to IDE Permissions you need to make it manually");
                 }
                 Files.write(checkerFile.toPath(), (
-                        "{\n LastDateRun\": null\n } ").getBytes());
+                        "{\n \"LastRunDate\": null\n}").getBytes());
             }catch (Exception e){
                 System.err.println(e.getMessage());
             }

@@ -204,6 +204,7 @@ public class ElementFingerprint {
                     batchedOk = true;
                 }
             } catch (Exception ignored) {
+                // JS not available or failed — fall through to sequential
             }
         }
 
@@ -800,7 +801,7 @@ public class ElementFingerprint {
         if (ta.size() == tb.size() && ta.containsAll(tb)) return 1.0;
         int inter = 0;
         for (String t : ta) if (tb.contains(t)) inter++;
-        return inter / (double) (ta.size() + tb.size() - inter);
+        return inter / (double) (ta.size() + tb.size() - inter);   // |∩| / |∪| without extra sets
     }
 
     private static java.util.Set<String> tokenSet(String s) {

@@ -117,7 +117,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute));
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute), false);
     }
 
     /**
@@ -130,7 +130,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property));
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property), false);
     }
 
     // Overloaded methods with default timeouts

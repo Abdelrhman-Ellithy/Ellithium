@@ -68,6 +68,36 @@ public class APIListener implements Filter {
         return result;
     }
 
+    /**
+     * As {@link #obfuscateData}, additionally masking sensitive query-string parameter VALUES
+     * (e.g. {@code ?api_key=...}, {@code ?token=...}) by parameter NAME — {@code obfuscateData}'s
+     * generic patterns don't recognize a raw {@code key=value} pair the way {@link #obfuscateJson}
+     * recognizes a JSON key, so an API key or token passed as a query parameter (common with
+     * key-based REST auth) would otherwise reach the report unredacted.
+     */
+    private String obfuscateUri(String uri) {
+        if (uri == null) return null;
+        int q = uri.indexOf('?');
+        if (q < 0) return obfuscateData(uri);
+
+        String base = uri.substring(0, q);
+        String query = uri.substring(q + 1);
+        StringBuilder masked = new StringBuilder();
+        for (String param : query.split("&")) {
+            if (!masked.isEmpty()) masked.append('&');
+            int eq = param.indexOf('=');
+            if (eq < 0) {
+                masked.append(param);
+                continue;
+            }
+            String key = param.substring(0, eq);
+            String value = param.substring(eq + 1);
+            boolean sensitive = SENSITIVE_FIELDS.contains(key.toLowerCase());
+            masked.append(key).append('=').append(sensitive ? "********" : obfuscateData(value));
+        }
+        return obfuscateData(base) + "?" + masked;
+    }
+
     private JSONObject obfuscateJson(JSONObject json) {
         JSONObject result = new JSONObject(json.toString());
         for (String key : result.keySet()) {
@@ -147,7 +177,7 @@ public class APIListener implements Filter {
         // Request logging
         try {
             Reporter.log("Request Method: ", LogLevel.INFO_BLUE, requestSpec.getMethod());
-            Reporter.log("Request URI: ", LogLevel.INFO_BLUE, requestSpec.getURI());
+            Reporter.log("Request URI: ", LogLevel.INFO_BLUE, obfuscateUri(requestSpec.getURI()));
         } catch (Exception e) {
             Reporter.log("Error logging request basic info: " + e.getMessage(), LogLevel.ERROR);
         }

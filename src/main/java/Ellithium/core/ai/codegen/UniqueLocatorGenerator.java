@@ -327,7 +327,7 @@ public final class UniqueLocatorGenerator {
     private static boolean isPresent(String s) { return s != null && !s.isBlank(); }
 
     private static String esc(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
     }
 
     private static final class Draft {

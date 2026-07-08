@@ -23,7 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-/** Tier 2 local embedding healer. See ai-context for architecture notes. */
+/** Tier 2 local embedding healer. */
 public class EnsembleHealer {
 
     private static final String EXTERNAL_MODEL_DIR = System.getProperty("ellithium.ai.modelDir",
@@ -96,10 +96,12 @@ public class EnsembleHealer {
             Reporter.log("[LOCAL AI MODEL] awaitInit called before initializeAsync — starting init now "
                     + "(ensure GeneralHandler.StartRoutine() is invoked before healing)", LogLevel.DEBUG);
             initializeAsync();
-            return;
+            f = INIT_FUTURE;
         }
         if (f != null && !f.isDone()) {
-            try { f.get(30, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}
+            try {
+                f.get(AIConfigLoader.getOnnxInitMaxWaitMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -191,11 +193,17 @@ public class EnsembleHealer {
      */
     public static synchronized void shutdown() {
         available = false;
-        // Drain in-flight embeds before closing the ORT session (max 2 s) to prevent
+        // Drain in-flight embeds before closing the ORT session (max 5 s) to prevent
         // a native crash when shutdown races a concurrent heal on another thread.
         long deadline = System.currentTimeMillis() + 5_000;
         while (EMBED_IN_FLIGHT.get() > 0 && System.currentTimeMillis() < deadline) {
             try { Thread.sleep(5); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+        }
+        int stillInFlight = EMBED_IN_FLIGHT.get();
+        if (stillInFlight > 0) {
+            Reporter.log("[LOCAL AI MODEL] Closing ORT session with " + stillInFlight
+                    + " embed call(s) still in flight after the 5s drain deadline — "
+                    + "a concurrent inference may fail or crash the native runtime", LogLevel.WARN);
         }
         Object sess;
         while ((sess = SESSION_POOL.poll()) != null) closeQuietly(sess);

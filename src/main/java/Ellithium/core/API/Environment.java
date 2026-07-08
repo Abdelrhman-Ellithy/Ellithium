@@ -17,8 +17,6 @@ public class Environment {
     private final String envFilePath;
     private static final String ENV_DIR = "src" + File.separator + "test" + File.separator + "resources"
             + File.separator + "TestData" + File.separator + "Environments";
-    private static final int MAX_RETRIES = 5;
-    private static final long RETRY_DELAY_MS = 100;
 
     /**
      * @param name The name of the environment to create or load
@@ -30,11 +28,6 @@ public class Environment {
             envDir.mkdirs();
         }
         this.envFilePath = ENV_DIR + File.separator + name + ".json";
-    }
-
-    @FunctionalInterface
-    private interface FileLockAction<T> {
-        T run() throws Exception;
     }
 
     /**

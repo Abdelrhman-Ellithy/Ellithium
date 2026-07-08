@@ -872,6 +872,29 @@ class BaseActions<T extends WebDriver> {
     }
 
     /**
+     * Presence-waited find with NO healing, bounded by {@code timeoutMillis}. Unlike
+     * {@link #rawVisibleElement}, does not require {@code isDisplayed()} — reading a DOM
+     * attribute/property does not need the element to be visible, so gating on visibility here
+     * only adds a redundant round trip and widens the window for a stale read against an
+     * element whose attributes change on their own (an animation, a live status field).
+     */
+    private WebElement rawPresentElement(By locator, long timeoutMillis, int polling) {
+        try {
+            return getFluentWaitMillis(timeoutMillis, polling)
+                    .until(ExpectedConditions.presenceOfElementLocated(locator));
+        } catch (TimeoutException te) {
+            By cached = HEALING_PORT.getCachedLocator(driver, locator);
+            if (cached != null && !cached.equals(locator)) {
+                try {
+                    return getFluentWaitMillis(Math.min(timeoutMillis, CACHED_HEAL_FALLBACK_TIMEOUT_MS), polling)
+                            .until(ExpectedConditions.presenceOfElementLocated(cached));
+                } catch (WebDriverException ignored) {}
+            }
+            throw new NoSuchElementException("No element located by " + locator, te);
+        }
+    }
+
+    /**
      * The single locator-healing call used by the retry helpers, fired at most once per operation.
      * Returns the healed element, or {@code null} when healing did not resolve one.
      */
@@ -994,6 +1017,17 @@ class BaseActions<T extends WebDriver> {
 
     <R> R performAndGet(By locator, int timeout, int polling,
                                    Function<WebElement, R> action) {
+        return performAndGet(locator, timeout, polling, action, true);
+    }
+
+    /**
+     * As {@link #performAndGet(By, int, int, Function)}, but with an explicit
+     * {@code requireVisibility} switch. Pure attribute/property reads pass {@code false} — they
+     * only need the element present, and skipping the visibility check removes a redundant round
+     * trip on the hot path of every such read.
+     */
+    <R> R performAndGet(By locator, int timeout, int polling,
+                                   Function<WebElement, R> action, boolean requireVisibility) {
         locator = normalizeLocator(locator);
         long deadline = deadlineNanos(timeout);
         WebDriverException lastException = null;
@@ -1001,7 +1035,9 @@ class BaseActions<T extends WebDriver> {
         for (int attempt = 0; attempt <= STALE_MAX_RETRIES; attempt++) {
             WebElement el;
             try {
-                el = rawVisibleElement(locator, remainingMillis(deadline), polling);
+                el = requireVisibility
+                        ? rawVisibleElement(locator, remainingMillis(deadline), polling)
+                        : rawPresentElement(locator, remainingMillis(deadline), polling);
             } catch (StaleElementReferenceException e) {
                 lastException = e;
                 continue;

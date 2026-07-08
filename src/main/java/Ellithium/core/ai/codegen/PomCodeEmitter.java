@@ -42,7 +42,10 @@ public final class PomCodeEmitter {
 
     public static EmitResult build(List<RecordedStep> steps, String className,
                                    boolean parameterize, boolean soft) {
-        String name = (className != null && !className.isBlank()) ? className : "RecordedPage";
+        // Sanitized here (not just at the CLI) since build()/previewSource() are public API a
+        // programmatic caller can reach directly, bypassing CodegenCli's own sanitization —
+        // className is embedded verbatim into "public class <name>" below.
+        String name = CodegenCli.sanitizeClassName(className);
         String jsonPath = TEST_DATA_DIR + name + ".json";
 
         Set<String> usedFieldNames = new LinkedHashSet<>();
@@ -92,6 +95,7 @@ public final class PomCodeEmitter {
                     tgtRef = base;
                     int n = 2;
                     while (!usedFieldNames.add(tgtRef)) tgtRef = base + n++;
+                    if (!targetChosen.unique()) locatorFields.add(nonUniqueWarning());
                     locatorFields.add("private final By " + tgtRef + " = " + targetChosen.javaExpression() + ";");
                     exprToField.put(targetChosen.javaExpression(), tgtRef);
                 }
@@ -372,9 +376,19 @@ public final class PomCodeEmitter {
         String fieldName = base;
         int n = 2;
         while (!used.add(fieldName)) fieldName = base + n++;
+        if (!chosen.unique()) locatorFields.add(nonUniqueWarning());
         locatorFields.add("private final By " + fieldName + " = " + chosen.javaExpression() + ";");
         exprToField.put(chosen.javaExpression(), fieldName);
         return fieldName;
+    }
+
+    /**
+     * Uniqueness was only checked against the DOM at record time — it is not re-verified when the
+     * generated test runs, so a locator that matched one element during recording can match several
+     * once real/varying data is in play.
+     */
+    private static String nonUniqueWarning() {
+        return "// WARNING: not confirmed unique when recorded — may match more than one element";
     }
 
     private static String parameterize(String javaExpression, String param) {

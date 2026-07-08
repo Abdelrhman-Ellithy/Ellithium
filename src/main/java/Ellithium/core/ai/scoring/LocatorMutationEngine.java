@@ -443,7 +443,7 @@ public class LocatorMutationEngine {
                 if (!v.isBlank()) out.add(By.id(v));
             }
             // Also try data-testid
-            out.add(By.cssSelector("[data-testid='" + idVal + "']"));
+            out.add(By.cssSelector("[data-testid='" + cssEscape(idVal) + "']"));
         }
 
         // Contains → exact: //input[contains(@id,'foo')] → //input[@id='foo']
@@ -491,7 +491,7 @@ public class LocatorMutationEngine {
     private static void addGenericMutations(List<By> out, String value) {
         out.add(By.id(value));
         out.add(By.name(value));
-        out.add(By.cssSelector("[data-testid='" + value + "']"));
+        out.add(By.cssSelector("[data-testid='" + cssEscape(value) + "']"));
         List<String> variants = generateValueMutations(value);
         for (String v : variants) {
             if (!v.isBlank()) {

@@ -103,7 +103,7 @@ public class VideoRecordingManager {
     public static boolean isAttachmentEnabled() {
         String configPath = ConfigContext.getConfigFilePath();
         if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
-            Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
+            Reporter.log("Attachment configuration key not found, defaulting to false", LogLevel.WARN);
             return false;
         }
         String isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);

@@ -100,7 +100,14 @@ public class AISelfHealer {
     public static void cacheHealedLocator(WebDriver driver, By brokenLocator,
                                            By healedLocator, double score, String fieldLabel) {
         if (healedLocator == null) return;
-        if (score < AIConfigLoader.getHealingStoreThreshold()) return;
+        // Reusing this heal for the rest of the CURRENT run is lower-stakes than persisting it as a
+        // permanent baseline/source patch (BaselineStore.capture gates that separately, at
+        // getHealingStoreThreshold) — a heal already deemed confident enough to accept and use once
+        // is confident enough to reuse for the identical broken locator later in the same run.
+        // Gating this session cache at the higher persistence bar instead just forces every
+        // 0.70-0.85-confidence heal to re-pay a full re-heal (LLM round trip, for Tier 3) on every
+        // repeat occurrence.
+        if (score < AIConfigLoader.getConfidenceThreshold()) return;
         String key = cacheKey(driver, brokenLocator);
         if (globalHealedCache.size() >= HEALED_CACHE_MAX) {
             globalHealedCache.entrySet().removeIf(e -> e.getValue().isExpired());
@@ -171,43 +178,6 @@ public class AISelfHealer {
     public static double getLastHealConfidence() { return LAST_HEAL_CONFIDENCE.get(); }
 
     // ──────────────────────── Public Source Patching API ────────────────────────
-
-    static void queueSourcePatch(By brokenLocator, WebElement healedElement,
-                                 StackTraceElement[] stackTrace, double confidence, int tier) {
-        try {
-            HealingStrategy strategy = getEffectiveStrategy();
-            if (strategy != HealingStrategy.HEAL_AND_NOTIFY) return;
-
-            if (confidence < AIConfigLoader.getHealingStoreThreshold()) {
-                Reporter.log(String.format("Source patch skipped: Tier %d heal confidence %.2f below "
-                        + "store threshold %.2f — source left untouched", tier, confidence,
-                        AIConfigLoader.getHealingStoreThreshold()), LogLevel.DEBUG);
-                return;
-            }
-
-            HealingContextBuilder.SourceLocation srcLoc = HealingContextBuilder.resolveSourceLocation(stackTrace);
-            if (srcLoc == null || srcLoc.filePath == null) return;
-
-            HealingContextBuilder.HealingContext tempCtx = new HealingContextBuilder.HealingContext();
-            HealingContextBuilder.parseByLocator(brokenLocator.toString(), tempCtx);
-            if (tempCtx.byMethod == null) return;
-
-            By healedBy = ElementFingerprint.reconstructLocator(healedElement);
-            if (healedBy == null) return;
-            String javaExpression = byToJavaExpression(healedBy);
-            if (javaExpression == null) return;
-
-            sourcePatchQueue.queue(new SourcePatch(
-                    srcLoc.filePath, srcLoc.fieldName,
-                    tempCtx.byMethod, tempCtx.byValue, javaExpression, confidence, tier));
-
-            Reporter.log("Source patch queued: By." + tempCtx.byMethod + "(\"" + tempCtx.byValue + "\") → "
-                    + javaExpression + " in " + srcLoc.filePath
-                    + " (tier " + tier + ", conf " + String.format("%.2f", confidence) + ")", LogLevel.DEBUG);
-        } catch (Exception e) {
-            // Source patching must never crash the test
-        }
-    }
 
     static void queueSourcePatch(By brokenLocator, By healedBy,
                                  StackTraceElement[] stackTrace, double confidence, int tier) {
@@ -507,7 +477,13 @@ public class AISelfHealer {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
+        String category = Ellithium.core.ai.HealingTelemetryStore.categoryForAction(ctx.actionType);
+
         if (acceptedLocator == null || acceptedResult == null) {
+            if (strategy != HealingStrategy.SUGGEST_ONLY) {
+                Ellithium.core.ai.HealingTelemetryStore.record(3, brokenLocator.toString(), null, 0.0, false,
+                        null, category);
+            }
             if (strategy == HealingStrategy.SUGGEST_ONLY) return null;
             Reporter.log("AI Self-Healing: No candidate passed validation", LogLevel.ERROR);
             return null;
@@ -516,12 +492,11 @@ public class AISelfHealer {
 
         LAST_HEAL_CONFIDENCE.set(acceptedResult.getConfidence());
 
+        Ellithium.core.ai.HealingTelemetryStore.record(3, brokenLocator.toString(),
+                acceptedLocator.toString(), acceptedResult.getConfidence(), true, null, category);
+
         String fieldLabel = ctx.fieldName != null ? ctx.fieldName : ctx.methodName;
-        if (acceptedResult.getConfidence() >= AIConfigLoader.getHealingStoreThreshold()) {
-            globalHealedCache.put(cacheKey(driver, brokenLocator),
-                    new CachedLocator(acceptedLocator, fieldLabel != null ? fieldLabel : "unknown",
-                            acceptedResult.getConfidence()));
-        }
+        cacheHealedLocator(driver, brokenLocator, acceptedLocator, acceptedResult.getConfidence(), fieldLabel);
 
         AIHealingReporter.queueChange(
                 ctx.filePath != null ? ctx.filePath : "unknown",

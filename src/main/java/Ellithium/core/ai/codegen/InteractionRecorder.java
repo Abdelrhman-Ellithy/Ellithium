@@ -30,6 +30,11 @@ public final class InteractionRecorder {
     private static volatile WebDriver driver = null;
     static volatile RecorderOptions options = RecorderOptions.defaults();
     private static volatile Thread drainThread = null;
+    // Bumped on every start()/stop() so a prior session's drain thread — still alive past stop()'s
+    // 1s join timeout because it was blocked in a slow/hung WebDriver call — reliably exits on its
+    // next loop check instead of resuming work if a new start() flips `recording` back to true
+    // before the old thread noticed it should stop.
+    private static volatile long recordingGeneration = 0L;
     private static volatile String lastUrl = null;
     static volatile String startUrl = null;
     private static volatile long navHintEpoch = 0L;
@@ -73,12 +78,15 @@ public final class InteractionRecorder {
                     + "use UniqueLocatorGenerator on a resolved element instead", LogLevel.WARN);
         }
         clearLog();
-        drainThread = Thread.ofVirtual().name("ellithium-codegen-recorder").start(InteractionRecorder::drainLoop);
+        long myGeneration = ++recordingGeneration;
+        drainThread = Thread.ofVirtual().name("ellithium-codegen-recorder")
+                .start(() -> drainLoop(myGeneration));
         Reporter.log("InteractionRecorder: recording started", LogLevel.INFO_YELLOW);
     }
 
     public static synchronized List<RecordedStep> stop() {
         recording = false;
+        recordingGeneration++;
         Thread t = drainThread;
         if (t != null) {
             t.interrupt();
@@ -101,8 +109,8 @@ public final class InteractionRecorder {
 
     public static String getStartUrl() { return startUrl; }
 
-    private static void drainLoop() {
-        while (recording) {
+    private static void drainLoop(long myGeneration) {
+        while (recording && recordingGeneration == myGeneration) {
             try {
                 if (!driverAlive()) { recording = false; break; }
                 boolean freshInject = ensureInjected();
