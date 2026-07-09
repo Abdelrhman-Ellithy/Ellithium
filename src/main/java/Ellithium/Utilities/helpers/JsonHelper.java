@@ -200,14 +200,20 @@ public class JsonHelper {
             }
             log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
             try (FileReader reader = new FileReader(jsonFile)) {
-                JsonElement jsonElement = JsonParser.parseReader(reader);
+                JsonElement jsonElement;
+                try {
+                    jsonElement = JsonParser.parseReader(reader);
+                } catch (JsonParseException e) {
+                    log("JSON file content is malformed — overwriting with a fresh object: ", LogLevel.ERROR, filePath);
+                    jsonElement = null;
+                }
 
-                // Initialize as empty object if file is empty or not a JSON object
+                // Initialize as empty object if file is empty, malformed, or not a JSON object
                 if (jsonElement == null || !jsonElement.isJsonObject()) {
                     jsonElement = new JsonObject();
                 }
                 JsonObject jsonObj = jsonElement.getAsJsonObject();
-                
+
                 jsonObj.addProperty(key, value);
 
                 try (FileWriter writer = new FileWriter(jsonFile)) {
@@ -237,28 +243,30 @@ public class JsonHelper {
             return false;
         }
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement parsed = JsonParser.parseReader(reader);
-            if (!parsed.isJsonObject()) {
-                log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
-                return false;
-            }
-            JsonObject jsonObject = parsed.getAsJsonObject();
-
-            for (String key : requiredKeys) {
-                if (!jsonObject.has(key)) {
-                    log("Missing key in JSON file: " + key, LogLevel.ERROR);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement parsed = JsonParser.parseReader(reader);
+                if (!parsed.isJsonObject()) {
+                    log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
                     return false;
                 }
-            }
-            log("All required keys are present in JSON file: ", LogLevel.INFO_GREEN, filePath);
-            return true;
+                JsonObject jsonObject = parsed.getAsJsonObject();
 
-        } catch (IOException e) {
-            log("Failed to validate keys in JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                for (String key : requiredKeys) {
+                    if (!jsonObject.has(key)) {
+                        log("Missing key in JSON file: " + key, LogLevel.ERROR);
+                        return false;
+                    }
+                }
+                log("All required keys are present in JSON file: ", LogLevel.INFO_GREEN, filePath);
+                return true;
+
+            } catch (IOException e) {
+                log("Failed to validate keys in JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+            }
+            return false;
         }
-        return false;
     }
 
     /**
@@ -275,23 +283,25 @@ public class JsonHelper {
 
         log("Attempting to read nested JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement parsed = JsonParser.parseReader(reader);
-            if (!parsed.isJsonObject()) {
-                log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement parsed = JsonParser.parseReader(reader);
+                if (!parsed.isJsonObject()) {
+                    log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
+                    return Collections.emptyMap();
+                }
+                return parseJsonObject(parsed.getAsJsonObject());
+
+            } catch (FileNotFoundException e) {
+                log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                return Collections.emptyMap();
+
+            } catch (IOException | JsonSyntaxException e) {
+                log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
                 return Collections.emptyMap();
             }
-            return parseJsonObject(parsed.getAsJsonObject());
-
-        } catch (FileNotFoundException e) {
-            log("Failed to find JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-            return Collections.emptyMap();
-
-        } catch (IOException | JsonSyntaxException e) {
-            log("Failed to read JSON file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-            return Collections.emptyMap();
         }
     }
 
@@ -351,17 +361,37 @@ public class JsonHelper {
 
         log("Comparing JSON files: ", LogLevel.INFO_BLUE, filePath1 + " and " + filePath2);
 
-        try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
-            JsonElement json1 = JsonParser.parseReader(reader1);
-            JsonElement json2 = JsonParser.parseReader(reader2);
-            boolean isEqual = json1.equals(json2);
-            log("Comparison result: " + isEqual, isEqual ? LogLevel.INFO_GREEN : LogLevel.ERROR, null);
-            return isEqual;
+        return withFileLocks(() -> {
+            try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
+                JsonElement json1 = JsonParser.parseReader(reader1);
+                JsonElement json2 = JsonParser.parseReader(reader2);
+                boolean isEqual = json1.equals(json2);
+                log("Comparison result: " + isEqual, isEqual ? LogLevel.INFO_GREEN : LogLevel.ERROR, null);
+                return isEqual;
 
-        } catch (IOException | JsonSyntaxException e) {
-            log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", " + filePath2);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-            return false;
+            } catch (IOException | JsonSyntaxException e) {
+                log("Failed to compare JSON files.", LogLevel.ERROR, filePath1 + ", " + filePath2);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                return false;
+            }
+        }, filePath1, filePath2);
+    }
+
+    /**
+     * Runs {@code action} while holding the locks for every given path, always acquired in
+     * ascending path order, so two threads locking the same set of files (in any argument order)
+     * can never deadlock.
+     */
+    private static <T> T withFileLocks(java.util.function.Supplier<T> action, String... paths) {
+        String[] sorted = paths.clone();
+        java.util.Arrays.sort(sorted);
+        return withFileLocksSorted(action, sorted, 0);
+    }
+
+    private static <T> T withFileLocksSorted(java.util.function.Supplier<T> action, String[] sortedPaths, int i) {
+        if (i >= sortedPaths.length) return action.get();
+        synchronized (getFileLock(sortedPaths[i])) {
+            return withFileLocksSorted(action, sortedPaths, i + 1);
         }
     }
 
@@ -383,29 +413,32 @@ public class JsonHelper {
 
         log("Merging JSON files: ", LogLevel.INFO_BLUE, sourceFilePath1 + " and " + sourceFilePath2);
 
-        try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
-            JsonElement parsed1 = JsonParser.parseReader(reader1);
-            JsonElement parsed2 = JsonParser.parseReader(reader2);
-            if (!parsed1.isJsonObject() || !parsed2.isJsonObject()) {
-                log("One or both JSON files are not top-level objects — merge requires objects.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
-                return;
-            }
-            JsonObject json1 = parsed1.getAsJsonObject();
-            JsonObject json2 = parsed2.getAsJsonObject();
+        withFileLocks(() -> {
+            try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
+                JsonElement parsed1 = JsonParser.parseReader(reader1);
+                JsonElement parsed2 = JsonParser.parseReader(reader2);
+                if (!parsed1.isJsonObject() || !parsed2.isJsonObject()) {
+                    log("One or both JSON files are not top-level objects — merge requires objects.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
+                    return null;
+                }
+                JsonObject json1 = parsed1.getAsJsonObject();
+                JsonObject json2 = parsed2.getAsJsonObject();
 
-            for (Map.Entry<String, JsonElement> entry : json2.entrySet()) {
-                json1.add(entry.getKey(), entry.getValue());
-            }
+                for (Map.Entry<String, JsonElement> entry : json2.entrySet()) {
+                    json1.add(entry.getKey(), entry.getValue());
+                }
 
-            try (FileWriter writer = new FileWriter(targetFile)) {
-                writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(json1));
-                log("Successfully merged JSON files to: ", LogLevel.INFO_GREEN, targetFilePath);
-            }
+                try (FileWriter writer = new FileWriter(targetFile)) {
+                    writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(json1));
+                    log("Successfully merged JSON files to: ", LogLevel.INFO_GREEN, targetFilePath);
+                }
 
-        } catch (IOException | JsonSyntaxException e) {
-            log("Failed to merge JSON files.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-        }
+            } catch (IOException | JsonSyntaxException e) {
+                log("Failed to merge JSON files.", LogLevel.ERROR, sourceFilePath1 + ", " + sourceFilePath2);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+            }
+            return null;
+        }, sourceFilePath1, sourceFilePath2, targetFilePath);
     }
 
     /**
@@ -535,35 +568,37 @@ public class JsonHelper {
             return null;
         }
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonElement currentElement = JsonParser.parseReader(reader);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonElement currentElement = JsonParser.parseReader(reader);
 
-            for(String key : pathKeys) {
-                if(currentElement.isJsonObject()) {
-                    JsonObject obj = currentElement.getAsJsonObject();
-                    currentElement = obj.has(key) ? obj.get(key) : null;
-                } else if(currentElement.isJsonArray()) {
-                    try {
-                        int index = Integer.parseInt(key);
-                        JsonArray array = currentElement.getAsJsonArray();
-                        currentElement = index < array.size() ? array.get(index) : null;
-                    } catch (NumberFormatException e) {
-                        return null;
+                for(String key : pathKeys) {
+                    if(currentElement.isJsonObject()) {
+                        JsonObject obj = currentElement.getAsJsonObject();
+                        currentElement = obj.has(key) ? obj.get(key) : null;
+                    } else if(currentElement.isJsonArray()) {
+                        try {
+                            int index = Integer.parseInt(key);
+                            JsonArray array = currentElement.getAsJsonArray();
+                            currentElement = index < array.size() ? array.get(index) : null;
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
                     }
+                    if(currentElement == null) break;
                 }
-                if(currentElement == null) break;
-            }
 
-            if(currentElement != null && currentElement.isJsonPrimitive()) {
-                log("Successfully read nested value", LogLevel.INFO_GREEN, filePath);
-                return currentElement.getAsString();
-            }
-            return null;
+                if(currentElement != null && currentElement.isJsonPrimitive()) {
+                    log("Successfully read nested value", LogLevel.INFO_GREEN, filePath);
+                    return currentElement.getAsString();
+                }
+                return null;
 
-        } catch (Exception e) {
-            log("Failed to read nested path", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-            return null;
+            } catch (Exception e) {
+                log("Failed to read nested path", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                return null;
+            }
         }
     }
 
@@ -689,21 +724,23 @@ public class JsonHelper {
         log("Checking array contains value in path: " + String.join(".", arrayPath), LogLevel.INFO_BLUE, filePath);
         File jsonFile = new File(filePath);
 
-        try (FileReader reader = new FileReader(jsonFile)) {
-            JsonArray targetArray = navigateToArray(JsonParser.parseReader(reader).getAsJsonObject(), arrayPath);
-            if(targetArray != null) {
-                for(JsonElement element : targetArray) {
-                    if(element.isJsonPrimitive() && element.getAsString().equals(value)) {
-                        log("Value found in array", LogLevel.INFO_GREEN, filePath);
-                        return true;
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                JsonArray targetArray = navigateToArray(JsonParser.parseReader(reader).getAsJsonObject(), arrayPath);
+                if(targetArray != null) {
+                    for(JsonElement element : targetArray) {
+                        if(element.isJsonPrimitive() && element.getAsString().equals(value)) {
+                            log("Value found in array", LogLevel.INFO_GREEN, filePath);
+                            return true;
+                        }
                     }
                 }
+                return false;
+            } catch (Exception e) {
+                log("Failed to check array contents", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+                return false;
             }
-            return false;
-        } catch (Exception e) {
-            log("Failed to check array contents", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
-            return false;
         }
     }
 
@@ -715,13 +752,15 @@ public class JsonHelper {
      * @return Object of type T.
      */
     public static <T> T parseJsonToObject(String filePath, Class<T> classOfT) {
-        try {
-            String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
-            return new Gson().fromJson(jsonContent, classOfT);
-        } catch (IOException e) {
-            log("Failed to parse JSON to object", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
-            return null;
+        synchronized (getFileLock(filePath)) {
+            try {
+                String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+                return new Gson().fromJson(jsonContent, classOfT);
+            } catch (IOException e) {
+                log("Failed to parse JSON to object", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+                return null;
+            }
         }
     }
 
@@ -733,14 +772,16 @@ public class JsonHelper {
      * @return List of objects of type T.
      */
     public static <T> List<T> parseJsonToList(String filePath, Class<T> classOfT) {
-        try {
-            String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
-            Type listType = TypeToken.getParameterized(List.class, classOfT).getType();
-            return new Gson().fromJson(jsonContent, listType);
-        } catch (IOException e) {
-            log("Failed to parse JSON to list", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
-            return new ArrayList<>();
+        synchronized (getFileLock(filePath)) {
+            try {
+                String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+                Type listType = TypeToken.getParameterized(List.class, classOfT).getType();
+                return new Gson().fromJson(jsonContent, listType);
+            } catch (IOException e) {
+                log("Failed to parse JSON to list", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+                return new ArrayList<>();
+            }
         }
     }
 
@@ -750,12 +791,14 @@ public class JsonHelper {
      * @return true if valid, false otherwise.
      */
     public static boolean isValidJson(String filePath) {
-        try (FileReader reader = new FileReader(filePath)) {
-            JsonParser.parseReader(reader);
-            return true;
-        } catch (JsonSyntaxException | IOException e) {
-            log("Invalid JSON format", LogLevel.ERROR, filePath);
-            return false;
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(filePath)) {
+                JsonParser.parseReader(reader);
+                return true;
+            } catch (JsonSyntaxException | IOException e) {
+                log("Invalid JSON format", LogLevel.ERROR, filePath);
+                return false;
+            }
         }
     }
 
@@ -764,14 +807,16 @@ public class JsonHelper {
      * @param filePath Path to the JSON file.
      */
     public static void prettyPrintJson(String filePath) {
-        try (FileReader reader = new FileReader(filePath)) {
-            JsonElement jsonElement = JsonParser.parseReader(reader);
-            String prettyJson = new GsonBuilder().setPrettyPrinting().create().toJson(jsonElement);
-            Files.write(Paths.get(filePath), prettyJson.getBytes(StandardCharsets.UTF_8));
-            log("Successfully formatted JSON file", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to format JSON file", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(filePath)) {
+                JsonElement jsonElement = JsonParser.parseReader(reader);
+                String prettyJson = new GsonBuilder().setPrettyPrinting().create().toJson(jsonElement);
+                Files.write(Paths.get(filePath), prettyJson.getBytes(StandardCharsets.UTF_8));
+                log("Successfully formatted JSON file", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to format JSON file", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+            }
         }
     }
 
@@ -782,14 +827,16 @@ public class JsonHelper {
      */
     public static Map<String, Integer> getJsonKeyOccurrences(String filePath) {
         Map<String, Integer> keyOccurrences = new HashMap<>();
-        try (FileReader reader = new FileReader(filePath)) {
-            countKeysRecursively(JsonParser.parseReader(reader), keyOccurrences);
-            log("Successfully counted key occurrences", LogLevel.INFO_GREEN, filePath);
-            return keyOccurrences;
-        } catch (IOException e) {
-            log("Failed to count key occurrences", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
-            return keyOccurrences;
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(filePath)) {
+                countKeysRecursively(JsonParser.parseReader(reader), keyOccurrences);
+                log("Successfully counted key occurrences", LogLevel.INFO_GREEN, filePath);
+                return keyOccurrences;
+            } catch (IOException e) {
+                log("Failed to count key occurrences", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
+                return keyOccurrences;
+            }
         }
     }
 
@@ -818,16 +865,18 @@ public class JsonHelper {
      * @param filePath Path to the JSON file.
      */
     public static void removeNullValues(String filePath) {
-        try (FileReader reader = new FileReader(filePath)) {
-            JsonElement element = JsonParser.parseReader(reader);
-            JsonElement cleaned = removeNullValuesRecursively(element);
-            try (FileWriter writer = new FileWriter(filePath)) {
-                new GsonBuilder().setPrettyPrinting().create().toJson(cleaned, writer);
-                log("Successfully removed null values", LogLevel.INFO_GREEN, filePath);
+        synchronized (getFileLock(filePath)) {
+            try (FileReader reader = new FileReader(filePath)) {
+                JsonElement element = JsonParser.parseReader(reader);
+                JsonElement cleaned = removeNullValuesRecursively(element);
+                try (FileWriter writer = new FileWriter(filePath)) {
+                    new GsonBuilder().setPrettyPrinting().create().toJson(cleaned, writer);
+                    log("Successfully removed null values", LogLevel.INFO_GREEN, filePath);
+                }
+            } catch (IOException e) {
+                log("Failed to remove null values", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
             }
-        } catch (IOException e) {
-            log("Failed to remove null values", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
     }
 
@@ -874,14 +923,16 @@ public class JsonHelper {
 
             String backupPath = filePath + ".backup-" + System.currentTimeMillis();
             File backupFile = new File(backupPath);
-            
+
             // Ensure parent directory exists
             File parentDir = backupFile.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();
             }
 
-        Files.copy(sourceFile.toPath(), backupFile.toPath());
+            synchronized (getFileLock(filePath)) {
+                Files.copy(sourceFile.toPath(), backupFile.toPath());
+            }
 
             // Verify backup was created and content matches
             if (backupFile.exists() && compareJsonFiles(filePath, backupPath)) {

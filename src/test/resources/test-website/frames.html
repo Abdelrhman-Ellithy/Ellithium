@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frames &amp; Windows — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .iframe-shell {
+      border:1px solid var(--border); border-radius:var(--radius-md);
+      overflow:hidden; background:var(--bg-primary);
+      min-height:220px; display:flex; align-items:center; justify-content:center;
+    }
+    .iframe-shell.loaded { display:block; }
+    .iframe-shell iframe { width:100%; border:none; display:block; }
+    .loading-ph { display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--text-muted); font-size:0.82rem; padding:2rem; }
+    .window-handle-list { display:flex; flex-direction:column; gap:4px; }
+    .window-handle-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 12px; background:var(--bg-primary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); font-family:'Courier New',monospace; font-size:0.75rem;
+    }
+    .window-handle-item .handle-id { color:var(--accent-cyan); }
+    .window-handle-item .handle-badge { font-size:0.68rem; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Frames &amp; Windows</div>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link active" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);">🖼</div>
+      <div>
+        <h1 class="page-title">Frames &amp; Windows</h1>
+        <p class="page-subtitle">Real iframe injection with timing delays, nested frame chains requiring multi-level context switching, new window/popup handle management, and recoverContext recovery scenarios.</p>
+        <div class="mt-2">
+          <span class="etag">NoSuchFrameException</span>
+          <span class="etag">NoSuchWindowException</span>
+          <span class="etag etag-amber">FrameActions.switchToDefaultContent</span>
+          <span class="etag etag-amber">WindowActions.getAllWindowHandles</span>
+          <span class="etag etag-amber">WindowActions.switchToOriginalWindow</span>
+          <span class="etag etag-amber">WaitActions.waitForFrameToBeAvailableAndSwitchToIt</span>
+          <span class="etag etag-amber">WaitActions.waitForNumberOfWindowsToBe</span>
+          <span class="etag etag-amber">InteractionRecovery.recoverContext</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- 4A: Delayed iframe -->
+      <div class="card span-2">
+        <div class="card-header">
+          <div class="card-title">📦 Dynamic iFrame — 3-Second Delayed Injection</div>
+          <div class="card-desc">The <code>&lt;iframe&gt;</code> element is not present in the DOM at page load. It is injected exactly 3 seconds after. Any attempt to <code>driver.switchTo().frame()</code> before injection throws <code>NoSuchFrameException</code>. After injection, use <code>WaitActions.waitForFrameToBeAvailableAndSwitchToIt()</code>. The iframe contains a full login form that requires frame context to interact with.</div>
+        </div>
+        <div id="iframe-shell" class="iframe-shell mt-3">
+          <div class="loading-ph">
+            <div class="spinner-ring"></div>
+            <span>iFrame injected in <strong id="iframe-cd">3</strong>s — switching before this throws NoSuchFrameException</span>
+          </div>
+        </div>
+        <div id="iframe-status" class="status status-warn mt-2">⏳ Waiting for iframe injection…</div>
+      </div>
+
+      <!-- 4B: Window Management -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🪟 Window Handle Management</div>
+          <div class="card-desc">Opens new windows/tabs. Tests <code>WindowActions.getAllWindowHandles()</code>, <code>waitForNumberOfWindowsToBe(2)</code>, and <code>switchToOriginalWindow(handle)</code>.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <button id="open-blank-window-btn" data-id="open-blank-window-btn" class="btn btn-green" onclick="openBlankWindow()">🪟 Open Blank Window (target=_blank)</button>
+          <button id="open-popup-btn" data-id="open-popup-btn" class="btn btn-violet btn-sm" onclick="openPopup()">🪟 Open Popup (200×250)</button>
+          <button id="open-named-btn" data-id="open-named-btn" class="btn btn-cyan btn-sm" onclick="openNamedWindow()">🪟 Open Named Window</button>
+          <div class="divider"></div>
+          <div class="section-label">Expected Window Handles</div>
+          <div class="window-handle-list" id="handle-list">
+            <div class="window-handle-item">
+              <span class="handle-id">Main Window</span>
+              <span class="badge badge-green handle-badge">original</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="updateHandleList()">🔄 Refresh Handle List</button>
+        </div>
+        <div id="window-status" class="status status-info mt-2">No extra windows opened</div>
+      </div>
+
+      <!-- 4C: Window Size / Position -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📐 Window Size &amp; Position (WindowActions)</div>
+          <div class="card-desc">Tests <code>WindowActions.setWindowSize</code>, <code>setWindowPosition</code>, <code>maximizeWindow</code>, <code>minimizeWindow</code>, <code>fullscreenWindow</code>, <code>getWindowSize</code>, <code>getWindowPosition</code>.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="row gap-2">
+            <div class="col form-group">
+              <label class="ctrl-label" for="win-w">Width (px)</label>
+              <input type="number" id="win-w" data-id="win-w" class="ctrl-input" value="1280" min="400" max="3840" />
+            </div>
+            <div class="col form-group">
+              <label class="ctrl-label" for="win-h">Height (px)</label>
+              <input type="number" id="win-h" data-id="win-h" class="ctrl-input" value="720" min="300" max="2160" />
+            </div>
+          </div>
+          <button id="set-size-btn" data-id="set-size-btn" class="btn btn-blue btn-sm" onclick="setSize()">📐 Set Window Size</button>
+          <div class="row gap-2">
+            <div class="col form-group">
+              <label class="ctrl-label" for="win-x">X Position</label>
+              <input type="number" id="win-x" data-id="win-x" class="ctrl-input" value="100" />
+            </div>
+            <div class="col form-group">
+              <label class="ctrl-label" for="win-y">Y Position</label>
+              <input type="number" id="win-y" data-id="win-y" class="ctrl-input" value="100" />
+            </div>
+          </div>
+          <button id="set-position-btn" data-id="set-position-btn" class="btn btn-violet btn-sm" onclick="setPosition()">📌 Set Window Position</button>
+          <div class="row gap-2">
+            <button id="maximize-btn" data-id="maximize-btn" class="btn btn-ghost btn-sm" onclick="doMaximize()">⬛ Maximize</button>
+            <button id="fullscreen-btn" data-id="fullscreen-btn" class="btn btn-ghost btn-sm" onclick="doFullscreen()">⛶ Fullscreen</button>
+          </div>
+          <div id="window-info" class="status status-info mt-1">Current: <span id="win-info-text">unknown</span></div>
+        </div>
+      </div>
+
+      <!-- 4D: Nested iframes -->
+      <div class="card span-2">
+        <div class="card-header">
+          <div class="card-title">🪆 Nested iFrame Chain (2 levels)</div>
+          <div class="card-desc">An outer frame containing an inner frame. Requires: <code>switchTo().frame("outer-frame")</code> → <code>switchTo().frame("inner-frame")</code> to reach the deepest input. Then <code>switchTo().defaultContent()</code> or <code>switchTo().parentFrame()</code> to exit. Also tests <code>FrameActions.switchToDefaultContent()</code>.</div>
+        </div>
+        <div class="row gap-2 mt-3">
+          <button id="inject-nested-btn" data-id="inject-nested-btn" class="btn btn-cyan" onclick="injectNested()">📦 Inject Nested Frame Chain</button>
+          <button id="remove-nested-btn" data-id="remove-nested-btn" class="btn btn-ghost btn-sm" onclick="removeNested()" style="display:none;">🗑 Remove</button>
+        </div>
+        <div id="nested-frame-container" class="mt-3"></div>
+        <div id="nested-status" class="status status-info mt-2">No nested frames injected</div>
+      </div>
+
+      <!-- 4E: recoverContext -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔄 recoverContext — NoSuchWindowException Recovery</div>
+          <div class="card-desc">Tests <code>InteractionRecovery.recoverContext(locator, NoSuchWindowException)</code>. Open a window then close it. The recovery mechanism should switch back to the available open window handle.</div>
+        </div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:10px;">
+          <button id="open-recover-window-btn" data-id="open-recover-window-btn" class="btn btn-blue" onclick="openRecoverWindow()">🪟 Open Recoverable Window</button>
+          <div id="recover-status" class="status status-info mt-2">Open a window first, then close it manually to simulate NoSuchWindowException</div>
+        </div>
+      </div>
+
+      <!-- 4F: Frame switching sequence -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Frame Context Switching Steps</div>
+          <div class="card-desc">Step-by-step visual guide showing the exact Selenium calls needed to switch into and back from the injected login iframe.</div>
+        </div>
+        <div class="mt-3 console-box" style="height:200px;" id="switch-guide">
+// Step 1: Wait for iframe to exist
+WebElement iframeEl = WaitActions.waitForElementPresence(
+    By.id("dynamic-iframe"), 10, 500);
+
+// Step 2: Switch into it
+driver.switchTo().frame(iframeEl);
+// OR: WaitActions.waitForFrameToBeAvailableAndSwitchToIt(
+//     By.id("dynamic-iframe"), 10, 500);
+
+// Step 3: Interact with elements inside
+driver.findElement(By.id("iframe-username")).sendKeys("admin");
+driver.findElement(By.id("iframe-password")).sendKeys("secret");
+driver.findElement(By.id("iframe-login-btn")).click();
+
+// Step 4: Return to main document
+driver.switchTo().defaultContent();
+// OR: FrameActions.switchToDefaultContent();
+
+// NoSuchFrameException guard: if called before 3s injection
+// WaitActions.waitForElementPresence ensures iframe is in DOM first
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Frames &amp; Windows</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+
+/* 4A: Delayed iframe injection */
+var iframeInjected = false;
+
+(function(){
+  var cd = 3;
+  var cdEl = document.getElementById('iframe-cd');
+  var tick = setInterval(function(){
+    cd--;
+    if (cdEl) cdEl.textContent = cd;
+    if (cd <= 0) {
+      clearInterval(tick);
+      injectLoginIframe();
+    }
+  }, 1000);
+})();
+
+function buildLoginFrameHTML() {
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Login Frame</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;background:#0a0e1a;color:#e2e8f0;padding:18px;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;}.card{background:#131929;border:1px solid #1e2d4a;border-radius:10px;padding:20px;width:100%;max-width:380px;}h2{color:#3b82f6;font-size:0.95rem;margin-bottom:14px;text-align:center;}label{display:block;font-size:0.72rem;color:#94a3b8;margin-bottom:4px;font-weight:600;}input,select{width:100%;padding:8px 11px;background:#0f1526;border:1px solid #1e2d4a;border-radius:5px;color:#e2e8f0;font-size:0.82rem;margin-bottom:10px;}input:focus,select:focus{outline:none;border-color:#3b82f6;}button{width:100%;padding:9px;background:#3b82f6;color:#fff;border:none;border-radius:5px;font-size:0.82rem;cursor:pointer;font-weight:600;margin-bottom:8px;}button:hover{background:#2563eb;}.secondary-btn{background:#8b5cf6;}.secondary-btn:hover{background:#7c3aed;}#result{margin-top:8px;font-size:0.75rem;min-height:20px;text-align:center;color:#10b981;}.env-badge{text-align:center;font-size:0.68rem;color:#475569;margin-bottom:10px;font-family:monospace;}</style></head><body><div class="card"><h2>🔐 iFrame Login Form</h2><div class="env-badge">frame name: login-frame | id: dynamic-iframe</div><label for="iframe-username">Username</label><input type="text" id="iframe-username" placeholder="admin" autocomplete="username" /><label for="iframe-password">Password</label><input type="password" id="iframe-password" placeholder="••••••••" autocomplete="current-password" /><label for="iframe-env">Environment</label><select id="iframe-env"><option value="dev">Development</option><option value="staging">Staging</option><option value="prod">Production</option></select><button id="iframe-login-btn" onclick="doLogin()">Sign In</button><button class="secondary-btn" id="iframe-cancel-btn" onclick="doCancel()">Cancel</button><div id="result"></div></div><script>function doLogin(){var u=document.getElementById("iframe-username").value,p=document.getElementById("iframe-password").value,r=document.getElementById("result");r.textContent=u&&p?"✅ Logged in as: "+u:"⚠ Fill both fields";}function doCancel(){document.getElementById("iframe-username").value="";document.getElementById("iframe-password").value="";document.getElementById("result").textContent="Cancelled";}<\/script></body></html>';
+}
+
+function injectLoginIframe() {
+  if (iframeInjected) return;
+  iframeInjected = true;
+  var shell = document.getElementById('iframe-shell');
+  var blob = new Blob([buildLoginFrameHTML()], {type:'text/html'});
+  var url  = URL.createObjectURL(blob);
+  shell.innerHTML = '<iframe id="dynamic-iframe" data-id="dynamic-iframe" name="login-frame" src="' + url + '" style="height:260px;"></iframe>';
+  shell.classList.add('loaded');
+  setStatus('iframe-status','ok','✅ iFrame injected at ' + ts() + '. switchTo().frame("login-frame") or By.id("dynamic-iframe") now works.');
+}
+
+/* 4B: Window handles */
+var openedWindows = [];
+function openBlankWindow() {
+  var html = buildDummyWindowHTML('Blank Window', 'target=_blank');
+  var blob = new Blob([html], {type:'text/html'});
+  var w = window.open(URL.createObjectURL(blob), '_blank');
+  if (w) { openedWindows.push(w); updateHandleList(); setStatus('window-status','ok','✅ New blank window opened. waitForNumberOfWindowsToBe(2) should pass.'); }
+}
+function openPopup() {
+  var html = buildDummyWindowHTML('Popup 200×250', 'popup window');
+  var blob = new Blob([html], {type:'text/html'});
+  var w = window.open(URL.createObjectURL(blob), 'ellithium-popup', 'width=200,height=250,left=200,top=100');
+  if (w) { openedWindows.push(w); updateHandleList(); setStatus('window-status','ok','✅ Popup (200×250) opened.'); }
+}
+function openNamedWindow() {
+  var html = buildDummyWindowHTML('Named Window', 'name: ellithium-named');
+  var blob = new Blob([html], {type:'text/html'});
+  var w = window.open(URL.createObjectURL(blob), 'ellithium-named');
+  if (w) { openedWindows.push(w); updateHandleList(); setStatus('window-status','ok','✅ Named window "ellithium-named" opened.'); }
+}
+function buildDummyWindowHTML(title, sub) {
+  return '<!DOCTYPE html><html><head><title>' + title + '</title><style>body{font-family:system-ui;background:#0a0e1a;color:#e2e8f0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;text-align:center;padding:20px;}h1{color:#3b82f6;font-size:1.3rem;}p{color:#94a3b8;font-size:0.82rem;}code{background:rgba(59,130,246,0.1);padding:2px 8px;border-radius:4px;color:#06b6d4;font-size:0.8rem;}button{padding:8px 20px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;}button:hover{background:#2563eb;}</style></head><body><h1>🪟 ' + title + '</h1><p>' + sub + '</p><p>Switch here via: <code>driver.switchTo().window(handle)</code></p><p>Return via: <code>WindowActions.switchToOriginalWindow(originalHandle)</code></p><button onclick="window.close()">Close Window</button></body></html>';
+}
+function updateHandleList() {
+  var list = document.getElementById('handle-list');
+  list.innerHTML = '<div class="window-handle-item"><span class="handle-id">Main Window (this)</span><span class="badge badge-green handle-badge">original</span></div>';
+  var alive = openedWindows.filter(function(w){ try{return !w.closed;}catch(e){return false;} });
+  openedWindows = alive;
+  alive.forEach(function(w, i){
+    var item = document.createElement('div');
+    item.className = 'window-handle-item';
+    item.innerHTML = '<span class="handle-id">Window ' + (i+1) + ' — ' + (w.name||'unnamed') + '</span><span class="badge badge-amber handle-badge">open</span>';
+    list.appendChild(item);
+  });
+  setStatus('window-status','info','Window count: ' + (alive.length + 1) + ' (including main)');
+}
+
+/* 4C: Window size/position */
+function setSize() {
+  var w = parseInt(document.getElementById('win-w').value);
+  var h = parseInt(document.getElementById('win-h').value);
+  try { window.resizeTo(w, h); document.getElementById('win-info-text').textContent = w + 'x' + h; } catch(e) {}
+  setStatus('window-info','ok','setWindowSize(' + w + ', ' + h + ') called');
+}
+function setPosition() {
+  var x = parseInt(document.getElementById('win-x').value);
+  var y = parseInt(document.getElementById('win-y').value);
+  try { window.moveTo(x, y); } catch(e) {}
+  setStatus('window-info','ok','setWindowPosition(' + x + ', ' + y + ') called');
+}
+function doMaximize() {
+  try { window.moveTo(0,0); window.resizeTo(screen.width, screen.height); } catch(e) {}
+  setStatus('window-info','ok','maximizeWindow() — moved to 0,0 and resized to screen dimensions');
+}
+function doFullscreen() {
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  setStatus('window-info','ok','fullscreenWindow() called');
+}
+
+/* 4D: Nested frames */
+function injectNested() {
+  var container = document.getElementById('nested-frame-container');
+  var innerHTML = '<!DOCTYPE html><html><head><style>body{font-family:system-ui;background:#0f1526;color:#e2e8f0;padding:10px;}p{font-size:0.75rem;color:#94a3b8;margin-bottom:6px;}iframe{width:100%;border:1px solid #2a4070;border-radius:4px;}</style></head><body><p>🔵 Outer Frame (name: outer-frame)</p><p>Now switch one more level: switchTo().frame("inner-frame")</p><iframe name="inner-frame" srcdoc="&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;style&gt;body{font-family:system-ui;background:#131929;color:#e2e8f0;padding:10px;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&apos;font-size:0.72rem;color:#8b5cf6;margin-bottom:8px;&apos;&gt;🟣 Inner Frame (name: inner-frame)&lt;/p&gt;&lt;input id=&apos;deep-input&apos; data-id=&apos;deep-input&apos; type=&apos;text&apos; placeholder=&apos;Innermost — requires 2 switchTo calls&apos; style=&apos;width:90%;padding:7px 10px;background:#0a0e1a;border:1px solid #1e2d4a;border-radius:5px;color:#e2e8f0;font-size:0.8rem;&apos; /&gt;&lt;button id=&apos;deep-btn&apos; data-id=&apos;deep-btn&apos; onclick=&apos;document.getElementById(&quot;deep-input&quot;).value=&quot;Clicked at &quot;+new Date().toISOString()&apos; style=&apos;margin-top:8px;padding:6px 14px;background:#8b5cf6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.78rem;&apos;&gt;Deep Button&lt;/button&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></body></html>';
+  var blob = new Blob([innerHTML], {type:'text/html'});
+  container.innerHTML = '<iframe id="outer-nested-frame" data-id="outer-nested-frame" name="outer-frame" src="' + URL.createObjectURL(blob) + '" style="width:100%;height:180px;border:1px solid var(--border-bright);border-radius:8px;"></iframe>';
+  document.getElementById('inject-nested-btn').style.display = 'none';
+  document.getElementById('remove-nested-btn').style.display = 'inline-flex';
+  setStatus('nested-status','ok','✅ Nested frames injected. switchTo().frame("outer-frame") then switchTo().frame("inner-frame") to reach #deep-input.');
+}
+function removeNested() {
+  document.getElementById('nested-frame-container').innerHTML = '';
+  document.getElementById('inject-nested-btn').style.display = 'inline-flex';
+  document.getElementById('remove-nested-btn').style.display = 'none';
+  setStatus('nested-status','info','Nested frames removed');
+}
+
+/* 4E: recoverContext */
+function openRecoverWindow() {
+  var html = buildDummyWindowHTML('Recoverable Window', 'Close this window to trigger NoSuchWindowException, then call recoverContext()');
+  var blob = new Blob([html], {type:'text/html'});
+  var w = window.open(URL.createObjectURL(blob), 'recover-window');
+  setStatus('recover-status','ok','✅ Window opened. Close it manually, then the framework should call recoverContext(locator, NoSuchWindowException) which switches to the remaining open handle.');
+}
+</script>
+</body>
+</html>

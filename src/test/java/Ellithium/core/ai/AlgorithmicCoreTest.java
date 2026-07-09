@@ -321,4 +321,43 @@ public class AlgorithmicCoreTest {
         Assert.assertFalse(fp.hasStrongIdentity(),
                 "role + type have no stable identity value — expected false");
     }
+
+    // ── linkText / partialLinkText mutations (whitespace is a real-world copy-paste artifact) ──
+
+    @Test
+    public void linkText_withLeadingTrailingWhitespace_trimsAndOffersPartialFallback() {
+        List<org.openqa.selenium.By> mutations =
+                LocatorMutationEngine.generateMutations(org.openqa.selenium.By.linkText(" Sign In "));
+        Assert.assertTrue(mutations.contains(org.openqa.selenium.By.linkText("Sign In")),
+                "must try the trimmed exact text");
+        Assert.assertTrue(mutations.contains(org.openqa.selenium.By.partialLinkText("Sign In")),
+                "must also offer the trimmed value as partialLinkText");
+    }
+
+    @Test
+    public void linkText_exact_alsoOffersPartialLinkTextFallback() {
+        List<org.openqa.selenium.By> mutations =
+                LocatorMutationEngine.generateMutations(org.openqa.selenium.By.linkText("Sign In"));
+        Assert.assertTrue(mutations.contains(org.openqa.selenium.By.partialLinkText("Sign In")),
+                "an exact linkText should still get a partialLinkText fallback for minor drift");
+    }
+
+    @Test
+    public void partialLinkText_withWhitespace_trimsButDoesNotAddRedundantPartial() {
+        List<org.openqa.selenium.By> mutations =
+                LocatorMutationEngine.generateMutations(org.openqa.selenium.By.partialLinkText(" Sign In "));
+        Assert.assertTrue(mutations.contains(org.openqa.selenium.By.partialLinkText("Sign In")),
+                "must try the trimmed value");
+        Assert.assertTrue(mutations.contains(org.openqa.selenium.By.linkText("Sign In")),
+                "must also try the trimmed value as an exact linkText");
+    }
+
+    @Test
+    public void linkText_noWhitespace_noSpuriousDuplicateMutations() {
+        List<org.openqa.selenium.By> mutations =
+                LocatorMutationEngine.generateMutations(org.openqa.selenium.By.linkText("SignIn"));
+        long partialCount = mutations.stream()
+                .filter(m -> m.equals(org.openqa.selenium.By.partialLinkText("SignIn"))).count();
+        Assert.assertEquals(partialCount, 1, "no whitespace to trim — exactly one partial fallback, no duplicates");
+    }
 }

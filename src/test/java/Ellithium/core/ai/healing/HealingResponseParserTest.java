@@ -25,6 +25,18 @@ public class HealingResponseParserTest {
         Assert.assertEquals(HealingResponseParser.extractValue("By.xpath(\"//input[@id='x']\")"), "//input[@id='x']");
     }
 
+    @Test
+    public void extractValue_unescapesBackslashEscapedQuotes() {
+        Assert.assertEquals(
+                HealingResponseParser.extractValue("By.xpath(\"//div[@id=\\\"x\\\"]\")"),
+                "//div[@id=\"x\"]");
+    }
+
+    @Test
+    public void extractValue_unescapesBackslash() {
+        Assert.assertEquals(HealingResponseParser.extractValue("By.xpath(\"a\\\\b\")"), "a\\b");
+    }
+
     // ── parseByFromExpression ─────────────────────────────────────────────────
 
     @Test
@@ -83,53 +95,6 @@ public class HealingResponseParserTest {
     public void parseByFromExpression_unknownExpression_returnsNull() {
         By by = HealingResponseParser.parseByFromExpression("By.unknown(\"value\")");
         Assert.assertNull(by, "Unknown strategy must return null");
-    }
-
-    // ── isStableLocatorStrategy ───────────────────────────────────────────────
-
-    @Test
-    public void isStableLocatorStrategy_byId_isStable() {
-        Assert.assertTrue(HealingResponseParser.isStableLocatorStrategy(By.id("login-btn")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_byName_isStable() {
-        Assert.assertTrue(HealingResponseParser.isStableLocatorStrategy(By.name("username")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_cssWithDataTestId_isStable() {
-        Assert.assertTrue(HealingResponseParser.isStableLocatorStrategy(
-                By.cssSelector("[data-testid='submit']")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_cssWithAriaLabel_isStable() {
-        Assert.assertTrue(HealingResponseParser.isStableLocatorStrategy(
-                By.cssSelector("[aria-label='Submit']")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_cssWithIdHash_isStable() {
-        Assert.assertTrue(HealingResponseParser.isStableLocatorStrategy(
-                By.cssSelector("#main-login-btn")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_cssDynamicClass_isUnstable() {
-        Assert.assertFalse(HealingResponseParser.isStableLocatorStrategy(
-                By.cssSelector(".dynamic-generated-class")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_xpath_isUnstable() {
-        Assert.assertFalse(HealingResponseParser.isStableLocatorStrategy(
-                By.xpath("//div[3]/button")));
-    }
-
-    @Test
-    public void isStableLocatorStrategy_null_returnsFalse() {
-        Assert.assertFalse(HealingResponseParser.isStableLocatorStrategy(null));
     }
 
     // ── parseMultiCandidateResponse ───────────────────────────────────────────

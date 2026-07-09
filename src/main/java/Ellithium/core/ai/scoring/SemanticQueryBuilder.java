@@ -119,7 +119,7 @@ public class SemanticQueryBuilder {
             tokens.add(deCamelCase(extractLocatorValue(locatorValue)));
         }
 
-        if (isPresent(methodName)) {
+        if (isPresent(methodName) && !"unknown".equalsIgnoreCase(methodName.trim())) {
             String stripped = deCamelCase(stripMethodPrefixV2(methodName));
             if (!stripped.isBlank()) {
                 tokens.add(stripped);

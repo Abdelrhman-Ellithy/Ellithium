@@ -37,8 +37,8 @@ public final class CodegenCli {
         LocalDriverType browser = browserOf(flags.getOrDefault("browser", "chrome"));
         HeadlessMode headless = flags.containsKey("headless") ? HeadlessMode.True : HeadlessMode.False;
         RecorderOptions opts = new RecorderOptions(
-                flags.getOrDefault("output", "src/test/java"),
-                flags.getOrDefault("package", "Pages"),
+                sanitizeRelativePath("output", flags.getOrDefault("output", "src/test/java"), "src/test/java"),
+                sanitizeRelativePath("package", flags.getOrDefault("package", "Pages"), "Pages"),
                 browser.name(),
                 flags.getOrDefault("target", "test"),
                 flags.getOrDefault("assert", "soft"),
@@ -65,9 +65,13 @@ public final class CodegenCli {
             InteractionRecorder.start(driver, opts, url);
 
             long deadline = System.currentTimeMillis() + SESSION_CAP_MS;
+            boolean interrupted = false;
             while (InteractionRecorder.isRecording() && System.currentTimeMillis() < deadline) {
                 try { Thread.sleep(POLL_MS); }
-                catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                catch (InterruptedException e) { Thread.currentThread().interrupt(); interrupted = true; break; }
+            }
+            if (!interrupted && InteractionRecorder.isRecording()) {
+                System.out.println("Session cap reached (" + (SESSION_CAP_MS / 60_000) + " min) — stopping automatically.");
             }
 
             List<RecordedStep> steps = InteractionRecorder.stop();
@@ -122,6 +126,24 @@ public final class CodegenCli {
             }
         }
         return url;
+    }
+
+    /**
+     * Rejects a {@code --output}/{@code --package} value containing a {@code ..} path segment —
+     * both flags are concatenated raw into the generated file's write path by {@code PomCodeEmitter}
+     * with no other validation, so an unsanitized value (typo or programmatically-constructed CI
+     * input) could write generated Java source outside the intended project directory.
+     */
+    private static String sanitizeRelativePath(String flagName, String value, String fallback) {
+        String normalized = value.replace('\\', '/');
+        for (String segment : normalized.split("/")) {
+            if (segment.equals("..")) {
+                System.out.println("Ignoring --" + flagName + " \"" + value
+                        + "\": '..' path segments are not allowed. Using default: " + fallback);
+                return fallback;
+            }
+        }
+        return value;
     }
 
     private static LocalDriverType browserOf(String name) {

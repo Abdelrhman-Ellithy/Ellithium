@@ -169,7 +169,7 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
      * </pre>
      *
      * @return a new {@link MobileActions} instance bound to the current {@link AppiumDriver}
-     * @throws ClassCastException if the current driver is not an {@link io.appium.java_client.AppiumDriver}
+     * @throws UnsupportedOperationException if the current driver is not an {@link io.appium.java_client.AppiumDriver}
      * @see MobileActions
      * @since 2.2.2 (unified mobile actions)
      */

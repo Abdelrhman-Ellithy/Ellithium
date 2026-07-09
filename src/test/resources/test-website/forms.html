@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complex Forms — Ellithium Arena</title>
+  <link rel="stylesheet" href="_shared.css" />
+  <style>
+    .file-drop-zone {
+      border:2px dashed var(--border-bright); border-radius:var(--radius-md);
+      padding:1.5rem; text-align:center; cursor:pointer;
+      transition:var(--transition); position:relative;
+    }
+    .file-drop-zone:hover { border-color:var(--accent-blue); background:rgba(59,130,246,0.04); }
+    .file-drop-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .custom-dd { position:relative; }
+    .custom-dd-trigger {
+      width:100%; padding:10px 14px; background:var(--bg-primary);
+      border:1px solid var(--border); border-radius:var(--radius-sm);
+      color:var(--text-primary); font-size:0.85rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between;
+      transition:var(--transition);
+    }
+    .custom-dd-trigger:hover { border-color:var(--accent-blue); }
+    .custom-dd-menu {
+      display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:var(--bg-secondary); border:1px solid var(--border);
+      border-radius:var(--radius-sm); z-index:100; overflow:hidden;
+      box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    }
+    .custom-dd-menu.open { display:block; animation:fadeSlideIn 0.15s ease; }
+    @keyframes fadeSlideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .custom-dd-opt {
+      padding:10px 14px; font-size:0.83rem; cursor:pointer;
+      transition:var(--transition); color:var(--text-primary);
+      border-bottom:1px solid rgba(30,45,74,0.4);
+    }
+    .custom-dd-opt:last-child { border-bottom:none; }
+    .custom-dd-opt:hover { background:rgba(59,130,246,0.1); color:var(--accent-blue); }
+    .custom-dd-opt.selected { background:rgba(59,130,246,0.08); color:var(--accent-blue); font-weight:700; }
+    .radio-option, .cb-option {
+      display:flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:var(--radius-sm); cursor:pointer;
+      transition:var(--transition); border:1px solid transparent;
+    }
+    .radio-option:hover, .cb-option:hover { background:rgba(59,130,246,0.05); border-color:var(--border); }
+    .range-val {
+      font-size:1.2rem; font-weight:800; color:var(--accent-blue);
+      font-family:'Courier New',monospace; min-width:2.5rem; text-align:center;
+    }
+    .multi-select { height:130px; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html"><div class="logo-icon">⚡</div><div><div>Ellithium</div><div class="logo-sub">Testing Arena</div></div></a>
+      <div class="header-badge"><div class="badge-dot"></div>Complex Forms</div>
+    </div>
+  </header>
+  <nav class="site-nav">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="waits.html"><span class="nav-icon">⏳</span>Waits</a>
+    <a class="nav-link" href="state.html"><span class="nav-icon">🚫</span>State Traps</a>
+    <a class="nav-link" href="stale.html"><span class="nav-icon">♻</span>Stale &amp; Shadow</a>
+    <a class="nav-link" href="frames.html"><span class="nav-icon">🖼</span>Frames &amp; Windows</a>
+    <a class="nav-link active" href="forms.html"><span class="nav-icon">📝</span>Forms</a>
+    <a class="nav-link" href="mouse.html"><span class="nav-icon">🖱</span>Mouse &amp; Keys</a>
+    <a class="nav-link" href="alerts.html"><span class="nav-icon">🔔</span>Alerts</a>
+    <a class="nav-link" href="navigation.html"><span class="nav-icon">🧭</span>Navigation</a>
+    <a class="nav-link" href="cookies.html"><span class="nav-icon">🍪</span>Cookies</a>
+  </nav>
+  <main class="page-content">
+    <div class="page-hero">
+      <div class="page-hero-icon" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);">📝</div>
+      <div>
+        <h1 class="page-title">Complex Forms &amp; Input Variety</h1>
+        <p class="page-subtitle">Every HTML form input type with real validation challenges: file upload (sendKeys path), native and custom dropdowns (SelectActions), radio/checkbox state detection, range/date/color/number HTML5 inputs, and contenteditable elements.</p>
+        <div class="mt-2">
+          <span class="etag etag-green">SelectActions.selectDropdownByText</span>
+          <span class="etag etag-green">SelectActions.selectDropdownByValue</span>
+          <span class="etag etag-green">SelectActions.selectDropdownByIndex</span>
+          <span class="etag etag-green">SelectActions.deselectAll</span>
+          <span class="etag etag-green">SelectActions.getDropdownSelectedOptions</span>
+          <span class="etag etag-green">JavaScriptActions.uploadFileUsingJS</span>
+          <span class="etag etag-green">JavaScriptActions.setElementValueUsingJS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-auto">
+
+      <!-- File Upload -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📁 File Upload</div><div class="card-desc">Use <code>element.sendKeys("/absolute/path/to/file")</code>. Tests <code>JavaScriptActions.uploadFileUsingJS</code> which validates file exists first. Accept: any file type.</div></div>
+        <div class="mt-3">
+          <div class="file-drop-zone" id="file-drop-zone" data-id="file-drop-zone">
+            <input type="file" id="file-upload" data-id="file-upload" multiple onchange="handleUpload(this)" />
+            <div style="font-size:1.8rem;margin-bottom:8px;">📂</div>
+            <div style="font-size:0.82rem;color:var(--text-muted);">Click or drag files here<br/><code>id: file-upload</code></div>
+          </div>
+          <div id="upload-status" class="status status-info mt-2">No file selected</div>
+          <div id="file-list" style="margin-top:8px;font-size:0.78rem;color:var(--text-secondary);"></div>
+        </div>
+      </div>
+
+      <!-- Native Select -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔽 Native &lt;select&gt; Dropdown</div><div class="card-desc">Use Selenium's <code>Select</code> class (wrapped by <code>SelectActions</code>). Tests all methods: by text, by value, by index, deselect, getSelectedOptions.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label class="ctrl-label" for="native-select">Single Select</label>
+            <select id="native-select" data-id="native-select" class="ctrl-input" onchange="updateSelectStatus()">
+              <option value="">-- Select Framework --</option>
+              <option value="selenium">Selenium WebDriver</option>
+              <option value="playwright">Playwright</option>
+              <option value="cypress">Cypress</option>
+              <option value="puppeteer">Puppeteer</option>
+              <option value="appium">Appium</option>
+              <option value="webdriverio">WebdriverIO</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label" for="multi-select">Multi-Select (hold Ctrl/Cmd)</label>
+            <select id="multi-select" data-id="multi-select" class="ctrl-input multi-select" multiple onchange="updateMultiStatus()">
+              <option value="java">Java</option>
+              <option value="python">Python</option>
+              <option value="csharp">C#</option>
+              <option value="js">JavaScript</option>
+              <option value="ruby">Ruby</option>
+              <option value="go">Go</option>
+            </select>
+          </div>
+          <div>
+            <label class="ctrl-label" for="native-select-grouped">Grouped Select (optgroup)</label>
+            <select id="native-select-grouped" data-id="native-select-grouped" class="ctrl-input">
+              <optgroup label="Browsers">
+                <option value="chrome">Chrome</option>
+                <option value="firefox">Firefox</option>
+                <option value="edge">Edge</option>
+              </optgroup>
+              <optgroup label="Mobile">
+                <option value="android">Android (Appium)</option>
+                <option value="ios">iOS (XCUITest)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div id="select-status" class="status status-info">Nothing selected</div>
+          <div id="multi-status" class="status status-info">No multi-select</div>
+        </div>
+      </div>
+
+      <!-- Custom Dropdown -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎛 Custom div-Based Dropdown</div><div class="card-desc">NOT a native <code>&lt;select&gt;</code>. Requires <code>click()</code> on trigger to open, then <code>findElement</code> inside the menu. Mimics real-world custom components that break standard SelectActions.</div></div>
+        <div class="mt-3">
+          <label class="ctrl-label">Browser Engine</label>
+          <div class="custom-dd" id="custom-dd" data-id="custom-dd">
+            <div class="custom-dd-trigger" id="custom-dd-trigger" data-id="custom-dd-trigger" onclick="toggleDD()" tabindex="0">
+              <span id="custom-dd-value">Select engine…</span><span>▾</span>
+            </div>
+            <div class="custom-dd-menu" id="custom-dd-menu" data-id="custom-dd-menu">
+              <div class="custom-dd-opt" id="dd-blink"   data-id="dd-blink"   data-value="blink"   onclick="selectDD('Blink (Chrome/Edge)','blink')">🔵 Blink (Chrome/Edge)</div>
+              <div class="custom-dd-opt" id="dd-gecko"   data-id="dd-gecko"   data-value="gecko"   onclick="selectDD('Gecko (Firefox)','gecko')">🦊 Gecko (Firefox)</div>
+              <div class="custom-dd-opt" id="dd-webkit"  data-id="dd-webkit"  data-value="webkit"  onclick="selectDD('WebKit (Safari)','webkit')">🧭 WebKit (Safari)</div>
+              <div class="custom-dd-opt" id="dd-trident" data-id="dd-trident" data-value="trident" onclick="selectDD('Trident (IE Legacy)','trident')">💀 Trident (IE)</div>
+            </div>
+          </div>
+          <div id="custom-dd-status" class="status status-info mt-3">No engine selected</div>
+        </div>
+      </div>
+
+      <!-- Radio / Checkbox / Toggle -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">☑ Radio, Checkbox &amp; Toggle</div><div class="card-desc">Tests <code>isSelected()</code>, <code>click()</code> to select/deselect, and <code>waitForElementSelectionStateToBe</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div class="ctrl-label">Browser (Radio)</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px;">
+              <label class="radio-option"><input type="radio" id="radio-chrome"  name="browser" value="chrome"  data-id="radio-chrome"  onchange="radioChange()">Chrome</label>
+              <label class="radio-option"><input type="radio" id="radio-firefox" name="browser" value="firefox" data-id="radio-firefox" onchange="radioChange()">Firefox</label>
+              <label class="radio-option"><input type="radio" id="radio-edge"    name="browser" value="edge"    data-id="radio-edge"    onchange="radioChange()">Edge</label>
+              <label class="radio-option"><input type="radio" id="radio-safari"  name="browser" value="safari"  data-id="radio-safari"  onchange="radioChange()">Safari</label>
+            </div>
+            <div id="radio-status" class="status status-info mt-2">No browser selected</div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div class="ctrl-label">Features (Checkbox)</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px;">
+              <label class="cb-option"><input type="checkbox" id="cb-screenshots" data-id="cb-screenshots" onchange="cbChange()">Screenshots</label>
+              <label class="cb-option"><input type="checkbox" id="cb-video"        data-id="cb-video"        onchange="cbChange()">Video Recording</label>
+              <label class="cb-option"><input type="checkbox" id="cb-parallel"     data-id="cb-parallel"     onchange="cbChange()">Parallel Execution</label>
+              <label class="cb-option"><input type="checkbox" id="cb-retry"        data-id="cb-retry"        onchange="cbChange()">Auto-Retry</label>
+            </div>
+            <div id="cb-status" class="status status-info mt-2">Nothing checked</div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-weight:600;font-size:0.85rem;">Headless Mode</div><div style="font-size:0.72rem;color:var(--text-muted);">CSS toggle switch</div></div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-headless" data-id="toggle-headless" onchange="toggleChange(this)" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="toggle-status" class="status status-warn">Headless: OFF</div>
+        </div>
+      </div>
+
+      <!-- HTML5 Inputs -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎚 HTML5 Input Types</div><div class="card-desc">Range slider, date, time, datetime-local, number, color picker, search with datalist. Each uses <code>sendKeys</code> or <code>JavaScriptActions.setElementValueUsingJS</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label class="ctrl-label">Timeout: <span class="range-val" id="range-display">30</span>s</label>
+            <input type="range" id="range-slider" data-id="range-slider" min="0" max="120" value="30" oninput="document.getElementById('range-display').textContent=this.value" />
+          </div>
+          <div class="row gap-2">
+            <div class="col form-group">
+              <label class="ctrl-label" for="date-input">Date</label>
+              <input type="date" id="date-input" data-id="date-input" class="ctrl-input" />
+            </div>
+            <div class="col form-group">
+              <label class="ctrl-label" for="time-input">Time</label>
+              <input type="time" id="time-input" data-id="time-input" class="ctrl-input" />
+            </div>
+          </div>
+          <div class="row gap-2">
+            <div class="col form-group">
+              <label class="ctrl-label" for="datetime-input">DateTime-Local</label>
+              <input type="datetime-local" id="datetime-input" data-id="datetime-input" class="ctrl-input" />
+            </div>
+            <div class="col form-group">
+              <label class="ctrl-label" for="number-input">Number (1–100)</label>
+              <input type="number" id="number-input" data-id="number-input" class="ctrl-input" min="1" max="100" value="4" />
+            </div>
+          </div>
+          <div class="row gap-2" style="align-items:center;">
+            <div class="col form-group">
+              <label class="ctrl-label" for="color-input">Color Picker</label>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <input type="color" id="color-input" data-id="color-input" value="#3b82f6" onchange="document.getElementById('color-val').textContent=this.value" />
+                <span id="color-val" style="font-family:'Courier New',monospace;font-size:0.82rem;color:var(--text-secondary);">#3b82f6</span>
+              </div>
+            </div>
+            <div class="col form-group">
+              <label class="ctrl-label" for="js-set-value-target">JS setValue Target</label>
+              <input type="text" id="js-set-value-target" data-id="js-set-value-target" class="ctrl-input" placeholder="Set via JS executor" />
+            </div>
+          </div>
+          <div>
+            <label class="ctrl-label" for="search-input">Search (with datalist)</label>
+            <input type="search" id="search-input" data-id="search-input" class="ctrl-input" list="search-suggestions" placeholder="Type to search…" />
+            <datalist id="search-suggestions">
+              <option value="Ellithium Framework"></option>
+              <option value="Selenium WebDriver"></option>
+              <option value="Shadow DOM Testing"></option>
+              <option value="StaleElementReferenceException"></option>
+              <option value="WaitActions.waitForElementPresence"></option>
+            </datalist>
+          </div>
+          <button class="btn btn-violet btn-sm" id="set-value-js-btn" data-id="set-value-js-btn" onclick="jsSetValue()">⚡ JS: setElementValueUsingJS on #js-set-value-target</button>
+        </div>
+      </div>
+
+      <!-- Textarea + ContentEditable -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">✍ Textarea &amp; ContentEditable</div><div class="card-desc"><code>textarea</code>: use <code>clear()</code> then <code>sendKeys()</code>. <code>contenteditable</code>: requires JS click then <code>sendKeys(Keys.chord(Keys.CONTROL,"a"))</code> + <code>sendKeys(text)</code>.</div></div>
+        <div class="mt-3" style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label class="ctrl-label" for="textarea-input">Textarea (maxlength=300)</label>
+            <textarea id="textarea-input" data-id="textarea-input" class="ctrl-input" rows="4" maxlength="300" style="resize:vertical;" oninput="updateCharCount(this)" placeholder="Use element.clear() then sendKeys(text)…"></textarea>
+            <div style="text-align:right;font-size:0.72rem;color:var(--text-muted);"><span id="char-count" data-id="char-count">0</span>/300</div>
+          </div>
+          <div>
+            <label class="ctrl-label">ContentEditable Div</label>
+            <div id="content-editable" data-id="content-editable" contenteditable="true"
+              style="min-height:70px;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;color:var(--text-primary);outline:none;cursor:text;transition:var(--transition);"
+              onfocus="this.style.borderColor='var(--accent-blue)'"
+              onblur="this.style.borderColor='var(--border)'">
+              Edit me — I am a contenteditable div
+            </div>
+          </div>
+          <div>
+            <label class="ctrl-label" for="email-input">Email Validation Input</label>
+            <input type="email" id="email-input" data-id="email-input" class="ctrl-input" placeholder="test@example.com" />
+          </div>
+          <div>
+            <label class="ctrl-label" for="tel-input">Tel Input</label>
+            <input type="tel" id="tel-input" data-id="tel-input" class="ctrl-input" placeholder="+1-555-000-0000" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Form Submission -->
+      <div class="card span-2">
+        <div class="card-header"><div class="card-title">📤 Full Form Submission (no page reload)</div><div class="card-desc">A complete form with all field types. Submitting sets <code>data-submitted="true"</code> on the form element — used to test <code>waitForElementAttributeToBe(form, "data-submitted", "true")</code>.</div></div>
+        <form id="full-form" data-id="full-form" data-submitted="false" onsubmit="submitFullForm(event)" class="mt-3">
+          <div class="grid grid-3" style="gap:12px;">
+            <div class="form-group"><label class="ctrl-label" for="form-name">Full Name</label><input type="text" id="form-name" data-id="form-name" class="ctrl-input" placeholder="Jane Doe" required /></div>
+            <div class="form-group"><label class="ctrl-label" for="form-email">Email</label><input type="email" id="form-email" data-id="form-email" class="ctrl-input" placeholder="jane@example.com" required /></div>
+            <div class="form-group"><label class="ctrl-label" for="form-role">Role</label><select id="form-role" data-id="form-role" class="ctrl-input"><option value="">-- Select --</option><option value="qa">QA Engineer</option><option value="dev">Developer</option><option value="pm">Product Manager</option><option value="devops">DevOps</option></select></div>
+            <div class="form-group"><label class="ctrl-label" for="form-notes">Notes</label><textarea id="form-notes" data-id="form-notes" class="ctrl-input" rows="2" placeholder="Optional notes…"></textarea></div>
+            <div class="form-group"><label class="ctrl-label" for="form-priority">Priority (1–10)</label><input type="number" id="form-priority" data-id="form-priority" class="ctrl-input" min="1" max="10" value="5" /></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;"><button type="submit" id="form-submit-btn" data-id="form-submit-btn" class="btn btn-green btn-full">✅ Submit Form</button></div>
+          </div>
+        </form>
+        <div id="form-result" class="status status-ok mt-3" style="display:none;"></div>
+      </div>
+
+    </div>
+  </main>
+  <footer class="site-footer"><strong>Ellithium</strong> Arena — Complex Forms</footer>
+</div>
+<script src="_shared.js"></script>
+<script>
+'use strict';
+function handleUpload(input) {
+  var files = Array.from(input.files);
+  if (!files.length) return;
+  setStatus('upload-status','ok','📁 ' + files.length + ' file(s): ' + files.map(function(f){return f.name;}).join(', '));
+  document.getElementById('file-list').innerHTML = files.map(function(f,i){
+    return '<div style="padding:3px 0;">📄 <strong id="file-name-'+i+'" data-id="file-name-'+i+'">' + f.name + '</strong> (' + (f.size/1024).toFixed(1) + ' KB)</div>';
+  }).join('');
+}
+function updateSelectStatus() {
+  var sel = document.getElementById('native-select');
+  setStatus('select-status','ok', sel.value ? '✅ Selected: ' + sel.options[sel.selectedIndex].text + ' (value:'+sel.value+')' : 'Nothing selected');
+}
+function updateMultiStatus() {
+  var sel = document.getElementById('multi-select');
+  var opts = Array.from(sel.selectedOptions).map(function(o){return o.text;});
+  setStatus('multi-status', opts.length?'ok':'info', opts.length ? '✅ Selected: ' + opts.join(', ') : 'No languages selected');
+}
+function toggleDD() { document.getElementById('custom-dd-menu').classList.toggle('open'); }
+function selectDD(text, val) {
+  document.getElementById('custom-dd-value').textContent = text;
+  document.getElementById('custom-dd-menu').classList.remove('open');
+  document.getElementById('custom-dd').dataset.value = val;
+  document.querySelectorAll('.custom-dd-opt').forEach(function(o){ o.classList.remove('selected'); });
+  var sel = document.querySelector('[data-value="'+val+'"]');
+  if (sel) sel.classList.add('selected');
+  setStatus('custom-dd-status','ok','✅ Selected: ' + text + ' (value: ' + val + ')');
+}
+document.addEventListener('click', function(e){
+  var dd = document.getElementById('custom-dd');
+  if (dd && !dd.contains(e.target)) document.getElementById('custom-dd-menu').classList.remove('open');
+});
+function radioChange() {
+  var r = document.querySelector('input[name="browser"]:checked');
+  setStatus('radio-status','ok', r ? '✅ Selected: ' + r.value : 'None');
+}
+function cbChange() {
+  var checked = ['cb-screenshots','cb-video','cb-parallel','cb-retry'].filter(function(id){ return document.getElementById(id).checked; });
+  setStatus('cb-status', checked.length?'ok':'info', checked.length ? '✅ Enabled: ' + checked.map(function(id){return id.replace('cb-','');}).join(', ') : 'Nothing checked');
+}
+function toggleChange(cb) {
+  setStatus('toggle-status', cb.checked?'ok':'warn', 'Headless: ' + (cb.checked ? 'ON' : 'OFF'));
+}
+function updateCharCount(el) { document.getElementById('char-count').textContent = el.value.length; }
+function jsSetValue() {
+  var target = document.getElementById('js-set-value-target');
+  var val = 'Set by JS at ' + ts();
+  target.value = val;
+  target.dispatchEvent(new Event('input'));
+  setStatus('select-status','ok','⚡ setElementValueUsingJS executed: "' + val + '"');
+}
+function submitFullForm(e) {
+  e.preventDefault();
+  var form = document.getElementById('full-form');
+  var name = document.getElementById('form-name').value;
+  var email = document.getElementById('form-email').value;
+  form.dataset.submitted = 'true';
+  var result = document.getElementById('form-result');
+  result.style.display = 'flex';
+  result.textContent = '✅ Submitted — data-submitted="true" set. Name: ' + name + ', Email: ' + email;
+}
+</script>
+</body>
+</html>

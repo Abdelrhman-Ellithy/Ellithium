@@ -24,6 +24,6 @@ public final class Tier1AlgorithmicHealer implements HealingTier {
     @Override
     public HealOutcome heal(HealingRequest request) {
         return BaselineStore.tryAlgorithmicHeal(request.driver(), request.brokenLocator(),
-                request.stackTrace(), request.actionType());
+                request.stackTrace(), request.actionType(), request.hints());
     }
 }

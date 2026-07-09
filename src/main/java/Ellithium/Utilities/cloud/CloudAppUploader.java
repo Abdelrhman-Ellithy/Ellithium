@@ -32,6 +32,7 @@ public class CloudAppUploader {
                                    String accessKey, String appFilePath, String customId) throws IOException {
 
         Reporter.log("Uploading app to " + provider + ": " + appFilePath, LogLevel.INFO_BLUE);
+        validateCredentials(username, accessKey);
 
         File appFile = new File(appFilePath);
         if (!appFile.exists()) {
@@ -90,6 +91,7 @@ public class CloudAppUploader {
                                     String accessKey, String appId) {
         Reporter.log("Attempting to delete app: " + appId + " from " + provider, LogLevel.INFO_BLUE);
         try {
+            validateCredentials(username, accessKey);
             String authHeader = createAuthHeader(username, accessKey);
             String cleanId = appId.replace("lt://", "").replace("bs://", "").replace("storage:filename=", "");
             if (provider == CloudProviderType.LAMBDATEST) {
@@ -137,6 +139,12 @@ public class CloudAppUploader {
             case LAMBDATEST   -> "https://manual-api.lambdatest.com/app/upload/realDevice";
             default -> throw new IllegalArgumentException("Upload not supported for provider: " + provider);
         };
+    }
+
+    private static void validateCredentials(String username, String accessKey) {
+        if (username == null || username.isBlank() || accessKey == null || accessKey.isBlank()) {
+            throw new IllegalArgumentException("Cloud provider username/accessKey must not be null or blank");
+        }
     }
 
     private static String createAuthHeader(String username, String accessKey) {

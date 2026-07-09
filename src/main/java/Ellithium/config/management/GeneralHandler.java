@@ -14,6 +14,7 @@ import Ellithium.core.logging.Logger;
 import Ellithium.core.ai.vision.AIVisionRCA;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
@@ -57,6 +58,7 @@ public class GeneralHandler {
     private static void AttachLogs(){
         String logs = Logger.getCurrentExecutionLogs();
         try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
+            Reporter.flushPendingStep();
             Allure.addAttachment("Execution Log File", "text/plain", logStream, ".log");
             Logger.info("Execution logs successfully attached to the Allure report.");
         } catch (IOException e) {

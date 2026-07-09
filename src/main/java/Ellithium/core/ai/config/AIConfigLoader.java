@@ -24,7 +24,7 @@ public class AIConfigLoader {
     private static ExecutionMode executionMode        = ExecutionMode.LOCAL;
     private static boolean visionRcaEnabled           = false;
     private static double  onnxSimilarityThreshold    = 0.60;
-    private static int     onnxMaxCandidates          = 15;
+    private static int     onnxMaxCandidates          = 60;
     private static double  tier3BaselineMatchFloor    = 0.40;
     private static int     onnxHardCandidateLimit     = 300;
     private static int     baselineTtlDays            = 30;
@@ -38,6 +38,8 @@ public class AIConfigLoader {
     private static boolean tier3Enabled               = true;
     private static int     ciHealAlertThreshold       = -1;
     private static int     baselineMaxLocators        = 0;
+    private static boolean healOnWaitsEnabled         = false;
+    private static int     onnxInitMaxWaitMs          = 30_000;
 
     private static volatile boolean initialized = false;
 
@@ -91,6 +93,8 @@ public class AIConfigLoader {
             tier3Enabled                = parseBool(p, "ai.tier3.enabled", tier3Enabled);
             ciHealAlertThreshold        = parseInt(p, "ai.healing.ciAlertThreshold", ciHealAlertThreshold);
             baselineMaxLocators         = parseInt(p, "ai.healing.baselineMaxLocators", baselineMaxLocators);
+            healOnWaitsEnabled          = parseBool(p, "ai.healing.waits.enabled", healOnWaitsEnabled);
+            onnxInitMaxWaitMs           = parseInt(p, "ai.onnx.initMaxWaitMs", onnxInitMaxWaitMs);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -197,6 +201,10 @@ public class AIConfigLoader {
     public static boolean isTier3Enabled()                      { return tier3Enabled; }
     public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
     public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }
+    /** Default for whether explicit wait methods heal on timeout (per-call boolean overrides this). */
+    public static boolean isHealOnWaitsEnabled()                { if (!initialized) initialize(); return healOnWaitsEnabled; }
+    /** Max time Tier 2 healing waits for an in-progress async model load before falling back. */
+    public static int    getOnnxInitMaxWaitMs()                 { if (!initialized) initialize(); return onnxInitMaxWaitMs; }
 
     // ── Grouped config views ──────────────────────────────────────────────────
 

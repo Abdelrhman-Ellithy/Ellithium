@@ -91,21 +91,38 @@ class HealingResponseParser {
         if (inner.length() >= 2) {
             char q = inner.charAt(0);
             if ((q == '"' || q == '\'') && inner.charAt(inner.length() - 1) == q) {
-                return inner.substring(1, inner.length() - 1);
+                return unescapeJava(inner.substring(1, inner.length() - 1));
             }
         }
         return inner;
     }
 
-    static boolean isStableLocatorStrategy(By locator) {
-        if (locator == null) return false;
-        String s = locator.toString();
-        if (s.startsWith("By.id:") || s.startsWith("By.name:")
-                || s.startsWith("AppiumBy.accessibilityId:")) return true;
-        if (s.startsWith("By.cssSelector:")) {
-            return s.contains("[data-testid") || s.contains("[data-test") || s.contains("[aria-label")
-                    || s.contains("#") || s.contains("[name=");
+    /**
+     * Inverse of the escaping used to build a Java string literal (see
+     * {@code AISelfHealer#escapeJava}). The LLM returns locator expressions as literal Java source
+     * (e.g. {@code By.xpath("//div[@id=\"x\"]")}); without unescaping, the literal {@code \"} stays
+     * in the parsed value and produces an XPath/CSS string that differs from what the model intended.
+     */
+    private static String unescapeJava(String s) {
+        StringBuilder out = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\\' && i + 1 < s.length()) {
+                char next = s.charAt(i + 1);
+                switch (next) {
+                    case '"'  -> { out.append('"');  i++; }
+                    case '\'' -> { out.append('\''); i++; }
+                    case '\\' -> { out.append('\\'); i++; }
+                    case 'n'  -> { out.append('\n'); i++; }
+                    case 'r'  -> { out.append('\r'); i++; }
+                    case 't'  -> { out.append('\t'); i++; }
+                    default   -> out.append(c);
+                }
+            } else {
+                out.append(c);
+            }
         }
-        return false;
+        return out.toString();
     }
+
 }

@@ -187,3 +187,39 @@ jobs:
       - uses: ./.github/actions/test-results
         with:
           artifact-name: ubuntu-unit-ai-models-test-results
+
+  Ubuntu-Arena-Tests:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Arena Tests
+        run: mvn test -Dtest="ElementActionsArenaTest,WaitActionsArenaTest,FrameActionsArenaTest,JavaScriptActionsArenaTest" -Dsurefire.parallel=classes -DthreadCount=4
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: ubuntu-arena-test-results
+
+  MacOS-Arena-Tests:
+    runs-on: macos-latest
+    env:
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO_NOTIFY: ${{ secrets.EMAIL_TO_NOTIFY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          java-version: 25
+      - uses: ./.github/actions/cleanup
+      - name: Run Arena Tests
+        run: mvn test -Dtest="CookieActionsArenaTest,SelectActionsArenaTest,MouseActionsArenaTest,NavigationActionsArenaTest,InteractionRecoveryArenaTest,AlertActionsArenaTest,WindowActionsArenaTest" -Darena.headless=false -Dsurefire.parallel=classes -DthreadCount=4
+      - uses: ./.github/actions/test-results
+        with:
+          artifact-name: macos-arena-test-results

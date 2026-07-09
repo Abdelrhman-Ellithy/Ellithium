@@ -235,6 +235,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
      */
     @Override
     public void beforeInvocation(IInvokedMethod method, ITestResult testResult) {
+        Reporter.flushPendingStep();
         if (DriverFactory.getCurrentDriver() == null) {
             String className = testResult.getTestClass().getRealClass().getName();
             WebDriver savedDriver = classDriverMap.get(className);
@@ -275,15 +276,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                     Reporter.attachScreenshotToReport(failedScreenShot, failedScreenShot.getName(), description);
                 }
             }
-            boolean notHeadless= (currentDriverConfiguration != (null)) && (currentDriverConfiguration.getHeadlessMode() == HeadlessMode.False);
-            boolean isNotMobileCloud= (currentDriverConfiguration != (null)) && (!currentDriverConfiguration.isMobileCloud());
-            boolean shouldRecord=driverExecution && notHeadless&&isNotMobileCloud;
             Reporter.addParams(GeneralHandler.getParameters());
-            if (shouldRecord){
-                stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
-            }
+            stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             GeneralHandler.addAttachments();
         }
+        Reporter.flushPendingStep();
     }
     
     @Override
@@ -327,7 +324,6 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         name.append("_");
         Ellithium.core.driver.DriverConfiguration cfg = DriverFactory.getCurrentDriverConfiguration();
         name.append(cfg != null && cfg.getDriverType() != null ? cfg.getDriverType().getName().toUpperCase() : "UNKNOWN");
-        name.append("_");
         Object[] parameters = result.getParameters();
         if (parameters != null && parameters.length > 0) {
             name.append("_params");

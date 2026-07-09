@@ -27,13 +27,16 @@ public class RetryAnalyzer implements IRetryAnalyzer {
         return false;
     }
     public static void initRetryCount(){
-        try {
-            String countStr= PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(),"retryCountOnFailure");
-            if (countStr != null) {
-                ConfigContext.setRetryCount(Integer.parseInt(countStr));
-            }
-        }catch (Exception e){
+        String countStr = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "retryCountOnFailure");
+        if (countStr == null) {
             Reporter.log("You Need to Add \"retryCountOnFailure\" Key on you config.properties File", LogLevel.ERROR);
+            return;
+        }
+        try {
+            ConfigContext.setRetryCount(Integer.parseInt(countStr));
+        } catch (NumberFormatException e) {
+            Reporter.log("Invalid \"retryCountOnFailure\" value in config.properties: \"" + countStr
+                    + "\" is not a number. Retries disabled (defaulting to 0).", LogLevel.ERROR);
         }
     }
 }

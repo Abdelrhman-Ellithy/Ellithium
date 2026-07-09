@@ -103,7 +103,7 @@ public class VideoRecordingManager {
     public static boolean isAttachmentEnabled() {
         String configPath = ConfigContext.getConfigFilePath();
         if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
-            Reporter.log("Attachment configuration key not found, defaulting to true", LogLevel.WARN);
+            Reporter.log("Attachment configuration key not found, defaulting to false", LogLevel.WARN);
             return false;
         }
         String isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
@@ -161,7 +161,7 @@ public class VideoRecordingManager {
             String recordingId = UUID.randomUUID().toString();
             ScreenRecorderActions<WebDriver> recorder = new ScreenRecorderActions<>(driver);
             String recordingName = sanitizeFileName(testName) + "_" +
-                    TestDataGenerator.getTimeStamp();
+                    TestDataGenerator.getTimeStamp() + "_" + recordingId.substring(0, 8);
             RecordingContext context = new RecordingContext(recorder, testName, driver, threadId);
             recordingContextMap.put(recordingId, context);
             threadToRecordingMap.put(threadId, recordingId);

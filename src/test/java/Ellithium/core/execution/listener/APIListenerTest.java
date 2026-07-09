@@ -79,6 +79,39 @@ public class APIListenerTest {
         Assert.assertTrue(result.contains("Bob"));
     }
 
+    // ── obfuscateUri — query-string parameter masking ─────────────────────
+
+    @Test
+    public void obfuscateUri_apiKeyQueryParam_masked() throws Exception {
+        String result = (String) invoke("obfuscateUri", "https://api.example.com/data?api_key=abcd1234");
+        Assert.assertFalse(result.contains("abcd1234"));
+        Assert.assertTrue(result.contains("api_key="));
+    }
+
+    @Test
+    public void obfuscateUri_tokenQueryParam_masked() throws Exception {
+        String result = (String) invoke("obfuscateUri", "https://api.example.com/data?token=secretTokenValue");
+        Assert.assertFalse(result.contains("secretTokenValue"));
+    }
+
+    @Test
+    public void obfuscateUri_multipleParams_onlySensitiveMasked() throws Exception {
+        String result = (String) invoke("obfuscateUri", "https://api.example.com/data?page=2&api_key=abcd1234");
+        Assert.assertTrue(result.contains("page=2"));
+        Assert.assertFalse(result.contains("abcd1234"));
+    }
+
+    @Test
+    public void obfuscateUri_noQueryString_unchanged() throws Exception {
+        String result = (String) invoke("obfuscateUri", "https://api.example.com/data");
+        Assert.assertEquals(result, "https://api.example.com/data");
+    }
+
+    @Test
+    public void obfuscateUri_null_returnsNull() throws Exception {
+        Assert.assertNull(invoke("obfuscateUri", (Object) null));
+    }
+
     // ── handleCookies ─────────────────────────────────────────────────────
 
     @Test

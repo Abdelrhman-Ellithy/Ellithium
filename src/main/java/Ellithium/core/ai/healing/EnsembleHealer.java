@@ -23,13 +23,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-/** Tier 2 local embedding healer. See ai-context for architecture notes. */
+/** Tier 2 local embedding healer. */
 public class EnsembleHealer {
 
     private static final String EXTERNAL_MODEL_DIR = System.getProperty("ellithium.ai.modelDir",
             System.getProperty("user.home") + "/.ellithium/ai-model");
+    /**
+     * Task-specific query prefix, applied to queries only (never documents). MUST stay
+     * byte-identical to {@code BGE_QUERY_PREFIX} in {@code finetune/01_data_generation.py} and
+     * {@code finetune/02_finetune.py} — the model is fine-tuned with this exact prefix, so this
+     * constant and the retrained ONNX model must always ship together.
+     */
     private static final String BGE_QUERY_PREFIX   =
-            "Represent this sentence for searching relevant passages: ";
+            "Locate this UI element: ";
     private static final int MAX_SEQ_LEN     = 256;
     private static final int MAX_TEXT_CHARS  = 240;
     private static final int MAX_CLASS_CHARS = 200;
@@ -46,6 +52,11 @@ public class EnsembleHealer {
 
     // ORT session pool. Auto-computes from heap/CPU unless -Dellithium.ai.onnxSessionPoolSize=N is set.
     // Each session ~34 MB native heap. Memory bound prevents OOM on constrained CI agents.
+    //
+    // Keep -Dsurefire.threadCount <= SESSION_POOL_SIZE (default cap 8): a full-scan Tier-2 fallback
+    // does up to ai.onnx.maxCandidates sequential embed() calls, each a session-pool acquire with a
+    // bounded wait — exceeding the pool size with more parallel test threads compounds those waits
+    // across threads. Raise -Dellithium.ai.onnxSessionPoolSize to match higher parallelism.
     private static final int SESSION_POOL_SIZE = resolveSessionPoolSize();
 
     private static int resolveSessionPoolSize() {
@@ -57,6 +68,9 @@ public class EnsembleHealer {
     }
     private static final java.util.concurrent.LinkedBlockingQueue<Object> SESSION_POOL =
             new java.util.concurrent.LinkedBlockingQueue<>(SESSION_POOL_SIZE);
+
+    private static final long SESSION_ACQUIRE_TIMEOUT_MS =
+            Long.getLong("ellithium.ai.onnxSessionAcquireMs", 2_000L);
 
     // ONNX inference is CPU-bound — it MUST run on bounded platform threads, never virtual threads
     // or the shared common ForkJoinPool. Sized to SESSION_POOL_SIZE so the offloaded query-embed
@@ -82,10 +96,12 @@ public class EnsembleHealer {
             Reporter.log("[LOCAL AI MODEL] awaitInit called before initializeAsync — starting init now "
                     + "(ensure GeneralHandler.StartRoutine() is invoked before healing)", LogLevel.DEBUG);
             initializeAsync();
-            return;
+            f = INIT_FUTURE;
         }
         if (f != null && !f.isDone()) {
-            try { f.get(30, java.util.concurrent.TimeUnit.SECONDS); } catch (Exception ignored) {}
+            try {
+                f.get(AIConfigLoader.getOnnxInitMaxWaitMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -177,11 +193,17 @@ public class EnsembleHealer {
      */
     public static synchronized void shutdown() {
         available = false;
-        // Drain in-flight embeds before closing the ORT session (max 2 s) to prevent
+        // Drain in-flight embeds before closing the ORT session (max 5 s) to prevent
         // a native crash when shutdown races a concurrent heal on another thread.
         long deadline = System.currentTimeMillis() + 5_000;
         while (EMBED_IN_FLIGHT.get() > 0 && System.currentTimeMillis() < deadline) {
             try { Thread.sleep(5); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+        }
+        int stillInFlight = EMBED_IN_FLIGHT.get();
+        if (stillInFlight > 0) {
+            Reporter.log("[LOCAL AI MODEL] Closing ORT session with " + stillInFlight
+                    + " embed call(s) still in flight after the 5s drain deadline — "
+                    + "a concurrent inference may fail or crash the native runtime", LogLevel.WARN);
         }
         Object sess;
         while ((sess = SESSION_POOL.poll()) != null) closeQuietly(sess);
@@ -208,6 +230,57 @@ public class EnsembleHealer {
     }
 
     /**
+     * Ranks {@code candidates} by semantic similarity to {@code query} using the SAME technique as
+     * Tier 2 healing: the ONNX embedding cosine when the local model is available, falling back to
+     * deCamelCase token-Jaccard otherwise. Returns the most similar candidate, or {@code null} when
+     * none has any semantic overlap. Reused (not duplicated) by multi-element set-healing to choose
+     * which of a healed element's classes is the renamed shared set selector.
+     */
+    public static String mostSemanticallySimilar(String query, java.util.List<String> candidates) {
+        if (query == null || query.isBlank() || candidates == null || candidates.isEmpty()) return null;
+        if (isAvailable()) {
+            float[] q = embed(query, true);
+            if (q != null) {
+                String best = null;
+                double bestCos = Double.NEGATIVE_INFINITY;
+                for (String c : candidates) {
+                    if (c == null || c.isBlank()) continue;
+                    float[] v = embed(c, false);
+                    if (v == null) continue;
+                    double cos = cosineSimilarity(q, v);
+                    if (cos > bestCos) { bestCos = cos; best = c; }
+                }
+                if (best != null) return best;
+            }
+        }
+        java.util.Set<String> queryTokens = deCamelTokens(query);
+        String best = null;
+        double bestJaccard = 0.0;
+        for (String c : candidates) {
+            if (c == null || c.isBlank()) continue;
+            double j = jaccardTokens(queryTokens, deCamelTokens(c));
+            if (j > bestJaccard) { bestJaccard = j; best = c; }
+        }
+        return best;
+    }
+
+    private static java.util.Set<String> deCamelTokens(String s) {
+        java.util.Set<String> set = new java.util.HashSet<>();
+        for (String t : SemanticQueryBuilder.deCamelCase(s).split("\\s+")) {
+            if (!t.isBlank()) set.add(t);
+        }
+        return set;
+    }
+
+    private static double jaccardTokens(java.util.Set<String> a, java.util.Set<String> b) {
+        if (a.isEmpty() || b.isEmpty()) return 0.0;
+        int inter = 0;
+        for (String t : a) if (b.contains(t)) inter++;
+        int union = a.size() + b.size() - inter;
+        return union == 0 ? 0.0 : (double) inter / union;
+    }
+
+    /**
      * Attempts to heal a broken locator using local ONNX embedding similarity search.
      * Returns null immediately when unavailable (silent no-op in the cascade).
      */
@@ -215,6 +288,24 @@ public class EnsembleHealer {
                                                String actionType, String callerMethod,
                                                String fieldName, String locatorValue,
                                                ElementFingerprint baseline) {
+        return tryEnsembleHeal(driver, locator, actionType, callerMethod, fieldName,
+                locatorValue, baseline, null);
+    }
+
+    /**
+     * As the 7-arg overload, additionally consuming the cross-tier candidate shortlist collected by
+     * Tier 1 ({@code hints}, may be null/empty). A non-empty shortlist is scored FIRST as a fast
+     * path: a relative cosine comparison between 2–3 finalists Tier 1 already narrowed to (K embeds
+     * instead of a page scan). A clear winner (margin ≥ {@link #SHORTLIST_MARGIN_MIN}) or a
+     * corroborated single finalist heals immediately; anything indecisive — finalists too close or
+     * all below the cosine floor — falls through to the full DOM scan, which decides with the
+     * richer fused signals (strategy weight f2, baseline proximity f1) and its own soft margin gate.
+     */
+    public static HealOutcome tryEnsembleHeal(WebDriver driver, By locator,
+                                               String actionType, String callerMethod,
+                                               String fieldName, String locatorValue,
+                                               ElementFingerprint baseline,
+                                               Ellithium.core.ai.models.HealingHints hints) {
         awaitInit();
         if (!available) return null;
 
@@ -233,6 +324,12 @@ public class EnsembleHealer {
             java.util.concurrent.CompletableFuture<float[]> queryFuture =
                     java.util.concurrent.CompletableFuture.supplyAsync(() -> embed(query, true), EMBED_POOL);
 
+            if (hints != null && !hints.isEmpty()) {
+                HealOutcome shortlistHeal = scoreShortlist(driver, queryFuture, hints, locator,
+                        actionType, query);
+                if (shortlistHeal != null) return shortlistHeal;
+            }
+
             HealOutcome outcome = scoreAndSelectCandidate(driver, queryFuture, baseline, locator,
                     actionType, query, callerMethod, fieldName, locatorValue);
             return outcome;
@@ -241,6 +338,125 @@ public class EnsembleHealer {
                 try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
             }
         }
+    }
+
+    /** Below this cosine a shortlist finalist carries no semantic signal — the Tier-1 token
+     *  evidence was bad and the full page scan proceeds. */
+    private static final double SHORTLIST_COSINE_FLOOR  = 0.50;
+    /** top1−top2 margin needed to accept a shortlist winner on cosine alone; below it the
+     *  finalists are too close for the fast path and the full DOM scan decides — it fuses the
+     *  extra signals (strategy weight f2, baseline proximity f1) the shortlist pass lacks. */
+    private static final double SHORTLIST_MARGIN_MIN    = 0.05;
+    /** A single-candidate shortlist has no margin to lean on — accept only with this much
+     *  standalone cosine corroboration. */
+    private static final double SHORTLIST_SINGLE_ACCEPT = 0.60;
+
+    /** Scores the Tier-1 shortlist; returns the winning heal, or null to proceed to the full scan. */
+    private static HealOutcome scoreShortlist(WebDriver driver,
+                                              java.util.concurrent.CompletableFuture<float[]> queryFuture,
+                                              Ellithium.core.ai.models.HealingHints hints,
+                                              By brokenLocator, String actionType, String query) {
+        SemanticLocatorResolver.ElementCategory cat = SemanticLocatorResolver.categorizeAction(actionType);
+        String category = cat != null ? cat.name() : null;
+
+        List<WebElement> live = new ArrayList<>();
+        for (Ellithium.core.ai.models.HealingHints.CandidateHint h : hints.shortlist()) {
+            WebElement el = h.element();
+            try {
+                el.isEnabled();
+            } catch (org.openqa.selenium.StaleElementReferenceException stale) {
+                el = null;
+                if (h.locator() != null) {
+                    try {
+                        List<WebElement> refound = driver.findElements(h.locator());
+                        if (refound.size() == 1) el = refound.get(0);
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception unusable) {
+                el = null;
+            }
+            if (el != null) live.add(el);
+        }
+        if (live.isEmpty()) return null;
+
+        float[] queryVector;
+        try {
+            queryVector = queryFuture.get(8, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return null;
+        }
+        if (queryVector == null) return null;
+
+        List<Map<String, Object>> batch;
+        Ellithium.core.execution.listener.seleniumListener.suppressLogging();
+        try {
+            batch = Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, live);
+        } finally {
+            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+        }
+
+        WebElement best = null;
+        String bestDoc = null;
+        double bestCosine = -1.0, secondCosine = -1.0;
+        for (int i = 0; i < live.size(); i++) {
+            WebElement el = live.get(i);
+            Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
+            try {
+                String cacheKey  = (attrs != null) ? buildCacheKey(attrs) : buildCacheKey(el);
+                float[] docVector = ElementVectorCache.getInstance().get(cacheKey);
+                String doc = null;
+                if (docVector == null) {
+                    doc = (attrs != null) ? buildElementDocument(attrs, el) : buildElementDocument(el);
+                    if (doc.isBlank()) continue;
+                    docVector = embed(doc, false);
+                    if (docVector != null && !cacheKey.isEmpty()) {
+                        ElementVectorCache.getInstance().put(cacheKey, docVector);
+                    }
+                }
+                if (docVector == null) continue;
+                double cosine = dotProduct(queryVector, docVector);
+                if (cosine > bestCosine) {
+                    secondCosine = bestCosine;
+                    bestCosine = cosine;
+                    best = el;
+                    bestDoc = doc != null ? doc : describeCached(attrs, el);
+                } else if (cosine > secondCosine) {
+                    secondCosine = cosine;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (best == null || bestCosine < SHORTLIST_COSINE_FLOOR) {
+            Reporter.log(String.format(
+                    "[TIER 2 - Shortlist] uninformative (best cosine=%.3f over %d finalist(s)) — full scan",
+                    bestCosine, live.size()), LogLevel.DEBUG);
+            return null;
+        }
+        if (live.size() == 1 || secondCosine < 0.0) {
+            if (bestCosine >= SHORTLIST_SINGLE_ACCEPT) {
+                Reporter.log(String.format("[TIER 2 - Shortlist] single finalist corroborated (cosine=%.3f)",
+                        bestCosine), LogLevel.INFO_GREEN);
+                HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, true,
+                        query, category, "shortlist-single");
+                return HealOutcome.of(best, bestCosine, 2);
+            }
+            return null;
+        }
+        double margin = bestCosine - secondCosine;
+        if (margin >= SHORTLIST_MARGIN_MIN) {
+            Reporter.log(String.format(
+                    "[TIER 2 - Shortlist] clear finalist (cosine=%.3f, margin=%.3f over %d)",
+                    bestCosine, margin, live.size()), LogLevel.INFO_GREEN);
+            HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, true,
+                    query, category, "shortlist-clear");
+            return HealOutcome.of(best, bestCosine, 2);
+        }
+        Reporter.log(String.format(
+                "[TIER 2 - Shortlist] narrow margin %.3f between %d finalists (top=%.3f) — deferring"
+                + " to the full DOM scan (strategy + baseline signals decide). Finalists: %s",
+                margin, live.size(), bestCosine, hints.describe()), LogLevel.INFO_YELLOW);
+        return null;
     }
 
     /**
@@ -254,12 +470,17 @@ public class EnsembleHealer {
         if (!available || ortEnvironment == null || tokenizer == null) return null;
         Object session;
         try {
-            session = SESSION_POOL.poll(1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+            session = SESSION_POOL.poll(SESSION_ACQUIRE_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
         }
-        if (session == null) return null;
+        if (session == null) {
+            Reporter.log("[LOCAL AI MODEL] embed: no ONNX session available after "
+                    + SESSION_ACQUIRE_TIMEOUT_MS + "ms (pool=" + SESSION_POOL_SIZE
+                    + ") — raise -Dellithium.ai.onnxSessionPoolSize to match test parallelism", LogLevel.WARN);
+            return null;
+        }
         EMBED_IN_FLIGHT.incrementAndGet();
         Object env = ortEnvironment, tok = tokenizer;
         String input = isQuery ? BGE_QUERY_PREFIX + text : text;
@@ -428,6 +649,7 @@ public class EnsembleHealer {
         String     bestDoc     = null;
         Map<String, Object> bestAttrs = null;
         double bestCombined = -1.0, bestCosine = 0.0, bestF1 = Double.NaN, bestF2 = Double.NaN;
+        double secondBestCombined = -1.0;
         int poolScored = 0;
         int resolverScored = 0;
 
@@ -466,8 +688,11 @@ public class EnsembleHealer {
 
                     if (bestElement == null || combined > bestCombined
                             || (Math.abs(combined - bestCombined) < 1e-6 && f1 > bestF1)) {
+                        if (bestElement != null && bestCombined > secondBestCombined) secondBestCombined = bestCombined;
                         bestElement = candidate; bestCombined = combined; bestCosine = cosine;
                         bestF1 = f1; bestF2 = f2; bestDoc = doc; bestAttrs = attrs;
+                    } else if (combined > secondBestCombined) {
+                        secondBestCombined = combined;
                     }
 
                     if (combined >= EARLY_EXIT_COMBINED && cosine >= COSINE_CORROBORATION_FLOOR) break;
@@ -477,23 +702,35 @@ public class EnsembleHealer {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
 
-        if (bestElement == null) return null;
-        if (bestDoc == null) bestDoc = "(vector-cache hit)";
+        if (bestElement == null) {
+            Reporter.log("[TIER 2] no candidate scored (" + poolScored + " pool + " + resolverScored
+                    + " resolver candidates attempted) — every embed failed or was filtered out",
+                    LogLevel.DEBUG);
+            HealingTelemetryStore.record(2, brokenLocator.toString(), null, 0.0, false, query, category, "full-scan");
+            return null;
+        }
+        if (bestDoc == null) bestDoc = describeCached(bestAttrs, bestElement);
 
         // Verify winner is still live; the DOM may have re-rendered between batch-read and now.
         bestElement = ensureLive(driver, bestElement, bestAttrs);
-        if (bestElement == null) return null;
+        if (bestElement == null) {
+            Reporter.log("[TIER 2] winner went stale before commit — " + bestDoc, LogLevel.DEBUG);
+            HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category, "full-scan");
+            return null;
+        }
 
-        GateResult gate = decideGate(bestCombined, threshold, bestF2,
+        double margin = (secondBestCombined >= 0.0) ? bestCombined - secondBestCombined : bestCombined;
+        double relief = Math.min(Math.max(0.0, margin), MAX_MARGIN_RELIEF);
+        GateResult gate = decideGate(bestCombined, threshold - relief, bestF2,
                 true, bestCosine);
         if (gate.accept) {
             Reporter.log(String.format("[TIER 2] healed via %s (combined=%.3f f2=%.2f f3=%.3f)",
                     gate.via, gate.score, bestF2, bestCosine), LogLevel.INFO_GREEN);
-            HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category);
+            HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category, "full-scan");
             return HealOutcome.of(bestElement, gate.score, 2);
         }
         Reporter.log(String.format("[TIER 2] no heal — combined=%.3f < threshold=%.3f", bestCombined, threshold), LogLevel.DEBUG);
-        HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category);
+        HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category, "full-scan");
         return null;
     }
 
@@ -529,6 +766,33 @@ public class EnsembleHealer {
                 }
             }
         } catch (Exception ignored) {}
+    }
+
+    /**
+     * Identifying description for a candidate whose document vector came from the cache (the doc
+     * string was never rebuilt): tag/id/text from the batched attrs, or the element's reconstructed
+     * locator — so telemetry always records WHICH element healed, never an opaque cache marker.
+     */
+    private static String describeCached(Map<String, Object> attrs, WebElement el) {
+        try {
+            if (attrs != null) {
+                StringBuilder sb = new StringBuilder("(cached)");
+                Object tag = attrs.get("tag");
+                Object id = attrs.get("id");
+                Object text = attrs.get("text");
+                if (tag != null) sb.append(" ").append(tag);
+                if (id != null && !id.toString().isBlank()) sb.append(" id=").append(id);
+                if (text != null && !text.toString().isBlank()) {
+                    String t = text.toString();
+                    sb.append(" text=").append(t, 0, Math.min(40, t.length()));
+                }
+                return sb.toString();
+            }
+            By reconstructed = ElementFingerprint.reconstructLocator(el);
+            return reconstructed != null ? "(cached) " + reconstructed : "(cached, no attrs)";
+        } catch (Exception e) {
+            return "(vector-cache hit)";
+        }
     }
 
     private static double maxScore(double a, double b) {
@@ -569,6 +833,7 @@ public class EnsembleHealer {
 
     private static final double GATE_STRATEGY_MIN       = 0.75;
     private static final double GATE_RESCUE_COSINE_FLOOR = 0.50;
+    private static final double MAX_MARGIN_RELIEF        = 0.20;
 
     /** Bump when the ONNX model is updated — invalidates all stale per-element vector cache entries. */
     static final String MODEL_VERSION = "v1";

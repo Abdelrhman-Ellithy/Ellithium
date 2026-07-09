@@ -132,19 +132,21 @@ public class ExcelHelper {
      */
     public static List<String> getColumnData(String filePath, String sheetName, int columnIndex) {
         List<String> columnData = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet != null) {
-                for (Row row : sheet) {
-                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    columnData.add(getCellValueAsString(cell));
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet != null) {
+                    for (Row row : sheet) {
+                        Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        columnData.add(getCellValueAsString(cell));
+                    }
+                } else {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
                 }
-            } else {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            } catch (IOException e) {
+                Reporter.log("Error while reading column data: ", LogLevel.ERROR, e.getMessage());
             }
-        } catch (IOException e) {
-            Reporter.log("Error while reading column data: ", LogLevel.ERROR, e.getMessage());
         }
         return columnData;
     }
@@ -158,20 +160,22 @@ public class ExcelHelper {
      * @return The cell value as a string.
      */
     public static String getCellData(String filePath, String sheetName, int rowIndex, int columnIndex) {
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet != null) {
-                Row row = sheet.getRow(rowIndex);
-                if (row != null) {
-                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    return getCellValueAsString(cell);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet != null) {
+                    Row row = sheet.getRow(rowIndex);
+                    if (row != null) {
+                        Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        return getCellValueAsString(cell);
+                    }
+                } else {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
                 }
-            } else {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            } catch (IOException e) {
+                Reporter.log("Error while reading cell data: ", LogLevel.ERROR, e.getMessage());
             }
-        } catch (IOException e) {
-            Reporter.log("Error while reading cell data: ", LogLevel.ERROR, e.getMessage());
         }
         return "";
     }
@@ -185,21 +189,23 @@ public class ExcelHelper {
      */
     public static List<String> getRowData(String filePath, String sheetName, int rowIndex) {
         List<String> rowData = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet != null) {
-                Row row = sheet.getRow(rowIndex);
-                if (row != null) {
-                    for (Cell cell : row) {
-                        rowData.add(getCellValueAsString(cell));
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet != null) {
+                    Row row = sheet.getRow(rowIndex);
+                    if (row != null) {
+                        for (Cell cell : row) {
+                            rowData.add(getCellValueAsString(cell));
+                        }
                     }
+                } else {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
                 }
-            } else {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+            } catch (IOException e) {
+                Reporter.log("Error while reading row data: ", LogLevel.ERROR, e.getMessage());
             }
-        } catch (IOException e) {
-            Reporter.log("Error while reading row data: ", LogLevel.ERROR, e.getMessage());
         }
         return rowData;
     }
@@ -405,41 +411,43 @@ public class ExcelHelper {
      * @param newValue New value to set.
      */
     public static void replaceColumnData(String filePath, String sheetName, String columnName, String oldValue, String newValue) {
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
-
-            Row headerRow = sheet.getRow(0);
-            int columnIndex = -1;
-            for (Cell cell : headerRow) {
-                if (cell.getStringCellValue().equals(columnName)) {
-                    columnIndex = cell.getColumnIndex();
-                    break;
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return;
                 }
-            }
-            if (columnIndex == -1) {
-                Reporter.log("Column " + columnName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
 
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header row
-                Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                if (cell.getStringCellValue().equals(oldValue)) {
-                    cell.setCellValue(newValue);
+                Row headerRow = sheet.getRow(0);
+                int columnIndex = -1;
+                for (Cell cell : headerRow) {
+                    if (cell.getStringCellValue().equals(columnName)) {
+                        columnIndex = cell.getColumnIndex();
+                        break;
+                    }
                 }
-            }
+                if (columnIndex == -1) {
+                    Reporter.log("Column " + columnName + " does not exist.", LogLevel.ERROR);
+                    return;
+                }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath )) {
-                workbook.write(fos);
+                for (Row row : sheet) {
+                    if (row.getRowNum() == 0) continue; // Skip header row
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    if (cell.getStringCellValue().equals(oldValue)) {
+                        cell.setCellValue(newValue);
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath )) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Replaced all occurrences of '" + oldValue + "' with '" + newValue + "' in column " + columnName, LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while replacing column data: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Replaced all occurrences of '" + oldValue + "' with '" + newValue + "' in column " + columnName, LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while replacing column data: " + e.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -450,33 +458,35 @@ public class ExcelHelper {
      * @param newRows New rows data.
      */
     public static void appendData(String filePath, String sheetName, List<Map<String, String>> newRows) {
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
-
-            int lastRowNum = sheet.getLastRowNum();
-            Row headerRow = sheet.getRow(0);
-            List<String> headers = new ArrayList<>();
-            headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
-
-            for (Map<String, String> rowData : newRows) {
-                Row row = sheet.createRow(++lastRowNum);
-                for (int i = 0; i < headers.size(); i++) {
-                    String value = rowData.getOrDefault(headers.get(i), "");
-                    row.createCell(i).setCellValue(value);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return;
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath )) {
-                workbook.write(fos);
+                int lastRowNum = sheet.getLastRowNum();
+                Row headerRow = sheet.getRow(0);
+                List<String> headers = new ArrayList<>();
+                headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
+
+                for (Map<String, String> rowData : newRows) {
+                    Row row = sheet.createRow(++lastRowNum);
+                    for (int i = 0; i < headers.size(); i++) {
+                        String value = rowData.getOrDefault(headers.get(i), "");
+                        row.createCell(i).setCellValue(value);
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath )) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Appended new rows to the Excel sheet.", LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while appending data: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Appended new rows to the Excel sheet.", LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while appending data: " + e.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -487,30 +497,32 @@ public class ExcelHelper {
      * @param rowIndex Index of the row to delete.
      */
     public static void deleteRow(String filePath, String sheetName, int rowIndex) {
-        try (FileInputStream fis = new FileInputStream(filePath );
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
-
-            Row row = sheet.getRow(rowIndex);
-            if (row != null) {
-                sheet.removeRow(row);
-                // Shift rows up to fill the gap
-                int lastRowNum = sheet.getLastRowNum();
-                if (rowIndex < lastRowNum) {
-                    sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath );
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return;
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath )) {
-                workbook.write(fos);
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    sheet.removeRow(row);
+                    // Shift rows up to fill the gap
+                    int lastRowNum = sheet.getLastRowNum();
+                    if (rowIndex < lastRowNum) {
+                        sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath )) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Deleted row " + rowIndex + " from the Excel sheet.", LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while deleting row: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Deleted row " + rowIndex + " from the Excel sheet.", LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while deleting row: " + e.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -524,35 +536,37 @@ public class ExcelHelper {
      */
     public static List<Map<String, String>> filterRows(String filePath, String sheetName, int columnIndex, String filterValue) {
         List<Map<String, String>> filteredRows = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return filteredRows;
-            }
-            Row headerRow = sheet.getRow(0);
-            List<String> headers = new ArrayList<>();
-            if (headerRow != null) {
-                for (Cell cell : headerRow) {
-                    headers.add(getCellValueAsString(cell));
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = WorkbookFactory.create(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return filteredRows;
                 }
-            }
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
-                Cell cell = row.getCell(columnIndex);
-                if (cell != null && getCellValueAsString(cell).equals(filterValue)) {
-                    Map<String, String> rowMap = new LinkedHashMap<>();
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell c = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                        rowMap.put(headers.get(i), getCellValueAsString(c));
+                Row headerRow = sheet.getRow(0);
+                List<String> headers = new ArrayList<>();
+                if (headerRow != null) {
+                    for (Cell cell : headerRow) {
+                        headers.add(getCellValueAsString(cell));
                     }
-                    filteredRows.add(rowMap);
                 }
+                for (Row row : sheet) {
+                    if (row.getRowNum() == 0) continue;
+                    Cell cell = row.getCell(columnIndex);
+                    if (cell != null && getCellValueAsString(cell).equals(filterValue)) {
+                        Map<String, String> rowMap = new LinkedHashMap<>();
+                        for (int i = 0; i < headers.size(); i++) {
+                            Cell c = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                            rowMap.put(headers.get(i), getCellValueAsString(c));
+                        }
+                        filteredRows.add(rowMap);
+                    }
+                }
+                Reporter.log("Filtered rows in sheet " + sheetName + " based on value: " + filterValue + ".", LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while filtering rows: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Filtered rows in sheet " + sheetName + " based on value: " + filterValue + ".", LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while filtering rows: " + e.getMessage(), LogLevel.ERROR);
         }
         return filteredRows;
     }
@@ -564,26 +578,28 @@ public class ExcelHelper {
      * @param columnIndex Index of the column to delete.
      */
     public static void deleteColumn(String filePath, String sheetName, int columnIndex) {
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
-
-            for (Row row : sheet) {
-                if (row.getCell(columnIndex) != null) {
-                    row.removeCell(row.getCell(columnIndex));
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = WorkbookFactory.create(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return;
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath)) {
-                workbook.write(fos);
+                for (Row row : sheet) {
+                    if (row.getCell(columnIndex) != null) {
+                        row.removeCell(row.getCell(columnIndex));
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Deleted column " + columnIndex + " from sheet " + sheetName + ".", LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while deleting column: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Deleted column " + columnIndex + " from sheet " + sheetName + ".", LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while deleting column: " + e.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -595,45 +611,47 @@ public class ExcelHelper {
      * @param ascending true for ascending order; false for descending.
      */
     public static void sortRows(String filePath, String sheetName, int columnIndex, boolean ascending) {
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return;
-            }
-
-            List<List<String>> snapshot = new ArrayList<>();
-            for (Row row : sheet) {
-                List<String> cells = new ArrayList<>();
-                for (int i = row.getFirstCellNum(); i < row.getLastCellNum(); i++) {
-                    Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    cells.add(getCellValueAsString(cell));
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = WorkbookFactory.create(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
+                    return;
                 }
-                snapshot.add(cells);
-            }
 
-            snapshot.sort((r1, r2) -> {
-                String v1 = columnIndex < r1.size() ? r1.get(columnIndex) : "";
-                String v2 = columnIndex < r2.size() ? r2.get(columnIndex) : "";
-                return ascending ? v1.compareTo(v2) : v2.compareTo(v1);
-            });
-
-            for (int i = 0; i < snapshot.size(); i++) {
-                Row newRow = sheet.createRow(i);
-                List<String> cells = snapshot.get(i);
-                for (int j = 0; j < cells.size(); j++) {
-                    newRow.createCell(j).setCellValue(cells.get(j));
+                List<List<String>> snapshot = new ArrayList<>();
+                for (Row row : sheet) {
+                    List<String> cells = new ArrayList<>();
+                    for (int i = row.getFirstCellNum(); i < row.getLastCellNum(); i++) {
+                        Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        cells.add(getCellValueAsString(cell));
+                    }
+                    snapshot.add(cells);
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(filePath)) {
-                workbook.write(fos);
+                snapshot.sort((r1, r2) -> {
+                    String v1 = columnIndex < r1.size() ? r1.get(columnIndex) : "";
+                    String v2 = columnIndex < r2.size() ? r2.get(columnIndex) : "";
+                    return ascending ? v1.compareTo(v2) : v2.compareTo(v1);
+                });
+
+                for (int i = 0; i < snapshot.size(); i++) {
+                    Row newRow = sheet.createRow(i);
+                    List<String> cells = snapshot.get(i);
+                    for (int j = 0; j < cells.size(); j++) {
+                        newRow.createCell(j).setCellValue(cells.get(j));
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Sorted rows in sheet " + sheetName + " based on column " + columnIndex +
+                        (ascending ? " in ascending order." : " in descending order."), LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while sorting rows: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Sorted rows in sheet " + sheetName + " based on column " + columnIndex +
-                    (ascending ? " in ascending order." : " in descending order."), LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while sorting rows: " + e.getMessage(), LogLevel.ERROR);
         }
     }
 
@@ -643,33 +661,47 @@ public class ExcelHelper {
      * @param outputFilePath Output file path.
      */
     public static void mergeExcelFiles(List<String> filePaths, String outputFilePath) {
-        try (Workbook outputWorkbook = new XSSFWorkbook()) {
-            Sheet outputSheet = outputWorkbook.createSheet("Merged Data");
-            int rowIndex = 0;
+        List<String> allPaths = new ArrayList<>(filePaths);
+        allPaths.add(outputFilePath);
+        // Sorted, nested locks for every involved file so two threads merging overlapping sets
+        // of files (in any order) can never deadlock.
+        List<String> sortedPaths = new ArrayList<>(new TreeSet<>(allPaths));
+        acquireLocksAndRun(sortedPaths, 0, () -> {
+            try (Workbook outputWorkbook = new XSSFWorkbook()) {
+                Sheet outputSheet = outputWorkbook.createSheet("Merged Data");
+                int rowIndex = 0;
 
-            for (String filePath : filePaths) {
-                try (FileInputStream fis = new FileInputStream(filePath);
-                     Workbook workbook = WorkbookFactory.create(fis)) {
-                    Sheet sheet = workbook.getSheetAt(0);
-                    for (Row row : sheet) {
-                        Row newRow = outputSheet.createRow(rowIndex++);
-                        for (int colIndex = 0; colIndex < row.getLastCellNum(); colIndex++) {
-                            Cell newCell = newRow.createCell(colIndex);
-                            Cell sourceCell = row.getCell(colIndex);
-                            if (sourceCell != null) {
-                                newCell.setCellValue(sourceCell.toString());
+                for (String filePath : filePaths) {
+                    try (FileInputStream fis = new FileInputStream(filePath);
+                         Workbook workbook = WorkbookFactory.create(fis)) {
+                        Sheet sheet = workbook.getSheetAt(0);
+                        for (Row row : sheet) {
+                            Row newRow = outputSheet.createRow(rowIndex++);
+                            for (int colIndex = 0; colIndex < row.getLastCellNum(); colIndex++) {
+                                Cell newCell = newRow.createCell(colIndex);
+                                Cell sourceCell = row.getCell(colIndex);
+                                if (sourceCell != null) {
+                                    newCell.setCellValue(sourceCell.toString());
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
-                outputWorkbook.write(fos);
+                try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+                    outputWorkbook.write(fos);
+                }
+                Reporter.log("Successfully merged " + filePaths.size() + " files into " + outputFilePath + ".", LogLevel.INFO_GREEN);
+            } catch (IOException e) {
+                Reporter.log("Error while merging Excel files: " + e.getMessage(), LogLevel.ERROR);
             }
-            Reporter.log("Successfully merged " + filePaths.size() + " files into " + outputFilePath + ".", LogLevel.INFO_GREEN);
-        } catch (IOException e) {
-            Reporter.log("Error while merging Excel files: " + e.getMessage(), LogLevel.ERROR);
+        });
+    }
+
+    private static void acquireLocksAndRun(List<String> sortedPaths, int i, Runnable action) {
+        if (i >= sortedPaths.size()) { action.run(); return; }
+        synchronized (getFileLock(sortedPaths.get(i))) {
+            acquireLocksAndRun(sortedPaths, i + 1, action);
         }
     }
 
@@ -681,33 +713,35 @@ public class ExcelHelper {
      * @return true if structure is valid; false otherwise.
      */
     public static boolean validateFileStructure(String filePath, String sheetName, List<String> expectedHeaders) {
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
-                Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
-                return false;
-            }
-
-            Row headerRow = sheet.getRow(0);
-            if (headerRow == null) {
-                Reporter.log("No header row found in sheet " + sheetName + ".", LogLevel.ERROR);
-                return false;
-            }
-
-            for (int i = 0; i < expectedHeaders.size(); i++) {
-                Cell cell = headerRow.getCell(i);
-                if (cell == null || !cell.toString().equals(expectedHeaders.get(i))) {
-                    Reporter.log("Mismatch in header at column " + (i + 1) + ": Expected '"
-                            + expectedHeaders.get(i) + "' but found '" + (cell != null ? cell.toString() : "null") + "'.", LogLevel.ERROR);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = WorkbookFactory.create(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    Reporter.log("Sheet " + sheetName + " does not exist.", LogLevel.ERROR);
                     return false;
                 }
+
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) {
+                    Reporter.log("No header row found in sheet " + sheetName + ".", LogLevel.ERROR);
+                    return false;
+                }
+
+                for (int i = 0; i < expectedHeaders.size(); i++) {
+                    Cell cell = headerRow.getCell(i);
+                    if (cell == null || !cell.toString().equals(expectedHeaders.get(i))) {
+                        Reporter.log("Mismatch in header at column " + (i + 1) + ": Expected '"
+                                + expectedHeaders.get(i) + "' but found '" + (cell != null ? cell.toString() : "null") + "'.", LogLevel.ERROR);
+                        return false;
+                    }
+                }
+                Reporter.log("File structure validated successfully for sheet " + sheetName + ".", LogLevel.INFO_GREEN);
+                return true;
+            } catch (IOException e) {
+                Reporter.log("Error while validating file structure: " + e.getMessage(), LogLevel.ERROR);
+                return false;
             }
-            Reporter.log("File structure validated successfully for sheet " + sheetName + ".", LogLevel.INFO_GREEN);
-            return true;
-        } catch (IOException e) {
-            Reporter.log("Error while validating file structure: " + e.getMessage(), LogLevel.ERROR);
-            return false;
         }
     }
 
@@ -718,21 +752,23 @@ public class ExcelHelper {
      * @return true if empty; false otherwise.
      */
     public static boolean isSheetEmpty(String filePath, String sheetName) {
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheet(sheetName);
-            if (sheet == null) {
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    return true;
+                }
+                if (sheet.getPhysicalNumberOfRows() == 0) {
+                    return true;
+                }
+                // Check if first row exists and is empty
+                Row firstRow = sheet.getRow(0);
+                return firstRow == null || firstRow.getPhysicalNumberOfCells() == 0;
+            } catch (IOException e) {
+                Reporter.log("Error checking if sheet is empty: ", LogLevel.ERROR, e.getMessage());
                 return true;
             }
-            if (sheet.getPhysicalNumberOfRows() == 0) {
-                return true;
-            }
-            // Check if first row exists and is empty
-            Row firstRow = sheet.getRow(0);
-            return firstRow == null || firstRow.getPhysicalNumberOfCells() == 0;
-        } catch (IOException e) {
-            Reporter.log("Error checking if sheet is empty: ", LogLevel.ERROR, e.getMessage());
-            return true;
         }
     }
 
@@ -742,15 +778,17 @@ public class ExcelHelper {
      * @param sheetName Name of the new sheet.
      */
     public static void createSheet(String filePath, String sheetName) {
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = new XSSFWorkbook(fis)) {
-            workbook.createSheet(sheetName);
-            try (FileOutputStream fos = new FileOutputStream(filePath)) {
-                workbook.write(fos);
+        synchronized (getFileLock(filePath)) {
+            try (FileInputStream fis = new FileInputStream(filePath);
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                workbook.createSheet(sheetName);
+                try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                    workbook.write(fos);
+                }
+                Reporter.log("Successfully created sheet: ", LogLevel.INFO_GREEN, sheetName);
+            } catch (IOException e) {
+                Reporter.log("Error creating sheet: ", LogLevel.ERROR, e.getMessage());
             }
-            Reporter.log("Successfully created sheet: ", LogLevel.INFO_GREEN, sheetName);
-        } catch (IOException e) {
-            Reporter.log("Error creating sheet: ", LogLevel.ERROR, e.getMessage());
         }
     }
 }
