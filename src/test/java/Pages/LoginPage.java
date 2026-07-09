@@ -26,7 +26,7 @@ public class LoginPage {
     }
 
     public SecureAreaPage clickLoginBtn() {
-        driverActions.elements().clickOnElement(By.xpath("//button[normalize-space(.)='Login' and @type='submit']"));
+        driverActions.elements().clickOnElement(By.id("//button[normalize-space(.)='Login' and @type='submit']"));
         return new SecureAreaPage(driver);
     }
 }

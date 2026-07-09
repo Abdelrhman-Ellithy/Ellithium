@@ -3,7 +3,6 @@ package Ellithium.Utilities.interactions;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.io.File;
 import java.util.List;
 
@@ -118,7 +117,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute));
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute), false);
     }
 
     /**
@@ -131,7 +130,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
-        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property));
+        return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property), false);
     }
 
     // Overloaded methods with default timeouts
@@ -401,31 +400,31 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         uploadMultipleFiles(fileUploadLocator, filePaths, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
     }
     /**
+     * Checks if an element is present in the DOM within the specified time, with an explicit
+     * healing switch. As a pure existence probe, healing defaults to {@code false} in the other
+     * overloads so a genuinely-absent element reads as absent; pass {@code heal=true} to opt a
+     * specific call into the healing cascade (resolving a renamed locator to its match).
+     * @param locator Element locator
+     * @param timeout Maximum wait time in seconds
+     * @param pollingEvery Polling interval in milliseconds
+     * @param heal whether to attempt healing when the locator never resolves
+     * @return true if the element is present, false otherwise
+     */
+    public boolean isElementPresent(By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Element present check: " + locator, LogLevel.INFO_BLUE);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, el -> Boolean.TRUE, Boolean.FALSE, heal);
+    }
+
+    /**
      * Checks if an element is present in the DOM within the specified time.
+     * Healing is not attempted (existence probe); use the {@code heal} overload to opt in.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      * @return true if the element is present, false otherwise
      */
     public boolean isElementPresent(By locator, int timeout, int pollingEvery) {
-        try {
-            getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(locator));
-            Reporter.log("Element is present: " + locator, LogLevel.INFO_BLUE);
-            return true;
-        } catch (TimeoutException e) {
-            try {
-                findWebElement(locator);
-                Reporter.log("Element is present (healed): " + locator, LogLevel.INFO_BLUE);
-                return true;
-            } catch (Exception ignored) {
-                Reporter.log("Element not present within timeout: " + locator, LogLevel.ERROR);
-                return false;
-            }
-        } catch (Exception e) {
-            Reporter.log("Failed to check element presence: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
-            return false;
-        }
+        return isElementPresent(locator, timeout, pollingEvery, false);
     }
 
     /**

@@ -145,6 +145,29 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
         return isAndroid() ? (int) value : value;
     }
 
+    /**
+     * Floor applied to the Android percent-based pinch gestures ({@code mobile: pinchOpenGesture} /
+     * {@code mobile: pinchCloseGesture}) when {@code scale} is derived from a caller-supplied scale
+     * factor. A {@code scale} at or near 1.0 (no zoom) would otherwise collapse
+     * {@code |scale - 1.0|} to 0 (or near-0), sending a degenerate zero/near-zero-distance percent to
+     * the Appium server instead of a valid pinch magnitude.
+     */
+    private static final double MIN_PINCH_PERCENT = 0.01;
+
+    /**
+     * Converts a caller-supplied pinch {@code scale} factor to the percent value Android's
+     * percent-based pinch gestures expect, clamped away from the degenerate 0.0 that {@code scale == 1.0}
+     * would otherwise produce.
+     */
+    private double scaleToAndroidPinchPercent(double scale) {
+        double percent = Math.min(Math.abs(scale - 1.0), 1.0);
+        if (percent < MIN_PINCH_PERCENT) {
+            Reporter.log("Note: scale " + scale + " is too close to 1.0 for Android's percent-based pinch; using minimum percent " + MIN_PINCH_PERCENT, LogLevel.INFO_BLUE);
+            percent = MIN_PINCH_PERCENT;
+        }
+        return percent;
+    }
+
     // ========================================================================================
     // GESTURE EXECUTION & EXCEPTION HANDLING
     // ========================================================================================
@@ -355,7 +378,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: doubleTap' command with duration parameter</li>
+     *   <li>iOS: Uses 'mobile: doubleTap' command; XCUITest's doubleTap does not accept a duration
+     *       parameter, so {@code durationSeconds} is ignored and a standard double-tap is performed</li>
      *   <li>Android: Not supported with duration parameter</li>
      * </ul>
      *
@@ -368,11 +392,12 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             if (isIOS()) {
-                // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
+            Reporter.log("Note: durationSeconds is not supported by the underlying double-tap command on "
+                    + (isIOS() ? "iOS" : "Android") + " and was ignored", LogLevel.INFO_BLUE);
         });
     }
 
@@ -381,7 +406,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: doubleTap' command with duration parameter</li>
+     *   <li>iOS: Uses 'mobile: doubleTap' command; XCUITest's doubleTap does not accept a duration
+     *       parameter, so {@code durationSeconds} is ignored and a standard double-tap is performed</li>
      *   <li>Android: Not supported with duration parameter</li>
      * </ul>
      *
@@ -396,11 +422,12 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("x", convertCoordinate(x));
             params.put("y", convertCoordinate(y));
             if (isIOS()) {
-                // XCUITest mobile: doubleTap does not accept a duration parameter — performs standard double-tap
                 driver.executeScript("mobile: doubleTap", params);
             } else {
                 driver.executeScript("mobile: doubleClickGesture", params);
             }
+            Reporter.log("Note: durationSeconds is not supported by the underlying double-tap command on "
+                    + (isIOS() ? "iOS" : "Android") + " and was ignored", LogLevel.INFO_BLUE);
         });
     }
 
@@ -520,7 +547,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             if (isIOS()) {
                 driver.executeScript("mobile: swipe", params);
             } else {
-                params.put("percent", 0.5); // Default 50% swipe for Android
+                params.put("percent", 0.5);
                 driver.executeScript("mobile: swipeGesture", params);
             }
         });
@@ -775,24 +802,24 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *   <li>Android: Uses 'mobile: scroll' command with UiSelector strategy</li>
      * </ul>
      *
-     * @param locator Locator to the to scroll from (iOS only)
+     * @param locator Locator to the element to scroll from (iOS only; ignored on Android)
      * @param selector The predicate string (iOS) or UiSelector string (Android)
      * @param direction The direction to scroll
      */
     public void scrollToElement(By locator, String selector, String direction) {
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
-        performOnElement("scroll to element", locator, element -> {
-            if (isIOS()) {
-                Map<String, Object> params = new HashMap<>();
-                putElement(params, element);
-                params.put("predicateString", selector);
-                params.put("direction", direction);
-                driver.executeScript("mobile: scroll", params);
-            } else {
-                driver.findElement(AppiumBy.androidUIAutomator(
+        if (isAndroid()) {
+            performGesture("scroll to element", () -> driver.findElement(AppiumBy.androidUIAutomator(
                     "new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector()." + selector + ")"
-                ));
-            }
+            )));
+            return;
+        }
+        performOnElement("scroll to element", locator, element -> {
+            Map<String, Object> params = new HashMap<>();
+            putElement(params, element);
+            params.put("predicateString", selector);
+            params.put("direction", direction);
+            driver.executeScript("mobile: scroll", params);
         });
     }
 
@@ -842,7 +869,8 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *
      * <p><b>Platform Support:</b>
      * <ul>
-     *   <li>iOS: Uses 'mobile: dragFromToForDuration' command (duration in seconds)</li>
+     *   <li>iOS: Uses 'mobile: dragFromToForDuration' command (duration in seconds); XCUITest ignores
+     *       fromX/fromY when "element" is present, using the element's center as the drag source</li>
      *   <li>Android: Uses 'mobile: dragGesture' command (duration not supported, will be ignored)</li>
      * </ul>
      *
@@ -857,7 +885,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             if (isIOS()) {
-                // XCUITest: when "element" is present, fromX/fromY are ignored and element center is used as drag source
                 params.put("toX", endX);
                 params.put("toY", endY);
                 params.put("duration", durationSeconds);
@@ -953,8 +980,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             Map<String, Object> params = new HashMap<>();
             putElement(params, element);
             if (isIOS()) {
-                // iOS uses scale and velocity
-                double scale = zoomIn ? 2.0 : 0.5; // Scale > 1 zooms in, < 1 zooms out
+                double scale = zoomIn ? 2.0 : 0.5;
                 params.put("scale", scale);
                 params.put("velocity", 1.0);
                 driver.executeScript("mobile: pinch", params);
@@ -978,7 +1004,9 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Uses 'mobile: pinch' command with scale and velocity parameters</li>
-     *   <li>Android: Uses 'mobile: pinchGesture' command if available, or pinchOpen/Close based on scale</li>
+     *   <li>Android: UIAutomator2 has no scale/velocity pinch command, so this routes to
+     *       pinchOpen/pinchCloseGesture based on the sign of {@code scale}, with velocity ignored
+     *       and a percent derived from how far {@code scale} is from 1.0 (clamped to 1.0)</li>
      * </ul>
      *
      * @param locator Locator to the element to pinch
@@ -995,8 +1023,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 params.put("velocity", velocity);
                 driver.executeScript("mobile: pinch", params);
             } else {
-                // UIAutomator2 has no scale/velocity pinch — route by direction with clamped percent
-                params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
+                params.put("percent", scaleToAndroidPinchPercent(scale));
                 driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
             }
         });
@@ -1096,7 +1123,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * <p><b>Platform Support:</b>
      * <ul>
      *   <li>iOS: Not supported - will throw UnsupportedOperationException</li>
-     *   <li>Android: Uses 'mobile: pinchGesture' command with area parameters</li>
+     *   <li>Android: Uses pinchOpenGesture/pinchCloseGesture based on the sign of {@code scale}</li>
      * </ul>
      *
      * @param left The left coordinate
@@ -1104,7 +1131,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param width The width
      * @param height The height
      * @param scale The scale factor
-     * @param velocity The velocity of the pinch
+     * @param velocity The velocity of the pinch (ignored on Android)
      * @throws UnsupportedOperationException if called on iOS
      */
     public void pinchInArea(int left, int top, int width, int height, double scale, double velocity) {
@@ -1116,7 +1143,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
             params.put("top", top);
             params.put("width", width);
             params.put("height", height);
-            params.put("percent", Math.min(Math.abs(scale - 1.0), 1.0));
+            params.put("percent", scaleToAndroidPinchPercent(scale));
             driver.executeScript(scale >= 1.0 ? "mobile: pinchOpenGesture" : "mobile: pinchCloseGesture", params);
         });
     }

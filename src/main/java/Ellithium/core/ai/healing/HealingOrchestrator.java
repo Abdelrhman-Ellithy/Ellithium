@@ -11,6 +11,7 @@ import Ellithium.core.ai.spi.Tier1AlgorithmicHealer;
 import Ellithium.core.ai.spi.Tier2EnsembleHealer;
 import Ellithium.core.ai.spi.Tier3LLMHealer;
 import Ellithium.core.ai.HealingTelemetryStore;
+import Ellithium.core.ai.dom.InteractiveElements;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.By;
@@ -22,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 public final class HealingOrchestrator implements ElementHealingPort {
 
@@ -78,6 +78,7 @@ public final class HealingOrchestrator implements ElementHealingPort {
         for (HealingTier tier : tiers) {
             if (!tier.isAvailable()) continue;
 
+            HealingTelemetryStore.markAttemptStart();
             HealOutcome raw;
             try {
                 raw = tier.heal(request);
@@ -92,7 +93,17 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 Reporter.log("[TIER " + tier.order() + "] cause: "
                         + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
                         LogLevel.DEBUG);
+                if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+                    HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(),
+                            null, 0.0, false, null, null, "backstop-exception");
+                }
                 continue;
+            }
+            // Structural backstop: guarantees a minimum telemetry entry for every tier attempted,
+            // even if the tier's own internal code path skips record() on some exit.
+            if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+                HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(), null, 0.0,
+                        raw != null && raw.element() != null, null, null, "backstop");
             }
             if (raw == null || raw.element() == null) continue;
 
@@ -104,11 +115,14 @@ public final class HealingOrchestrator implements ElementHealingPort {
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
 
+            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
+            if (guarded == null) continue;
+
             AISelfHealer.cacheHealedLocator(request.driver(), request.brokenLocator(),
                     locator, raw.score(), request.fieldName());
 
             if (!tier.persistsOwnHeal()) {
-                BaselineStore.capture(request.driver(), request.brokenLocator(), resolved,
+                BaselineStore.capture(request.driver(), request.brokenLocator(), guarded,
                         raw.score(), tier.order());
 
                 HealingContextBuilder.SourceLocation srcLoc =
@@ -131,8 +145,6 @@ public final class HealingOrchestrator implements ElementHealingPort {
                         request.actionType(),
                         srcLoc != null ? srcLoc.lineNumber : 0);
             }
-            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
-            if (guarded == null) continue;
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
         Reporter.log("[AI] All healing tiers exhausted for " + request.brokenLocator()
@@ -142,31 +154,9 @@ public final class HealingOrchestrator implements ElementHealingPort {
         return null;
     }
 
-    private static final Set<String> INTERACTIVE_TAGS =
-            Set.of("button", "a", "input", "select", "textarea", "option");
-
-    private static final Set<String> INTERACTIVE_ROLES =
-            Set.of("button", "link", "menuitem", "menuitemcheckbox",
-                    "menuitemradio", "tab", "option", "checkbox", "radio");
-
-    private static final String[] INNER_INTERACTIVE_SELECTORS = {
-            "button[type='submit']",
-            "input[type='submit']",
-            "button",
-            "input[type='button']",
-            "a"
-    };
-
-    private static boolean isClickLikeAction(String actionType) {
-        if (actionType == null || actionType.equals("unknown")) return false;
-        String lower = actionType.toLowerCase();
-        return lower.contains("click") || lower.contains("tap")
-                || lower.contains("press") || lower.contains("hover");
-    }
-
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
                                                         String tierLabel, WebDriver driver) {
-        if (healed == null || !isClickLikeAction(actionType)) return healed;
+        if (healed == null || !InteractiveElements.isClickLikeAction(actionType)) return healed;
         try {
             // Batch getTagName + getAttribute("role") into one JS round-trip instead of two.
             String tag, role;
@@ -184,11 +174,11 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 tag  = healed.getTagName().toLowerCase();
                 role = healed.getAttribute("role");
             }
-            if (INTERACTIVE_TAGS.contains(tag)) return healed;
+            if (InteractiveElements.TAGS.contains(tag)) return healed;
 
-            if (role != null && INTERACTIVE_ROLES.contains(role)) return healed;
+            if (role != null && InteractiveElements.ROLES.contains(role)) return healed;
 
-            for (String selector : INNER_INTERACTIVE_SELECTORS) {
+            for (String selector : InteractiveElements.INNER_SELECTORS) {
                 try {
                     WebElement inner = healed.findElement(By.cssSelector(selector));
                     if (inner.isDisplayed()) {

@@ -7,6 +7,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.time.Duration;
 import java.util.List;
+import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -74,13 +75,31 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return The present WebElement
      */
     public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Presence: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementPresence(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    /**
+     * Waits for an element to be present in the DOM, with explicit control over healing.
+     * @param heal {@code true} to attempt AI healing if the locator does not resolve within the
+     *             timeout; {@code false} (default, from {@code ai.healing.waits.enabled}) to honor
+     *             the timeout and throw, so a genuinely-absent element surfaces as a real failure.
+     */
+    public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element Presence: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait(timeout,pollingEvery)
-                    .until(ExpectedConditions.presenceOfElementLocated(locator));
+                    .until(ExpectedConditions.presenceOfElementLocated(normalized));
         } catch (WebDriverException e) {
-            return findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            return findWebElement(normalized);
         }
+    }
+
+    /** Presence wait using default timeout/polling, with explicit heal control. */
+    public  WebElement waitForElementPresence( By locator, boolean heal) {
+        return waitForElementPresence(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(), heal);
     }
 
     /**
@@ -227,8 +246,29 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return The WebDriver instance switched to the frame
      */
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString(), LogLevel.INFO_BLUE);
-        return performFrameSwitch(locator, timeout, pollingEvery);
+        return waitForFrameToBeAvailableAndSwitchToIt(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    /**
+     * Waits for a frame to be available and switches to it, with explicit control over healing.
+     * @param heal {@code true} to attempt AI healing if the frame locator does not resolve within
+     *             the timeout; {@code false} (default, from {@code ai.healing.waits.enabled}) to
+     *             honor the timeout and throw {@code TimeoutException}/{@code NoSuchFrameException}.
+     */
+    public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
+        if (heal) {
+            return performFrameSwitch(normalized, timeout, pollingEvery);
+        }
+        return getFluentWait(timeout, pollingEvery)
+                .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(normalized));
+    }
+
+    /** Frame wait/switch using default timeout/polling, with explicit heal control. */
+    public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, boolean heal) {
+        return waitForFrameToBeAvailableAndSwitchToIt(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(), heal);
     }
 
     /**
@@ -278,8 +318,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             });
             return true;
         } catch (WebDriverException e) {
-            WebElement healed = findWebElement(locator);
-            return healed.isDisplayed() && healed.isEnabled();
+            try {
+                WebElement healed = findWebElement(locator);
+                return healed.isDisplayed() && healed.isEnabled();
+            } catch (org.openqa.selenium.StaleElementReferenceException stale) {
+                WebElement refound = findWebElement(locator);
+                return refound.isDisplayed() && refound.isEnabled();
+            }
         }
     }
 
@@ -377,8 +422,21 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
             return size > number;
         } catch (WebDriverException e) {
-            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() > number;
+            return presentCountAfterHeal(locator, timeout, pollingEvery) > number;
         }
+    }
+
+    /**
+     * Presence-based recount for the count waits' heal fallback: the original locator's PRESENT
+     * matches are counted first (the count conditions are presence-semantics — a hidden element
+     * still counts), and only a locator resolving nothing falls to the visibility set-heal for a
+     * renamed set. Counting visible elements here would wrongly shrink the count when part of the
+     * set is present-but-hidden.
+     */
+    private int presentCountAfterHeal(By locator, int timeout, int pollingEvery) {
+        List<WebElement> present = findWebElements(locator);
+        if (!present.isEmpty()) return present.size();
+        return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size();
     }
 
     /**
@@ -396,7 +454,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
             return size < number;
         } catch (WebDriverException e) {
-            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() < number;
+            return presentCountAfterHeal(locator, timeout, pollingEvery) < number;
         }
     }
 
@@ -428,7 +486,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
                     .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
             return size == number;
         } catch (WebDriverException e) {
-            return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size() == number;
+            return presentCountAfterHeal(locator, timeout, pollingEvery) == number;
         }
     }
 

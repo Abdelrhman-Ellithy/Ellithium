@@ -10,7 +10,11 @@ import java.util.Date;
  * Generates random test data using JavaFaker.
  */
 public class TestDataGenerator {
-    private static final Faker faker = new Faker();
+    private static final ThreadLocal<Faker> FAKER = ThreadLocal.withInitial(Faker::new);
+
+    private static Faker faker() {
+        return FAKER.get();
+    }
 
     /**
      * Generates a random full name.
@@ -18,7 +22,7 @@ public class TestDataGenerator {
      */
     public static String getRandomFullName() {
         Reporter.log("Generating random FullName", LogLevel.INFO_BLUE);
-        return faker.name().fullName();
+        return faker().name().fullName();
     }
 
     /**
@@ -47,7 +51,7 @@ public class TestDataGenerator {
      */
     public static String getRandomFirstName() {
         Reporter.log("Generating random FirstName", LogLevel.INFO_BLUE);
-        return faker.name().firstName();
+        return faker().name().firstName();
     }
 
     /**
@@ -56,7 +60,7 @@ public class TestDataGenerator {
      */
     public static String getRandomLastName() {
         Reporter.log("Generating random LastName", LogLevel.INFO_BLUE);
-        return faker.name().lastName();
+        return faker().name().lastName();
     }
 
     /**
@@ -65,7 +69,7 @@ public class TestDataGenerator {
      */
     public static String getRandomEmail() {
         Reporter.log("Generating random Email", LogLevel.INFO_BLUE);
-        return faker.internet().emailAddress();
+        return faker().internet().emailAddress();
     }
 
     /**
@@ -74,7 +78,7 @@ public class TestDataGenerator {
      */
     public static String getRandomPhoneNumber() {
         Reporter.log("Generating random PhoneNumber", LogLevel.INFO_BLUE);
-        return faker.phoneNumber().cellPhone();
+        return faker().phoneNumber().cellPhone();
     }
 
     /**
@@ -83,7 +87,7 @@ public class TestDataGenerator {
      */
     public static String getRandomAddress() {
         Reporter.log("Generating random Address", LogLevel.INFO_BLUE);
-        return faker.address().fullAddress();
+        return faker().address().fullAddress();
     }
 
     /**
@@ -92,7 +96,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCity() {
         Reporter.log("Generating random City", LogLevel.INFO_BLUE);
-        return faker.address().city();
+        return faker().address().city();
     }
 
     /**
@@ -101,7 +105,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCountry() {
         Reporter.log("Generating random Country", LogLevel.INFO_BLUE);
-        return faker.address().country();
+        return faker().address().country();
     }
 
     /**
@@ -110,7 +114,7 @@ public class TestDataGenerator {
      */
     public static String getRandomState() {
         Reporter.log("Generating random State", LogLevel.INFO_BLUE);
-        return faker.address().state();
+        return faker().address().state();
     }
 
     /**
@@ -119,7 +123,7 @@ public class TestDataGenerator {
      */
     public static String getRandomZipCode() {
         Reporter.log("Generating random ZipCode", LogLevel.INFO_BLUE);
-        return faker.address().zipCode();
+        return faker().address().zipCode();
     }
 
     /**
@@ -128,7 +132,7 @@ public class TestDataGenerator {
      */
     public static String getRandomUsername() {
         Reporter.log("Generating random Username", LogLevel.INFO_BLUE);
-        return faker.name().username();
+        return faker().name().username();
     }
 
     /**
@@ -137,7 +141,7 @@ public class TestDataGenerator {
      */
     public static String getRandomPassword() {
         Reporter.log("Generating random Password", LogLevel.INFO_BLUE);
-        return faker.internet().password();
+        return faker().internet().password();
     }
 
     /**
@@ -146,7 +150,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCompany() {
         Reporter.log("Generating random Company", LogLevel.INFO_BLUE);
-        return faker.company().name();
+        return faker().company().name();
     }
 
     /**
@@ -155,7 +159,7 @@ public class TestDataGenerator {
      */
     public static String getRandomJobTitle() {
         Reporter.log("Generating random JobTitle", LogLevel.INFO_BLUE);
-        return faker.job().title();
+        return faker().job().title();
     }
 
     /**
@@ -164,7 +168,7 @@ public class TestDataGenerator {
      */
     public static String getRandomWebsite() {
         Reporter.log("Generating random Website", LogLevel.INFO_BLUE);
-        return faker.internet().url();
+        return faker().internet().url();
     }
 
     /**
@@ -173,7 +177,7 @@ public class TestDataGenerator {
      */
     public static String getRandomIPAddress() {
         Reporter.log("Generating random IPAddress", LogLevel.INFO_BLUE);
-        return faker.internet().ipV4Address();
+        return faker().internet().ipV4Address();
     }
 
     /**
@@ -182,7 +186,7 @@ public class TestDataGenerator {
      */
     public static String getRandomBirthDate() {
         Reporter.log("Generating random BirthDate", LogLevel.INFO_BLUE);
-        return faker.date().birthday().toString();
+        return faker().date().birthday().toString();
     }
 
     /**
@@ -191,7 +195,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCreditCardNumber() {
         Reporter.log("Generating random CreditCardNumber", LogLevel.INFO_BLUE);
-        return faker.finance().creditCard();
+        return faker().finance().creditCard();
     }
 
     /**
@@ -200,7 +204,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCreditCardExpiry() {
         Reporter.log("Generating random CreditCardExpiry", LogLevel.INFO_BLUE);
-        return faker.business().creditCardExpiry();
+        return faker().business().creditCardExpiry();
     }
 
     /**
@@ -209,7 +213,7 @@ public class TestDataGenerator {
      */
     public static String getMedicineName() {
         Reporter.log("Generating random MedicineName", LogLevel.INFO_BLUE);
-        return faker.medical().medicineName();
+        return faker().medical().medicineName();
     }
 
     /**
@@ -218,7 +222,7 @@ public class TestDataGenerator {
      */
     public static String getRandomUniversity() {
         Reporter.log("Generating random University", LogLevel.INFO_BLUE);
-        return faker.educator().university();
+        return faker().educator().university();
     }
 
     /**
@@ -227,7 +231,7 @@ public class TestDataGenerator {
      */
     public static String getRandomDegree() {
         Reporter.log("Generating random Degree", LogLevel.INFO_BLUE);
-        return faker.educator().course();
+        return faker().educator().course();
     }
 
     /**
@@ -236,7 +240,7 @@ public class TestDataGenerator {
      */
     public static String getRandomAnimal() {
         Reporter.log("Generating random Animal", LogLevel.INFO_BLUE);
-        return faker.animal().name();
+        return faker().animal().name();
     }
 
     /**
@@ -245,7 +249,7 @@ public class TestDataGenerator {
      */
     public static String getRandomColor() {
         Reporter.log("Generating random Color", LogLevel.INFO_BLUE);
-        return faker.color().name();
+        return faker().color().name();
     }
 
     /**
@@ -254,7 +258,7 @@ public class TestDataGenerator {
      */
     public static String getRandomBook() {
         Reporter.log("Generating random Book", LogLevel.INFO_BLUE);
-        return faker.book().title();
+        return faker().book().title();
     }
 
     /**
@@ -263,7 +267,7 @@ public class TestDataGenerator {
      */
     public static String getRandomSentence() {
         Reporter.log("Generating random Sentence", LogLevel.INFO_BLUE);
-        return faker.lorem().sentence();
+        return faker().lorem().sentence();
     }
 
     /**
@@ -272,7 +276,7 @@ public class TestDataGenerator {
      */
     public static String getRandomParagraph() {
         Reporter.log("Generating random Paragraph", LogLevel.INFO_BLUE);
-        return faker.lorem().paragraph();
+        return faker().lorem().paragraph();
     }
 
     /**
@@ -281,7 +285,7 @@ public class TestDataGenerator {
      */
     public static String getRandomQuote() {
         Reporter.log("Generating random Quote", LogLevel.INFO_BLUE);
-        return faker.harryPotter().quote();
+        return faker().harryPotter().quote();
     }
 
     /**
@@ -290,7 +294,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCountryCode() {
         Reporter.log("Generating random CountryCode", LogLevel.INFO_BLUE);
-        return faker.address().countryCode();
+        return faker().address().countryCode();
     }
 
     /**
@@ -299,7 +303,7 @@ public class TestDataGenerator {
      */
     public static String getRandomBuildingNumber() {
         Reporter.log("Generating random BuildingNumber", LogLevel.INFO_BLUE);
-        return faker.address().buildingNumber();
+        return faker().address().buildingNumber();
     }
 
     /**
@@ -308,7 +312,7 @@ public class TestDataGenerator {
      */
     public static String getRandomStreetName() {
         Reporter.log("Generating random StreetName", LogLevel.INFO_BLUE);
-        return faker.address().streetName();
+        return faker().address().streetName();
     }
 
     /**
@@ -317,7 +321,7 @@ public class TestDataGenerator {
      */
     public static String getRandomStreetAddress() {
         Reporter.log("Generating random StreetAddress", LogLevel.INFO_BLUE);
-        return faker.address().streetAddress();
+        return faker().address().streetAddress();
     }
 
     /**
@@ -326,7 +330,7 @@ public class TestDataGenerator {
      */
     public static String getRandomLatitude() {
         Reporter.log("Generating random Latitude", LogLevel.INFO_BLUE);
-        return String.valueOf(faker.address().latitude());
+        return String.valueOf(faker().address().latitude());
     }
 
     /**
@@ -335,7 +339,7 @@ public class TestDataGenerator {
      */
     public static String getRandomLongitude() {
         Reporter.log("Generating random Longitude", LogLevel.INFO_BLUE);
-        return String.valueOf(faker.address().longitude());
+        return String.valueOf(faker().address().longitude());
     }
 
     /**
@@ -344,7 +348,7 @@ public class TestDataGenerator {
      */
     public static String getRandomTimeZone() {
         Reporter.log("Generating random TimeZone", LogLevel.INFO_BLUE);
-        return faker.address().timeZone();
+        return faker().address().timeZone();
     }
 
     /**
@@ -353,7 +357,7 @@ public class TestDataGenerator {
      */
     public static String getRandomBankAccountNumber() {
         Reporter.log("Generating random BankAccountNumber", LogLevel.INFO_BLUE);
-        return faker.finance().iban();
+        return faker().finance().iban();
     }
 
     /**
@@ -362,7 +366,7 @@ public class TestDataGenerator {
      */
     public static String getRandomSWIFTCode() {
         Reporter.log("Generating random SWIFTCode", LogLevel.INFO_BLUE);
-        return faker.finance().bic();
+        return faker().finance().bic();
     }
 
     /**
@@ -371,7 +375,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCompanyIndustry() {
         Reporter.log("Generating random CompanyIndustry", LogLevel.INFO_BLUE);
-        return faker.company().industry();
+        return faker().company().industry();
     }
 
     /**
@@ -380,7 +384,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCompanyCatchPhrase() {
         Reporter.log("Generating random CompanyCatchPhrase", LogLevel.INFO_BLUE);
-        return faker.company().catchPhrase();
+        return faker().company().catchPhrase();
     }
 
     /**
@@ -389,7 +393,7 @@ public class TestDataGenerator {
      */
     public static String getRandomProductName() {
         Reporter.log("Generating random ProductName", LogLevel.INFO_BLUE);
-        return faker.commerce().productName();
+        return faker().commerce().productName();
     }
 
     /**
@@ -398,7 +402,7 @@ public class TestDataGenerator {
      */
     public static String getRandomProductPrice() {
         Reporter.log("Generating random ProductPrice", LogLevel.INFO_BLUE);
-        return faker.commerce().price();
+        return faker().commerce().price();
     }
 
     /**
@@ -407,7 +411,7 @@ public class TestDataGenerator {
      */
     public static String getRandomProductMaterial() {
         Reporter.log("Generating random ProductMaterial", LogLevel.INFO_BLUE);
-        return faker.commerce().material();
+        return faker().commerce().material();
     }
 
     /**
@@ -416,7 +420,7 @@ public class TestDataGenerator {
      */
     public static String getRandomDepartment() {
         Reporter.log("Generating random Department", LogLevel.INFO_BLUE);
-        return faker.commerce().department();
+        return faker().commerce().department();
     }
 
     /**
@@ -425,7 +429,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCurrencyCode() {
         Reporter.log("Generating random CurrencyCode", LogLevel.INFO_BLUE);
-        return faker.currency().code();
+        return faker().currency().code();
     }
 
     /**
@@ -434,7 +438,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCurrencyName() {
         Reporter.log("Generating random CurrencyName", LogLevel.INFO_BLUE);
-        return faker.currency().name();
+        return faker().currency().name();
     }
 
     /**
@@ -443,7 +447,7 @@ public class TestDataGenerator {
      */
     public static String getRandomCountryFlagEmoji() {
         Reporter.log("Generating random CountryFlagEmoji", LogLevel.INFO_BLUE);
-        return faker.country().flag();
+        return faker().country().flag();
     }
 
     /**
@@ -452,6 +456,6 @@ public class TestDataGenerator {
      */
     public static String getRandomFunnyName() {
         Reporter.log("Generating random FunnyName", LogLevel.INFO_BLUE);
-        return faker.funnyName().name();
+        return faker().funnyName().name();
     }
 }

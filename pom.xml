@@ -61,7 +61,11 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>3.0.0</EllithiumVersion>
+        <EllithiumVersion>3.1.0</EllithiumVersion>
+        <!-- Test parallelism, overridable from the CLI (e.g. -Dsurefire.parallel=classes
+             -Dsurefire.threadCount=10). Defaults run single-threaded so unit runs are unaffected. -->
+        <surefire.parallel>classes</surefire.parallel>
+        <surefire.threadCount>1</surefire.threadCount>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -102,10 +106,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-3.0.0.jar
-            gpg -ab target/ellithium-3.0.0-javadoc.jar
-            gpg -ab target/ellithium-3.0.0-sources.jar
-            gpg -ab target/ellithium-3.0.0.pom
+            gpg -ab target/ellithium-3.1.0.jar
+            gpg -ab target/ellithium-3.1.0-javadoc.jar
+            gpg -ab target/ellithium-3.1.0-sources.jar
+            gpg -ab target/ellithium-3.1.0.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>
@@ -632,6 +636,11 @@
                     <encoding>UTF-8</encoding>
                     <argLine>--enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+ZGenerational</argLine>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <!-- Exposes -Dsurefire.parallel / -Dsurefire.threadCount to the CLI. Defaults keep
+                         normal runs single-threaded (threadCount=1); the Arena command overrides them. -->
+                    <parallel>${surefire.parallel}</parallel>
+                    <threadCount>${surefire.threadCount}</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount>
                     <printSummary>false</printSummary>
                     <testFailureIgnore>true</testFailureIgnore>
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>

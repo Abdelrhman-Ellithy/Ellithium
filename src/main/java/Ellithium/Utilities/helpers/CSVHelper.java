@@ -421,12 +421,23 @@ public class CSVHelper {
      */
     public static void mergeCsvFiles(String outputFilePath, List<String> inputFiles) {
         Reporter.log("Merging CSV files into: " + outputFilePath, LogLevel.INFO_GREEN, "");
-        List<Map<String, String>> mergedData = new ArrayList<>();
-        for (String file : inputFiles) {
-            mergedData.addAll(getCsvData(file));
+        Set<String> allPaths = new TreeSet<>(inputFiles);
+        allPaths.add(outputFilePath);
+        acquireLocksAndRun(new ArrayList<>(allPaths), 0, () -> {
+            List<Map<String, String>> mergedData = new ArrayList<>();
+            for (String file : inputFiles) {
+                mergedData.addAll(getCsvData(file));
+            }
+            setCsvData(outputFilePath, mergedData);
+            Reporter.log("Successfully merged CSV files.", LogLevel.INFO_GREEN, outputFilePath);
+        });
+    }
+
+    private static void acquireLocksAndRun(List<String> sortedPaths, int i, Runnable action) {
+        if (i >= sortedPaths.size()) { action.run(); return; }
+        synchronized (getFileLock(sortedPaths.get(i))) {
+            acquireLocksAndRun(sortedPaths, i + 1, action);
         }
-        setCsvData(outputFilePath, mergedData);
-        Reporter.log("Successfully merged CSV files.", LogLevel.INFO_GREEN, outputFilePath);
     }
 
     /**
@@ -456,13 +467,15 @@ public class CSVHelper {
      * @param newData Map containing the new row data
      */
     public static void updateRow(String filePath, int rowIndex, Map<String, String> newData) {
-        List<Map<String, String>> data = getCsvData(filePath);
-        if (rowIndex < data.size()) {
-            data.set(rowIndex, newData);
-            setCsvData(filePath, data);
-            Reporter.log("Successfully updated row in CSV file.", LogLevel.INFO_GREEN, filePath);
-        } else {
-            Reporter.log("Row index out of bounds.", LogLevel.ERROR, filePath);
+        synchronized (getFileLock(filePath)) {
+            List<Map<String, String>> data = getCsvData(filePath);
+            if (rowIndex < data.size()) {
+                data.set(rowIndex, newData);
+                setCsvData(filePath, data);
+                Reporter.log("Successfully updated row in CSV file.", LogLevel.INFO_GREEN, filePath);
+            } else {
+                Reporter.log("Row index out of bounds.", LogLevel.ERROR, filePath);
+            }
         }
     }
 
@@ -473,14 +486,16 @@ public class CSVHelper {
      * @param newValue New value for all rows in the column
      */
     public static void updateColumn(String filePath, String columnName, String newValue) {
-        List<Map<String, String>> data = getCsvData(filePath);
-        for (Map<String, String> row : data) {
-            if (row.containsKey(columnName)) {
-                row.put(columnName, newValue);
+        synchronized (getFileLock(filePath)) {
+            List<Map<String, String>> data = getCsvData(filePath);
+            for (Map<String, String> row : data) {
+                if (row.containsKey(columnName)) {
+                    row.put(columnName, newValue);
+                }
             }
+            setCsvData(filePath, data);
+            Reporter.log("Successfully updated column in CSV file.", LogLevel.INFO_GREEN, filePath);
         }
-        setCsvData(filePath, data);
-        Reporter.log("Successfully updated column in CSV file.", LogLevel.INFO_GREEN, filePath);
     }
 
     /**

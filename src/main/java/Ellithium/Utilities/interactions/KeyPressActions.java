@@ -37,15 +37,16 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
     /**
      * Long presses any key event on Android device.
      * @param keyEvent KeyEvent to press
-     * @param durationMillis Duration to hold the key in milliseconds
+     * @param durationMillis Requested hold duration in milliseconds; not honored by the underlying
+     *                       driver call, which uses its own fixed press duration
      */
     public void longPressKey(KeyEvent keyEvent, long durationMillis) {
         if (driver instanceof AndroidDriver) {
             try {
                 AndroidDriver androidDriver = (AndroidDriver) driver;
                 androidDriver.longPressKey(keyEvent);
-                Sleep.sleepMillis(durationMillis);
-                Reporter.log("Long pressed key for " + durationMillis + "ms", LogLevel.INFO_BLUE);
+                Reporter.log("Long pressed key (requested " + durationMillis
+                        + "ms; actual on-device hold duration is not controllable via this API)", LogLevel.INFO_BLUE);
             } catch (Exception e) {
                 Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
                 throw e;

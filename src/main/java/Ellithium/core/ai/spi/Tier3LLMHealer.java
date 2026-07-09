@@ -30,7 +30,7 @@ public final class Tier3LLMHealer implements HealingTier {
     @Override
     public HealOutcome heal(HealingRequest request) {
         WebElement element = AISelfHealer.attemptHeal(
-                request.driver(), request.brokenLocator(), request.stackTrace());
+                request.driver(), request.brokenLocator(), request.stackTrace(), request.hints());
         if (element == null) return null;
         By healed = AISelfHealer.getCachedHealedLocator(request.driver(), request.brokenLocator());
         if (healed == null) healed = HealedLocatorBuilder.build(request.driver(), element, request.baseline());

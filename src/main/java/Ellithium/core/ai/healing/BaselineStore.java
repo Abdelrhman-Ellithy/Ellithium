@@ -6,6 +6,7 @@ import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
+import Ellithium.core.ai.models.HealingHints;
 import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
@@ -180,6 +181,17 @@ public class BaselineStore {
      */
     public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator,
                                                   StackTraceElement[] stackTrace, String actionType) {
+        return tryAlgorithmicHeal(driver, brokenLocator, stackTrace, actionType, null);
+    }
+
+    /**
+     * As {@link #tryAlgorithmicHeal(WebDriver, By, StackTraceElement[], String)}, additionally
+     * collecting Tier 1's abstained near-miss candidates into {@code hints} for a later tier.
+     * {@code hints} may be null.
+     */
+    public static HealOutcome tryAlgorithmicHeal(WebDriver driver, By brokenLocator,
+                                                  StackTraceElement[] stackTrace, String actionType,
+                                                  HealingHints hints) {
         ensureLoaded();
         List<ElementFingerprint> history = baselines.get(pageKey(driver, brokenLocator.toString()));
         ElementFingerprint baseline = (history != null && !history.isEmpty())
@@ -187,28 +199,30 @@ public class BaselineStore {
 
         String category = Ellithium.core.ai.HealingTelemetryStore.categoryForAction(actionType);
 
-        if (baseline == null) {
-            Reporter.log("BaselineStore: No baseline for " + brokenLocator
-                    + " — skipping Tier 1", LogLevel.DEBUG);
-            HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false, null, category);
-            return null;
-        }
-
-        Reporter.log("BaselineStore: Baseline found (" + history.size() + " history entries) for "
-                + brokenLocator + " — Tier 1 healing", LogLevel.DEBUG);
-
-        boolean switchedFrame = baseline.enterIframeContext(driver);
+        boolean switchedFrame = (baseline != null) && baseline.enterIframeContext(driver);
         if (switchedFrame) {
             Reporter.log("BaselineStore: element is inside iframe — switched frame context for Tier 1 heal",
                     LogLevel.DEBUG);
         }
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
-            WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline);
+            // Mutation pass runs even without a baseline (cold start): it has its own
+            // token-based abstain/hand-off logic for that case.
+            WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline, hints);
             if (mutationMatch != null) {
                 acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace, category);
                 return HealOutcome.of(mutationMatch, 0.92, 1);
             }
+
+            if (baseline == null) {
+                Reporter.log("BaselineStore: No baseline for " + brokenLocator
+                        + " — skipping remaining Tier 1 steps", LogLevel.DEBUG);
+                HealingTelemetryStore.record(1, brokenLocator.toString(), null, 0.0, false, null, category);
+                return null;
+            }
+
+            Reporter.log("BaselineStore: Baseline found (" + history.size() + " history entries) for "
+                    + brokenLocator + " — Tier 1 healing", LogLevel.DEBUG);
 
             WebElement attrMatch = tryAttributePreSearch(driver, baseline, history);
             if (attrMatch != null) {
@@ -266,7 +280,7 @@ public class BaselineStore {
             // contains-match (*=) is intentional: tolerates value-suffix drift (e.g. "submit" still
             // matches "submit-v2") without falling through to a full DOM scan.
             WebElement found = tryDirectLookup(driver,
-                    By.cssSelector("[data-testid*='" + baseline.getDataTestId() + "']"), history, PRE_SEARCH_FUZZY_THRESHOLD);
+                    By.cssSelector("[data-testid*='" + escapeAttr(baseline.getDataTestId()) + "']"), history, PRE_SEARCH_FUZZY_THRESHOLD);
             if (found != null) return found;
         }
 

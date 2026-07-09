@@ -211,22 +211,30 @@ public class SQLDatabaseProvider implements SQLProvider {
      * @throws SQLException if transaction cannot be started
      */
     public Connection beginTransaction() throws SQLException {
-        Connection stale = transactionConnection.get();
-        if (stale != null) {
-            try (stale) {
-                if (!stale.getAutoCommit()) stale.rollback();
-                Reporter.log("Rolled back and closed a leaked prior transaction before starting a new one.",
-                        LogLevel.WARN);
-            } catch (SQLException ignored) {
-            } finally {
-                transactionConnection.remove();
-            }
-        }
+        releaseLeakedTransaction();
         Connection conn = dataSource.getConnection();
         conn.setAutoCommit(false);
         transactionConnection.set(conn);
         Reporter.log("Transaction started.", LogLevel.INFO_BLUE);
         return conn;
+    }
+
+    /**
+     * Rolls back and closes a transaction left open on the calling thread by a prior
+     * {@link #beginTransaction()} that never reached {@link #commitTransaction()} or
+     * {@link #rollbackTransaction()}. No-op if there is no open transaction on this thread.
+     */
+    public void releaseLeakedTransaction() {
+        Connection stale = transactionConnection.get();
+        if (stale == null) return;
+        try (stale) {
+            if (!stale.getAutoCommit()) stale.rollback();
+            Reporter.log("Rolled back and closed a leaked prior transaction before starting a new one.",
+                    LogLevel.WARN);
+        } catch (SQLException ignored) {
+        } finally {
+            transactionConnection.remove();
+        }
     }
 
     /**

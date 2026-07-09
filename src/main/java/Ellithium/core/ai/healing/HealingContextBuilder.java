@@ -172,20 +172,7 @@ class HealingContextBuilder {
     }
 
     static String extractActionType(StackTraceElement[] stackTrace) {
-        for (StackTraceElement frame : stackTrace) {
-            String cls = frame.getClassName();
-            if (cls.startsWith("Ellithium.Utilities.interactions.")) {
-                String method = frame.getMethodName();
-                if (!method.equals("findWebElement") && !method.equals("waitForVisibilityAndFindElement")
-                        && !method.equals("getFluentWait") && !method.equals("findWebElements")
-                        && !method.equals("waitForVisibilityAndFindElements")
-                        && !method.equals("performWithStaleRetry")
-                        && !method.equals("performAndGet")) {
-                    return method;
-                }
-            }
-        }
-        return "unknown";
+        return Ellithium.core.ai.dom.ActionStackResolver.extractAction(stackTrace);
     }
 
     static String readCallSiteSource(String filePath, int lineNumber) {

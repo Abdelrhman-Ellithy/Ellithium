@@ -30,6 +30,11 @@ public final class InteractionRecorder {
     private static volatile WebDriver driver = null;
     static volatile RecorderOptions options = RecorderOptions.defaults();
     private static volatile Thread drainThread = null;
+    // Bumped on every start()/stop() so a prior session's drain thread — still alive past stop()'s
+    // 1s join timeout because it was blocked in a slow/hung WebDriver call — reliably exits on its
+    // next loop check instead of resuming work if a new start() flips `recording` back to true
+    // before the old thread noticed it should stop.
+    private static volatile long recordingGeneration = 0L;
     private static volatile String lastUrl = null;
     static volatile String startUrl = null;
     private static volatile long navHintEpoch = 0L;
@@ -73,12 +78,15 @@ public final class InteractionRecorder {
                     + "use UniqueLocatorGenerator on a resolved element instead", LogLevel.WARN);
         }
         clearLog();
-        drainThread = Thread.ofVirtual().name("ellithium-codegen-recorder").start(InteractionRecorder::drainLoop);
+        long myGeneration = ++recordingGeneration;
+        drainThread = Thread.ofVirtual().name("ellithium-codegen-recorder")
+                .start(() -> drainLoop(myGeneration));
         Reporter.log("InteractionRecorder: recording started", LogLevel.INFO_YELLOW);
     }
 
     public static synchronized List<RecordedStep> stop() {
         recording = false;
+        recordingGeneration++;
         Thread t = drainThread;
         if (t != null) {
             t.interrupt();
@@ -101,8 +109,8 @@ public final class InteractionRecorder {
 
     public static String getStartUrl() { return startUrl; }
 
-    private static void drainLoop() {
-        while (recording) {
+    private static void drainLoop(long myGeneration) {
+        while (recording && recordingGeneration == myGeneration) {
             try {
                 if (!driverAlive()) { recording = false; break; }
                 boolean freshInject = ensureInjected();
@@ -111,7 +119,9 @@ public final class InteractionRecorder {
                 checkNewTabs();
                 if (stopRequested()) { recording = false; break; }
                 if (changed || freshInject) render();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Reporter.log("InteractionRecorder: drain iteration failed: " + e, LogLevel.DEBUG);
+            }
             sleep(POLL_MS);
         }
     }
@@ -397,7 +407,9 @@ public final class InteractionRecorder {
         try {
             js.executeScript(CAPTURE_SCRIPT, options.pickModeDefault());
             return Boolean.TRUE.equals(js.executeScript(OVERLAY_SCRIPT));
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Reporter.log("InteractionRecorder: toolbar injection failed (page may block scripts via CSP): " + e, LogLevel.DEBUG);
+        }
         return false;
     }
 
@@ -560,11 +572,11 @@ public final class InteractionRecorder {
             + " function stableClassOf(el){ var c=el.getAttribute&&el.getAttribute('class'); if(!c)return null; var t=c.trim().split(/\\s+/); for(var i=0;i<t.length;i++){ if(t[i]&&!dyn(t[i])) return t[i]; } return null; }"
             + " function xpIndexOf(d,xp,el){ try{ var r=d.evaluate(xp,d,null,XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,null); for(var i=0;i<r.snapshotLength;i++){ if(r.snapshotItem(i)===el) return i+1; } }catch(e){} return 0; }"
             + " function attrW(nm){"
-            + "   var TD=['data-testid','data-test','data-cy','data-qa']; if(TD.indexOf(nm)>=0) return 1.0;"
-            + "   if(nm==='id') return 0.9; if(nm==='name') return 0.85;"
-            + "   if(nm==='aria-label'||nm==='aria-labelledby') return 0.80;"
+            + "   var TD=['data-testid','data-test','data-cy','data-qa']; if(TD.indexOf(nm)>=0) return " + UniqueLocatorGenerator.W_TESTID + ";"
+            + "   if(nm==='id') return " + UniqueLocatorGenerator.W_ID + "; if(nm==='name') return " + UniqueLocatorGenerator.W_NAME + ";"
+            + "   if(nm==='aria-label'||nm==='aria-labelledby') return " + UniqueLocatorGenerator.W_ARIA + ";"
             + "   if(nm==='role') return 0.78;"
-            + "   if(nm.indexOf('data-')===0) return 0.70;"
+            + "   if(nm.indexOf('data-')===0) return " + UniqueLocatorGenerator.W_DATA + ";"
             + "   if(nm==='href'||nm==='src'||nm==='alt') return 0.68;"
             + "   if(nm==='type'||nm==='value'||nm==='placeholder'||nm==='title') return 0.62;"
             + "   return 0.50; }"

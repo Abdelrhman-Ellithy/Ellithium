@@ -62,6 +62,7 @@ public class JavaScriptActionsTest {
         By locator = By.id("email");
         WebElement mockElement = mock(WebElement.class);
         when(mockDriver.findElement(locator)).thenReturn(mockElement);
+        when(mockElement.isDisplayed()).thenReturn(true);
         jsActions.setElementValueUsingJS(locator, "user@example.com");
         verify(mockJs).executeScript(
                 eq("arguments[0].value = arguments[1];"),
@@ -76,6 +77,7 @@ public class JavaScriptActionsTest {
         By locator = By.id("btn");
         WebElement mockElement = mock(WebElement.class);
         when(mockDriver.findElement(locator)).thenReturn(mockElement);
+        when(mockElement.isDisplayed()).thenReturn(true);
         jsActions.javascriptClick(locator);
         verify(mockJs).executeScript("arguments[0].click();", mockElement);
     }

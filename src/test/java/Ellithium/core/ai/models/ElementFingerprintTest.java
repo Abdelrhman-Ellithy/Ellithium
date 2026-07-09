@@ -1,11 +1,16 @@
 package Ellithium.core.ai.models;
 
 import com.google.gson.Gson;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ElementFingerprintTest {
 
@@ -13,6 +18,54 @@ public class ElementFingerprintTest {
 
     private ElementFingerprint fp(String json) {
         return GSON.fromJson(json, ElementFingerprint.class);
+    }
+
+    /** A web (non-native) element exposing only the given attribute — all others null. */
+    private WebElement webElementWithAttribute(String attrName, String attrValue) {
+        WebElement el = mock(WebElement.class);
+        when(el.getAttribute(attrName)).thenReturn(attrValue);
+        return el;
+    }
+
+    // ── reconstructLocator: live attribute values must be CSS-escaped ─────────
+
+    @Test
+    public void reconstructLocator_ariaLabelWithQuote_isEscaped() {
+        // A real, ordinary aria-label ("User's Profile") — not a crafted attack string — breaks an
+        // unescaped [aria-label='...'] selector by closing the quote early.
+        WebElement el = webElementWithAttribute("aria-label", "User's Profile");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("[aria-label='User\\'s Profile']"),
+                "a quote in a live attribute value must be escaped, not break the selector: " + by);
+    }
+
+    @Test
+    public void reconstructLocator_dataTestIdWithQuote_isEscaped() {
+        WebElement el = webElementWithAttribute("data-testid", "user's-menu");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("[data-testid='user\\'s-menu']"),
+                "a quote in data-testid must be escaped: " + by);
+    }
+
+    @Test
+    public void reconstructLocator_dataTestWithQuote_isEscaped() {
+        WebElement el = webElementWithAttribute("data-test", "o'brien-panel");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("[data-test='o\\'brien-panel']"));
+    }
+
+    @Test
+    public void reconstructLocator_dataCyWithQuote_isEscaped() {
+        WebElement el = webElementWithAttribute("data-cy", "o'brien-panel");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("[data-cy='o\\'brien-panel']"));
+    }
+
+    @Test
+    public void reconstructLocator_dataQaWithQuote_isEscaped() {
+        WebElement el = webElementWithAttribute("data-qa", "o'brien-panel");
+        By by = ElementFingerprint.reconstructLocator(el);
+        Assert.assertEquals(by, By.cssSelector("[data-qa='o\\'brien-panel']"));
     }
 
     // ── computeDynamicMax ────────────────────────────────────────────────────
