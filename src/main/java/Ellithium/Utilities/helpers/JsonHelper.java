@@ -161,7 +161,7 @@ public class JsonHelper {
                 JsonObject jsonObject = parsed.getAsJsonObject();
                 log("Successfully read value for key: " + key + " from JSON file: ", LogLevel.INFO_GREEN, filePath);
                 var value = jsonObject.get(key);
-                if (value != null) {
+                if (value != null && !value.isJsonNull()) {
                     return value.getAsString();
                 } else {
                     return null;

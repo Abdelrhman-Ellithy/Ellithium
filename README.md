@@ -411,18 +411,19 @@ public class BaseStepDefinitions {
 
 ### Step 1: Create a BaseTest Class
 
-- **Create a BaseTests class that extends `NonBDDSetup` — all test classes extend from it**.
+- **Create a plain BaseTests class — all test classes extend from it. No Ellithium base class is
+  needed in Non-BDD mode**; the reporting/lifecycle listener is wired via the `<listener>` property
+  in the Surefire plugin configuration shown in the setup steps above, so it applies automatically.
 
 ```java
 package UI_NonBDD;
 
-import Ellithium.core.base.NonBDDSetup;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.*;
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.*;
 
-public class BaseTests extends NonBDDSetup {
+public class BaseTests {
     protected WebDriver driver;
 
     @BeforeClass

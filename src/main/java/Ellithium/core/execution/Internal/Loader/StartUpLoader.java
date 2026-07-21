@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class StartUpLoader {
     private static String
@@ -74,17 +73,58 @@ public class StartUpLoader {
         File file = new File(filePath);
         return file.exists();
     }
+    /**
+     * Locates the Ellithium JAR that is actually in use for this build. Resolved from the
+     * running JVM's own code source first — the exact jar {@link StartUpLoader}'s class was
+     * loaded from, which Maven guarantees matches the consuming project's declared dependency
+     * version (release, beta, or SNAPSHOT alike) — falling back to a highest-installed-version
+     * scan of the local Maven repository only when the class wasn't loaded from a jar at all
+     * (e.g. running against exploded {@code target/classes} in an IDE/dev build).
+     * <p>
+     * The code-source resolution is load-bearing, not an optimization: a local {@code .m2}
+     * repository commonly accumulates multiple installed Ellithium versions from different
+     * projects on the same machine (e.g. one project pinned to a stable release, another testing
+     * a beta). A "highest version wins" scan has no way to know which of those the *current*
+     * build actually depends on, and can silently resolve and extract resources from the wrong
+     * one — most visibly when a numerically-newer beta/pre-release is cached alongside an older
+     * stable version a project still depends on.
+     */
     public static File findJarFile() {
+        File codeSourceJar = findJarFromCodeSource();
+        return codeSourceJar != null ? codeSourceJar : findHighestVersionJarFromRepo();
+    }
+
+    private static File findJarFromCodeSource() {
+        try {
+            var codeSource = StartUpLoader.class.getProtectionDomain().getCodeSource();
+            if (codeSource == null) return null;
+            File location = new File(codeSource.getLocation().toURI());
+            return (location.isFile() && location.getName().endsWith(".jar")) ? location : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Matches the main artifact by its exact deterministic filename
+     * ({@code ellithium-<version>.jar}, where {@code <version>} is literally the containing
+     * directory's name) rather than a pattern — a version directory also commonly contains
+     * {@code ellithium-<version>-sources.jar} and {@code ellithium-<version>-javadoc.jar} (fetched
+     * by an IDE or {@code -Dclassifier=sources}), and {@code File.listFiles()} order is
+     * unspecified, so a loose pattern match could non-deterministically return a sources/javadoc
+     * JAR — which has no {@code properties/*} resource entries, causing every downstream
+     * extraction to silently no-op.
+     */
+    private static File findHighestVersionJarFromRepo() {
         String repoPath = ConfigContext.getEllithiumRepoPath();
         File repoDir = new File(repoPath);
         File[] versionDirs = repoDir.listFiles(File::isDirectory);
         if (versionDirs != null && versionDirs.length > 0) {
             Arrays.sort(versionDirs, (dir1, dir2) -> compareVersions(dir1.getName(), dir2.getName()));
             File highestVersionDir = versionDirs[versionDirs.length - 1];
-            Pattern jarPattern = Pattern.compile("^ellithium-\\d+(\\.\\d+)*(-[A-Za-z0-9._]+)?\\.jar$");
-            File[] jarFiles = highestVersionDir.listFiles((dir, name) -> jarPattern.matcher(name).matches());
-            if (jarFiles != null && jarFiles.length > 0) {
-                return jarFiles[0];
+            File mainJar = new File(highestVersionDir, "ellithium-" + highestVersionDir.getName() + ".jar");
+            if (mainJar.exists()) {
+                return mainJar;
             }
         }
         return null;
