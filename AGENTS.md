@@ -23,7 +23,7 @@ coordinate: `io.github.abdelrhman-ellithy:ellithium`. Requires JDK 25 and Maven
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <Ellithiumversion>3.1.0</Ellithiumversion>
+    <Ellithiumversion>3.1.1</Ellithiumversion>
 </properties>
 <dependencies>
     <dependency>

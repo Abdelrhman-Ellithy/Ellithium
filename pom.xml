@@ -61,7 +61,7 @@
         </profile>
     </profiles>
     <properties>
-        <EllithiumVersion>3.1.0</EllithiumVersion>
+        <EllithiumVersion>3.1.1</EllithiumVersion>
         <!-- Test parallelism, overridable from the CLI (e.g. -Dsurefire.parallel=classes
              -Dsurefire.threadCount=10). Defaults run single-threaded so unit runs are unaffected. -->
         <surefire.parallel>classes</surefire.parallel>
@@ -106,10 +106,10 @@
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
             check version config, readme,
-            gpg -ab target/ellithium-3.1.0.jar
-            gpg -ab target/ellithium-3.1.0-javadoc.jar
-            gpg -ab target/ellithium-3.1.0-sources.jar
-            gpg -ab target/ellithium-3.1.0.pom
+            gpg -ab target/ellithium-3.1.1.jar
+            gpg -ab target/ellithium-3.1.1-javadoc.jar
+            gpg -ab target/ellithium-3.1.1-sources.jar
+            gpg -ab target/ellithium-3.1.1.pom
             gpg --keyserver keyserver.ubuntu.com --send-keys
             mvn deploy -P central,!github -DskipTests -X</deployToMavenCentral>
     </properties>
