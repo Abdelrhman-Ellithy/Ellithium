@@ -18,7 +18,12 @@ public final class Tier1AlgorithmicHealer implements HealingTier {
 
     @Override
     public boolean persistsOwnHeal() {
-        return true;
+        // false: persistence/source-patching is deferred to HealingOrchestrator's shared
+        // post-resolveInteractiveElement() path (same as Tier 2/3), so a mutation/attribute/DOM-scan
+        // match that the orchestrator later rejects (e.g. a non-interactive container for a click
+        // action) never gets a baseline persisted or a source patch queued for a heal that wasn't
+        // actually used.
+        return false;
     }
 
     @Override

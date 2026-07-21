@@ -1,0 +1,28 @@
+# Ellithium
+
+> Unified Java test automation framework for Web (Selenium), Mobile (Appium), API
+> (Rest Assured), and SQL/NoSQL DB testing — with BDD (Cucumber) and non-BDD (TestNG)
+> modes, Allure reporting, and a built-in three-tier AI locator self-healing engine.
+> Add as a Maven dependency: `io.github.abdelrhman-ellithy:ellithium`. Requires
+> JDK 25 and Maven ≥ 3.9.9.
+
+## Docs
+
+- Official documentation: https://abdelrhman-ellithy.github.io/ellithium.github.io/
+  — full setup guides, architecture, API reference, configuration guides, and
+  tutorials. Start here for anything not covered by the links below.
+- [README.md](README.md): quick-start (pom.xml setup for a new consumer project),
+  BDD and non-BDD bootstrap examples, feature overview, AI-feature config examples.
+- [AGENTS.md](AGENTS.md): dense, agent-oriented reference for setting up and writing
+  tests with Ellithium — pom.xml wiring, the `DriverActions`/`DriverFactory` API
+  surface, `ai-config.properties` keys, and the codegen/calibration CLI tools — usable
+  without a browsing tool or MCP server.
+
+## Demo projects
+
+- [Noon-Shopping-Website-Manual-Automation](https://github.com/Abdelrhman-Ellithy/Noon-Shopping-Website-Manual-Automation-) — BDD (Cucumber) setup reference.
+- [The-Internet-Herokuapp](https://github.com/Abdelrhman-Ellithy/The-Internet-Herokuapp) — non-BDD (TestNG) setup reference.
+
+## Contact
+
+- Abdelrahman Ellithy — abdelarhmanellithy@gmail.com

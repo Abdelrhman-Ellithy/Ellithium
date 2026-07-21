@@ -91,6 +91,28 @@ public class JsonHelperTests {
     }
 
     @Test
+    public void testGetJsonKeyValue_jsonNullValue_returnsJavaNull() {
+        try {
+            // Reproduces Test-Output/UpdateChecker/checker.json's "LastRunDate": null on a fresh
+            // project — Gson's JsonObject.get() returns JsonNull.INSTANCE (never Java null) for a
+            // JSON null value, so this must not throw UnsupportedOperationException.
+            JsonObject data = new JsonObject();
+            data.add("LastRunDate", JsonNull.INSTANCE);
+            try (FileWriter writer = new FileWriter(TEST_JSON)) {
+                writer.write(data.toString());
+            }
+            String value = JsonHelper.getJsonKeyValue(TEST_JSON, "LastRunDate");
+            assertEquals(value, null);
+            Reporter.log("JSON null-value key test passed successfully", LogLevel.INFO_GREEN);
+        } catch (AssertionError e) {
+            Reporter.log("JSON null-value key test failed: ", LogLevel.ERROR, e.getMessage());
+            throw e;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void testSetJsonKeyValue() {
         try {
             JsonHelper.setJsonKeyValue(TEST_JSON, "name", "Updated Name");

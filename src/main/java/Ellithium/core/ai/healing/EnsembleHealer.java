@@ -840,8 +840,9 @@ public class EnsembleHealer {
 
     /**
      * Accept decision (pure, unit-testable). Path A: the fused combined score clears the calibrated
-     * threshold. Path B (strategy-rescue): a gold-tier match (f2 ≥ 0.95: exact data-testid /
-     * AppiumBy / cross-validated mutation) corroborated by the local model cosine (f3 ≥ 0.35) —
+     * threshold. Path B (strategy-rescue): a gold-tier match (f2 ≥ {@link #GATE_STRATEGY_MIN}: exact
+     * data-testid / AppiumBy / cross-validated mutation) corroborated by the local model cosine
+     * (f3 ≥ {@link #GATE_RESCUE_COSINE_FLOOR}) —
      * two genuinely independent signals (algorithmic strategy vs. learned embedding) so the heal is
      * trusted even when combined hasn't cleared the threshold. Using cosine as the second gate instead
      * of the baseline fingerprint means cold-start elements (no stored baseline) can still be rescued,

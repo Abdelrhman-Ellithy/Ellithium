@@ -1,13 +1,11 @@
 package Ellithium.core.ai.healing;
 
-import Ellithium.core.ai.reporting.AIHealingReporter;
 import Ellithium.core.ai.HealingTelemetryStore;
 import Ellithium.core.ai.scoring.LocatorMutationEngine;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.models.HealingHints;
-import Ellithium.core.ai.models.HealingResult;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import com.google.gson.Gson;
@@ -210,7 +208,7 @@ public class BaselineStore {
             // token-based abstain/hand-off logic for that case.
             WebElement mutationMatch = LocatorMutationEngine.tryMutations(brokenLocator, driver, baseline, hints);
             if (mutationMatch != null) {
-                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, "[TIER 1 - Mutation]", null, stackTrace, category);
+                acceptHeal(driver, brokenLocator, mutationMatch, 0.92, null, category);
                 return HealOutcome.of(mutationMatch, 0.92, 1);
             }
 
@@ -227,7 +225,9 @@ public class BaselineStore {
             WebElement attrMatch = tryAttributePreSearch(driver, baseline, history);
             if (attrMatch != null) {
                 double score = scoreBestHistory(attrMatch, history);
-                acceptHeal(driver, brokenLocator, attrMatch, score, "[TIER 1 - AttrSearch]", null, stackTrace, category);
+                Reporter.log("BaselineStore: Tier 1 MATCH via attribute pre-search — score="
+                        + String.format("%.2f", score), LogLevel.INFO_GREEN);
+                acceptHeal(driver, brokenLocator, attrMatch, score, null, category);
                 return HealOutcome.of(attrMatch, score, 1);
             }
 
@@ -244,8 +244,7 @@ public class BaselineStore {
                 Reporter.log("BaselineStore: Tier 1 MATCH — score=" + String.format("%.2f", best.score)
                         + " | " + best.reasoning + " | locator=" + best.reconstructedLocator,
                         LogLevel.INFO_GREEN);
-                acceptHeal(driver, brokenLocator, best.element, best.score,
-                        "[TIER 1 - Algorithmic] " + best.reasoning, best.reconstructedLocator, stackTrace, category);
+                acceptHeal(driver, brokenLocator, best.element, best.score, best.reconstructedLocator, category);
                 return HealOutcome.of(best.element, best.reconstructedLocator, best.score, 1);
             } else {
                 Reporter.log("BaselineStore: Tier 1 best score=" + String.format("%.2f", best.score)
@@ -546,50 +545,25 @@ public class BaselineStore {
 
     // ──────────────────────── Accept Heal Helper ────────────────────────
 
+    /**
+     * Records telemetry for a Tier 1 candidate this method accepted. Baseline persistence,
+     * source-patch queuing, and the healing-report entry are deliberately NOT done here — Tier 1
+     * no longer self-persists ({@link Ellithium.core.ai.spi.Tier1AlgorithmicHealer#persistsOwnHeal()}
+     * is {@code false}); {@link HealingOrchestrator} performs all of that, uniformly for every tier,
+     * only after its own {@code resolveInteractiveElement}/stale-guard checks confirm this candidate
+     * is actually usable — so a candidate this method accepts but the orchestrator later rejects
+     * (e.g. a non-interactive container for a click action) never gets a baseline persisted or a
+     * source patch queued for a heal that was never used.
+     */
     private static void acceptHeal(WebDriver driver, By brokenLocator, WebElement healed,
-                                    double score, String tierLabel, By reconstructedLocator,
-                                    StackTraceElement[] stackTrace, String category) {
+                                    double score, By reconstructedLocator, String category) {
         By built = HealedLocatorBuilder.build(driver, healed, null);
         By bestLocator = built != null ? built
                 : (reconstructedLocator != null ? reconstructedLocator
                         : ElementFingerprint.reconstructLocator(healed));
         String locatorStr = bestLocator != null ? bestLocator.toString() : brokenLocator.toString();
 
-        // Update baseline with fresh fingerprint — only when the heal clears the store threshold,
-        // so a low-confidence Tier 1 match cannot persist a wrong fingerprint for future runs.
-        try {
-            if (bestLocator != null && score >= AIConfigLoader.getHealingStoreThreshold()) {
-                // Key the fingerprint by the BROKEN locator (the lookup key) so fp.locatorKey
-                // matches the map key — previously captured under bestLocator causing key mismatch.
-                ElementFingerprint updatedFp = ElementFingerprint.capture(driver, brokenLocator, healed);
-                if (updatedFp.computeDynamicMax() >= 15) {
-                    baselines.compute(pageKey(driver, brokenLocator.toString()), (k, existing) -> {
-                        List<ElementFingerprint> updated = new ArrayList<>();
-                        if (existing != null && !existing.isEmpty()) {
-                            int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
-                            updated.addAll(existing.subList(start, existing.size()));
-                        }
-                        updated.add(updatedFp);
-                        return List.copyOf(updated);
-                    });
-                    saveToDiskAsync();
-                }
-            }
-        } catch (Exception e) {
-            Reporter.log("BaselineStore: acceptHeal baseline-update skipped: "
-                    + e.getClass().getSimpleName() + ": " + e.getMessage(), LogLevel.DEBUG);
-        }
-
-        AIHealingReporter.queueChange(
-                "algorithmic-baseline", brokenLocator.toString(),
-                new HealingResult(locatorStr, score, tierLabel),
-                null, null, null, 0);
-
         HealingTelemetryStore.record(1, brokenLocator.toString(), locatorStr, score, true, null, category);
-
-        if (stackTrace != null && bestLocator != null) {
-            AISelfHealer.queueSourcePatch(brokenLocator, bestLocator, stackTrace, score, 1);
-        }
     }
 
     // ──────────────────────── Reasoning ────────────────────────
