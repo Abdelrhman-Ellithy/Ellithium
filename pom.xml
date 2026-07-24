@@ -79,7 +79,7 @@
         <CSV>1.14.1</CSV>
         <ApachePOI>5.5.1</ApachePOI>
         <restversion>6.0.1</restversion>
-        <Cucumber>7.34.4</Cucumber>
+        <Cucumber>7.34.5</Cucumber>
         <cucumberTsetNG>7.34.5</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
         <SQLiteVersion>3.53.2.1</SQLiteVersion>
