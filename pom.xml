@@ -97,7 +97,7 @@
         <oracleDBVersion>23.26.2.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>7.5.3</redisDBVersion>
-        <couchBaseVersion>3.12.1</couchBaseVersion>
+        <couchBaseVersion>3.12.2</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
         <onnxRuntimeVersion>1.27.0</onnxRuntimeVersion>
