@@ -227,11 +227,35 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         }
     }
 
+    /**
+     * Builds an unambiguous subject line. A bare "(104/107)" reads as "104 out of 107" with no
+     * indication of which side is failures vs. the total, so passed/failed/skipped are spelled out
+     * explicitly against the total instead.
+     */
     private String generateEmailSubject(TestResultSummary summary) {
         try {
             String prefix = config.getEmailSubjectPrefix();
-            String status = summary.getFailedTests() > 0 ? "FAILED" : "PASSED";
-            return prefix + " - Test Execution - " + status + " (" + summary.getPassedTests() + "/" + summary.getTotalTests() + ")";
+            long failed = summary.getFailedTests();
+            long passed = summary.getPassedTests();
+            long skipped = summary.getSkippedTests();
+            long total = summary.getTotalTests();
+            boolean isFailed = failed > 0;
+            String status = isFailed ? "FAILED" : "PASSED";
+
+            // Lead with whichever count matches the status word, so the subject scans naturally
+            // for both outcomes instead of always putting "failed" first.
+            StringBuilder counts = new StringBuilder();
+            if (isFailed) {
+                counts.append(failed).append(" failed, ").append(passed).append(" passed");
+            } else {
+                counts.append(passed).append(" passed, ").append(failed).append(" failed");
+            }
+            if (skipped > 0) {
+                counts.append(", ").append(skipped).append(" skipped");
+            }
+            counts.append(" of ").append(total);
+
+            return prefix + " - Test Execution - " + status + " (" + counts + ")";
         } catch (Exception e) {
             Reporter.log("Failed to generate email subject: " + e.getMessage(), LogLevel.ERROR);
             return "Ellithium Test Results";

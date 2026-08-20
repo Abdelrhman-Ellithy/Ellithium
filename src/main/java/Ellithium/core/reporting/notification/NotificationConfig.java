@@ -26,6 +26,7 @@ public class NotificationConfig {
     private static final String EMAIL_SMTP_PASSWORD = "notification.email.smtp.password";
     private static final String EMAIL_FROM = "notification.email.from";
     private static final String EMAIL_TO = "notification.email.to";
+    private static final String EMAIL_CC = "notification.email.cc";
     private static final String EMAIL_SUBJECT_PREFIX = "notification.email.subject.prefix";
     
     private static final String SLACK_WEBHOOK_URL = "notification.slack.webhook.url";
@@ -60,6 +61,8 @@ public class NotificationConfig {
     /**
      * Quick check if notifications are enabled without full configuration loading.
      * Result is cached after the first read so the properties file is not re-read on every call.
+     * Reads from the same file ({@link #NOTIFICATION_FILE}) as the full configuration so this
+     * pre-flight check can never disagree with {@link #isNotificationEnabled()}.
      * @return true if notifications are enabled, false otherwise
      */
     static boolean isNotificationEnabledQuick() {
@@ -67,7 +70,7 @@ public class NotificationConfig {
             return cachedQuickCheck;
         }
         try {
-            String enabled = Ellithium.Utilities.helpers.PropertyHelper.getAllProperties("src/main/resources/properties/config.properties").getProperty("notification.enabled");
+            String enabled = PropertyHelper.getAllProperties(NOTIFICATION_FILE).getProperty(NOTIFICATION_ENABLED);
             cachedQuickCheck = enabled != null && Boolean.parseBoolean(enabled);
             return cachedQuickCheck;
         } catch (Exception e) {
@@ -234,13 +237,22 @@ public class NotificationConfig {
     }
     
     /**
-     * Gets the to email address.
-     * @return To email address
+     * Gets the to email address(es).
+     * @return To email address(es), comma-separated if more than one
      */
     public String getToEmail() {
         return getProperty(EMAIL_TO);
     }
-    
+
+    /**
+     * Gets the CC email address(es). Optional - callers should treat a null/blank result as
+     * "no CC" rather than a configuration error.
+     * @return CC email address(es), comma-separated if more than one, or null/blank if unset
+     */
+    public String getCcEmail() {
+        return getProperty(EMAIL_CC);
+    }
+
     /**
      * Gets the email subject prefix.
      * @return Email subject prefix

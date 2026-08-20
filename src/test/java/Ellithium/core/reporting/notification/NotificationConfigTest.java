@@ -70,6 +70,7 @@ public class NotificationConfigTest {
         cfg.getSmtpPassword();
         cfg.getFromEmail();
         cfg.getToEmail();
+        cfg.getCcEmail();
         cfg.getEmailSubjectPrefix();
         cfg.getSlackWebhookUrl();
         cfg.getSlackChannel();
