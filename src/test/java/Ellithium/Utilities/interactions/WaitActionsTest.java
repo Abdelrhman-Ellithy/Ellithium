@@ -276,9 +276,16 @@ public class WaitActionsTest {
     public void waitForElementToBeClickable_fallbackPath_usesDirectElementWhenLocatorTimesOut() {
         when(mockDriver.findElement(LOCATOR)).thenReturn(mockElement);
         // First call: isEnabled()=false → locator-based condition returns null → TimeoutException with timeout=0
-        // Second call (fallback): isEnabled()=true → element-based condition satisfied
+        // Second call (fallback with heal=true): isEnabled()=true → element-based condition satisfied
         when(mockElement.isEnabled()).thenReturn(false, true);
-        WebElement result = waitActions.waitForElementToBeClickable(LOCATOR, 0, 100);
+        WebElement result = waitActions.waitForElementToBeClickable(LOCATOR, 0, 100, true);
         Assert.assertEquals(result, mockElement);
+    }
+
+    @Test(expectedExceptions = org.openqa.selenium.TimeoutException.class)
+    public void waitForElementToBeClickable_whenHealingDisabled_throwsTimeoutDirectly() {
+        when(mockDriver.findElement(LOCATOR)).thenReturn(mockElement);
+        when(mockElement.isEnabled()).thenReturn(false);
+        waitActions.waitForElementToBeClickable(LOCATOR, 0, 100, false);
     }
 }

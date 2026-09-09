@@ -21,6 +21,7 @@ import Ellithium.core.reporting.notification.TestResultCollector;
 import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;
 import io.qameta.allure.testng.AllureTestNg;
+import org.apache.logging.log4j.ThreadContext;
 import org.testng.*;
 import org.testng.annotations.ITestAnnotation;
 import org.testng.annotations.Listeners;
@@ -86,11 +87,18 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         // (R9) can flag a
         // heal that was USED in a test that later FAILS. Safe for BDD + non-BDD (id
         // needs no driver).
-        HealingTelemetryStore.setCurrentTest(getTestIdentifier(result));
+        String testIdentifier = getTestIdentifier(result);
+        String testName = result.getName();
+        HealingTelemetryStore.setCurrentTest(testIdentifier);
+        ThreadContext.put("testIdentifier", testIdentifier);
+        ThreadContext.put("testName", testName);
         if (!testResultCollector.isCucumberTest(result)) {
-            Logger.clearCurrentExecutionLogs();
-            Logger.info(BLUE + "[START] TESTCASE " + result.getName() + " [STARTED]" + RESET);
-            VideoRecordingManager.prepareRecording(getTestName(result), getTestIdentifier(result));
+            Logger.clearLogsForTest(testIdentifier);
+            Logger.info(BLUE + "[START] TESTCASE " + testName + " [STARTED]" + RESET);
+            String recordingId = VideoRecordingManager.prepareRecording(getTestName(result), testIdentifier);
+            if (recordingId != null) {
+                testResultToRecordingId.put(getResultKey(result), recordingId);
+            }
         }
     }
 
@@ -98,11 +106,25 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onTestFailure(ITestResult result) {
         // False-heal detector (R9): flag any heal USED in this now-failed test as a
         // wrong-heal suspect.
-        HealingTelemetryStore.markTestFailed(getTestIdentifier(result));
+        String testIdentifier = getTestIdentifier(result);
+        int suspectHeals = HealingTelemetryStore.markTestFailed(testIdentifier);
         HealingTelemetryStore.clearCurrentTest();
+        if (suspectHeals > 0) {
+            String details = HealingTelemetryStore.getSuspectWrongHealDetails(testIdentifier);
+            Logger.warn(RED + "[FALSE-HEAL DETECTED] Test " + result.getName() + " failed after using "
+                    + suspectHeals + " AI heal(s): " + details + RESET);
+            if (Ellithium.core.ai.config.AIConfigLoader.isFailOnSuspectHeal()) {
+                Throwable original = result.getThrowable();
+                String msg = "[AI FALSE-HEAL] Test failed after using " + suspectHeals + " healed locator(s). Suspect heals: " + details;
+                AssertionError falseHealError = new AssertionError(msg, original);
+                result.setThrowable(falseHealError);
+            }
+        }
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(RED + "[FAILED] TESTCASE " + result.getName() + " [FAILED]" + RESET);
         }
+        ThreadContext.put("testName", "Ellithium");
+        ThreadContext.remove("testIdentifier");
     }
 
     @Override
@@ -111,6 +133,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(GREEN + "[PASSED] TESTCASE " + result.getName() + " [PASSED]" + RESET);
         }
+        ThreadContext.put("testName", "Ellithium");
+        ThreadContext.remove("testIdentifier");
     }
 
     @Override
@@ -119,6 +143,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(YELLOW + "[SKIPPED] TESTCASE " + result.getName() + " [SKIPPED]" + RESET);
         }
+        ThreadContext.put("testName", "Ellithium");
+        ThreadContext.remove("testIdentifier");
     }
 
     @Override
@@ -141,7 +167,10 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void onStart(ISuite suite) {
-        System.setProperty("ellithium.suite.name", suite.getName());
+        String existing = System.getProperty("ellithium.suite.name");
+        if (existing == null || existing.isBlank() || "UnknownSuite".equalsIgnoreCase(existing)) {
+            System.setProperty("ellithium.suite.name", suite.getName());
+        }
         Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
     }
 
@@ -220,13 +249,43 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void beforeInvocation(IInvokedMethod method, ITestResult testResult) {
         Reporter.flushPendingStep();
-        if (DriverFactory.getCurrentDriver() == null) {
+        if (testResult != null) {
+            if (method.isTestMethod() || (method.getTestMethod() != null && method.getTestMethod().isBeforeMethodConfiguration())) {
+                String testIdentifier = getTestIdentifier(testResult);
+                String testName = testResult.getName();
+                ThreadContext.put("testIdentifier", testIdentifier);
+                ThreadContext.put("testName", testName);
+            } else if (method.isConfigurationMethod()) {
+                String className = testResult.getTestClass() != null
+                        ? testResult.getTestClass().getRealClass().getSimpleName()
+                        : "Ellithium";
+                String methodName = method.getTestMethod() != null ? method.getTestMethod().getMethodName() : "config";
+                String target = className + "." + methodName;
+                ThreadContext.put("testName", target);
+                ThreadContext.put("testIdentifier", target);
+            }
+        }
+        if (DriverFactory.getCurrentDriver() == null && testResult != null && testResult.getTestClass() != null) {
             String className = testResult.getTestClass().getRealClass().getName();
             WebDriver savedDriver = classDriverMap.get(className);
             DriverConfiguration savedConfig = classConfigMap.get(className);
             if (savedDriver != null && savedConfig != null) {
                 DriverFactory.adoptCurrentThread(savedDriver, savedConfig);
             }
+        }
+        if (method.isTestMethod()) {
+            ensureRecordingStarted(testResult);
+        } else if (method.getTestMethod() != null && method.getTestMethod().isBeforeMethodConfiguration() && testResult != null) {
+            VideoRecordingManager.prepareRecording(getTestName(testResult), getTestIdentifier(testResult));
+        }
+    }
+
+    private void ensureRecordingStarted(ITestResult testResult) {
+        if (testResult == null || testResultCollector.isCucumberTest(testResult)) return;
+        String testIdentifier = getTestIdentifier(testResult);
+        String recordingId = VideoRecordingManager.prepareRecording(getTestName(testResult), testIdentifier);
+        if (recordingId != null) {
+            testResultToRecordingId.put(getResultKey(testResult), recordingId);
         }
     }
 
@@ -248,6 +307,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             String className = testResult.getTestClass().getRealClass().getName();
             classDriverMap.remove(className);
             classConfigMap.remove(className);
+            ThreadContext.put("testName", "Ellithium");
+            ThreadContext.remove("testIdentifier");
         }
 
         if (method.isTestMethod()) {
@@ -267,6 +328,10 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             GeneralHandler.addAttachments();
         }
+        if (method.isConfigurationMethod()) {
+            ThreadContext.put("testName", "Ellithium");
+            ThreadContext.remove("testIdentifier");
+        }
         Reporter.flushPendingStep();
     }
 
@@ -285,16 +350,19 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     private void stopRecordingForTest(ITestResult result, String status) {
         try {
             String resultKey = getResultKey(result);
-            String recordingId = testResultToRecordingId.get(resultKey);
+            String recordingId = testResultToRecordingId.remove(resultKey);
+            String videoPath = null;
             if (recordingId != null) {
-                String videoPath = VideoRecordingManager.stopRecordingById(recordingId, status);
-                if (videoPath != null) {
-                    Logger.info(GREEN + "Video recording stopped successfully for: " + result.getName() + RESET);
-                }
-                testResultToRecordingId.remove(resultKey);
+                videoPath = VideoRecordingManager.stopRecordingById(recordingId, status);
             } else {
-                Logger.info(YELLOW + "No recording ID found for test, trying thread-based stop" + RESET);
-                VideoRecordingManager.stopRecordingForCurrentThread(status);
+                String testIdentifier = getTestIdentifier(result);
+                videoPath = VideoRecordingManager.stopRecordingForTest(testIdentifier, status);
+                if (videoPath == null) {
+                    videoPath = VideoRecordingManager.stopRecordingForCurrentThread(status);
+                }
+            }
+            if (videoPath != null) {
+                Logger.info(GREEN + "Video recording stopped successfully for: " + result.getName() + RESET);
             }
         } catch (Exception e) {
             Logger.warn(RED + "Failed to stop video recording: " + e.getMessage() + RESET);

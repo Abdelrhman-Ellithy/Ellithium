@@ -8,12 +8,14 @@ import org.testng.ITestResult;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Handles integration between the notification system and test frameworks.
- * Manages test result collection and notification sending at execution completion.
+ * Manages test result collection and notification sending at execution
+ * completion.
  * Implements graceful error handling to prevent test execution blocking.
  */
 public class NotificationIntegrationHandler implements TestResultCollector {
@@ -26,6 +28,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     private final AtomicLong failedTestsExecuted = new AtomicLong(0);
     private final AtomicLong skippedTestsExecuted = new AtomicLong(0);
     private final Set<ITestResult> allFailedResults = ConcurrentHashMap.newKeySet();
+    private final List<String> executedTests = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
     private volatile long executionStartTime = 0;
 
     /**
@@ -40,6 +43,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     /**
      * Checks if notifications are enabled without loading the full configuration.
      * This provides early exit for performance optimization.
+     * 
      * @return true if notifications are enabled, false otherwise
      */
     public boolean isNotificationSystemEnabled() {
@@ -73,6 +77,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             failedTestsExecuted.set(0);
             skippedTestsExecuted.set(0);
             allFailedResults.clear();
+            executedTests.clear();
             Reporter.log("Test result collection system initialized", LogLevel.INFO_BLUE);
         } catch (Exception e) {
             Reporter.log("Failed to initialize test result collection: " + e.getMessage(), LogLevel.ERROR);
@@ -92,16 +97,22 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             int testngFailed = 0;
             int testngSkipped = 0;
 
+            String suiteName = (context.getSuite() != null && context.getSuite().getName() != null)
+                    ? context.getSuite().getName()
+                    : context.getName();
+
             for (ITestResult result : context.getPassedTests().getAllResults()) {
                 if (!shouldExcludeFromTestNGCounting(result)) {
                     testngPassed++;
                     testngTests++;
+                    executedTests.add(formatTestResult(result, suiteName, "PASSED"));
                 }
             }
             for (ITestResult result : context.getFailedTests().getAllResults()) {
                 if (!shouldExcludeFromTestNGCounting(result)) {
                     testngFailed++;
                     testngTests++;
+                    executedTests.add(formatTestResult(result, suiteName, "FAILED"));
                     allFailedResults.add(result);
                 }
             }
@@ -109,6 +120,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
                 if (!shouldExcludeFromTestNGCounting(result)) {
                     testngSkipped++;
                     testngTests++;
+                    executedTests.add(formatTestResult(result, suiteName, "SKIPPED"));
                 }
             }
 
@@ -118,10 +130,11 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             skippedTestsExecuted.addAndGet(testngSkipped);
 
             Reporter.log("Collected TestNG test results from context: " + context.getName() +
-                       " (TestNG Tests: " + testngTests + ", Passed: " + testngPassed +
-                       ", Failed: " + testngFailed + ", Skipped: " + testngSkipped + ")", LogLevel.INFO_BLUE);
+                    " (TestNG Tests: " + testngTests + ", Passed: " + testngPassed +
+                    ", Failed: " + testngFailed + ", Skipped: " + testngSkipped + ")", LogLevel.INFO_BLUE);
         } catch (Exception e) {
-            Reporter.log("Failed to collect test results from context: " + context.getName() + " - " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Failed to collect test results from context: " + context.getName() + " - " + e.getMessage(),
+                    LogLevel.ERROR);
         }
     }
 
@@ -133,15 +146,18 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         try {
             ensureNotificationSystemInitialized();
             totalTestsExecuted.incrementAndGet();
+            executedTests.add("Cucumber scenario '" + scenarioName + "' [" + status.toUpperCase() + "]");
             switch (status.toLowerCase()) {
-                case "passed"  -> passedTestsExecuted.incrementAndGet();
-                case "failed"  -> failedTestsExecuted.incrementAndGet();
+                case "passed" -> passedTestsExecuted.incrementAndGet();
+                case "failed" -> failedTestsExecuted.incrementAndGet();
                 case "skipped" -> skippedTestsExecuted.incrementAndGet();
-                default -> Reporter.log("Unknown Cucumber test status: " + status + " for scenario: " + scenarioName, LogLevel.WARN);
+                default -> Reporter.log("Unknown Cucumber test status: " + status + " for scenario: " + scenarioName,
+                        LogLevel.WARN);
             }
             Reporter.log("Collected Cucumber test result: " + scenarioName + " - " + status, LogLevel.DEBUG);
         } catch (Exception e) {
-            Reporter.log("Failed to collect Cucumber test result: " + scenarioName + " - " + e.getMessage(), LogLevel.ERROR);
+            Reporter.log("Failed to collect Cucumber test result: " + scenarioName + " - " + e.getMessage(),
+                    LogLevel.ERROR);
         }
     }
 
@@ -158,6 +174,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
 
     /**
      * Sends execution completion notifications.
+     * 
      * @return true if notifications were sent successfully
      */
     public boolean sendExecutionCompletionNotifications() {
@@ -186,27 +203,28 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             if (exceedsFailureThreshold()) {
                 shouldSendNotification = true;
                 notificationReason = "Failure rate (" + String.format("%.1f%%", getFailureRate()) +
-                                  "%) exceeds threshold (" + config.getFailureThreshold() + "%)";
+                        "%) exceeds threshold (" + config.getFailureThreshold() + "%)";
             }
             if (config.shouldSendOnCompletion()) {
                 shouldSendNotification = true;
                 notificationReason = "Test execution completed";
             }
             if (!shouldSendNotification) {
-                Reporter.log("No notification criteria met. Skipping execution completion notification.", LogLevel.INFO_BLUE);
+                Reporter.log("No notification criteria met. Skipping execution completion notification.",
+                        LogLevel.INFO_BLUE);
                 return false;
             }
 
             Reporter.log("Sending execution completion notification: " + notificationReason, LogLevel.INFO_BLUE);
 
+            String suiteName = System.getProperty("ellithium.suite.name", "Test Suite");
             TestResultSummary summary = new TestResultSummary(
-                totalTestsExecuted.get(),
-                passedTestsExecuted.get(),
-                failedTestsExecuted.get(),
-                skippedTestsExecuted.get(),
-                getTotalExecutionTime(),
-                getAllFailedResults()
-            );
+                    totalTestsExecuted.get(),
+                    passedTestsExecuted.get(),
+                    failedTestsExecuted.get(),
+                    skippedTestsExecuted.get(),
+                    getTotalExecutionTime(),
+                    getAllFailedResults(), executedTests, suiteName);
 
             String subject = generateEmailSubject(summary);
             String emailBody = summary.generateHtmlEmailBody();
@@ -227,9 +245,16 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         }
     }
 
+    private String formatTestResult(ITestResult result, String suiteName, String status) {
+        String className = result.getTestClass() == null ? "UnknownClass" : result.getTestClass().getName();
+        return suiteName + " :: " + className + " :: " + result.getName() + " [" + status + "]";
+    }
+
     /**
-     * Builds an unambiguous subject line. A bare "(104/107)" reads as "104 out of 107" with no
-     * indication of which side is failures vs. the total, so passed/failed/skipped are spelled out
+     * Builds an unambiguous subject line. A bare "(104/107)" reads as "104 out of
+     * 107" with no
+     * indication of which side is failures vs. the total, so passed/failed/skipped
+     * are spelled out
      * explicitly against the total instead.
      */
     private String generateEmailSubject(TestResultSummary summary) {
@@ -242,7 +267,8 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             boolean isFailed = failed > 0;
             String status = isFailed ? "FAILED" : "PASSED";
 
-            // Lead with whichever count matches the status word, so the subject scans naturally
+            // Lead with whichever count matches the status word, so the subject scans
+            // naturally
             // for both outcomes instead of always putting "failed" first.
             StringBuilder counts = new StringBuilder();
             if (isFailed) {
@@ -255,7 +281,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             }
             counts.append(" of ").append(total);
 
-            return prefix + " - Test Execution - " + status + " (" + counts + ")";
+            return prefix + " [" + summary.getSuiteName() + "] - Test Execution - " + status + " (" + counts + ")";
         } catch (Exception e) {
             Reporter.log("Failed to generate email subject: " + e.getMessage(), LogLevel.ERROR);
             return "Ellithium Test Results";
@@ -264,13 +290,14 @@ public class NotificationIntegrationHandler implements TestResultCollector {
 
     /**
      * Determines if a test result should be excluded from TestNG counting.
-     * This prevents double counting when both TestNG and Cucumber listeners are active.
+     * This prevents double counting when both TestNG and Cucumber listeners are
+     * active.
      */
     public boolean shouldExcludeFromTestNGCounting(ITestResult result) {
         try {
             return isCucumberTestByName(result) ||
-                   isCucumberTestByClass(result) ||
-                   isCucumberTestByAnnotation(result);
+                    isCucumberTestByClass(result) ||
+                    isCucumberTestByAnnotation(result);
         } catch (Exception e) {
             Reporter.log("Failed to determine if test should be excluded: " + e.getMessage(), LogLevel.ERROR);
             return false;
@@ -315,10 +342,10 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     private boolean hasCucumberAnnotation(Method method) {
         try {
             return method.isAnnotationPresent(io.cucumber.java.en.Given.class) ||
-                   method.isAnnotationPresent(io.cucumber.java.en.When.class) ||
-                   method.isAnnotationPresent(io.cucumber.java.en.Then.class) ||
-                   method.isAnnotationPresent(io.cucumber.java.en.And.class) ||
-                   method.isAnnotationPresent(io.cucumber.java.en.But.class);
+                    method.isAnnotationPresent(io.cucumber.java.en.When.class) ||
+                    method.isAnnotationPresent(io.cucumber.java.en.Then.class) ||
+                    method.isAnnotationPresent(io.cucumber.java.en.And.class) ||
+                    method.isAnnotationPresent(io.cucumber.java.en.But.class);
         } catch (Exception e) {
             return false;
         }

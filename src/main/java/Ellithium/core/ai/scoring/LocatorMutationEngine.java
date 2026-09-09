@@ -71,7 +71,13 @@ public class LocatorMutationEngine {
             for (By mutation : mutations) {
                 if (deferredSet.contains(mutation)) continue;
                 try {
-                    WebElement found = driver.findElement(mutation);
+                    List<WebElement> matches = driver.findElements(mutation);
+                    if (matches.isEmpty()) continue;
+                    if (baseline == null && matches.size() > 1 && isContainsMutation(mutation)) {
+                        // Ambiguous substring match at cold-start without baseline cannot be trusted
+                        continue;
+                    }
+                    WebElement found = matches.get(0);
                     if (baseline != null && !mutationCrossValidates(driver, baseline, found)) {
                         if (hints != null) hints.add(found, mutation, 0.0, "mutation resolved, cross-validation failed", 1);
                         continue;
@@ -81,11 +87,14 @@ public class LocatorMutationEngine {
                     return found;
                 } catch (org.openqa.selenium.StaleElementReferenceException e) {
                     try {
-                        WebElement retried = driver.findElement(mutation);
-                        if (baseline == null || mutationCrossValidates(driver, baseline, retried)) {
-                            Ellithium.core.execution.listener.seleniumListener.resumeLogging();
-                            Reporter.log("[TIER 1] mutation (stale-retry): " + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
-                            return retried;
+                        List<WebElement> retriedMatches = driver.findElements(mutation);
+                        if (!retriedMatches.isEmpty()) {
+                            WebElement retried = retriedMatches.get(0);
+                            if (baseline == null || mutationCrossValidates(driver, baseline, retried)) {
+                                Ellithium.core.execution.listener.seleniumListener.resumeLogging();
+                                Reporter.log("[TIER 1] mutation (stale-retry): " + brokenLocator + " → " + mutation, LogLevel.INFO_GREEN);
+                                return retried;
+                            }
                         }
                     } catch (Exception ignored) {}
                 } catch (NoSuchElementException | org.openqa.selenium.InvalidSelectorException ignored) {}
@@ -362,8 +371,10 @@ public class LocatorMutationEngine {
             if (isCssIdentifier(v)) out.add(By.className(v));
         }
         // Contains fallback — full value and each distinctive token, on id and data-id.
-        out.add(By.cssSelector("[id*='" + cssEscape(value) + "']"));
-        out.add(By.cssSelector("[data-id*='" + cssEscape(value) + "']"));
+        if (value.length() >= 3) {
+            out.add(By.cssSelector("[id*='" + cssEscape(value) + "']"));
+            out.add(By.cssSelector("[data-id*='" + cssEscape(value) + "']"));
+        }
         List<String> tokens = tokenize(value);
         if (tokens.size() >= 2) {
             for (String t : tokens) {
@@ -388,7 +399,9 @@ public class LocatorMutationEngine {
         // name → data-testid
         out.add(By.cssSelector("[data-testid='" + cssEscape(value) + "']"));
         // Contains fallback
-        out.add(By.cssSelector("[name*='" + cssEscape(value) + "']"));
+        if (value.length() >= 3) {
+            out.add(By.cssSelector("[name*='" + cssEscape(value) + "']"));
+        }
     }
 
     private static void addCssMutations(List<By> out, String value) {
@@ -399,10 +412,14 @@ public class LocatorMutationEngine {
             for (String v : variants) {
                 if (!v.isBlank()) out.add(By.cssSelector("." + v));
             }
-            out.add(By.cssSelector("[class*='" + cssEscape(cls) + "']"));
+            if (cls.length() >= 3) {
+                out.add(By.cssSelector("[class*='" + cssEscape(cls) + "']"));
+            }
             List<String> tokens = tokenize(cls);
-            if (!tokens.isEmpty()) {
-                out.add(By.cssSelector("[class*='" + cssEscape(tokens.get(0)) + "']"));
+            for (String t : tokens) {
+                if (t.length() >= 3) {
+                    out.add(By.cssSelector("[class*='" + cssEscape(t) + "']"));
+                }
             }
             return;
         }
@@ -418,7 +435,9 @@ public class LocatorMutationEngine {
                 if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + cssEscape(v) + "']"));
             }
             // Contains fallback
-            out.add(By.cssSelector("[" + attr + "*='" + cssEscape(attrVal) + "']"));
+            if (attrVal.length() >= 3) {
+                out.add(By.cssSelector("[" + attr + "*='" + cssEscape(attrVal) + "']"));
+            }
             // Attribute swap
             if (attr.equals("data-testid")) {
                 out.add(By.cssSelector("[data-test='" + cssEscape(attrVal) + "']"));
@@ -568,5 +587,11 @@ public class LocatorMutationEngine {
             }
         }
         return sb.toString();
+    }
+
+    private static boolean isContainsMutation(By by) {
+        if (by == null) return false;
+        String s = by.toString();
+        return s.contains("*=") || s.contains("contains(");
     }
 }

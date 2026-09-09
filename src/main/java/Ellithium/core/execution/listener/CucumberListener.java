@@ -12,6 +12,7 @@ import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import io.cucumber.plugin.event.*;
 import io.qameta.allure.Allure;
 import io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm;
+import org.apache.logging.log4j.ThreadContext;
 
 import java.io.File;
 import java.util.List;
@@ -81,19 +82,40 @@ public class CucumberListener extends AllureCucumber7Jvm {
      */
     private void testStartedHandler(TestCaseStarted event) {
         Reporter.flushPendingStep();
+        String existingSuite = System.getProperty("ellithium.suite.name");
+        if (existingSuite == null || existingSuite.isBlank() || "UnknownSuite".equalsIgnoreCase(existingSuite)) {
+            try {
+                String uriStr = event.getTestCase().getUri().toString();
+                int slash = Math.max(uriStr.lastIndexOf('/'), uriStr.lastIndexOf('\\'));
+                String feat = (slash >= 0 && slash < uriStr.length() - 1) ? uriStr.substring(slash + 1) : uriStr;
+                if (feat.endsWith(".feature")) feat = feat.substring(0, feat.length() - ".feature".length());
+                if (!feat.isBlank()) {
+                    System.setProperty("ellithium.suite.name", feat);
+                }
+            } catch (Exception ignored) {}
+        }
         String name = event.getTestCase().getName();
         String scenarioId = getScenarioIdentifier(event.getTestCase());
+        ThreadContext.put("testIdentifier", scenarioId);
+        ThreadContext.put("testName", name);
+        Logger.clearLogsForTest(scenarioId);
         List<TestStep> allSteps = event.getTestCase().getTestSteps();
         int totalSteps = (int) allSteps.stream()
                 .filter(step -> step instanceof PickleStepTestStep)
                 .count();
         ScenarioContext context = new ScenarioContext(name, scenarioId, totalSteps);
         scenarioContext.set(context);
+        String recordingId = VideoRecordingManager.prepareRecording(name, scenarioId);
+        if (recordingId != null) {
+            context.recordingId = recordingId;
+            context.recordingStarted = true;
+            scenarioToRecordingId.put(scenarioId, recordingId);
+        }
         Logger.info(CYAN + "[START] " + BLUE + "Scenario " + name + " (Steps: " + totalSteps + ") [START]" + RESET);
     }
 
     /**
-     * Handles step start - starts recording on first step and clears logs
+     * Handles step start - starts recording on first step if not yet started
      */
     private void stepStartedHandler(TestStepStarted event) {
         Reporter.flushPendingStep();
@@ -104,7 +126,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
         if (context == null) {
             return;
         }
-        Logger.clearCurrentExecutionLogs();
         context.currentStepIndex++;
         if (context.currentStepIndex == 1 && !context.recordingStarted) {
             startRecordingIfPossible(context);
@@ -115,27 +136,18 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Attempts to start recording if driver is available and conditions are met
      */
     private void startRecordingIfPossible(ScenarioContext context) {
-        DriverConfiguration driverConfiguration = DriverFactory.getCurrentDriverConfiguration();
-        boolean isNotMobileCloud = (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
-        boolean shouldRecord = hasActiveDriver() && isNotMobileCloud;
-        if (shouldRecord) {
-            try {
-                String recordingId = VideoRecordingManager.startRecording(
-                        context.scenarioName,
-                        context.scenarioId);
-
-                if (recordingId != null) {
-                    context.recordingId = recordingId;
-                    context.recordingStarted = true;
-                    scenarioToRecordingId.put(context.scenarioId, recordingId);
-                    Logger.info(GREEN + "Video recording started for scenario: " + context.scenarioName + RESET);
-                }
-            } catch (Exception e) {
-                Logger.warn(RED + "Failed to start video recording: " + e.getMessage() + RESET);
-                Logger.logException(e);
+        String recordingId = VideoRecordingManager.prepareRecording(context.scenarioName, context.scenarioId);
+        if (recordingId != null) {
+            if (!context.recordingStarted) {
+                context.recordingId = recordingId;
+                context.recordingStarted = true;
+                scenarioToRecordingId.put(context.scenarioId, recordingId);
+                Logger.info(GREEN + "Video recording started for scenario: " + context.scenarioName + RESET);
             }
         } else {
             boolean driverExecution = (DriverFactory.getCurrentDriver() != null);
+            DriverConfiguration driverConfiguration = DriverFactory.getCurrentDriverConfiguration();
+            boolean isNotMobileCloud = (driverConfiguration != (null)) && (!driverConfiguration.isMobileCloud());
             if (!driverExecution) {
                 Logger.debug(YELLOW + "Video recording skipped: No active driver");
             } else if (!isNotMobileCloud) {
@@ -175,10 +187,6 @@ public class CucumberListener extends AllureCucumber7Jvm {
             Reporter.addParams(GeneralHandler.getParameters());
             context.paramAdded = true;
         }
-        boolean isLastStep = context.currentStepIndex >= context.totalSteps;
-        if (isLastStep && context.recordingStarted) {
-            stopRecording(context);
-        }
         Reporter.flushPendingStep();
     }
 
@@ -213,8 +221,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
             case SKIPPED -> Logger.info(YELLOW + "[SKIPPED] Scenario " + scenarioName + " [SKIPPED]" + RESET);
             default -> Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName + " [" + status + "]" + RESET);
         }
-        if (context.recordingStarted && context.recordingId != null) {
-            Logger.debug(YELLOW + "Recording still active in scenario finish, stopping now" + RESET);
+        if (context.recordingStarted || VideoRecordingManager.isRecordingActiveForTest(context.scenarioId)) {
             stopRecording(context);
         }
         try {
@@ -224,6 +231,9 @@ public class CucumberListener extends AllureCucumber7Jvm {
         } catch (Exception e) {
             Logger.warn(YELLOW + "Failed to collect Cucumber test result: " + e.getMessage() + RESET);
         }
+        ThreadContext.put("testName", "Ellithium");
+        ThreadContext.remove("testIdentifier");
+        Logger.clearLogsForTest(context.scenarioId);
         scenarioContext.remove();
         Reporter.flushPendingStep();
     }

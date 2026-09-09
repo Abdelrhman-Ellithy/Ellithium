@@ -217,7 +217,7 @@ public class PropertyHelper {
         try {
             Properties prop = loadProperties(filePath);
             boolean exists = prop.containsKey(key);
-            log("Checked key existence: " + key + " in file: ", LogLevel.INFO_GREEN, filePath);
+            log("Checked key existence: " + key + " in file: ", LogLevel.DEBUG, filePath);
             return exists;
         } catch (IOException e) {
             log("Failed to check key in properties file: ", LogLevel.ERROR, filePath);

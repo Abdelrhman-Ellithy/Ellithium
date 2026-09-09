@@ -350,7 +350,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             devTools.createSession();
             devToolsSession = devTools;
 
-            String detectedVersion = detectCDPVersion();
+            String detectedVersion = detectCDPVersion(chromiumDriver);
             if (detectedVersion == null) {
                 Reporter.log("No CDP version found in classpath", LogLevel.WARN);
                 return false;
@@ -397,8 +397,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 return false;
             }
 
-            devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
-
             Object startCommand;
             try {
                 java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast",
@@ -422,8 +420,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 }
             }
 
-            devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
             addScreencastFrameListener(devTools, pageClass);
+            devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
+            devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
             Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.DEBUG);
             return true;
 
@@ -497,6 +496,27 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Dynamically detects available CDP version in classpath based on running browser version.
+     */
+    private String detectCDPVersion(WebDriver d) {
+        if (d instanceof org.openqa.selenium.HasCapabilities hasCaps) {
+            String browserVersion = hasCaps.getCapabilities().getBrowserVersion();
+            if (browserVersion != null && !browserVersion.isBlank()) {
+                try {
+                    int major = Integer.parseInt(browserVersion.split("\\.")[0]);
+                    for (int v = major; v >= Math.max(85, major - 5); v--) {
+                        try {
+                            Class.forName("org.openqa.selenium.devtools.v" + v + ".page.Page");
+                            return "v" + v;
+                        } catch (ClassNotFoundException ignored) {}
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return detectCDPVersion();
+    }
+
+    /**
      * Dynamically detects available CDP version in classpath.
      * Scans for org.openqa.selenium.devtools.v* packages.
      */
@@ -532,9 +552,6 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
-     * Adds listener for CDP screencast frames.
-     */
-    /**
      * Registers a CDP screencast-frame listener that decodes each frame's Base64 image data,
      * dedupes against the last stored frame, and acknowledges the frame back to CDP via reflection
      * (frame field/ack-command shapes vary by CDP version, same as {@link #startCDPRecording}).
@@ -562,10 +579,16 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Method getSessionIdMethod = frameData.getClass().getMethod("getSessionId");
                     Integer sessionId = (Integer) getSessionIdMethod.invoke(frameData);
 
-                    Object ackCommand = pageClass.getMethod("screencastFrameAck", Integer.class)
-                            .invoke(null, sessionId);
+                    Method ackMethod;
+                    try {
+                        ackMethod = pageClass.getMethod("screencastFrameAck", Integer.class);
+                    } catch (NoSuchMethodException nsme) {
+                        ackMethod = pageClass.getMethod("screencastFrameAck", int.class);
+                    }
+                    Object ackCommand = ackMethod.invoke(null, sessionId);
                     devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    Logger.debug("Error processing screencast frame: " + e.getMessage());
                 }
             }
         });

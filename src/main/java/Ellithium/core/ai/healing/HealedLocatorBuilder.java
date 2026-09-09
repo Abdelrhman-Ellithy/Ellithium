@@ -229,12 +229,20 @@ public final class HealedLocatorBuilder {
         for (Candidate c : candidates) {
             int tm = probe.targetMatches(c.by);
             if (tm <= 0) continue;                       // invalid → dropped
+            if (tm > 10) continue;                       // too many matches → ambiguous / dangerous
+            if (isStructuralCatchAll(c.sel)) continue;   // bare tag or * → catch-all
             double validity = (tm == 1) ? 1.0 : 1.0 / tm;
             double brevity  = 1.0 / (1.0 + c.sel.length() / 120.0);
             double score    = c.weight * validity * (0.9 + 0.1 * brevity);
             if (score > bestScore) { bestScore = score; best = c.by; }
         }
         return best;
+    }
+
+    private static boolean isStructuralCatchAll(String sel) {
+        if (sel == null || sel.isBlank()) return true;
+        String s = sel.trim();
+        return s.equals("*") || s.matches("^[a-zA-Z][a-zA-Z0-9]*$");
     }
 
     // ──────────────────────── Mobile native ────────────────────────

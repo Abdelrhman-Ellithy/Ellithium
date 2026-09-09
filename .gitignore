@@ -93,3 +93,4 @@ Test-Output/Reports/healing-report.md
 src/test/resources/TestData/samename.jar
 src/main/resources/properties/allure.properties
 selenium-docs.md
+ellithium-ai-mappings.json*

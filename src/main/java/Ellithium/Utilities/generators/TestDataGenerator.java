@@ -31,7 +31,7 @@ public class TestDataGenerator {
      */
     public static String getTimeStamp() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd-h-m-ssa").format(new Date());
-        Reporter.log("Getting Timestamp: " + timestamp, LogLevel.INFO_BLUE);
+        Reporter.log("Getting Timestamp: " + timestamp, LogLevel.DEBUG);
         return timestamp;
     }
 

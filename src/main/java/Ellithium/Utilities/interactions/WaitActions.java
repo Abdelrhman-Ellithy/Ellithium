@@ -26,12 +26,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      */
     public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element To Disappear: ",LogLevel.INFO_BLUE,locator.toString());
+        waitForElementToDisappear(locator, timeout, pollingEvery, false);
+    }
+
+    public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element To Disappear: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.invisibilityOfElementLocated(locator));
+                    .until(ExpectedConditions.invisibilityOfElementLocated(normalized));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
                     .until(ExpectedConditions.invisibilityOf(element));
         }
@@ -45,12 +52,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return The clickable WebElement
      */
     public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Wait For Element To Be Clickable: ",LogLevel.INFO_BLUE,locator.toString());
+        return waitForElementToBeClickable(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Wait For Element To Be Clickable: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait(timeout,pollingEvery)
-                    .until(ExpectedConditions.elementToBeClickable(locator));
+                    .until(ExpectedConditions.elementToBeClickable(normalized));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeClickable(element));
         }
     }
@@ -63,8 +77,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return The visible WebElement
      */
     public  WebElement waitForElementToBeVisible( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Wait For Element To Be Visible: ",LogLevel.INFO_BLUE,locator.toString());
-        return waitForVisibilityAndFindElement(locator, timeout, pollingEvery);
+        return waitForElementToBeVisible(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  WebElement waitForElementToBeVisible( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Wait For Element To Be Visible: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        return waitForVisibilityAndFindElement(locator, timeout, pollingEvery, heal);
     }
 
     /**
@@ -111,13 +130,20 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return The WebElement with the specified text
      */
     public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Text: '" + text + "' to be present in Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForTextToBePresentInElement(locator, text, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Text: '" + text + "' to be present in Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             getFluentWait(timeout,pollingEvery)
-                    .until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
-            return findWebElement( locator);
+                    .until(ExpectedConditions.textToBePresentInElementLocated(normalized, text));
+            return driver.findElement(normalized);
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.textToBePresentInElement(element, text));
             return element;
         }
@@ -132,12 +158,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the element is selected, false otherwise
      */
     public  boolean waitForElementToBeSelected( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element to be Selected: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementToBeSelected(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForElementToBeSelected( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element to be Selected: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait( timeout, pollingEvery)
-                    .until(ExpectedConditions.elementToBeSelected(locator));
+                    .until(ExpectedConditions.elementToBeSelected(normalized));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.elementToBeSelected(element));
         }
     }
@@ -152,12 +185,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the attribute has the expected value, false otherwise
      */
     public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementAttributeToBe(locator, attribute, value, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait( timeout, pollingEvery)
-                    .until(ExpectedConditions.attributeToBe(locator, attribute, value));
+                    .until(ExpectedConditions.attributeToBe(normalized, attribute, value));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeToBe(element, attribute, value));
         }
     }
@@ -172,12 +212,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the attribute contains the expected value, false otherwise
      */
     public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementAttributeContains(locator, attribute, value, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait( timeout, pollingEvery)
-                    .until(ExpectedConditions.attributeContains(locator, attribute, value));
+                    .until(ExpectedConditions.attributeContains(normalized, attribute, value));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait( Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).until(ExpectedConditions.attributeContains(element, attribute, value));
         }
     }
@@ -192,9 +239,14 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      */
     public  boolean waitForElementStaleness( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Staleness: " + locator.toString(), LogLevel.INFO_BLUE);
-        WebElement element = findWebElement(locator);
-        return getFluentWait( timeout, pollingEvery)
-                .until(ExpectedConditions.stalenessOf(element));
+        By normalized = BaseActions.normalizeLocator(locator);
+        try {
+            WebElement element = driver.findElement(normalized);
+            return getFluentWait( timeout, pollingEvery)
+                    .until(ExpectedConditions.stalenessOf(element));
+        } catch (org.openqa.selenium.NoSuchElementException e) {
+            return true;
+        }
     }
 
     /**
@@ -305,11 +357,17 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the element is enabled, false otherwise
      */
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element to be Enabled: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementToBeEnabled(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element to be Enabled: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             getFluentWait(timeout, pollingEvery).until(d -> {
                 try {
-                    WebElement el = d.findElement(locator);
+                    WebElement el = d.findElement(normalized);
                     return el.isDisplayed() && el.isEnabled();
                 } catch (org.openqa.selenium.NoSuchElementException
                        | org.openqa.selenium.StaleElementReferenceException ex) {
@@ -318,11 +376,12 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             });
             return true;
         } catch (WebDriverException e) {
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             try {
-                WebElement healed = findWebElement(locator);
+                WebElement healed = findWebElement(normalized);
                 return healed.isDisplayed() && healed.isEnabled();
             } catch (org.openqa.selenium.StaleElementReferenceException stale) {
-                WebElement refound = findWebElement(locator);
+                WebElement refound = findWebElement(normalized);
                 return refound.isDisplayed() && refound.isEnabled();
             }
         }
@@ -363,12 +422,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the element has the expected selection state, false otherwise
      */
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForElementSelectionStateToBe(locator, selected, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.elementSelectionStateToBe(locator, selected));
+                    .until(ExpectedConditions.elementSelectionStateToBe(normalized, selected));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
                     .until(ExpectedConditions.elementSelectionStateToBe(element, selected));
         }
@@ -383,12 +449,19 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the text is present in the element's value attribute, false otherwise
      */
     public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForTextToBePresentInElementValue(locator, text, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             return getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.textToBePresentInElementValue(locator, text));
+                    .until(ExpectedConditions.textToBePresentInElementValue(normalized, text));
         } catch (WebDriverException e) {
-            WebElement element = findWebElement(locator);
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement element = findWebElement(normalized);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
                     .until(ExpectedConditions.textToBePresentInElementValue(element, text));
         }
@@ -416,13 +489,20 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the number of elements is more than the specified number, false otherwise
      */
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForNumberOfElementsToBeMoreThan(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             int size = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, number)).size();
+                    .until(ExpectedConditions.numberOfElementsToBeMoreThan(normalized, number)).size();
             return size > number;
         } catch (WebDriverException e) {
-            return presentCountAfterHeal(locator, timeout, pollingEvery) > number;
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            return presentCountAfterHeal(normalized, timeout, pollingEvery, heal) > number;
         }
     }
 
@@ -433,10 +513,11 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * renamed set. Counting visible elements here would wrongly shrink the count when part of the
      * set is present-but-hidden.
      */
-    private int presentCountAfterHeal(By locator, int timeout, int pollingEvery) {
+    private int presentCountAfterHeal(By locator, int timeout, int pollingEvery, boolean heal) {
+        if (!heal) return 0;
         List<WebElement> present = findWebElements(locator);
         if (!present.isEmpty()) return present.size();
-        return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery).size();
+        return waitForVisibilityAndFindElements(locator, Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery, heal).size();
     }
 
     /**
@@ -448,13 +529,20 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the number of elements is less than the specified number, false otherwise
      */
     public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForNumberOfElementsToBeLessThan(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             int size = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.numberOfElementsToBeLessThan(locator, number)).size();
+                    .until(ExpectedConditions.numberOfElementsToBeLessThan(normalized, number)).size();
             return size < number;
         } catch (WebDriverException e) {
-            return presentCountAfterHeal(locator, timeout, pollingEvery) < number;
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            return presentCountAfterHeal(normalized, timeout, pollingEvery, heal) < number;
         }
     }
 
@@ -467,8 +555,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return List of visible WebElements
      */
     public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString(), LogLevel.INFO_BLUE);
-        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
+        return waitForVisibilityOfAllElements(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery, heal);
     }
 
     /**
@@ -480,13 +573,20 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @return True if the number of elements matches the expected number, false otherwise
      */
     public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery) {
-        Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString(), LogLevel.INFO_BLUE);
+        return waitForNumberOfElementsToBe(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery, boolean heal) {
+        Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString()
+                + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
+        By normalized = BaseActions.normalizeLocator(locator);
         try {
             int size = getFluentWait(timeout, pollingEvery)
-                    .until(ExpectedConditions.numberOfElementsToBe(locator, number)).size();
+                    .until(ExpectedConditions.numberOfElementsToBe(normalized, number)).size();
             return size == number;
         } catch (WebDriverException e) {
-            return presentCountAfterHeal(locator, timeout, pollingEvery) == number;
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
+            return presentCountAfterHeal(normalized, timeout, pollingEvery, heal) == number;
         }
     }
 
