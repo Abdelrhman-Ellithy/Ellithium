@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -27,7 +28,7 @@ public class AllureHelper {
         String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
-        String lastReportPath="LastReport";
+        String lastReportPath = "LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
             if (allureBinaryPath == null) {
@@ -47,23 +48,22 @@ public class AllureHelper {
                             PosixFilePermission.GROUP_READ,
                             PosixFilePermission.GROUP_EXECUTE,
                             PosixFilePermission.OTHERS_READ,
-                            PosixFilePermission.OTHERS_EXECUTE
-                    );
+                            PosixFilePermission.OTHERS_EXECUTE);
                     Files.setPosixFilePermissions(allureExecutable.toPath(), perms);
                 } catch (IOException e) {
                     Logger.error("Permission setting failed: " + e.getMessage());
                 }
             }
+            String reportName = resolveReportName(allurePropertiesFilePath);
             String generateCommand = String.format(
-                    "\"%s\" generate --single-file --name \"Test Report\" -c -o \"%s\" \"%s\"",
+                    "\"%s\" generate --single-file --name \"%s\" -c -o \"%s\" \"%s\"",
                     allureExecutable,
+                    reportName,
                     new File(lastReportPath).getAbsolutePath(),
-                    new File(resultsPath).getAbsolutePath()
-            );
+                    new File(resultsPath).getAbsolutePath());
             executeCommand(generateCommand);
             File indexFile = new File(lastReportPath + File.separator + "index.html");
-            File renamedFile = new File(reportPath + File.separator + "Ellithium-Test-Report-"
-                    + TestDataGenerator.getTimeStamp() + ".html");
+            File renamedFile = new File(reportPath + File.separator + sanitizeFileName(reportName) + ".html");
             if (indexFile.exists()) {
                 try {
                     File destinationDir = new File(reportPath);
@@ -84,13 +84,62 @@ public class AllureHelper {
                 lastReportDir.delete();
             }
             String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
-            if (openFlag != null && openFlag.equalsIgnoreCase("true")){
+            if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
                 CommandExecutor.openFile(renamedFile.getPath());
             }
         }
     }
+
+    static String resolveReportName(String propertiesPath) {
+        String sysProp = System.getProperty("allure.report.name");
+        if (sysProp == null || sysProp.isBlank()) {
+            sysProp = System.getProperty("report.name");
+        }
+        String configured = (sysProp != null && !sysProp.isBlank())
+                ? sysProp
+                : getDataFromProperties(propertiesPath, "allure.report.name");
+
+        String suite = System.getProperty("ellithium.suite.name", "");
+        if ("UnknownSuite".equalsIgnoreCase(suite) || "Test Suite".equalsIgnoreCase(suite)) {
+            suite = "";
+        }
+
+        String name = (configured != null && !configured.isBlank()) ? configured : "{suite}-{timestamp}";
+
+        // Remove Ellithium prefix if present (case-insensitive)
+        if (name.toLowerCase().startsWith("ellithium-")) {
+            name = name.substring("ellithium-".length());
+        } else if (name.equalsIgnoreCase("ellithium")) {
+            name = suite.isBlank() ? "{timestamp}" : "{suite}-{timestamp}";
+        }
+
+        if (suite.isBlank()) {
+            name = name.replace("{suite}-", "").replace("-{suite}", "").replace("{suite}", "");
+        } else {
+            name = name.replace("{suite}", suite);
+        }
+
+        String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        name = name.replace("{date}", date);
+        name = name.replace("{timestamp}", TestDataGenerator.getTimeStamp());
+
+        name = name.trim();
+        if (name.startsWith("-")) name = name.substring(1);
+        if (name.endsWith("-")) name = name.substring(0, name.length() - 1);
+
+        if (name.isBlank()) {
+            name = TestDataGenerator.getTimeStamp();
+        }
+        return name;
+    }
+
+    private static String sanitizeFileName(String value) {
+        return value.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
     private static String resolveAllureBinaryPath() {
-        String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository" + File.separator + "allure-Ellithium";
+        String allurePath = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
+                + File.separator + "allure-Ellithium";
         File allureDirectory = new File(allurePath);
         File allureBinaryDirectory;
         if (allureDirectory.exists()) {
@@ -99,20 +148,21 @@ public class AllureHelper {
             if (subDirs != null && subDirs.length > 0) {
                 allureBinaryDirectory = new File(subDirs[0], "bin");
                 if (!allureBinaryDirectory.exists()) {
-                    Logger.info(Colors.RED +"Binary directory not found in the expected location.");
+                    Logger.info(Colors.RED + "Binary directory not found in the expected location.");
                     return null;
                 }
-                Logger.info(Colors.GREEN + "Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath() + Colors.RESET);
+                Logger.info(Colors.GREEN + "Found Allure binary directory: " + allureBinaryDirectory.getAbsolutePath()
+                        + Colors.RESET);
                 return allureBinaryDirectory.getAbsolutePath() + File.separator;
             } else {
-                Logger.info(Colors.RED +"No subdirectories found in the Allure directory."+ Colors.RESET);
+                Logger.info(Colors.RED + "No subdirectories found in the Allure directory." + Colors.RESET);
                 return null;
             }
         } else {
-            Logger.info(Colors.RED +"Allure folder not found. Extracting from JAR..."+ Colors.RESET);
+            Logger.info(Colors.RED + "Allure folder not found. Extracting from JAR..." + Colors.RESET);
             File jarFile = StartUpLoader.findJarFile();
             if (!jarFile.exists()) {
-                Logger.info(Colors.RED +"Ellithium JAR file not found"+ Colors.RESET);
+                Logger.info(Colors.RED + "Ellithium JAR file not found" + Colors.RESET);
                 return null;
             }
             try {
@@ -120,7 +170,7 @@ public class AllureHelper {
                 String allureVersion = ConfigContext.getAllureVersion();
                 allureBinaryDirectory = new File(allureDirectory, "-" + allureVersion + File.separator + "bin");
             } catch (IOException e) {
-                Logger.info(Colors.RED +"Failed to extract Allure folder from JAR: "+ Colors.RESET);
+                Logger.info(Colors.RED + "Failed to extract Allure folder from JAR: " + Colors.RESET);
                 Logger.logException(e);
                 return null;
             }
@@ -128,7 +178,7 @@ public class AllureHelper {
         return allureBinaryDirectory.getAbsolutePath() + File.separator;
     }
 
-    public static void deleteAllureResultsDir(){
+    public static void deleteAllureResultsDir() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
         File allureResultsFolder = new File(resultsPath);
@@ -149,6 +199,7 @@ public class AllureHelper {
             }
         }
     }
+
     public static void extractAllureFolderFromJar(File jarFile, File targetDirectory) throws IOException {
         if (!targetDirectory.exists()) {
             Files.createDirectory(targetDirectory.toPath());
@@ -169,24 +220,26 @@ public class AllureHelper {
                     }
                 }
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.err.println(e.getMessage());
         }
     }
-    public static void addEnvironmentDetailsToReport (){
+
+    public static void addEnvironmentDetailsToReport() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
-        if (resultsPath == null) return;
-        resultsPath=resultsPath.concat(File.separator).concat("environment.properties");
-        PropertyHelper.setDataToProperties(resultsPath,"OS", System.getProperty("os.name"));
-        PropertyHelper.setDataToProperties(resultsPath,"OS Version", System.getProperty("os.version"));
-        PropertyHelper.setDataToProperties(resultsPath,"Architecture", System.getProperty("os.arch"));
-        PropertyHelper.setDataToProperties(resultsPath,"Java Version", System.getProperty("java.version"));
-        PropertyHelper.setDataToProperties(resultsPath,"User", System.getProperty("user.name"));
-        PropertyHelper.setDataToProperties(resultsPath,"Machine Name", getHostName());
-        PropertyHelper.setDataToProperties(resultsPath,"Maven Version", executeCommandWithOutput("mvn -v"));
+        if (resultsPath == null)
+            return;
+        resultsPath = resultsPath.concat(File.separator).concat("environment.properties");
+        PropertyHelper.setDataToProperties(resultsPath, "OS", System.getProperty("os.name"));
+        PropertyHelper.setDataToProperties(resultsPath, "OS Version", System.getProperty("os.version"));
+        PropertyHelper.setDataToProperties(resultsPath, "Architecture", System.getProperty("os.arch"));
+        PropertyHelper.setDataToProperties(resultsPath, "Java Version", System.getProperty("java.version"));
+        PropertyHelper.setDataToProperties(resultsPath, "User", System.getProperty("user.name"));
+        PropertyHelper.setDataToProperties(resultsPath, "Machine Name", getHostName());
+        PropertyHelper.setDataToProperties(resultsPath, "Maven Version", executeCommandWithOutput("mvn -v"));
     }
+
     private static String getHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();

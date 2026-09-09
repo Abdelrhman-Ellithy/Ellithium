@@ -63,4 +63,28 @@ public class EmailObfuscatorTest {
         String result = EmailObfuscator.obfuscate("abc@x.com");
         Assert.assertEquals(result, "a***c@x.com");
     }
+
+    // ── Multi-address (comma-separated TO/CC lists) ─────────────────────────
+    // Regression coverage: obfuscate() used to find only the first "@" in the whole string, so
+    // with more than one address everything after the first email leaked into the "domain" part
+    // unobfuscated (e.g. "alice@example.com,bob@example.com" -> "a***e@example.com,bob@example.com",
+    // exposing bob's address in full).
+
+    @Test
+    public void obfuscate_twoEmails_bothMasked() {
+        String result = EmailObfuscator.obfuscate("alice@example.com,bob@example.com");
+        Assert.assertEquals(result, "a***e@example.com, b***b@example.com");
+    }
+
+    @Test
+    public void obfuscate_threeEmails_allMasked() {
+        String result = EmailObfuscator.obfuscate("alice@example.com,bob@example.com,carol@example.com");
+        Assert.assertEquals(result, "a***e@example.com, b***b@example.com, c***l@example.com");
+    }
+
+    @Test
+    public void obfuscate_multipleEmails_withSpacesAroundCommas_stillMasked() {
+        String result = EmailObfuscator.obfuscate(" alice@example.com , bob@example.com ");
+        Assert.assertEquals(result, "a***e@example.com, b***b@example.com");
+    }
 }

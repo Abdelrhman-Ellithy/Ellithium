@@ -11,6 +11,10 @@ public final class TestContext {
         return CURRENT.isBound() ? CURRENT.get().testId() : null;
     }
 
+    public static String testName() {
+        return CURRENT.isBound() ? CURRENT.get().testName() : null;
+    }
+
     public static TestContextData current() {
         return CURRENT.isBound() ? CURRENT.get() : null;
     }

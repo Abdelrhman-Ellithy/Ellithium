@@ -578,10 +578,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void clearElement(By locator, int timeout, int pollingEvery) {
         try {
-            performWithStaleRetry(locator, timeout, pollingEvery, el -> {
-                el.clear();
-                Reporter.log("Element cleared: " + locator, LogLevel.INFO_BLUE);
-            });
+            performWithStaleRetry(locator, timeout, pollingEvery, WebElement::clear);
         } catch (TimeoutException e) {
             Reporter.log("Clear failed – element not visible within timeout: " + locator + " | " + e.getMessage(), LogLevel.ERROR);
             throw e;

@@ -4,6 +4,7 @@ import Ellithium.core.execution.listener.appiumListener;
 import Ellithium.core.execution.listener.seleniumListener;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import Ellithium.core.recording.internal.VideoRecordingManager;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.Capabilities;
@@ -16,34 +17,43 @@ import static io.appium.java_client.proxy.Helpers.createProxy;
 
 /**
  * Factory class for creating and managing WebDriver instances.
- * This class provides thread-safe creation and management of different types of WebDriver instances
- * including local browsers, remote browsers, and mobile devices (Android and iOS).
+ * This class provides thread-safe creation and management of different types of
+ * WebDriver instances
+ * including local browsers, remote browsers, and mobile devices (Android and
+ * iOS).
  *
- * <p>The factory supports various configuration options through different driver configs:
+ * <p>
+ * The factory supports various configuration options through different driver
+ * configs:
  * <ul>
- *   <li>LocalDriverConfig - For local browser instances</li>
- *   <li>RemoteDriverConfig - For remote browser instances</li>
- *   <li>MobileDriverConfig - For mobile device automation (local Appium)</li>
- *   <li>CloudMobileDriverConfig - For cloud mobile testing (BrowserStack, Sauce Labs, LambdaTest)</li>
+ * <li>LocalDriverConfig - For local browser instances</li>
+ * <li>RemoteDriverConfig - For remote browser instances</li>
+ * <li>MobileDriverConfig - For mobile device automation (local Appium)</li>
+ * <li>CloudMobileDriverConfig - For cloud mobile testing (BrowserStack, Sauce
+ * Labs, LambdaTest)</li>
  * </ul>
  *
- * <p>Thread Safety: This factory maintains separate ThreadLocal instances for different driver types,
+ * <p>
+ * Thread Safety: This factory maintains separate ThreadLocal instances for
+ * different driver types,
  * ensuring thread-safe operation in parallel test execution scenarios.
  *
- * <p>Usage Examples:
+ * <p>
+ * Usage Examples:
+ * 
  * <pre>
  * // Local browser
  * WebDriver driver = DriverFactory.getNewDriver(new LocalDriverConfig()
- *     .setLocalDriverType(LocalDriverType.CHROME)
- *     .setHeadlessMode(HeadlessMode.True));
+ *         .setLocalDriverType(LocalDriverType.CHROME)
+ *         .setHeadlessMode(HeadlessMode.True));
  *
  * // Cloud mobile
  * AndroidDriver driver = DriverFactory.getNewDriver(new CloudMobileDriverConfig()
- *     .setCloudProvider(CloudProviderType.BROWSERSTACK)
- *     .setUsername("user")
- *     .setAccessKey("key")
- *     .setDriverType(MobileDriverType.Android)
- *     .setDeviceName("Google Pixel 7"));
+ *         .setCloudProvider(CloudProviderType.BROWSERSTACK)
+ *         .setUsername("user")
+ *         .setAccessKey("key")
+ *         .setDriverType(MobileDriverType.Android)
+ *         .setDeviceName("Google Pixel 7"));
  * </pre>
  */
 public class DriverFactory {
@@ -60,16 +70,18 @@ public class DriverFactory {
      * Factory method that creates appropriate driver based on configuration type.
      * This is the primary entry point for driver creation using config objects.
      *
-     * <p>Supported Configuration Types:
+     * <p>
+     * Supported Configuration Types:
      * <ul>
-     *   <li>LocalDriverConfig - Creates local browser instances</li>
-     *   <li>RemoteDriverConfig - Creates remote browser instances</li>
-     *   <li>CloudMobileDriverConfig - Creates cloud mobile device instances</li>
-     *   <li>MobileDriverConfig - Creates local mobile device instances</li>
+     * <li>LocalDriverConfig - Creates local browser instances</li>
+     * <li>RemoteDriverConfig - Creates remote browser instances</li>
+     * <li>CloudMobileDriverConfig - Creates cloud mobile device instances</li>
+     * <li>MobileDriverConfig - Creates local mobile device instances</li>
      * </ul>
      *
      * @param driverConfigBuilder Configuration builder instance
-     * @param <T> Type of driver to be returned (WebDriver, AndroidDriver, or IOSDriver)
+     * @param <T>                 Type of driver to be returned (WebDriver,
+     *                            AndroidDriver, or IOSDriver)
      * @return Configured driver instance
      * @throws IllegalArgumentException if unknown config type is provided
      */
@@ -82,7 +94,8 @@ public class DriverFactory {
             case RemoteDriverConfig remoteDriverConfig -> getNewDriver(remoteDriverConfig);
             case CloudMobileDriverConfig cloudMobileConfig -> getNewDriver(cloudMobileConfig);
             case MobileDriverConfig mobileDriverConfig -> getNewDriver(mobileDriverConfig);
-            default -> throw new IllegalArgumentException("Unknown driver config type: " + driverConfigBuilder.getClass().getName());
+            default -> throw new IllegalArgumentException(
+                    "Unknown driver config type: " + driverConfigBuilder.getClass().getName());
         };
     }
 
@@ -94,20 +107,19 @@ public class DriverFactory {
      * Creates a new WebDriver instance using local driver configuration.
      *
      * @param localDriverConfig Configuration for local browser instance
-     * @param <T> Type of WebDriver to be returned
+     * @param <T>               Type of WebDriver to be returned
      * @return Configured WebDriver instance
      */
     @SuppressWarnings("unchecked")
     public static <T> T getNewDriver(LocalDriverConfig localDriverConfig) {
         localDriverConfig.validate();
-        DriverConfiguration driverConfiguration=new DriverConfiguration(
+        DriverConfiguration driverConfiguration = new DriverConfiguration(
                 localDriverConfig.getLocalDriverType(),
                 localDriverConfig.getHeadlessMode(),
                 localDriverConfig.getPageLoadStrategy(),
                 localDriverConfig.getPrivateMode(),
                 localDriverConfig.getSandboxMode(),
-                localDriverConfig.getWebSecurityMode()
-                ,localDriverConfig.getCapabilities(),
+                localDriverConfig.getWebSecurityMode(), localDriverConfig.getCapabilities(),
                 false);
         driverConfigurationThread.set(driverConfiguration);
         webSetUp();
@@ -117,23 +129,23 @@ public class DriverFactory {
     /**
      * Creates a new local WebDriver instance with detailed configuration options.
      *
-     * @param driverType Browser type to be instantiated
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * @param driverType           Browser type to be instantiated
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
-     * @param webSecurityMode Security settings for the browser
-     * @param sandboxMode Sandbox mode configuration
-     * @param <T> Type of WebDriver to be returned
+     * @param webSecurityMode      Security settings for the browser
+     * @param sandboxMode          Sandbox mode configuration
+     * @param <T>                  Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
     public static <T> T getNewLocalDriver(LocalDriverType driverType,
-                                          HeadlessMode headlessMode,
-                                          PrivateMode privateMode,
-                                          PageLoadStrategyMode pageLoadStrategyMode,
-                                          WebSecurityMode webSecurityMode,
-                                          SandboxMode sandboxMode) {
+            HeadlessMode headlessMode,
+            PrivateMode privateMode,
+            PageLoadStrategyMode pageLoadStrategyMode,
+            WebSecurityMode webSecurityMode,
+            SandboxMode sandboxMode) {
         Capabilities emptyCaps = new MutableCapabilities();
-        LocalDriverConfig localDriverConfig=new LocalDriverConfig(
+        LocalDriverConfig localDriverConfig = new LocalDriverConfig(
                 driverType,
                 emptyCaps,
                 headlessMode,
@@ -143,16 +155,17 @@ public class DriverFactory {
                 sandboxMode).setCapabilities(emptyCaps);
         return getNewDriver(localDriverConfig);
     }
+
     /**
      * Creates a new local WebDriver instance with detailed configuration options.
      * sets SandboxMode to Sandbox by default
      * 
-     * @param driverType Browser type to be instantiated
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * @param driverType           Browser type to be instantiated
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
-     * @param webSecurityMode Security settings for the browser
-     * @param <T> Type of WebDriver to be returned
+     * @param webSecurityMode      Security settings for the browser
+     * @param <T>                  Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
     public static <T> T getNewLocalDriver(
@@ -161,7 +174,8 @@ public class DriverFactory {
             PrivateMode privateMode,
             PageLoadStrategyMode pageLoadStrategyMode,
             WebSecurityMode webSecurityMode) {
-        return getNewLocalDriver(driverType, headlessMode, privateMode, pageLoadStrategyMode, webSecurityMode, SandboxMode.Sandbox);
+        return getNewLocalDriver(driverType, headlessMode, privateMode, pageLoadStrategyMode, webSecurityMode,
+                SandboxMode.Sandbox);
     }
 
     /**
@@ -169,11 +183,11 @@ public class DriverFactory {
      * sets SandboxMode to Sandbox by default
      * sets WebSecurityMode to default value SecureMode
      * 
-     * @param driverType Browser type to be instantiated
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * @param driverType           Browser type to be instantiated
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
-     * @param <T> Type of WebDriver to be returned
+     * @param <T>                  Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
     public static <T> T getNewLocalDriver(
@@ -181,7 +195,8 @@ public class DriverFactory {
             HeadlessMode headlessMode,
             PrivateMode privateMode,
             PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewLocalDriver(driverType, headlessMode, privateMode, pageLoadStrategyMode, WebSecurityMode.SecureMode);
+        return getNewLocalDriver(driverType, headlessMode, privateMode, pageLoadStrategyMode,
+                WebSecurityMode.SecureMode);
     }
 
     /**
@@ -190,17 +205,17 @@ public class DriverFactory {
      * sets WebSecurityMode to default value SecureMode
      * sets PageLoadStrategyMode to default value Normal
      * 
-     * @param driverType Browser type to be instantiated
+     * @param driverType   Browser type to be instantiated
      * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
-     * @param <T> Type of WebDriver to be returned
+     * @param privateMode  Whether to run browser in private/incognito mode
+     * @param <T>          Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
     public static <T> T getNewLocalDriver(
             LocalDriverType driverType,
             HeadlessMode headlessMode,
             PrivateMode privateMode) {
-        return getNewLocalDriver(driverType,headlessMode,privateMode,PageLoadStrategyMode.Normal);
+        return getNewLocalDriver(driverType, headlessMode, privateMode, PageLoadStrategyMode.Normal);
     }
 
     /**
@@ -210,13 +225,13 @@ public class DriverFactory {
      * sets PageLoadStrategyMode to default value Normal
      * sets PrivateMode to default value False
      * 
-     * @param driverType Browser type to be instantiated
+     * @param driverType   Browser type to be instantiated
      * @param headlessMode Whether to run browser in headless mode
-     * @param <T> Type of WebDriver to be returned
+     * @param <T>          Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
-    public static <T > T  getNewLocalDriver(LocalDriverType driverType,HeadlessMode headlessMode) {
-        return getNewLocalDriver(driverType,headlessMode,PrivateMode.False);
+    public static <T> T getNewLocalDriver(LocalDriverType driverType, HeadlessMode headlessMode) {
+        return getNewLocalDriver(driverType, headlessMode, PrivateMode.False);
     }
 
     /**
@@ -228,11 +243,11 @@ public class DriverFactory {
      * sets HeadlessMode to default value False
      * 
      * @param driverType Browser type to be instantiated
-     * @param <T> Type of WebDriver to be returned
+     * @param <T>        Type of WebDriver to be returned
      * @return Configured local WebDriver instance
      */
-    public static <T> T  getNewLocalDriver(LocalDriverType driverType) {
-        return getNewLocalDriver(driverType,HeadlessMode.False);
+    public static <T> T getNewLocalDriver(LocalDriverType driverType) {
+        return getNewLocalDriver(driverType, HeadlessMode.False);
     }
 
     // ========================================================================================
@@ -243,38 +258,38 @@ public class DriverFactory {
      * Creates a new WebDriver instance using remote driver configuration.
      *
      * @param remoteDriverConfig Configuration for remote browser instance
-     * @param <T> Type of WebDriver to be returned
+     * @param <T>                Type of WebDriver to be returned
      * @return Configured WebDriver instance
      */
     @SuppressWarnings("unchecked")
     public static <T> T getNewDriver(RemoteDriverConfig remoteDriverConfig) {
         remoteDriverConfig.validate();
-        DriverConfiguration driverConfiguration=new DriverConfiguration(
+        DriverConfiguration driverConfiguration = new DriverConfiguration(
                 remoteDriverConfig.getDriverType(),
                 remoteDriverConfig.getHeadlessMode(),
                 remoteDriverConfig.getPageLoadStrategy(),
                 remoteDriverConfig.getPrivateMode(),
                 remoteDriverConfig.getSandboxMode(),
-                remoteDriverConfig.getWebSecurityMode()
-                ,remoteDriverConfig.getCapabilities(),
+                remoteDriverConfig.getWebSecurityMode(), remoteDriverConfig.getCapabilities(),
                 false);
         driverConfiguration.setRemoteAddress(remoteDriverConfig.getRemoteAddress());
         driverConfigurationThread.set(driverConfiguration);
         webSetUp();
-        return (T)WebDriverThread.get();
+        return (T) WebDriverThread.get();
     }
 
     /**
      * Creates a new remote WebDriver instance with detailed configuration options.
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
-     * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * 
+     * @param <T>                  Type of WebDriver to be returned
+     * @param driverType           Browser type to be instantiated
+     * @param remoteAddress        URL of the remote WebDriver server
+     * @param capabilities         Desired capabilities for the remote WebDriver
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
-     * @param webSecurityMode Security settings for the browser
-     * @param sandboxMode Sandbox mode configuration
+     * @param webSecurityMode      Security settings for the browser
+     * @param sandboxMode          Sandbox mode configuration
      * @return Configured remote WebDriver instance
      */
     public static <T> T getNewRemoteDriver(
@@ -286,25 +301,26 @@ public class DriverFactory {
             PageLoadStrategyMode pageLoadStrategyMode,
             WebSecurityMode webSecurityMode,
             SandboxMode sandboxMode) {
-        RemoteDriverConfig remoteDriverConfig=new RemoteDriverConfig(
+        RemoteDriverConfig remoteDriverConfig = new RemoteDriverConfig(
                 driverType, remoteAddress,
                 capabilities, headlessMode,
                 privateMode, pageLoadStrategyMode,
-                webSecurityMode,sandboxMode);
+                webSecurityMode, sandboxMode);
         return getNewDriver(remoteDriverConfig);
     }
 
     /**
      * Creates a new remote WebDriver instance with detailed configuration options.
      * sets SandboxMode to Sandbox by default
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
-     * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * 
+     * @param <T>                  Type of WebDriver to be returned
+     * @param driverType           Browser type to be instantiated
+     * @param remoteAddress        URL of the remote WebDriver server
+     * @param capabilities         Desired capabilities for the remote WebDriver
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
-     * @param webSecurityMode Security settings for the browser
+     * @param webSecurityMode      Security settings for the browser
      * @return Configured remote WebDriver instance
      */
     public static <T> T getNewRemoteDriver(
@@ -315,19 +331,21 @@ public class DriverFactory {
             PrivateMode privateMode,
             PageLoadStrategyMode pageLoadStrategyMode,
             WebSecurityMode webSecurityMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,webSecurityMode,SandboxMode.Sandbox);
+        return getNewRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, privateMode,
+                pageLoadStrategyMode, webSecurityMode, SandboxMode.Sandbox);
     }
 
     /**
      * Creates a new remote WebDriver instance with detailed configuration options.
      * sets SandboxMode to Sandbox by default
      * sets WebSecurityMode to default value SecureMode
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
-     * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * 
+     * @param <T>                  Type of WebDriver to be returned
+     * @param driverType           Browser type to be instantiated
+     * @param remoteAddress        URL of the remote WebDriver server
+     * @param capabilities         Desired capabilities for the remote WebDriver
+     * @param headlessMode         Whether to run browser in headless mode
+     * @param privateMode          Whether to run browser in private/incognito mode
      * @param pageLoadStrategyMode Strategy for handling page loads
      * @return Configured remote WebDriver instance
      */
@@ -338,7 +356,8 @@ public class DriverFactory {
             HeadlessMode headlessMode,
             PrivateMode privateMode,
             PageLoadStrategyMode pageLoadStrategyMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode,pageLoadStrategyMode,WebSecurityMode.SecureMode);
+        return getNewRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, privateMode,
+                pageLoadStrategyMode, WebSecurityMode.SecureMode);
     }
 
     /**
@@ -346,12 +365,13 @@ public class DriverFactory {
      * sets SandboxMode to Sandbox by default
      * sets WebSecurityMode to default value SecureMode
      * sets PageLoadStrategyMode to default value Normal
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
+     * 
+     * @param <T>           Type of WebDriver to be returned
+     * @param driverType    Browser type to be instantiated
      * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
-     * @param headlessMode Whether to run browser in headless mode
-     * @param privateMode Whether to run browser in private/incognito mode
+     * @param capabilities  Desired capabilities for the remote WebDriver
+     * @param headlessMode  Whether to run browser in headless mode
+     * @param privateMode   Whether to run browser in private/incognito mode
      * @return Configured remote WebDriver instance
      */
     public static <T> T getNewRemoteDriver(
@@ -360,9 +380,9 @@ public class DriverFactory {
             Capabilities capabilities,
             HeadlessMode headlessMode,
             PrivateMode privateMode) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,privateMode, PageLoadStrategyMode.Normal);
+        return getNewRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, privateMode,
+                PageLoadStrategyMode.Normal);
     }
-
 
     /**
      * Creates a new remote WebDriver instance with detailed configuration options.
@@ -370,21 +390,21 @@ public class DriverFactory {
      * sets WebSecurityMode to default value SecureMode
      * sets PageLoadStrategyMode to default value Normal
      * sets PrivateMode to default value False
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
+     * 
+     * @param <T>           Type of WebDriver to be returned
+     * @param driverType    Browser type to be instantiated
      * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
-     * @param headlessMode Whether to run browser in headless mode
+     * @param capabilities  Desired capabilities for the remote WebDriver
+     * @param headlessMode  Whether to run browser in headless mode
      * @return Configured remote WebDriver instance
      */
     public static <T> T getNewRemoteDriver(
             RemoteDriverType driverType,
             URL remoteAddress,
             Capabilities capabilities,
-            HeadlessMode headlessMode)  {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,headlessMode,PrivateMode.False);
+            HeadlessMode headlessMode) {
+        return getNewRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, PrivateMode.False);
     }
-
 
     /**
      * Creates a new remote WebDriver instance with detailed configuration options.
@@ -393,17 +413,18 @@ public class DriverFactory {
      * sets PageLoadStrategyMode to default value Normal
      * sets PrivateMode to default value False
      * sets HeadlessMode to default value False
-     * @param <T> Type of WebDriver to be returned
-     * @param driverType Browser type to be instantiated
+     * 
+     * @param <T>           Type of WebDriver to be returned
+     * @param driverType    Browser type to be instantiated
      * @param remoteAddress URL of the remote WebDriver server
-     * @param capabilities Desired capabilities for the remote WebDriver
+     * @param capabilities  Desired capabilities for the remote WebDriver
      * @return Configured remote WebDriver instance
      */
     public static <T> T getNewRemoteDriver(
             RemoteDriverType driverType,
             URL remoteAddress,
             Capabilities capabilities) {
-        return getNewRemoteDriver(driverType,remoteAddress,capabilities,HeadlessMode.False);
+        return getNewRemoteDriver(driverType, remoteAddress, capabilities, HeadlessMode.False);
     }
 
     // ========================================================================================
@@ -414,13 +435,14 @@ public class DriverFactory {
      * Creates a new mobile driver instance using mobile driver configuration.
      *
      * @param mobileDriverConfig Configuration for mobile device
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param <T>                Type of mobile driver to be returned (AndroidDriver
+     *                           or IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewDriver(MobileDriverConfig mobileDriverConfig) {
         mobileDriverConfig.validate();
-        HeadlessMode mode=checkMobileHeadless(mobileDriverConfig.getCapabilities());
-        DriverConfiguration driverConfiguration=new DriverConfiguration(
+        HeadlessMode mode = checkMobileHeadless(mobileDriverConfig.getCapabilities());
+        DriverConfiguration driverConfiguration = new DriverConfiguration(
                 mobileDriverConfig.getDriverType(),
                 mode,
                 mobileDriverConfig.getCapabilities(),
@@ -429,35 +451,36 @@ public class DriverFactory {
         return mobileSetup(
                 (MobileDriverType) mobileDriverConfig.getDriverType(),
                 mobileDriverConfig.getRemoteAddress(),
-                mobileDriverConfig.getCapabilities()
-        );
+                mobileDriverConfig.getCapabilities());
     }
 
     /**
      * Creates a new mobile driver instance with full configuration.
      * This is the most detailed mobile driver creation method for local Appium.
      *
-     * @param driverType Type of mobile driver (Android or iOS)
+     * @param driverType    Type of mobile driver (Android or iOS)
      * @param remoteAddress URL of the Appium server
-     * @param capabilities Desired capabilities for the mobile driver
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param capabilities  Desired capabilities for the mobile driver
+     * @param <T>           Type of mobile driver to be returned (AndroidDriver or
+     *                      IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewMobileDriver(
             MobileDriverType driverType,
             URL remoteAddress,
             Capabilities capabilities) {
-        MobileDriverConfig mobileDriverConfig =new MobileDriverConfig(driverType,capabilities,remoteAddress);
+        MobileDriverConfig mobileDriverConfig = new MobileDriverConfig(driverType, capabilities, remoteAddress);
         return getNewDriver(mobileDriverConfig);
     }
-    
+
     /**
      * Creates a new mobile driver instance with simplified configuration.
      * Uses default Appium server URL (<a href="http://127.0.0.1:4723">...</a>).
      *
-     * @param driverType Type of mobile driver (Android or iOS)
+     * @param driverType   Type of mobile driver (Android or iOS)
      * @param capabilities Desired capabilities for the mobile driver
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param <T>          Type of mobile driver to be returned (AndroidDriver or
+     *                     IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewMobileDriver(
@@ -477,40 +500,47 @@ public class DriverFactory {
      * Supports BrowserStack, Sauce Labs, LambdaTest, and other cloud providers.
      *
      * @param cloudMobileConfig Configuration for cloud mobile device
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param <T>               Type of mobile driver to be returned (AndroidDriver
+     *                          or IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewDriver(CloudMobileDriverConfig cloudMobileConfig) {
         cloudMobileConfig.validate();
-        HeadlessMode mode=checkMobileHeadless(cloudMobileConfig.getCapabilities());
-        DriverConfiguration driverConfiguration=new DriverConfiguration(
+        HeadlessMode mode = checkMobileHeadless(cloudMobileConfig.getCapabilities());
+        DriverConfiguration driverConfiguration = new DriverConfiguration(
                 cloudMobileConfig.getDriverType(),
                 mode,
                 cloudMobileConfig.getCapabilities(),
-                true
-        );
+                true);
         driverConfigurationThread.set(driverConfiguration);
-        Reporter.logReportOnly("Capabilities: "+cloudMobileConfig.getCapabilities().asMap().toString(),LogLevel.INFO_BLUE);
-        Reporter.log("Creating driver: "+ ((MobileDriverType)cloudMobileConfig.getDriverType()).getPlatformName()+ " for " + cloudMobileConfig.getCloudProvider() +
-                " cloud provider at " + sanitizeHubUrl(cloudMobileConfig.getRemoteAddress()), LogLevel.INFO_BLUE);
-        return mobileSetup( (MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(), cloudMobileConfig.getCapabilities());
+        Reporter.logReportOnly("Capabilities: " + cloudMobileConfig.getCapabilities().asMap().toString(),
+                LogLevel.INFO_BLUE);
+        Reporter.log(
+                "Creating driver: " + ((MobileDriverType) cloudMobileConfig.getDriverType()).getPlatformName() + " for "
+                        + cloudMobileConfig.getCloudProvider() +
+                        " cloud provider at " + sanitizeHubUrl(cloudMobileConfig.getRemoteAddress()),
+                LogLevel.INFO_BLUE);
+        return mobileSetup((MobileDriverType) cloudMobileConfig.getDriverType(), cloudMobileConfig.getRemoteAddress(),
+                cloudMobileConfig.getCapabilities());
     }
 
     /**
      * Creates a new cloud mobile driver with full configuration.
      * This is the most detailed cloud mobile driver creation method.
      *
-     * @param provider The cloud provider type
-     * @param username The username for authentication
-     * @param accessKey The access key for authentication
-     * @param driverType The mobile driver type (Android or iOS)
-     * @param deviceName The device name to test on
+     * @param provider        The cloud provider type
+     * @param username        The username for authentication
+     * @param accessKey       The access key for authentication
+     * @param driverType      The mobile driver type (Android or iOS)
+     * @param deviceName      The device name to test on
      * @param platformVersion The platform version
-     * @param app The app location/ID (e.g., "bs://app_id" for BrowserStack)
-     * @param projectName The project name for organization
-     * @param buildName The build name for organization
-     * @param testName The test name
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param app             The app location/ID (e.g., "bs://app_id" for
+     *                        BrowserStack)
+     * @param projectName     The project name for organization
+     * @param buildName       The build name for organization
+     * @param testName        The test name
+     * @param <T>             Type of mobile driver to be returned (AndroidDriver or
+     *                        IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewCloudMobileDriver(
@@ -538,14 +568,16 @@ public class DriverFactory {
      * Creates a new cloud mobile driver with essential configuration.
      * Omits project, build, and test names for simpler setup.
      *
-     * @param provider The cloud provider type
-     * @param username The username for authentication
-     * @param accessKey The access key for authentication
-     * @param driverType The mobile driver type (Android or iOS)
-     * @param deviceName The device name to test on
+     * @param provider        The cloud provider type
+     * @param username        The username for authentication
+     * @param accessKey       The access key for authentication
+     * @param driverType      The mobile driver type (Android or iOS)
+     * @param deviceName      The device name to test on
      * @param platformVersion The platform version
-     * @param app The app location/ID (e.g., "bs://app_id" for BrowserStack)
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param app             The app location/ID (e.g., "bs://app_id" for
+     *                        BrowserStack)
+     * @param <T>             Type of mobile driver to be returned (AndroidDriver or
+     *                        IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewCloudMobileDriver(
@@ -567,13 +599,14 @@ public class DriverFactory {
      * Creates a new cloud mobile driver with minimal configuration.
      * Uses the cloud provider's default settings for most options.
      *
-     * @param provider The cloud provider type
-     * @param username The username for authentication
-     * @param accessKey The access key for authentication
+     * @param provider   The cloud provider type
+     * @param username   The username for authentication
+     * @param accessKey  The access key for authentication
      * @param driverType The mobile driver type (Android or iOS)
      * @param deviceName The device name to test on
-     * @param app The app location/ID
-     * @param <T> Type of mobile driver to be returned (AndroidDriver or IOSDriver)
+     * @param app        The app location/ID
+     * @param <T>        Type of mobile driver to be returned (AndroidDriver or
+     *                   IOSDriver)
      * @return Configured mobile driver instance
      */
     public static <T> T getNewCloudMobileDriver(
@@ -601,19 +634,19 @@ public class DriverFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getCurrentDriver() {
-       DriverConfiguration currentDriverConfigurationThread=driverConfigurationThread.get();
-       if (currentDriverConfigurationThread!=null){
-           DriverType driverType=driverConfigurationThread.get().getDriverType();
-           if(driverType!=null){
-               if (driverType.equals(MobileDriverType.Android)) {
-                   return (T) AndroidDriverThread.get();
-               } else if (driverType.equals(IOS)) {
-                   return (T) IOSDriverThread.get();
-               } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
-                   return (T) WebDriverThread.get();
-               }
-           }
-       }
+        DriverConfiguration currentDriverConfigurationThread = driverConfigurationThread.get();
+        if (currentDriverConfigurationThread != null) {
+            DriverType driverType = driverConfigurationThread.get().getDriverType();
+            if (driverType != null) {
+                if (driverType.equals(MobileDriverType.Android)) {
+                    return (T) AndroidDriverThread.get();
+                } else if (driverType.equals(IOS)) {
+                    return (T) IOSDriverThread.get();
+                } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType) {
+                    return (T) WebDriverThread.get();
+                }
+            }
+        }
         return null;
     }
 
@@ -622,28 +655,36 @@ public class DriverFactory {
      */
     public static void quitDriver() {
         var config = driverConfigurationThread.get();
-        if (config == null) return;
+        if (config == null)
+            return;
         var driverType = config.getDriverType();
-        if (driverType!=null){
+        if (driverType != null) {
             try {
-                if (driverType==MobileDriverType.Android) {
+                if (driverType == MobileDriverType.Android) {
                     AndroidDriver localDriver = AndroidDriverThread.get();
                     if (localDriver != null) {
                         localDriver.quit();
                     }
-                } else if (driverType==IOS) {
+                } else if (driverType == IOS) {
                     IOSDriver localDriver = IOSDriverThread.get();
                     if (localDriver != null) {
                         localDriver.quit();
                     }
-                } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType ) {
+                } else if (driverType instanceof LocalDriverType || driverType instanceof RemoteDriverType) {
                     var localDriver = WebDriverThread.get();
                     if (localDriver != null) {
                         seleniumListener.suppressLogging();
-                        try { localDriver.navigate().to("about:blank"); } catch (Exception ignored) {
+                        try {
+                            localDriver.navigate().to("about:blank");
+                        } catch (Exception ignored) {
                         } finally {
-                            try { seleniumListener.resumeLogging(); } catch (Exception ignored) {}
-                            try { localDriver.quit(); } catch (Exception e) {
+                            try {
+                                seleniumListener.resumeLogging();
+                            } catch (Exception ignored) {
+                            }
+                            try {
+                                localDriver.quit();
+                            } catch (Exception e) {
                                 Reporter.log("Driver quit failed (non-fatal): " + e.getMessage(), LogLevel.WARN);
                             }
                         }
@@ -657,10 +698,14 @@ public class DriverFactory {
 
     /**
      * Clears the CURRENT thread's driver and configuration ThreadLocals.
-     * {@link ThreadLocal#remove()} affects only the calling thread; other parallel threads are
-     * untouched. A thread holds at most one driver, so the non-matching {@code remove()} calls are
-     * no-ops — they exist to guarantee cleanup even when config/driverType state is inconsistent,
-     * preventing a stale driver leaking into the next test on a reused carrier thread.
+     * {@link ThreadLocal#remove()} affects only the calling thread; other parallel
+     * threads are
+     * untouched. A thread holds at most one driver, so the non-matching
+     * {@code remove()} calls are
+     * no-ops — they exist to guarantee cleanup even when config/driverType state is
+     * inconsistent,
+     * preventing a stale driver leaking into the next test on a reused carrier
+     * thread.
      */
     static void removeDriver() {
         WebDriverThread.remove();
@@ -672,22 +717,35 @@ public class DriverFactory {
     /**
      * Re-registers an already-created driver on the calling thread's ThreadLocals.
      *
-     * <p>TestNG's {@code dependsOnMethods} can dispatch test methods to a different thread-pool
-     * thread than the one where {@code @BeforeClass} ran. Because {@link DriverFactory} stores
-     * the driver in {@link ThreadLocal} fields, the method thread sees {@code null} even though
-     * the browser is running. Calling this from {@code @BeforeMethod(alwaysRun=true)} in the
-     * test base class re-associates the existing driver with the current thread so that all
-     * framework features (recording, screenshots, listeners) work correctly.</p>
+     * <p>
+     * TestNG's {@code dependsOnMethods} can dispatch test methods to a different
+     * thread-pool
+     * thread than the one where {@code @BeforeClass} ran. Because
+     * {@link DriverFactory} stores
+     * the driver in {@link ThreadLocal} fields, the method thread sees {@code null}
+     * even though
+     * the browser is running. Calling this from
+     * {@code @BeforeMethod(alwaysRun=true)} in the
+     * test base class re-associates the existing driver with the current thread so
+     * that all
+     * framework features (recording, screenshots, listeners) work correctly.
+     * </p>
      *
-     * <p>Safe to call when already on the owning thread (re-sets the same values, no-op in effect).
-     * The next {@code @BeforeClass} on a recycled thread will overwrite these ThreadLocals.</p>
+     * <p>
+     * Safe to call when already on the owning thread (re-sets the same values,
+     * no-op in effect).
+     * The next {@code @BeforeClass} on a recycled thread will overwrite these
+     * ThreadLocals.
+     * </p>
      *
      * @param decoratedDriver the decorated driver returned by {@code getNewDriver}
-     * @param config          the configuration captured from {@code getCurrentDriverConfiguration()}
+     * @param config          the configuration captured from
+     *                        {@code getCurrentDriverConfiguration()}
      */
     public static void adoptCurrentThread(WebDriver decoratedDriver, DriverConfiguration config) {
         WebDriverThread.set(decoratedDriver);
         driverConfigurationThread.set(config);
+        VideoRecordingManager.onDriverCreated();
     }
 
     /**
@@ -695,16 +753,17 @@ public class DriverFactory {
      *
      * @return Current driver configuration
      */
-    public static DriverConfiguration getCurrentDriverConfiguration(){
+    public static DriverConfiguration getCurrentDriverConfiguration() {
         return driverConfigurationThread.get();
     }
 
     /**
-     * Internal Method to remove the current driver configuration for the executing thread.
+     * Internal Method to remove the current driver configuration for the executing
+     * thread.
      * Automatically managed don't call it
      *
      */
-    static void removeCurrentDriverConfiguration(){
+    static void removeCurrentDriverConfiguration() {
         driverConfigurationThread.remove();
     }
 
@@ -719,26 +778,29 @@ public class DriverFactory {
      * @throws IllegalStateException if driver creation fails
      */
     private static void webSetUp() {
-        DriverConfiguration currentDriverConfig=getCurrentDriverConfiguration();
-        DriverType driverType =currentDriverConfig.getDriverType();
+        DriverConfiguration currentDriverConfig = getCurrentDriverConfiguration();
+        DriverType driverType = currentDriverConfig.getDriverType();
         HeadlessMode headlessMode = currentDriverConfig.getHeadlessMode();
-        PageLoadStrategyMode PageLoadStrategy=currentDriverConfig.getPageLoadStrategy();
-        PrivateMode PrivateMode=currentDriverConfig.getPrivateMode();
-        SandboxMode SandboxMode=currentDriverConfig.getSandboxMode();
-        WebSecurityMode WebSecurityMode=currentDriverConfig.getWebSecurityMode();
-        Capabilities capabilities=currentDriverConfig.getCapabilities();
+        PageLoadStrategyMode PageLoadStrategy = currentDriverConfig.getPageLoadStrategy();
+        PrivateMode PrivateMode = currentDriverConfig.getPrivateMode();
+        SandboxMode SandboxMode = currentDriverConfig.getSandboxMode();
+        WebSecurityMode WebSecurityMode = currentDriverConfig.getWebSecurityMode();
+        Capabilities capabilities = currentDriverConfig.getCapabilities();
         WebDriver localDriver;
         if (driverType instanceof RemoteDriverType) {
             var remoteAddress = currentDriverConfig.getRemoteAddress();
-            localDriver = BrowserSetUp.setupRemoteDriver(driverType, remoteAddress, capabilities, headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
+            localDriver = BrowserSetUp.setupRemoteDriver(driverType, remoteAddress, capabilities, headlessMode,
+                    PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
         } else {
-            localDriver = BrowserSetUp.setupLocalDriver(driverType, capabilities,headlessMode, PageLoadStrategy, PrivateMode, SandboxMode, WebSecurityMode);
+            localDriver = BrowserSetUp.setupLocalDriver(driverType, capabilities, headlessMode, PageLoadStrategy,
+                    PrivateMode, SandboxMode, WebSecurityMode);
         }
         if (localDriver == null) {
             Reporter.log("Driver Creation Failed", LogLevel.ERROR);
             return;
         }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
+        VideoRecordingManager.onDriverCreated();
         Reporter.log("Driver Created", LogLevel.INFO_GREEN);
     }
 
@@ -747,36 +809,42 @@ public class DriverFactory {
      * KEY INSIGHT: This method works for BOTH local and cloud!
      * The only difference is the URL and capabilities passed in.
      * Local: <a href="http://127.0.0.1:4723">...</a> with basic capabilities
-     * Cloud: <a href="https://user:key@hub.browserstack.com/wd/hub">...</a> with cloud capabilities
-     * @param driverType Type of mobile driver (Android or iOS)
+     * Cloud: <a href="https://user:key@hub.browserstack.com/wd/hub">...</a> with
+     * cloud capabilities
+     * 
+     * @param driverType    Type of mobile driver (Android or iOS)
      * @param remoteAddress URL of the Appium server
-     * @param capabilities Desired capabilities for the mobile driver
-     * @param <T> Type of mobile driver to be returned
+     * @param capabilities  Desired capabilities for the mobile driver
+     * @param <T>           Type of mobile driver to be returned
      * @return Configured mobile driver instance
      * @throws IllegalArgumentException if invalid driver type is specified
      */
     @SuppressWarnings("unchecked")
-    private static <T> T mobileSetup(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities){
-        switch (driverType){
+    private static <T> T mobileSetup(MobileDriverType driverType, URL remoteAddress, Capabilities capabilities) {
+        switch (driverType) {
             case IOS -> {
-                IOSDriver localDriver=getDecoratedIOSDriver(remoteAddress, capabilities);
-                if(localDriver!=null){
+                IOSDriver localDriver = getDecoratedIOSDriver(remoteAddress, capabilities);
+                if (localDriver != null) {
                     IOSDriverThread.set(localDriver);
+                    VideoRecordingManager.onDriverCreated();
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)localDriver;
+                    return (T) localDriver;
                 }
             }
             case Android -> {
-                AndroidDriver localDriver=getDecoratedAndroidDriver(remoteAddress, capabilities);
-                if(localDriver!=null){
+                AndroidDriver localDriver = getDecoratedAndroidDriver(remoteAddress, capabilities);
+                if (localDriver != null) {
                     AndroidDriverThread.set(localDriver);
+                    VideoRecordingManager.onDriverCreated();
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
-                    return (T)localDriver;
+                    return (T) localDriver;
                 }
             }
-            default -> throw new IllegalArgumentException("Wrong Driver Initialization: " + getCurrentDriverConfiguration().getDriverType()+ "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
+            default -> throw new IllegalArgumentException(
+                    "Wrong Driver Initialization: " + getCurrentDriverConfiguration().getDriverType()
+                            + "visit: https://github.com/Abdelrhman-Ellithy/Ellithium to know how the correct way");
         }
-        Reporter.log("Driver Creation Failed",LogLevel.ERROR);
+        Reporter.log("Driver Creation Failed", LogLevel.ERROR);
         return null;
     }
 
@@ -794,44 +862,45 @@ public class DriverFactory {
      * Creates a decorated AndroidDriver instance with event listening capabilities.
      *
      * @param remoteAddress Appium server URL
-     * @param capabilities Desired capabilities for Android
+     * @param capabilities  Desired capabilities for Android
      * @return Decorated AndroidDriver instance
      */
-    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress,Capabilities capabilities){
+    private static AndroidDriver getDecoratedAndroidDriver(URL remoteAddress, Capabilities capabilities) {
         return createProxy(
                 AndroidDriver.class,
-                new Object[] {remoteAddress,capabilities},
-                new Class[] {URL.class,Capabilities.class},
-                new appiumListener()
-        );
+                new Object[] { remoteAddress, capabilities },
+                new Class[] { URL.class, Capabilities.class },
+                new appiumListener());
     }
 
     /**
      * Creates a decorated IOSDriver instance with event listening capabilities.
      *
      * @param remoteAddress Appium server URL
-     * @param capabilities Desired capabilities for iOS
+     * @param capabilities  Desired capabilities for iOS
      * @return Decorated IOSDriver instance
      */
-    private static IOSDriver getDecoratedIOSDriver(URL remoteAddress, Capabilities capabilities){
+    private static IOSDriver getDecoratedIOSDriver(URL remoteAddress, Capabilities capabilities) {
         return createProxy(
                 IOSDriver.class,
-                new Object[] {remoteAddress,capabilities},
-                new Class[] {URL.class,Capabilities.class},
-                new appiumListener()
-        );
+                new Object[] { remoteAddress, capabilities },
+                new Class[] { URL.class, Capabilities.class },
+                new appiumListener());
     }
+
     private static String sanitizeHubUrl(java.net.URL url) {
-        if (url == null) return "unknown";
+        if (url == null)
+            return "unknown";
         String s = url.toString();
         return s.replaceAll("(?<=://)[^:]+:[^@]+@", "***:***@");
     }
 
-    private static HeadlessMode checkMobileHeadless(Capabilities capabilities){
-        Object isHeadless=capabilities.getCapability("appium:isHeadless");
-        if (isHeadless!=null){
-            boolean headless=isHeadless.toString().equalsIgnoreCase("true");
-            if (headless) return HeadlessMode.True;
+    private static HeadlessMode checkMobileHeadless(Capabilities capabilities) {
+        Object isHeadless = capabilities.getCapability("appium:isHeadless");
+        if (isHeadless != null) {
+            boolean headless = isHeadless.toString().equalsIgnoreCase("true");
+            if (headless)
+                return HeadlessMode.True;
         }
         return HeadlessMode.False;
     }

@@ -69,6 +69,19 @@ public class NotificationSender {
             }
             message.setFrom(fromAddress);
             message.setRecipients(Message.RecipientType.TO, createEncodedInternetAddresses(config.getToEmail()));
+
+            String ccEmail = config.getCcEmail();
+            boolean hasCc = ccEmail != null && !ccEmail.trim().isEmpty();
+            if (hasCc) {
+                InternetAddress[] ccAddresses = createEncodedInternetAddresses(ccEmail);
+                if (ccAddresses != null) {
+                    message.setRecipients(Message.RecipientType.CC, ccAddresses);
+                } else {
+                    Reporter.log("Skipping CC - one or more CC addresses are invalid: " + ccEmail, LogLevel.WARN);
+                    hasCc = false;
+                }
+            }
+
             message.setSubject(encodeEmailSubject(subject));
 
             if (isHtml) {
@@ -81,7 +94,11 @@ public class NotificationSender {
 
             Transport.send(message);
 
-            Reporter.log("Email notification sent successfully to " + EmailObfuscator.obfuscate(config.getToEmail()), LogLevel.INFO_GREEN);
+            String successLog = "Email notification sent successfully to " + EmailObfuscator.obfuscate(config.getToEmail());
+            if (hasCc) {
+                successLog += " (cc: " + EmailObfuscator.obfuscate(ccEmail) + ")";
+            }
+            Reporter.log(successLog, LogLevel.INFO_GREEN);
             return true;
 
         } catch (Exception e) {

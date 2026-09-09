@@ -1,5 +1,6 @@
 package Ellithium.Utilities.interactions;
 
+import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.healing.BaselineStore;
 import Ellithium.core.ai.healing.HealingOrchestrator;
 import Ellithium.core.ai.models.HealingRequest;
@@ -112,13 +113,17 @@ class BaseActions<T extends WebDriver> {
      * which triggers AI Self-Healing if the element is missing or the locator is invalid.
      */
     WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery) {
+        return waitForVisibilityAndFindElement(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    WebElement waitForVisibilityAndFindElement(By locator, int timeout, int pollingEvery, boolean heal) {
         locator = normalizeLocator(locator);
         try {
             return getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
         } catch (WebDriverException e) {
             if (recoverContextOrAlert(e, locator)) return findWebElement(locator);
-            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             By cached = HEALING_PORT.getCachedLocator(driver, locator);
             if (cached != null && !cached.equals(locator)) {
                 try {
@@ -135,6 +140,10 @@ class BaseActions<T extends WebDriver> {
      * If a TimeoutException occurs, attempts to heal the locator before querying again.
      */
     List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery) {
+        return waitForVisibilityAndFindElements(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
+    }
+
+    List<WebElement> waitForVisibilityAndFindElements(By locator, int timeout, int pollingEvery, boolean heal) {
         locator = normalizeLocator(locator);
         try {
             getFluentWait(timeout, pollingEvery)
@@ -147,7 +156,7 @@ class BaseActions<T extends WebDriver> {
                 try { return driver.findElements(locator); } catch (WebDriverException ignored) {}
                 return new ArrayList<>();
             }
-            if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+            if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             List<WebElement> cachedHits = findByCachedHeal(locator);
             if (cachedHits != null) return cachedHits;
             return healElementSet(locator);
@@ -675,7 +684,7 @@ class BaseActions<T extends WebDriver> {
      */
     protected <R> R performAndGetOrDefault(By locator, int timeout, int pollingEvery,
                                             Function<WebElement, R> action, R defaultValue) {
-        return performAndGetOrDefault(locator, timeout, pollingEvery, action, defaultValue, true);
+        return performAndGetOrDefault(locator, timeout, pollingEvery, action, defaultValue, false);
     }
 
     /**
@@ -738,8 +747,8 @@ class BaseActions<T extends WebDriver> {
                     .until(org.openqa.selenium.support.ui.ExpectedConditions
                             .frameToBeAvailableAndSwitchToIt(locator));
         } catch (WebDriverException e) {
-            WebElement frame = findWebElement(locator);
             try {
+                WebElement frame = findWebElement(locator);
                 return driver.switchTo().frame(frame);
             } catch (WebDriverException ignored) {
                 throw e;

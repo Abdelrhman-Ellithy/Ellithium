@@ -23,6 +23,7 @@ import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.apache.logging.log4j.ThreadContext;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -56,13 +57,23 @@ public class GeneralHandler {
     }
     
     private static void AttachLogs(){
-        String logs = Logger.getCurrentExecutionLogs();
+        String testId = Logger.getCurrentTestIdentifier();
+        String testName = Logger.getCurrentTestName();
+        String logs = (testId != null) ? Logger.getLogsForTest(testId) : Logger.getCurrentExecutionLogs();
+        String attachmentName = (testName != null && !testName.isBlank())
+                ? "Execution Log File - " + testName
+                : ((testId != null && !testId.isBlank()) ? "Execution Log File - " + testId : "Execution Log File");
         try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
             Reporter.flushPendingStep();
-            Allure.addAttachment("Execution Log File", "text/plain", logStream, ".log");
+            Allure.addAttachment(attachmentName, "text/plain", logStream, ".log");
             Logger.info("Execution logs successfully attached to the Allure report.");
         } catch (IOException e) {
             Logger.error("Failed to attach execution logs: " + e.getMessage());
+        } finally {
+            if (testId != null) {
+                Logger.clearLogsForTest(testId);
+            }
+            Logger.clearCurrentExecutionLogs();
         }
     }
 
@@ -72,6 +83,8 @@ public class GeneralHandler {
     }
     
     public static void StartRoutine(){
+        System.setProperty("log4j2.isThreadContextMapInheritable", "true");
+        ThreadContext.put("testName", "Ellithium");
         EnsembleHealer.initializeAsync();
         ConfigContext.setIsLoggingOn(false);
         AllureHelper.deleteAllureResultsDir();

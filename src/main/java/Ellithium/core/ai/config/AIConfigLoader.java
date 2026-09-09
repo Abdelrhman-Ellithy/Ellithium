@@ -21,7 +21,7 @@ public class AIConfigLoader {
     private static String llmModel                    = "";
     private static String llmBaseUrl                  = "";
     private static String llmProviderClass            = "";
-    private static ExecutionMode executionMode        = ExecutionMode.LOCAL;
+    private static ExecutionMode executionMode        = ExecutionMode.CI;
     private static boolean visionRcaEnabled           = false;
     private static double  onnxSimilarityThreshold    = 0.60;
     private static int     onnxMaxCandidates          = 60;
@@ -38,7 +38,8 @@ public class AIConfigLoader {
     private static boolean tier3Enabled               = true;
     private static int     ciHealAlertThreshold       = -1;
     private static int     baselineMaxLocators        = 0;
-    private static boolean healOnWaitsEnabled         = false;
+    private static boolean healOnWaitsEnabled         = true;
+    private static boolean failOnSuspectHeal          = true;
     private static int     onnxInitMaxWaitMs          = 30_000;
 
     private static volatile boolean initialized = false;
@@ -94,6 +95,7 @@ public class AIConfigLoader {
             ciHealAlertThreshold        = parseInt(p, "ai.healing.ciAlertThreshold", ciHealAlertThreshold);
             baselineMaxLocators         = parseInt(p, "ai.healing.baselineMaxLocators", baselineMaxLocators);
             healOnWaitsEnabled          = parseBool(p, "ai.healing.waits.enabled", healOnWaitsEnabled);
+            failOnSuspectHeal           = parseBool(p, "ai.healing.failOnSuspectHeal", failOnSuspectHeal);
             onnxInitMaxWaitMs           = parseInt(p, "ai.onnx.initMaxWaitMs", onnxInitMaxWaitMs);
 
             initialized = true;
@@ -203,6 +205,8 @@ public class AIConfigLoader {
     public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }
     /** Default for whether explicit wait methods heal on timeout (per-call boolean overrides this). */
     public static boolean isHealOnWaitsEnabled()                { if (!initialized) initialize(); return healOnWaitsEnabled; }
+    /** Whether tests that fail after using a healed locator are marked as suspect false-heals and failed hard. */
+    public static boolean isFailOnSuspectHeal()                 { if (!initialized) initialize(); return failOnSuspectHeal; }
     /** Max time Tier 2 healing waits for an in-progress async model load before falling back. */
     public static int    getOnnxInitMaxWaitMs()                 { if (!initialized) initialize(); return onnxInitMaxWaitMs; }
 

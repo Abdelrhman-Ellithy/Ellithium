@@ -35,6 +35,9 @@ public final class Tier2EnsembleHealer implements HealingTier {
                 request.actionType(), request.locatorValue(), request.baseline());
         if (el == null) return null;
         double score = EnsembleHealer.scoreWithBatchedAttrs(request.baseline(), request.driver(), el);
+        if (score < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
+            return null;
+        }
         return HealOutcome.of(el, score, 2);
     }
 }

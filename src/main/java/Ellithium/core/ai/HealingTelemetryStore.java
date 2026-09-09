@@ -184,6 +184,25 @@ public class HealingTelemetryStore {
     }
 
     /**
+     * Formats human-readable details of suspect heals that occurred during test execution.
+     */
+    public static String getSuspectWrongHealDetails(String testId) {
+        if (testId == null) return "";
+        java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> testRecords = byTestId.get(testId);
+        if (testRecords == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (TelemetryRecord r : testRecords) {
+            if (r.suspectWrongHeal) {
+                if (sb.length() > 0) sb.append("; ");
+                sb.append("Tier ").append(r.tier).append(": ")
+                  .append(r.brokenLocator).append(" -> ").append(r.healedLocator)
+                  .append(" (score: ").append(String.format(java.util.Locale.ROOT, "%.2f", r.score)).append(")");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Returns all records for a specific tier (snapshot — safe to call from any thread).
      * Used by {@link ModelCalibrationRunner} for per-model threshold calibration.
      */

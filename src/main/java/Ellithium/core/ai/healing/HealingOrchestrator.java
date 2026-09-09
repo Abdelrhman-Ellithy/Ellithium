@@ -115,6 +115,13 @@ public final class HealingOrchestrator implements ElementHealingPort {
                     ? raw.reconstructedLocator()
                     : reconstructBest(request.driver(), resolved, request.baseline());
 
+            if (locator != null && locator.equals(request.brokenLocator())) {
+                continue;
+            }
+            if (tier.order() > 1 && raw.score() < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
+                continue;
+            }
+
             WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
             if (guarded == null) continue;
 
@@ -156,7 +163,11 @@ public final class HealingOrchestrator implements ElementHealingPort {
 
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
                                                         String tierLabel, WebDriver driver) {
-        if (healed == null || !InteractiveElements.isClickLikeAction(actionType)) return healed;
+        if (healed == null) return null;
+        if (InteractiveElements.isTextInputAction(actionType)) {
+            return resolveTextInputElement(healed, actionType, tierLabel, driver);
+        }
+        if (!InteractiveElements.isClickLikeAction(actionType)) return healed;
         try {
             // Batch getTagName + getAttribute("role") into one JS round-trip instead of two.
             String tag, role;
@@ -191,6 +202,61 @@ public final class HealingOrchestrator implements ElementHealingPort {
 
             Reporter.log("[" + tierLabel + "] Healed element is container <" + tag
                     + "> with no interactive child for click action — skipping", LogLevel.WARN);
+            return null;
+        } catch (Exception ex) {
+            return healed;
+        }
+    }
+
+    private static WebElement resolveTextInputElement(WebElement healed, String actionType,
+                                                      String tierLabel, WebDriver driver) {
+        try {
+            String tag, role, type, contentEditable;
+            try {
+                Object[] res = (Object[]) ((org.openqa.selenium.JavascriptExecutor) driver)
+                        .executeScript("var e=arguments[0]; return [e.tagName.toLowerCase(), e.getAttribute('role'), e.getAttribute('type'), e.getAttribute('contenteditable')];", healed);
+                if (res != null && res.length >= 4) {
+                    tag = res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase();
+                    role = res[1] != null ? res[1].toString() : null;
+                    type = res[2] != null ? res[2].toString() : null;
+                    contentEditable = res[3] != null ? res[3].toString() : null;
+                } else {
+                    tag = healed.getTagName().toLowerCase();
+                    role = healed.getAttribute("role");
+                    type = healed.getAttribute("type");
+                    contentEditable = healed.getAttribute("contenteditable");
+                }
+            } catch (Exception jse) {
+                tag = healed.getTagName().toLowerCase();
+                role = healed.getAttribute("role");
+                type = healed.getAttribute("type");
+                contentEditable = healed.getAttribute("contenteditable");
+            }
+
+            boolean isInputTag = InteractiveElements.TEXT_INPUT_TAGS.contains(tag);
+            boolean isNonTextType = type != null && ("hidden".equalsIgnoreCase(type) || "button".equalsIgnoreCase(type)
+                    || "submit".equalsIgnoreCase(type) || "checkbox".equalsIgnoreCase(type)
+                    || "radio".equalsIgnoreCase(type) || "image".equalsIgnoreCase(type));
+            boolean isEditable = "true".equalsIgnoreCase(contentEditable);
+            boolean isRoleText = role != null && InteractiveElements.TEXT_INPUT_ROLES.contains(role.toLowerCase(java.util.Locale.ROOT));
+
+            if ((isInputTag && !isNonTextType) || isEditable || isRoleText) {
+                return healed;
+            }
+
+            for (String selector : InteractiveElements.INNER_TEXT_SELECTORS) {
+                try {
+                    WebElement inner = healed.findElement(By.cssSelector(selector));
+                    if (inner.isDisplayed() && inner.isEnabled()) {
+                        Reporter.log("[" + tierLabel + "] Resolved container <" + tag
+                                + "> → inner editable <" + inner.getTagName() + ">", LogLevel.INFO_YELLOW);
+                        return inner;
+                    }
+                } catch (NoSuchElementException ignored) {}
+            }
+
+            Reporter.log("[" + tierLabel + "] Healed element is container <" + tag
+                    + "> with no editable child for text input action — skipping", LogLevel.WARN);
             return null;
         } catch (Exception ex) {
             return healed;

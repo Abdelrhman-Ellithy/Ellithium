@@ -50,4 +50,33 @@ public final class InteractiveElements {
     public static boolean isPlainClick(String actionType) {
         return "clickOnElement".equals(actionType) || "clickOnMultipleElements".equals(actionType);
     }
+
+    /** Actions that require an editable/input target (sendData, clearElement, setText, type, uploadFile). */
+    public static boolean isTextInputAction(String actionType) {
+        if (actionType == null || actionType.equals("unknown")) return false;
+        String lower = actionType.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("get") || lower.startsWith("is") || lower.startsWith("wait") || lower.contains("read")) {
+            return false;
+        }
+        return lower.contains("senddata") || lower.contains("sendkeys") || lower.contains("clear")
+                || lower.contains("settext") || lower.contains("type")
+                || lower.contains("upload") || lower.contains("fill");
+    }
+
+    /** Tags that accept text input natively. */
+    public static final Set<String> TEXT_INPUT_TAGS =
+            Set.of("input", "textarea");
+
+    /** Roles that represent text inputs. */
+    public static final Set<String> TEXT_INPUT_ROLES =
+            Set.of("textbox", "searchbox", "combobox");
+
+    /** Priority-ordered inner editable targets when a matched element is a container. */
+    public static final String[] INNER_TEXT_SELECTORS = {
+            "input:not([type='hidden']):not([type='submit']):not([type='button'])",
+            "textarea",
+            "[contenteditable='true']",
+            "[role='textbox']",
+            "[role='searchbox']"
+    };
 }
