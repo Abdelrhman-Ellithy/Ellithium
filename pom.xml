@@ -69,26 +69,26 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <seleniumVersion>4.47.0</seleniumVersion>
+        <seleniumVersion>4.48.0</seleniumVersion>
         <testNG>7.12.0</testNG>
         <JavaFaker>1.0.2</JavaFaker>
         <gsonVersion>2.14.0</gsonVersion>
         <log4jVersion>2.26.1</log4jVersion>
-        <AllureVersion>2.35.4</AllureVersion>
+        <AllureVersion>2.35.5</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
         <ApachePOI>5.5.1</ApachePOI>
         <restversion>6.0.1</restversion>
-        <Cucumber>7.34.6</Cucumber>
-        <cucumberTsetNG>7.34.6</cucumberTsetNG>
+        <Cucumber>7.34.7</Cucumber>
+        <cucumberTsetNG>7.34.7</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
-        <SQLiteVersion>3.53.2.1</SQLiteVersion>
+        <SQLiteVersion>3.53.4.0</SQLiteVersion>
         <PDFBoxVersion>2.0.27</PDFBoxVersion>
         <mavenSurefirePluginVersion>3.5.6</mavenSurefirePluginVersion>
         <mavenResourcesfirePluginVersion>3.3.1</mavenResourcesfirePluginVersion>
         <mavenDeployPluginVersion>3.1.4</mavenDeployPluginVersion>
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
-        <AllureJVMVersion>2.35.4</AllureJVMVersion>
+        <AllureJVMVersion>2.35.5</AllureJVMVersion>
         <HikariCPVersion>7.1.0</HikariCPVersion>
         <caffineVersion>3.2.4</caffineVersion>
         <mysqlVersion>26.7.0</mysqlVersion>
@@ -96,12 +96,12 @@
         <mssqlVersion>13.4.0.jre11</mssqlVersion>
         <oracleDBVersion>23.26.3.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
-        <redisDBVersion>8.0.0</redisDBVersion>
+        <redisDBVersion>8.0.1</redisDBVersion>
         <couchBaseVersion>3.12.2</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
         <mockito.version>5.23.0</mockito.version>
         <onnxRuntimeVersion>1.29.0</onnxRuntimeVersion>
-        <djlTokenizersVersion>0.36.0</djlTokenizersVersion>
+        <djlTokenizersVersion>0.37.0</djlTokenizersVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
         <publishJavaDocs>mvn resources:resources javadoc:javadoc scm-publish:publish-scm</publishJavaDocs>
         <deployToMavenCentral>
@@ -179,7 +179,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
-            <version>2.0.18</version>
+            <version>2.0.19</version>
         </dependency>
         <dependency>
             <groupId>io.qameta.allure</groupId>
@@ -360,7 +360,7 @@
         <dependency>
             <groupId>com.slack.api</groupId>
             <artifactId>slack-api-client</artifactId>
-            <version>1.50.0</version>
+            <version>1.51.0</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -670,7 +670,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
+                <version>3.16.0</version>
                 <configuration>
                     <release>25</release>
                 </configuration>
