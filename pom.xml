@@ -99,7 +99,7 @@
         <redisDBVersion>8.0.1</redisDBVersion>
         <couchBaseVersion>3.12.3</couchBaseVersion>
         <appiumVersion>10.1.1</appiumVersion>
-        <mockito.version>5.23.0</mockito.version>
+        <mockito.version>5.24.0</mockito.version>
         <onnxRuntimeVersion>1.30.0</onnxRuntimeVersion>
         <djlTokenizersVersion>0.38.0</djlTokenizersVersion>
         <installToLocalRepository>mvn clean install -DskipTests</installToLocalRepository>
