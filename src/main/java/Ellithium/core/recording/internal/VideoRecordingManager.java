@@ -370,8 +370,8 @@ public class VideoRecordingManager {
         }
         if (shouldAttach) {
             try {
-                Reporter.attachFileToReport(videoPath, testName + "_recording");
-                Logger.info("Video attached to report: " + testName);
+                Reporter.attachFileToReportAsync(videoPath, testName + "_recording");
+                Logger.info("Video attachment scheduled asynchronously for: " + testName);
             } catch (Exception e) {
                 Logger.error("Failed to attach video to report: " + e.getMessage());
             }
