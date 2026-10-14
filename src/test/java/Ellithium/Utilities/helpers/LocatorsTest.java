@@ -53,4 +53,30 @@ public class LocatorsTest {
         By result = Locators.className("w-[100px] flex");
         Assert.assertEquals(result, By.cssSelector(".w-\\[100px\\].flex"));
     }
+
+    @Test
+    public void fromString_resolvesPrefixFormatsCorrectly() {
+        Assert.assertEquals(Locators.fromString("id=username"), By.id("username"));
+        Assert.assertEquals(Locators.fromString("name=email"), By.name("email"));
+        Assert.assertEquals(Locators.fromString("xpath=//button[@type='submit']"), By.xpath("//button[@type='submit']"));
+        Assert.assertEquals(Locators.fromString("css=.btn-primary"), By.cssSelector(".btn-primary"));
+        Assert.assertEquals(Locators.fromString("class=btn primary"), By.cssSelector(".btn.primary"));
+        Assert.assertEquals(Locators.fromString("link=Home"), By.linkText("Home"));
+        Assert.assertEquals(Locators.fromString("partiallink=Hom"), By.partialLinkText("Hom"));
+    }
+
+    @Test
+    public void fromString_resolvesRawSelectors() {
+        Assert.assertEquals(Locators.fromString("//div[@id='main']"), By.xpath("//div[@id='main']"));
+        Assert.assertEquals(Locators.fromString("./span"), By.xpath("./span"));
+        Assert.assertEquals(Locators.fromString("(//a)[1]"), By.xpath("(//a)[1]"));
+        Assert.assertEquals(Locators.fromString(".container > div"), By.cssSelector(".container > div"));
+    }
+
+    @Test
+    public void cucumberParameterTypes_unquotesAndResolvesLocator() {
+        Ellithium.core.execution.listener.CucumberParameterTypes types = new Ellithium.core.execution.listener.CucumberParameterTypes();
+        Assert.assertEquals(types.locator("\"id=login-button\""), By.id("login-button"));
+        Assert.assertEquals(types.by("'xpath=//input'"), By.xpath("//input"));
+    }
 }

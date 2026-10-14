@@ -180,4 +180,13 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
         }
         return new MobileActions<>((AppiumDriver) driver);
     }
+
+    /**
+     * Provides modern network interception and request mocking capabilities (mock responses, inspect traffic).
+     *
+     * @return a new {@link NetworkActions} instance bound to the current driver
+     */
+    public NetworkActions<T> network() {
+        return new NetworkActions<>(driver);
+    }
 }

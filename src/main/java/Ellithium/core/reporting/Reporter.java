@@ -49,6 +49,22 @@ public class Reporter {
     private static final ThreadLocal<PendingStep> PENDING_STEP = new ThreadLocal<>();
 
     /**
+     * Sets the current execution stage in the Allure report (e.g. "Setup", "Action", "Verification", "AI Self-Healing").
+     *
+     * @param stageName The name of the test execution stage
+     */
+    public static void stage(String stageName) {
+        if (stageName != null && !stageName.isBlank()) {
+            try {
+                flushPendingStep();
+                Allure.stage(stageName);
+            } catch (Exception ignored) {
+                // Ignore if called outside an active Allure test context
+            }
+        }
+    }
+
+    /**
      * Logs a message with specified log level and additional parameter.
      * @param message The main message to log
      * @param logLevel The logging level
