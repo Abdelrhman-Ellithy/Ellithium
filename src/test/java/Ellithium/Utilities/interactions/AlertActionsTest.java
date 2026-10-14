@@ -10,16 +10,14 @@ import static org.mockito.Mockito.*;
 
 public class AlertActionsTest {
 
-    private WebDriver mockDriver;
-    private WebDriver.TargetLocator mockTargetLocator;
     private Alert mockAlert;
     private AlertActions<WebDriver> alertActions;
 
     @BeforeMethod
     public void setup() {
-        mockDriver        = mock(WebDriver.class);
-        mockTargetLocator = mock(WebDriver.TargetLocator.class);
-        mockAlert         = mock(Alert.class);
+        WebDriver mockDriver = mock(WebDriver.class);
+        WebDriver.TargetLocator mockTargetLocator = mock(WebDriver.TargetLocator.class);
+        mockAlert = mock(Alert.class);
         when(mockDriver.switchTo()).thenReturn(mockTargetLocator);
         when(mockTargetLocator.alert()).thenReturn(mockAlert);
         alertActions = new AlertActions<>(mockDriver);

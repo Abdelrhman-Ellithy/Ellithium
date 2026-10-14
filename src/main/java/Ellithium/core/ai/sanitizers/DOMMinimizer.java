@@ -290,10 +290,9 @@ public class DOMMinimizer {
                                                                int elemStart, int elemEnd) {
         LandmarkRegion deepest = null;
         for (LandmarkRegion region : landmarks) {
-            if (region.startPos <= elemStart && region.endPos >= elemEnd) {
-                if (deepest == null || region.depth > deepest.depth) {
-                    deepest = region;
-                }
+            if (region.startPos <= elemStart && region.endPos >= elemEnd
+                    && (deepest == null || region.depth > deepest.depth)) {
+                deepest = region;
             }
         }
         return deepest;

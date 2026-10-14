@@ -439,32 +439,11 @@ public class AISelfHealer {
                 continue;
             }
 
-            if (baseline != null) {
-                double matchScore = baseline.scoreSimilarity(foundEl);
-                if (matchScore > 0.0 && matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
-                    Reporter.log("[TIER 3] candidate rejected (baseline mismatch score=" + String.format("%.2f", matchScore)
-                            + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
-                    continue;
-                }
-                if (matchScore >= AIConfigLoader.getTier3BaselineMatchFloor()) {
-                    String baselineTag = baseline.getTagName();
-                    if (baselineTag != null && !baselineTag.isBlank()) {
-                        try {
-                            String candidateTag = foundEl.getTagName();
-                            if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
-                                Reporter.log("[TIER 3] candidate rejected (tag mismatch <" + baselineTag
-                                        + "> ≠ <" + candidateTag + ">): "
-                                        + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
-                                continue;
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                }
+            if (!isCandidateRejectedByBaseline(baseline, foundEl, candidate)) {
+                acceptedLocator = candidateLocator;
+                acceptedResult = candidate;
+                break;
             }
-
-            acceptedLocator = candidateLocator;
-            acceptedResult = candidate;
-            break;
         }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
@@ -516,6 +495,34 @@ public class AISelfHealer {
                 + " (conf=" + String.format("%.2f", acceptedResult.getConfidence()) + ")", LogLevel.INFO_GREEN);
 
         return acceptedLocator;
+    }
+
+    private static boolean isCandidateRejectedByBaseline(ElementFingerprint baseline, WebElement foundEl,
+                                                          HealingResult candidate) {
+        if (baseline == null) return false;
+
+        double matchScore = baseline.scoreSimilarity(foundEl);
+        if (matchScore > 0.0 && matchScore < AIConfigLoader.getTier3BaselineMatchFloor()) {
+            Reporter.log("[TIER 3] candidate rejected (baseline mismatch score=" + String.format("%.2f", matchScore)
+                    + "): " + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
+            return true;
+        }
+
+        if (matchScore >= AIConfigLoader.getTier3BaselineMatchFloor()) {
+            String baselineTag = baseline.getTagName();
+            if (baselineTag != null && !baselineTag.isBlank()) {
+                try {
+                    String candidateTag = foundEl.getTagName();
+                    if (candidateTag != null && !candidateTag.equalsIgnoreCase(baselineTag)) {
+                        Reporter.log("[TIER 3] candidate rejected (tag mismatch <" + baselineTag
+                                + "> ≠ <" + candidateTag + ">): "
+                                + candidate.getNewLocatorExpression(), LogLevel.DEBUG);
+                        return true;
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return false;
     }
 
     // ──────────────────────── LLM Retry Logic ────────────────────────

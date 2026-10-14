@@ -192,40 +192,46 @@ class HealingContextBuilder {
 
     static SourceLocation resolveSourceLocation(StackTraceElement[] stackTrace) {
         for (StackTraceElement frame : stackTrace) {
-            String className = frame.getClassName();
-            if (className.startsWith("Ellithium.")
-                    || className.startsWith("org.openqa.selenium")
-                    || className.startsWith("java.")
-                    || className.startsWith("sun.")
-                    || className.startsWith("io.cucumber")
-                    || className.startsWith("io.qameta")
-                    || className.startsWith("org.testng")
-                    || className.startsWith("net.bytebuddy")) {
-                continue;
+            if (!isFrameworkFrame(frame.getClassName())) {
+                return resolveLocationForFrame(frame);
             }
-
-            String classFilePart = className.replace('.', '/') + ".java";
-            String resolvedPath = null;
-            for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
-                String candidate = root + classFilePart;
-                if (new java.io.File(candidate).exists()) {
-                    resolvedPath = candidate;
-                    break;
-                }
-            }
-            int callSiteLine = frame.getLineNumber();
-
-            if (resolvedPath == null) {
-                return new SourceLocation(null, null, className, frame.getMethodName(), callSiteLine);
-            }
-
-            String fieldName = resolveFieldNameFromSource(resolvedPath, callSiteLine);
-
-            Reporter.log("[HEALING] source located: " + resolvedPath + ":" + callSiteLine
-                    + (fieldName != null ? " field='" + fieldName + "'" : ""), LogLevel.DEBUG);
-            return new SourceLocation(resolvedPath, fieldName, className, frame.getMethodName(), callSiteLine);
         }
         return null;
+    }
+
+    private static boolean isFrameworkFrame(String className) {
+        return className.startsWith("Ellithium.")
+                || className.startsWith("org.openqa.selenium")
+                || className.startsWith("java.")
+                || className.startsWith("sun.")
+                || className.startsWith("io.cucumber")
+                || className.startsWith("io.qameta")
+                || className.startsWith("org.testng")
+                || className.startsWith("net.bytebuddy");
+    }
+
+    private static SourceLocation resolveLocationForFrame(StackTraceElement frame) {
+        String className = frame.getClassName();
+        String classFilePart = className.replace('.', '/') + ".java";
+        String resolvedPath = null;
+        for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
+            String candidate = root + classFilePart;
+            if (new java.io.File(candidate).exists()) {
+                resolvedPath = candidate;
+                break;
+            }
+        }
+        int callSiteLine = frame.getLineNumber();
+
+        if (resolvedPath == null) {
+            return new SourceLocation(null, null, className, frame.getMethodName(), callSiteLine);
+        }
+
+        String fieldName = resolveFieldNameFromSource(resolvedPath, callSiteLine);
+
+        Reporter.log("[HEALING] source located: " + resolvedPath + ":" + callSiteLine
+                + (fieldName != null ? " field='" + fieldName + "'" : ""), LogLevel.DEBUG);
+        return new SourceLocation(resolvedPath, fieldName, className, frame.getMethodName(), callSiteLine);
     }
 
     static String resolveFieldNameFromSource(String filePath, int callSiteLine) {

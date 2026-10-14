@@ -8,8 +8,6 @@ import java.util.List;
 
 public class AmazonSearchPage {
 
-    private WebDriver driver;
-
     private DriverActions driverActions;
 
     private final By searchBar = By.id("search");
@@ -21,7 +19,6 @@ public class AmazonSearchPage {
     private final By searchItemPrice = By.cssSelector(".a-price");
 
     public AmazonSearchPage(WebDriver driver) {
-        this.driver = driver;
         driverActions = new DriverActions<>(driver);
         driverActions.navigation().navigateToUrl(JsonHelper.getJsonKeyValue("src/test/resources/TestData/TestData.json", "baseUrl"));
     }

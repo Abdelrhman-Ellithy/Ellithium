@@ -504,37 +504,42 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         WebDriver current = driver;
         int maxUnwrapDepth = 10;
 
-        for (int i = 0; i < maxUnwrapDepth; i++) {
-            if (current instanceof ChromiumDriver) {
-                return (ChromiumDriver) current;
+        for (int i = 0; i < maxUnwrapDepth && current != null; i++) {
+            if (current instanceof ChromiumDriver chromiumDriver) {
+                return chromiumDriver;
             }
-
-            if (current instanceof org.openqa.selenium.WrapsDriver) {
-                current = ((org.openqa.selenium.WrapsDriver) current).getWrappedDriver();
-                continue;
+            WebDriver next = unwrapNextDriver(current);
+            if (next == null || next == current) {
+                break;
             }
-
-            try {
-                java.lang.reflect.Field decoratedField = current.getClass().getDeclaredField("decorated");
-                decoratedField.setAccessible(true);
-                Object decorated = decoratedField.get(current);
-                if (decorated instanceof WebDriver) {
-                    current = (WebDriver) decorated;
-                    continue;
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                java.lang.reflect.Field driverField = current.getClass().getDeclaredField("driver");
-                driverField.setAccessible(true);
-                Object innerDriver = driverField.get(current);
-                if (innerDriver instanceof WebDriver) {
-                    current = (WebDriver) innerDriver;
-                    continue;
-                }
-            } catch (Exception ignored) {}
-            break;
+            current = next;
         }
+
+        return null;
+    }
+
+    private static WebDriver unwrapNextDriver(WebDriver current) {
+        if (current instanceof org.openqa.selenium.WrapsDriver wrapsDriver) {
+            return wrapsDriver.getWrappedDriver();
+        }
+
+        try {
+            java.lang.reflect.Field decoratedField = current.getClass().getDeclaredField("decorated");
+            decoratedField.setAccessible(true);
+            Object decorated = decoratedField.get(current);
+            if (decorated instanceof WebDriver d) {
+                return d;
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            java.lang.reflect.Field driverField = current.getClass().getDeclaredField("driver");
+            driverField.setAccessible(true);
+            Object innerDriver = driverField.get(current);
+            if (innerDriver instanceof WebDriver d) {
+                return d;
+            }
+        } catch (Exception ignored) {}
 
         return null;
     }

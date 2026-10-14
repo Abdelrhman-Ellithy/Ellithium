@@ -16,7 +16,6 @@ import java.util.Set;
 public class WindowActionsTest {
 
     private WebDriver driver;
-    private WebDriver.Options options;
     private WebDriver.Window window;
     private WebDriver.TargetLocator targetLocator;
     private WindowActions<WebDriver> windowActions;
@@ -27,7 +26,7 @@ public class WindowActionsTest {
                 Mockito.withSettings().extraInterfaces(
                         org.openqa.selenium.JavascriptExecutor.class,
                         org.openqa.selenium.TakesScreenshot.class));
-        options = Mockito.mock(WebDriver.Options.class);
+        WebDriver.Options options = Mockito.mock(WebDriver.Options.class);
         window = Mockito.mock(WebDriver.Window.class);
         targetLocator = Mockito.mock(WebDriver.TargetLocator.class);
 

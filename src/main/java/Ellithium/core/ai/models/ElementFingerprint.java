@@ -551,45 +551,64 @@ public class ElementFingerprint {
         return scoreSimilarity(attrs, null);
     }
 
-    public double scoreSimilarity(java.util.Map<String, Object> attrs, StructuralContext sc) {
-        if (attrs == null) return 0.0;
+    private static final class ScoreAccumulator {
         int score = 0;
         int dynamicMax = 0;
+    }
 
+    public double scoreSimilarity(java.util.Map<String, Object> attrs, StructuralContext sc) {
+        if (attrs == null) return 0.0;
+        ScoreAccumulator acc = new ScoreAccumulator();
+
+        scoreMobileAttributes(attrs, acc);
+        scoreTestAttributes(attrs, acc);
+        scoreIdentifierAttributes(attrs, acc);
+        scoreTextualAttributes(attrs, acc);
+        scoreDomAttributes(attrs, acc);
+        scoreStructuralContext(sc, acc);
+
+        if (acc.dynamicMax == 0) return 0.0;
+        return Math.min(1.0, acc.score / (double) acc.dynamicMax);
+    }
+
+    private void scoreMobileAttributes(java.util.Map<String, Object> attrs, ScoreAccumulator acc) {
         if (isNonBlank(this.resourceId)) {
-            dynamicMax += 30;
+            acc.dynamicMax += 30;
             String crid = asStr(attrs.get("resource-id"));
-            if (this.resourceId.equals(crid)) score += 30;
+            if (this.resourceId.equals(crid)) acc.score += 30;
             else if (isNonBlank(crid) && (crid.endsWith(suffixAfter(this.resourceId, '/'))
-                    || this.resourceId.endsWith(suffixAfter(crid, '/')))) score += 12;
+                    || this.resourceId.endsWith(suffixAfter(crid, '/')))) acc.score += 12;
         }
         if (isNonBlank(this.accessibilityId)) {
-            dynamicMax += 28;
+            acc.dynamicMax += 28;
             String caid = asStr(attrs.get("accessibility-id"));
             if (caid == null || caid.isBlank()) caid = asStr(attrs.get("content-desc"));
-            if (this.accessibilityId.equals(caid)) score += 28;
+            if (this.accessibilityId.equals(caid)) acc.score += 28;
         }
         if (isNonBlank(this.contentDesc)) {
-            dynamicMax += 18;
+            acc.dynamicMax += 18;
             String ccd = asStr(attrs.get("content-desc"));
-            if (this.contentDesc.equals(ccd)) score += 18;
-            else if (isNonBlank(ccd) && (ccd.contains(this.contentDesc) || this.contentDesc.contains(ccd))) score += 9;
+            if (this.contentDesc.equals(ccd)) acc.score += 18;
+            else if (isNonBlank(ccd) && (ccd.contains(this.contentDesc) || this.contentDesc.contains(ccd))) acc.score += 9;
         }
+    }
+
+    private void scoreTestAttributes(java.util.Map<String, Object> attrs, ScoreAccumulator acc) {
         if (isNonBlank(this.dataTestId)) {
-            dynamicMax += 30;
-            if (this.dataTestId.equals(asStr(attrs.get("data-testid")))) score += 30;
+            acc.dynamicMax += 30;
+            if (this.dataTestId.equals(asStr(attrs.get("data-testid")))) acc.score += 30;
         }
         if (isNonBlank(this.dataTest)) {
-            dynamicMax += 30;
-            if (this.dataTest.equals(asStr(attrs.get("data-test")))) score += 30;
+            acc.dynamicMax += 30;
+            if (this.dataTest.equals(asStr(attrs.get("data-test")))) acc.score += 30;
         }
         if (isNonBlank(this.dataCy)) {
-            dynamicMax += 30;
-            if (this.dataCy.equals(asStr(attrs.get("data-cy")))) score += 30;
+            acc.dynamicMax += 30;
+            if (this.dataCy.equals(asStr(attrs.get("data-cy")))) acc.score += 30;
         }
         if (isNonBlank(this.dataQa)) {
-            dynamicMax += 30;
-            if (this.dataQa.equals(asStr(attrs.get("data-qa")))) score += 30;
+            acc.dynamicMax += 30;
+            if (this.dataQa.equals(asStr(attrs.get("data-qa")))) acc.score += 30;
         }
         if (this.customDataAttrs != null) {
             Object dm = attrs.get("dataAttrs");
@@ -599,118 +618,121 @@ public class ElementFingerprint {
                 if (dataCount2++ >= 5) break;
                 dataDynamicMaxContrib2 += 30;
                 String cv = (dm instanceof java.util.Map<?, ?> dmap) ? asStr(dmap.get(e.getKey())) : null;
-                if (e.getValue().equals(cv)) score += 30;
+                if (e.getValue().equals(cv)) acc.score += 30;
             }
-            dynamicMax += Math.min(dataDynamicMaxContrib2, 150);
+            acc.dynamicMax += Math.min(dataDynamicMaxContrib2, 150);
         }
+    }
+
+    private void scoreIdentifierAttributes(java.util.Map<String, Object> attrs, ScoreAccumulator acc) {
         if (isNonBlank(this.id)) {
-            dynamicMax += 25;
+            acc.dynamicMax += 25;
             String cid = asStr(attrs.get("id"));
             if (this.id.equals(cid)) {
-                score += 25;
+                acc.score += 25;
             } else if (fuzzyIdMatch(idTokens(), this.id, cid)) {
-                score += 12;
+                acc.score += 12;
             }
         }
         if (isNonBlank(this.name)) {
-            dynamicMax += 20;
+            acc.dynamicMax += 20;
             String cname = asStr(attrs.get("name"));
             if (this.name.equals(cname)) {
-                score += 20;
+                acc.score += 20;
             } else if (fuzzyIdMatch(nameTokens(), this.name, cname)) {
-                score += 10;
+                acc.score += 10;
             }
         }
+    }
+
+    private void scoreTextualAttributes(java.util.Map<String, Object> attrs, ScoreAccumulator acc) {
         if (isNonBlank(this.ariaLabel)) {
-            dynamicMax += 15;
+            acc.dynamicMax += 15;
             String cal = asStr(attrs.get("aria-label"));
             if (this.ariaLabel.equals(cal)) {
-                score += 15;
-            } else if (isNonBlank(cal) &&
-                    (cal.contains(this.ariaLabel) || this.ariaLabel.contains(cal))) {
-                score += 8;
+                acc.score += 15;
+            } else if (isNonBlank(cal) && (cal.contains(this.ariaLabel) || this.ariaLabel.contains(cal))) {
+                acc.score += 8;
             }
         }
         if (isNonBlank(this.placeholder)) {
-            dynamicMax += 15;
+            acc.dynamicMax += 15;
             String cph = asStr(attrs.get("placeholder"));
             if (this.placeholder.equals(cph)) {
-                score += 15;
-            } else if (isNonBlank(cph) &&
-                    (cph.contains(this.placeholder) || this.placeholder.contains(cph))) {
-                score += 8;
+                acc.score += 15;
+            } else if (isNonBlank(cph) && (cph.contains(this.placeholder) || this.placeholder.contains(cph))) {
+                acc.score += 8;
             }
         }
         if (isNonBlank(this.text)) {
-            dynamicMax += 12;
+            acc.dynamicMax += 12;
             String ct = asStr(attrs.get("text"));
             if (isNonBlank(ct)) {
                 if (this.text.equals(ct)) {
-                    score += 12;
+                    acc.score += 12;
                 } else if (this.text.length() <= TEXT_PARTIAL_CAP && ct.length() <= TEXT_PARTIAL_CAP
                         && (ct.contains(this.text) || this.text.contains(ct))) {
-                    score += 7;
+                    acc.score += 7;
                 }
             }
         }
+        if (isNonBlank(this.title)) {
+            acc.dynamicMax += 10;
+            if (this.title.equals(asStr(attrs.get("title")))) acc.score += 10;
+        }
+        if (isNonBlank(this.label)) {
+            acc.dynamicMax += 20;
+            if (this.label.equals(asStr(attrs.get("label")))) acc.score += 20;
+        }
+    }
+
+    private void scoreDomAttributes(java.util.Map<String, Object> attrs, ScoreAccumulator acc) {
         if (isNonBlank(this.href)) {
-            dynamicMax += 20;
+            acc.dynamicMax += 20;
             String ch = asStr(attrs.get("href"));
-            if (this.href.equals(ch)) score += 20;
-            else if (isNonBlank(ch) && (ch.contains(this.href) || this.href.contains(ch))) score += 10;
+            if (this.href.equals(ch)) acc.score += 20;
+            else if (isNonBlank(ch) && (ch.contains(this.href) || this.href.contains(ch))) acc.score += 10;
         }
         if (isNonBlank(this.type)) {
-            dynamicMax += 8;
-            if (this.type.equals(asStr(attrs.get("type")))) score += 8;
+            acc.dynamicMax += 8;
+            if (this.type.equals(asStr(attrs.get("type")))) acc.score += 8;
         }
         if (isNonBlank(this.role)) {
-            dynamicMax += 5;
-            if (this.role.equals(asStr(attrs.get("role")))) score += 5;
+            acc.dynamicMax += 5;
+            if (this.role.equals(asStr(attrs.get("role")))) acc.score += 5;
         }
         if (isNonBlank(this.tagName)) {
-            dynamicMax += 5;
+            acc.dynamicMax += 5;
             String ctag = asStr(attrs.get("tag"));
-            if (ctag != null && this.tagName.equalsIgnoreCase(ctag)) score += 5;
+            if (ctag != null && this.tagName.equalsIgnoreCase(ctag)) acc.score += 5;
         }
         if (isNonBlank(this.className)) {
-            dynamicMax += 5;
+            acc.dynamicMax += 5;
             String ccls = asStr(attrs.get("class"));
             if (isNonBlank(ccls) && classJaccard(this.classTokens(), ccls) >= 0.40) {
-                score += 5;
+                acc.score += 5;
             }
         }
+    }
 
-        if (isNonBlank(this.title)) {
-            dynamicMax += 10;
-            if (this.title.equals(asStr(attrs.get("title")))) score += 10;
+    private void scoreStructuralContext(StructuralContext sc, ScoreAccumulator acc) {
+        if (sc == null) return;
+        if (isNonBlank(this.parentTag)) {
+            acc.dynamicMax += 3;
+            if (this.parentTag.equalsIgnoreCase(sc.parentTag)) acc.score += 3;
         }
-
-        if (isNonBlank(this.label)) {
-            dynamicMax += 20;
-            if (this.label.equals(asStr(attrs.get("label")))) score += 20;
+        if (this.childIndex >= 0 && sc.childIndex >= 0) {
+            acc.dynamicMax += 2;
+            if (Math.abs(this.childIndex - sc.childIndex) <= 1) acc.score += 2;
         }
-
-        if (sc != null) {
-            if (isNonBlank(this.parentTag)) {
-                dynamicMax += 3;
-                if (this.parentTag.equalsIgnoreCase(sc.parentTag)) score += 3;
-            }
-            if (this.childIndex >= 0 && sc.childIndex >= 0) {
-                dynamicMax += 2;
-                if (Math.abs(this.childIndex - sc.childIndex) <= 1) score += 2;
-            }
-            if (isNonBlank(this.prevSiblingTag)) {
-                dynamicMax += 2;
-                if (this.prevSiblingTag.equalsIgnoreCase(sc.prevSiblingTag)) score += 2;
-            }
-            if (isNonBlank(this.nextSiblingTag)) {
-                dynamicMax += 2;
-                if (this.nextSiblingTag.equalsIgnoreCase(sc.nextSiblingTag)) score += 2;
-            }
+        if (isNonBlank(this.prevSiblingTag)) {
+            acc.dynamicMax += 2;
+            if (this.prevSiblingTag.equalsIgnoreCase(sc.prevSiblingTag)) acc.score += 2;
         }
-
-        if (dynamicMax == 0) return 0.0;
-        return Math.min(1.0, score / (double) dynamicMax);
+        if (isNonBlank(this.nextSiblingTag)) {
+            acc.dynamicMax += 2;
+            if (this.nextSiblingTag.equalsIgnoreCase(sc.nextSiblingTag)) acc.score += 2;
+        }
     }
 
     private static String asStr(Object o) { return o != null ? o.toString() : null; }

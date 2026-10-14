@@ -308,7 +308,7 @@ public class LocatorMutationEngine {
         List<String> tokens = tokenize(value);
         LinkedHashSet<String> results = new LinkedHashSet<>();
 
-        if (tokens.isEmpty() || (tokens.size() == 1 && tokens.get(0).equals(value.toLowerCase()))) {
+        if (tokens.isEmpty() || (tokens.size() == 1 && tokens.get(0).equalsIgnoreCase(value))) {
             return List.of();
         }
 

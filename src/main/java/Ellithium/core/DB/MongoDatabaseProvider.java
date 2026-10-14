@@ -298,7 +298,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document inserted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to insert document. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to insert document", e);
+            throw new NoSQLRuntimeException("Failed to insert document", e);
         }
     }
 
@@ -308,7 +308,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      * @param collectionName the collection name
      * @param docId         the document ID
      * @param update        the update operation
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void updateDocument(String collectionName, String docId, Bson update) {
         try {
@@ -317,7 +317,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document updated successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to update document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to update document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to update document: " + docId, e);
         }
     }
 
@@ -326,7 +326,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      *
      * @param collectionName the collection name
      * @param docId         the document ID
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void deleteDocument(String collectionName, String docId) {
         try {
@@ -335,7 +335,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document deleted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to delete document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to delete document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to delete document: " + docId, e);
         }
     }
 
@@ -345,7 +345,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      * @param collectionName the collection name
      * @param field         the field to index
      * @param unique        whether the index should be unique
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void createIndex(String collectionName, String field, boolean unique) {
         try {
@@ -355,7 +355,7 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Index created successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to create index. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to create index", e);
+            throw new NoSQLRuntimeException("Failed to create index", e);
         }
     }
 

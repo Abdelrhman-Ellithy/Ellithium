@@ -12,13 +12,12 @@ import static org.mockito.Mockito.*;
 
 public class CookieActionsTest {
 
-    private WebDriver mockDriver;
     private WebDriver.Options mockOptions;
     private CookieActions<WebDriver> cookieActions;
 
     @BeforeMethod
     public void setup() {
-        mockDriver  = mock(WebDriver.class);
+        WebDriver mockDriver = mock(WebDriver.class);
         mockOptions = mock(WebDriver.Options.class);
         when(mockDriver.manage()).thenReturn(mockOptions);
         cookieActions = new CookieActions<>(mockDriver);
