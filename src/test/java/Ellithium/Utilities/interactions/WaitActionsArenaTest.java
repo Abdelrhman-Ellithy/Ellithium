@@ -41,7 +41,7 @@ public class WaitActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena", expectedExceptions = TimeoutException.class)
     public void waitForElementPresence_timesOut_whenTimeoutShorterThanInjectionDelay() {
         elementActions.clickOnElement(By.id("trigger-spinner-btn"), SHORT, POLL);
-        waitActions.waitForElementPresence(By.id("injected-form"), 2, POLL);
+        waitActions.waitForElementPresence(By.id("injected-form"), 2, POLL, false);
     }
 
     // ── 2. Visibility inside injected form ────────────────────────────────────
@@ -154,9 +154,9 @@ public class WaitActionsArenaTest extends ArenaBaseTest {
     public void waitForElementSelectionStateToBe_autoToggleCheckbox() {
         elementActions.clickOnElement(By.id("start-toggle-cb-btn"), SHORT, POLL);
         boolean result = waitActions.waitForElementSelectionStateToBe(
-                By.id("auto-toggle-checkbox"), true, MEDIUM, POLL);
+                By.id("auto-toggle-cb"), true, MEDIUM, POLL);
         Assert.assertTrue(result, "auto-toggle-cb should become selected after 3s");
-        Assert.assertTrue(elementActions.isElementSelected(By.id("auto-toggle-checkbox"), SHORT, POLL));
+        Assert.assertTrue(elementActions.isElementSelected(By.id("auto-toggle-cb"), SHORT, POLL));
     }
 
     // ── 10. Button unlocks after timer ────────────────────────────────────────

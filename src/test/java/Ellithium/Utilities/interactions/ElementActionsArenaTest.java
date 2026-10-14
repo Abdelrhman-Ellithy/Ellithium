@@ -128,7 +128,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void clickOnElement_clicksCheckbox_togglesSelection() {
-        By cb = By.id("screenshots-checkbox");
+        By cb = By.id("cb-screenshots");
         boolean before = elementActions.isElementSelected(cb, SHORT, POLL);
         elementActions.clickOnElement(cb, SHORT, POLL);
         boolean after = elementActions.isElementSelected(cb, SHORT, POLL);
@@ -147,11 +147,11 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void clickOnElement_onSubmitButton_triggersFormAction() {
-        elementActions.sendData(By.id("name"),  "Arena",        SHORT, POLL);
-        elementActions.sendData(By.id("formEmail"), "a@arena.test", SHORT, POLL);
-        elementActions.clickOnElement(By.id("send-form-button"), SHORT, POLL);
+        elementActions.sendData(By.id("form-name"),  "Arena",        SHORT, POLL);
+        elementActions.sendData(By.id("form-email"), "a@arena.test", SHORT, POLL);
+        elementActions.clickOnElement(By.id("form-submit-btn"), SHORT, POLL);
         waitActions.waitForElementToBeVisible(By.id("form-result"), SHORT, POLL);
-        String result = elementActions.getText(By.id("result"), SHORT, POLL);
+        String result = elementActions.getText(By.id("form-result"), SHORT, POLL);
         Assert.assertTrue(result.contains("Arena") || result.contains("✅"),
                 "contact-result must confirm form submission; got: " + result);
     }
@@ -159,7 +159,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void clickOnElement_withTimeout_onDelayedButton() {
         goTo("waits.html");
-        elementActions.clickOnElement(By.id("begin-enable-timer"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("trigger-enable-btn"), SHORT, POLL);
         elementActions.clickOnElement(By.id("enable-me-btn"), MEDIUM, POLL);
         String result = elementActions.getText(By.id("enable-status"), SHORT, POLL);
         Assert.assertTrue(result.contains("✅") || result.contains("clicked"),
@@ -186,7 +186,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void getText_returnsElementInnerText() {
         // page-title is a static heading
-        String text = elementActions.getText(By.id("page-title"), SHORT, POLL);
+        String text = elementActions.getText(By.className("page-title"), SHORT, POLL);
         Assert.assertFalse(text.isEmpty(), "getText must return non-empty heading text");
         Assert.assertTrue(text.length() > 3, "Heading text must have meaningful content");
     }
@@ -361,14 +361,14 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void isElementSelected_returnsFalseForUncheckedCheckbox() {
         // agree-checkbox starts unchecked
-        Assert.assertFalse(elementActions.isElementSelected(By.id("screenshots-checkbox"), SHORT, POLL),
+        Assert.assertFalse(elementActions.isElementSelected(By.id("cb-screenshots"), SHORT, POLL),
                 "Unchecked checkbox isElementSelected must be false");
     }
 
     @Test(groups = "arena")
     public void isElementSelected_returnsTrueAfterCheckboxClick() {
-        elementActions.clickOnElement(By.id("screenshots-checkbox"), SHORT, POLL);
-        Assert.assertTrue(elementActions.isElementSelected(By.id("screenshots-checkbox"), SHORT, POLL),
+        elementActions.clickOnElement(By.id("cb-screenshots"), SHORT, POLL);
+        Assert.assertTrue(elementActions.isElementSelected(By.id("cb-screenshots"), SHORT, POLL),
                 "After clicking, isElementSelected must return true");
     }
 
@@ -436,14 +436,14 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void isTextContains_trueWhenSubstringPresent() {
         Assert.assertTrue(
-                elementActions.isTextContains(By.id("page-title"), "Form", SHORT, POLL),
+                elementActions.isTextContains(By.className("page-title"), "Form", SHORT, POLL),
                 "isTextContains must be true when heading contains 'Form'");
     }
 
     @Test(groups = "arena")
     public void isTextContains_falseWhenSubstringAbsent() {
         Assert.assertFalse(
-                elementActions.isTextContains(By.id("page-title"), "NONEXISTENT_XYZ", SHORT, POLL),
+                elementActions.isTextContains(By.className("page-title"), "NONEXISTENT_XYZ", SHORT, POLL),
                 "isTextContains must be false for non-existent substring");
     }
 
@@ -459,7 +459,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void isTextEqual_falseWhenTextDiffers() {
         Assert.assertFalse(
-                elementActions.isTextEqual(By.id("page-title"), "COMPLETELY_WRONG_TEXT", SHORT, POLL),
+                elementActions.isTextEqual(By.className("page-title"), "COMPLETELY_WRONG_TEXT", SHORT, POLL),
                 "isTextEqual must be false when text does not match");
     }
 

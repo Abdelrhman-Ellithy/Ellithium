@@ -31,7 +31,7 @@ public class FrameActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena", expectedExceptions = {NoSuchFrameException.class, TimeoutException.class})
     public void switchToFrame_beforeInjection_throwsNoSuchFrame() {
         // 1s timeout < 3s injection delay — must fail
-        waitActions.waitForFrameToBeAvailableAndSwitchToIt(By.id("dynamic-iframe"), 1, 100);
+        waitActions.waitForFrameToBeAvailableAndSwitchToIt(By.id("dynamic-iframe"), 1, 100, false);
     }
 
     // ── 2. Switch to delayed iframe after injection ────────────────────────────
@@ -48,8 +48,8 @@ public class FrameActionsArenaTest extends ArenaBaseTest {
         elementActions.clickOnElement(By.id("iframe-login-btn"), SHORT, POLL);
 
         // Verify login feedback inside the iframe
-        waitActions.waitForElementToBeVisible(By.id("result-message"), SHORT, POLL);
-        String result = elementActions.getText(By.id("result-message"), SHORT, POLL);
+        waitActions.waitForElementToBeVisible(By.id("result"), SHORT, POLL);
+        String result = elementActions.getText(By.id("result"), SHORT, POLL);
         Assert.assertTrue(result.contains("✅") || result.contains("admin"),
                 "Login result inside iframe should confirm success; got: " + result);
 
@@ -129,12 +129,13 @@ public class FrameActionsArenaTest extends ArenaBaseTest {
         elementActions.sendData(By.id("iframe-password"), "TestPass", SHORT, POLL);
         elementActions.clickOnElement(By.id("iframe-login-btn"), SHORT, POLL);
 
-        String msg = elementActions.getText(By.id("result-message"), SHORT, POLL);
+        waitActions.waitForElementToBeVisible(By.id("result"), SHORT, POLL);
+        String msg = elementActions.getText(By.id("result"), SHORT, POLL);
         frameActions.switchToDefaultContent();
 
         // After returning, main page elements are accessible
         Assert.assertTrue(
-                elementActions.isElementDisplayed(By.id("page-title"), SHORT, POLL),
+                elementActions.isElementDisplayed(By.className("page-title"), SHORT, POLL),
                 "Main page title element must be visible after frame exit");
         Assert.assertFalse(msg.isEmpty(), "iframe login result must not be empty");
     }
