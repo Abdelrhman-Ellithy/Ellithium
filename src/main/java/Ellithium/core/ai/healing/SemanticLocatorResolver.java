@@ -10,8 +10,13 @@ import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.locators.RelativeLocator;
 
+import Ellithium.core.ai.config.AIConfigLoader;
+import Ellithium.core.ai.models.HealOutcome;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Tier 2 — Semantic Strategy Search.
@@ -262,13 +267,13 @@ public class SemanticLocatorResolver {
      * the similarity gate — so a silver or bronze match is still reachable even when gold strategies
      * find elements that don't resemble the stored baseline.
      */
-    public static WebElement trySemanticHeal(WebDriver driver,
-                                             String methodName, String fieldName,
-                                             String actionType, String locatorValue,
-                                             ElementFingerprint baseline) {
+    public static HealOutcome trySemanticHealOutcome(WebDriver driver,
+                                                     String methodName, String fieldName,
+                                                     String actionType, String locatorValue,
+                                                     ElementFingerprint baseline) {
         boolean switchedFrame = (baseline != null) && baseline.enterIframeContext(driver);
         try {
-        return trySemanticHealInContext(driver, methodName, fieldName, actionType, locatorValue, baseline);
+            return trySemanticHealInContext(driver, methodName, fieldName, actionType, locatorValue, baseline);
         } finally {
             if (switchedFrame) {
                 try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
@@ -276,10 +281,18 @@ public class SemanticLocatorResolver {
         }
     }
 
-    private static WebElement trySemanticHealInContext(WebDriver driver,
-                                                       String methodName, String fieldName,
-                                                       String actionType, String locatorValue,
-                                                       ElementFingerprint baseline) {
+    public static WebElement trySemanticHeal(WebDriver driver,
+                                             String methodName, String fieldName,
+                                             String actionType, String locatorValue,
+                                             ElementFingerprint baseline) {
+        HealOutcome outcome = trySemanticHealOutcome(driver, methodName, fieldName, actionType, locatorValue, baseline);
+        return outcome != null ? outcome.element() : null;
+    }
+
+    private static HealOutcome trySemanticHealInContext(WebDriver driver,
+                                                        String methodName, String fieldName,
+                                                        String actionType, String locatorValue,
+                                                        ElementFingerprint baseline) {
         List<Ellithium.core.ai.models.SemanticHit> mutationHits = new ArrayList<>();
         collectMutationHits(mutationHits, locatorValue, driver, baseline);
         if (!mutationHits.isEmpty()) {
@@ -287,7 +300,7 @@ public class SemanticLocatorResolver {
             By loc = ElementFingerprint.reconstructLocator(el);
             String locStr = loc != null ? loc.toString() : "";
             HealingTelemetryStore.record(2, locatorValue, locStr, 0.95, true);
-            return el;
+            return HealOutcome.of(el, loc, 0.95, 2);
         }
 
         ElementCategory category = categorizeAction(actionType);
@@ -300,7 +313,7 @@ public class SemanticLocatorResolver {
         }
 
         double cvThreshold;
-        if (baseline == null) cvThreshold = 0.0;
+        if (baseline == null) cvThreshold = AIConfigLoader.getConfidenceThreshold();
         else if (baseline.hasStrongIdentity()) cvThreshold = 0.35;
         else cvThreshold = 0.55;
 
@@ -309,7 +322,7 @@ public class SemanticLocatorResolver {
         // Light DOM first (the common case): collect candidates and pick the BEST scorer, not the
         // first above threshold — first-match heals to the wrong cell on grids/tables/card lists.
         java.util.LinkedHashMap<WebElement, String> candidateDesc = collectFromStrategies(driver, strategies);
-        Scored best = candidateDesc.isEmpty() ? null : pickBest(driver, candidateDesc, baseline, cvThreshold);
+        Scored best = candidateDesc.isEmpty() ? null : pickBest(driver, candidateDesc, baseline, cvThreshold, locatorValue, category);
 
         // Shadow-DOM fallthrough only: web components hide their internals behind shadow roots that
         // plain findElements cannot pierce. We pay the extra JS round-trip ONLY when the light DOM
@@ -317,22 +330,21 @@ public class SemanticLocatorResolver {
         if (best == null) {
             java.util.LinkedHashMap<WebElement, String> shadow = new java.util.LinkedHashMap<>();
             collectShadowCandidates(driver, strategies, shadow);
-            if (!shadow.isEmpty()) best = pickBest(driver, shadow, baseline, cvThreshold);
+            if (!shadow.isEmpty()) best = pickBest(driver, shadow, baseline, cvThreshold, locatorValue, category);
         }
 
-        if (best == null) {
+        if (best == null || Double.isNaN(best.score) || best.score < AIConfigLoader.getConfidenceThreshold()) {
             HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
             return null;
         }
 
         By cleanLocator = ElementFingerprint.reconstructLocator(best.element);
         String cleanLocatorStr = cleanLocator != null ? cleanLocator.toString() : "";
-        String scoreStr = Double.isNaN(best.score) ? "unscored" : String.format("%.2f", best.score);
+        String scoreStr = String.format("%.2f", best.score);
         Reporter.log(String.format("[TIER 2] healed via %s: %s (score %s)",
                 best.desc, cleanLocatorStr, scoreStr), LogLevel.INFO_GREEN);
-        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr,
-                Double.isNaN(best.score) ? 0.0 : best.score, true);
-        return best.element;
+        HealingTelemetryStore.record(2, locatorValue, cleanLocatorStr, best.score, true);
+        return HealOutcome.of(best.element, cleanLocator, best.score, 2);
     }
 
     /** Result of cross-validating a candidate pool: the winning element, its score, and its source description. */
@@ -381,12 +393,13 @@ public class SemanticLocatorResolver {
     /**
      * Cross-validates a candidate pool with ONE batched attribute read (0 extra WebDriver round-trips)
      * and returns the HIGHEST-scoring candidate above {@code cvThreshold}, early-exiting at a
-     * near-perfect 0.90 (same bar as Tier 1). When no baseline is available to rank against, falls
-     * back to the original first-visible-match short-circuit.
+     * near-perfect 0.90 (same bar as Tier 1). When no baseline is available, cross-validates against
+     * the broken locator's tokens and tag compatibility.
      */
     private static Scored pickBest(WebDriver driver,
                                    java.util.LinkedHashMap<WebElement, String> candidateDesc,
-                                   ElementFingerprint baseline, double cvThreshold) {
+                                   ElementFingerprint baseline, double cvThreshold,
+                                   String locatorValue, ElementCategory category) {
         List<WebElement> candidateList = new ArrayList<>(candidateDesc.keySet());
         java.util.List<java.util.Map<String, Object>> batch =
                 Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidateList);
@@ -413,15 +426,15 @@ public class SemanticLocatorResolver {
                     } else if (!el.isDisplayed()) {
                         continue;
                     }
-                    if (!scoring) {
-                        // No baseline to rank by — return NaN score so callers can distinguish
-                        // "scored heal" from "first-visible-match with no baseline to validate against".
-                        return new Scored(el, Double.NaN, candidateDesc.getOrDefault(el, "strategy"));
+                    double score;
+                    if (scoring) {
+                        score = (attrs != null)
+                                ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
+                                : baseline.scoreSimilarity(el);
+                    } else {
+                        score = scoreColdStart(attrs, el, locatorValue, category, candidateDesc.getOrDefault(el, "strategy"));
                     }
-                    double score = (attrs != null)
-                            ? baseline.scoreSimilarity(attrs, structuralFrom(attrs))
-                            : baseline.scoreSimilarity(el);
-                    if (score < cvThreshold) continue;
+                    if (Double.isNaN(score) || score < cvThreshold) continue;
                     if (score > bestScore) {
                         bestScore = score;
                         bestEl = el;
@@ -434,6 +447,118 @@ public class SemanticLocatorResolver {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
         return bestEl == null ? null : new Scored(bestEl, bestScore, bestDesc);
+    }
+
+    /**
+     * Cross-validates a candidate against the broken locator's own tokens, tag, and strategy
+     * when no historical baseline fingerprint exists (cold-start).
+     */
+    static double scoreColdStart(Map<String, Object> attrs, WebElement el,
+                                 String locatorValue, ElementCategory category,
+                                 String strategyDesc) {
+        if (locatorValue == null || locatorValue.isBlank()) return 0.0;
+
+        String raw = locatorValue;
+        int colon = raw.indexOf(':');
+        if (colon >= 0 && colon < raw.length() - 1) {
+            raw = raw.substring(colon + 1);
+        }
+        String clean = raw.replaceAll("[.#\\[\\]'\"=>~+*:,()/\\\\_\\-]", " ").trim();
+        List<String> discriminativeTokens = new ArrayList<>();
+        for (String t : clean.split("\\s+")) {
+            String lc = t.toLowerCase(java.util.Locale.ROOT).trim();
+            if (lc.length() >= 2 && !SemanticNameExtractor.isStateOrUtilityModifier(lc)) {
+                discriminativeTokens.add(lc);
+            }
+        }
+
+        String tag = null, id = null, cls = null, name = null, aria = null, text = null, role = null;
+        if (attrs != null) {
+            Object oTag = attrs.get("tag");  if (oTag != null) tag = oTag.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oId = attrs.get("id");    if (oId != null) id = oId.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oCls = attrs.get("class"); if (oCls != null) cls = oCls.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oName = attrs.get("name"); if (oName != null) name = oName.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oAria = attrs.get("aria-label"); if (oAria != null) aria = oAria.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oText = attrs.get("text"); if (oText != null) text = oText.toString().toLowerCase(java.util.Locale.ROOT);
+            Object oRole = attrs.get("role"); if (oRole != null) role = oRole.toString().toLowerCase(java.util.Locale.ROOT);
+        } else if (el != null) {
+            try { tag = el.getTagName().toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { id = el.getDomAttribute("id"); if (id != null) id = id.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { cls = el.getDomAttribute("class"); if (cls != null) cls = cls.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { name = el.getDomAttribute("name"); if (name != null) name = name.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { aria = el.getDomAttribute("aria-label"); if (aria != null) aria = aria.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { text = el.getText(); if (text != null) text = text.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+            try { role = el.getDomAttribute("role"); if (role != null) role = role.toLowerCase(java.util.Locale.ROOT); } catch (Exception ignored) {}
+        }
+
+        StringBuilder candText = new StringBuilder();
+        if (tag != null) candText.append(" ").append(tag);
+        if (id != null) candText.append(" ").append(id);
+        if (cls != null) candText.append(" ").append(cls);
+        if (name != null) candText.append(" ").append(name);
+        if (aria != null) candText.append(" ").append(aria);
+        if (text != null && text.length() <= 100) candText.append(" ").append(text);
+        if (role != null) candText.append(" ").append(role);
+
+        String candAll = candText.toString().replaceAll("[.#\\[\\]'\"=>~+*:,()/\\\\_\\-]", " ");
+        Set<String> candTokens = new HashSet<>();
+        for (String ct : candAll.split("\\s+")) {
+            if (!ct.isBlank()) candTokens.add(ct);
+        }
+
+        double tokenOverlap;
+        if (!discriminativeTokens.isEmpty()) {
+            int matched = 0;
+            for (String dt : discriminativeTokens) {
+                if (candTokens.contains(dt) || (dt.length() >= 4 && candAll.contains(dt))) {
+                    matched++;
+                }
+            }
+            if (matched == 0) {
+                return 0.0;
+            }
+            tokenOverlap = (double) matched / discriminativeTokens.size();
+        } else {
+            tokenOverlap = 0.40;
+        }
+
+        double tagAffinity = 0.50;
+        if (tag != null) {
+            if (category == ElementCategory.CLICKABLE) {
+                if ("button".equals(tag) || "a".equals(tag) || "summary".equals(tag)
+                        || "button".equals(role) || "tab".equals(role) || "link".equals(role) || "menuitem".equals(role)) {
+                    tagAffinity = 1.0;
+                } else if ("div".equals(tag) || "span".equals(tag) || "p".equals(tag) || "li".equals(tag)) {
+                    tagAffinity = 0.20;
+                }
+            } else if (category == ElementCategory.INPUT) {
+                if ("input".equals(tag) || "textarea".equals(tag) || "select".equals(tag)) {
+                    tagAffinity = 1.0;
+                } else {
+                    tagAffinity = 0.20;
+                }
+            } else if (category == ElementCategory.SELECT) {
+                tagAffinity = "select".equals(tag) ? 1.0 : 0.20;
+            } else {
+                tagAffinity = 0.70;
+            }
+        }
+
+        double stratWeight = 0.50;
+        if (strategyDesc != null) {
+            String s = strategyDesc.toLowerCase(java.util.Locale.ROOT);
+            if (s.contains("exact") || s.contains("id=") || s.contains("data-testid") || s.contains("name=")) {
+                stratWeight = 1.00;
+            } else if (s.contains("aria-label") || s.contains("text=")) {
+                stratWeight = 0.85;
+            } else if (s.contains("class~=")) {
+                stratWeight = 0.70;
+            } else if (s.contains("contains") || s.contains("class*=")) {
+                stratWeight = 0.50;
+            }
+        }
+
+        return Math.min(1.0, (tokenOverlap * 0.50) + (tagAffinity * 0.30) + (stratWeight * 0.20));
     }
 
     // Walks the document + every open shadow root once, collecting matches for a (comma-joined)
@@ -811,10 +936,12 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.cssSelector("[title*='"      + lower + "']"), "title*='" + lower + "'"));
         out.add(attempt(By.cssSelector("[role='" + lower + "']"), "role='" + lower + "'"));
 
-        out.add(attempt(By.cssSelector("[class*='" + lower + "']"),                              "class*='" + lower + "'"));
-        out.add(attempt(By.xpath(multiCaseXpath("div",  "class", name, "//")), "div[class~='"  + name + "']"));
-        out.add(attempt(By.xpath(multiCaseXpath("span", "class", name, "//")), "span[class~='" + name + "']"));
-        out.add(attempt(By.xpath(multiCaseXpath("p",    "class", name, "//")), "p[class~='"    + name + "']"));
+        if (!SemanticNameExtractor.isStateOrUtilityModifier(lower)) {
+            out.add(attempt(By.cssSelector("[class*='" + lower + "']"),                              "class*='" + lower + "'"));
+            out.add(attempt(By.xpath(multiCaseXpath("div",  "class", name, "//")), "div[class~='"  + name + "']"));
+            out.add(attempt(By.xpath(multiCaseXpath("span", "class", name, "//")), "span[class~='" + name + "']"));
+            out.add(attempt(By.xpath(multiCaseXpath("p",    "class", name, "//")), "p[class~='"    + name + "']"));
+        }
 
         out.add(attempt(By.xpath("//*[normalize-space(text())=" + xpathLiteral(name)  + "]"),           "exact text='" + name  + "'"));
         out.add(attempt(By.xpath("//*[contains(normalize-space(text())," + xpathLiteral(name)  + ")]"), "text contains '" + name  + "'"));

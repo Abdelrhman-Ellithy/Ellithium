@@ -35,7 +35,13 @@ public class AllureHelper {
                 Logger.error("Could not resolve Allure binary path");
                 return;
             }
-            File allureExecutable = new File(allureBinaryPath, "allure");
+            File allureExecutable;
+            if (SystemUtils.IS_OS_WINDOWS) {
+                File bat = new File(allureBinaryPath, "allure.bat");
+                allureExecutable = bat.exists() ? bat : new File(allureBinaryPath, "allure");
+            } else {
+                allureExecutable = new File(allureBinaryPath, "allure");
+            }
             if (!SystemUtils.IS_OS_WINDOWS) {
                 if (!allureExecutable.exists()) {
                     Logger.error("Allure executable not found: " + allureExecutable.getAbsolutePath());
@@ -55,15 +61,21 @@ public class AllureHelper {
                 }
             }
             String reportName = resolveReportName(allurePropertiesFilePath);
-            String generateCommand = String.format(
-                    "\"%s\" generate --single-file --name \"%s\" -c -o \"%s\" \"%s\"",
-                    allureExecutable,
+            List<String> commandList = List.of(
+                    allureExecutable.getAbsolutePath(),
+                    "generate",
+                    "--single-file",
+                    "--name",
                     reportName,
+                    "-c",
+                    "-o",
                     new File(lastReportPath).getAbsolutePath(),
-                    new File(resultsPath).getAbsolutePath());
-            executeCommand(generateCommand);
+                    new File(resultsPath).getAbsolutePath()
+            );
+            CommandExecutor.executeCommand(commandList);
             File indexFile = new File(lastReportPath + File.separator + "index.html");
-            File renamedFile = new File(reportPath + File.separator + sanitizeFileName(reportName) + ".html");
+            String safeReportName = sanitizeFileName(reportName);
+            File renamedFile = new File(reportPath + File.separator + safeReportName + ".html");
             if (indexFile.exists()) {
                 try {
                     File destinationDir = new File(reportPath);
@@ -71,7 +83,14 @@ public class AllureHelper {
                         Logger.error("Failed to create destination directory: " + reportPath);
                         return;
                     }
-                    Files.move(indexFile.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    try {
+                        Files.move(indexFile.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException moveEx) {
+                        Logger.warn("Could not overwrite existing report file (file may be open/locked): " + moveEx.getMessage());
+                        File backupFile = new File(reportPath + File.separator + safeReportName + "_" + TestDataGenerator.getTimeStamp() + ".html");
+                        Files.move(indexFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        renamedFile = backupFile;
+                    }
                     Logger.info("Report renamed to: " + renamedFile.getPath());
                 } catch (IOException e) {
                     Logger.error("Failed to rename report file: " + e.getMessage());
@@ -81,7 +100,11 @@ public class AllureHelper {
             }
             File lastReportDir = new File(lastReportPath);
             if (lastReportDir.exists()) {
-                lastReportDir.delete();
+                try {
+                    deleteDirectory(lastReportDir);
+                } catch (IOException e) {
+                    Logger.warn("Failed to delete temporary report directory: " + e.getMessage());
+                }
             }
             String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
             if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
@@ -133,8 +156,13 @@ public class AllureHelper {
         return name;
     }
 
-    private static String sanitizeFileName(String value) {
-        return value.replaceAll("[\\\\/:*?\"<>|]", "_");
+    static String sanitizeFileName(String value) {
+        if (value == null) return "Report";
+        String sanitized = value.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
+        while (sanitized.endsWith(".") || sanitized.endsWith(" ")) {
+            sanitized = sanitized.substring(0, sanitized.length() - 1);
+        }
+        return sanitized.isBlank() ? "Report" : sanitized;
     }
 
     private static String resolveAllureBinaryPath() {

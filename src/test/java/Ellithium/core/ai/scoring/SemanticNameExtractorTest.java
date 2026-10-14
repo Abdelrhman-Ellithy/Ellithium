@@ -170,4 +170,23 @@ public class SemanticNameExtractorTest {
         long distinct = result.stream().distinct().count();
         Assert.assertEquals(result.size(), distinct, "duplicates must be removed: " + result);
     }
+
+    @Test
+    public void isStateOrUtilityModifier_detectsModifiers() {
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier("active"));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier("disabled"));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier("selected"));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier("btn"));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier("primary"));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier(""));
+        Assert.assertTrue(SemanticNameExtractor.isStateOrUtilityModifier(null));
+    }
+
+    @Test
+    public void isStateOrUtilityModifier_allowsContentTokens() {
+        Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("username"));
+        Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("login"));
+        Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("checkout"));
+        Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("nav-link"));
+    }
 }

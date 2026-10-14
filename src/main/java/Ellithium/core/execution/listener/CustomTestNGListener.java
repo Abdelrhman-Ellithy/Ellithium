@@ -65,10 +65,17 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void run(IHookCallBack callBack, ITestResult testResult) {
+        Reporter.flushPendingStep();
         TestContextData data = new TestContextData(
                 getTestIdentifier(testResult), testResult.getName(), resolveBrowser());
         ScopedValue.where(TestContext.CURRENT, data)
-                .run(() -> callBack.runTestMethod(testResult));
+                .run(() -> {
+                    try {
+                        callBack.runTestMethod(testResult);
+                    } finally {
+                        Reporter.flushPendingStep();
+                    }
+                });
     }
 
     private String resolveBrowser() {
@@ -83,6 +90,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void onTestStart(ITestResult result) {
+        Reporter.flushPendingStep();
         // Attribute every heal on this thread to this test, so the false-heal detector
         // (R9) can flag a
         // heal that was USED in a test that later FAILS. Safe for BDD + non-BDD (id
@@ -104,6 +112,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void onTestFailure(ITestResult result) {
+        Reporter.flushPendingStep();
         // False-heal detector (R9): flag any heal USED in this now-failed test as a
         // wrong-heal suspect.
         String testIdentifier = getTestIdentifier(result);
@@ -129,6 +138,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void onTestSuccess(ITestResult result) {
+        Reporter.flushPendingStep();
         HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(GREEN + "[PASSED] TESTCASE " + result.getName() + " [PASSED]" + RESET);
@@ -139,6 +149,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void onTestSkipped(ITestResult result) {
+        Reporter.flushPendingStep();
         HealingTelemetryStore.clearCurrentTest();
         if (!testResultCollector.isCucumberTest(result)) {
             Logger.info(YELLOW + "[SKIPPED] TESTCASE " + result.getName() + " [SKIPPED]" + RESET);
@@ -291,6 +302,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
 
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+        Reporter.flushPendingStep();
         // Capture the driver right after @BeforeClass so we can restore it on worker
         // threads.
         if (method.getTestMethod().isBeforeClassConfiguration()) {
@@ -326,6 +338,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             }
             Reporter.addParams(GeneralHandler.getParameters());
             stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
+            Reporter.flushPendingStep();
             GeneralHandler.addAttachments();
         }
         if (method.isConfigurationMethod()) {

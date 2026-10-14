@@ -1,6 +1,8 @@
 package Ellithium.core.ai.healing;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -165,5 +167,29 @@ public class SemanticLocatorResolverTest {
                 "multiCaseXpath", String.class, String.class, String.class, String.class);
         m.setAccessible(true);
         return (String) m.invoke(null, tag, attr, name, scopePrefix);
+    }
+
+    @Test
+    public void scoreColdStart_stateModifierMatch_rejectedAsZero() {
+        WebElement mockEl = Mockito.mock(WebElement.class);
+        Mockito.when(mockEl.getTagName()).thenReturn("div");
+        Mockito.when(mockEl.getDomAttribute("class")).thenReturn("o_last_breadcrumb_item");
+        Mockito.when(mockEl.getText()).thenReturn("Quotations");
+
+        double score = SemanticLocatorResolver.scoreColdStart(null, mockEl, ".nav-link.active",
+                SemanticLocatorResolver.ElementCategory.CLICKABLE, "class*='active'");
+        Assert.assertEquals(score, 0.0, "State-modifier false candidate with no discriminative token overlap must score 0.0");
+    }
+
+    @Test
+    public void scoreColdStart_validRename_accepted() {
+        WebElement mockEl = Mockito.mock(WebElement.class);
+        Mockito.when(mockEl.getTagName()).thenReturn("input");
+        Mockito.when(mockEl.getDomAttribute("id")).thenReturn("userName");
+        Mockito.when(mockEl.getDomAttribute("name")).thenReturn("username");
+
+        double score = SemanticLocatorResolver.scoreColdStart(null, mockEl, "input#user_name",
+                SemanticLocatorResolver.ElementCategory.INPUT, "input[id~='user_name']");
+        Assert.assertTrue(score >= 0.70, "Legitimate cold-start candidate with token and tag overlap must clear threshold, got: " + score);
     }
 }

@@ -1,5 +1,7 @@
 package Ellithium.core.ai.healing;
 
+import Ellithium.Utilities.ai.HealingStrategy;
+import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealOutcome;
 import Ellithium.core.ai.models.HealingRequest;
@@ -69,6 +71,10 @@ public final class HealingOrchestrator implements ElementHealingPort {
     }
 
     public HealOutcome heal(HealingRequest request) {
+        HealingStrategy strategy = AIConfigLoader.getHealingStrategy();
+        if (strategy == HealingStrategy.DISABLED) {
+            return null;
+        }
         if (!isHealingGloballyEnabled()) {
             Reporter.log("[AI] Kill switch active (~/.ellithium/ai-disable exists) — all healing disabled",
                     LogLevel.WARN);
@@ -107,6 +113,14 @@ public final class HealingOrchestrator implements ElementHealingPort {
             }
             if (raw == null || raw.element() == null) continue;
 
+            double rawScore = raw.score();
+            if (Double.isNaN(rawScore) || rawScore <= 0.0) {
+                continue;
+            }
+            if (tier.order() > 1 && rawScore < AIConfigLoader.getConfidenceThreshold()) {
+                continue;
+            }
+
             WebElement resolved = resolveInteractiveElement(
                     raw.element(), request.actionType(), "TIER " + tier.order(), request.driver());
             if (resolved == null) continue;
@@ -116,9 +130,6 @@ public final class HealingOrchestrator implements ElementHealingPort {
                     : reconstructBest(request.driver(), resolved, request.baseline());
 
             if (locator != null && locator.equals(request.brokenLocator())) {
-                continue;
-            }
-            if (tier.order() > 1 && raw.score() < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
                 continue;
             }
 
@@ -151,6 +162,12 @@ public final class HealingOrchestrator implements ElementHealingPort {
                         srcLoc != null ? srcLoc.methodName : null,
                         request.actionType(),
                         srcLoc != null ? srcLoc.lineNumber : 0);
+            }
+            if (strategy == HealingStrategy.SUGGEST_ONLY) {
+                Reporter.log("[AI SUGGESTION] Locator " + request.brokenLocator() + " could be healed to: "
+                        + locator + " (score " + String.format("%.2f", raw.score()) + " via TIER " + tier.order() + ")",
+                        LogLevel.INFO_YELLOW);
+                return null;
             }
             return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }

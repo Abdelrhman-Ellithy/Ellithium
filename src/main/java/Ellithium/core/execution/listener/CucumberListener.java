@@ -165,6 +165,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * last step
      */
     private void stepFinishedHandler(TestStepFinished event) {
+        Reporter.flushPendingStep();
         if (!(event.getTestStep() instanceof PickleStepTestStep)) {
             return;
         }
@@ -206,6 +207,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles scenario finish - ensures recording is stopped and collects results
      */
     private void testFinishedHandler(TestCaseFinished event) {
+        Reporter.flushPendingStep();
         String scenarioName = event.getTestCase().getName();
         ScenarioContext context = scenarioContext.get();
         if (context == null) {
@@ -265,6 +267,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles step failure - captures screenshot and updates Allure
      */
     private void handleStepFailure(TestStepFinished event, ScenarioContext context) {
+        Reporter.flushPendingStep();
         String driverName = DriverFactory.getCurrentDriverConfiguration().getDriverType().getName();
         Reporter.setStepStatus(event.getTestStep().getId().toString(),
                 io.qameta.allure.model.Status.FAILED);
@@ -281,6 +284,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
                         description);
                 context.failedScreenShot = null;
             }
+            Reporter.flushPendingStep();
             GeneralHandler.addAttachments();
             stepResult.setStatus(io.qameta.allure.model.Status.FAILED);
         });
@@ -291,6 +295,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      */
     private void handleStepSuccess(io.qameta.allure.model.Status status) {
         Allure.getLifecycle().updateTestCase(stepResult -> {
+            Reporter.flushPendingStep();
             GeneralHandler.addAttachments();
             stepResult.setStatus(status);
         });
