@@ -61,6 +61,9 @@ final class InteractionRecovery {
     WebElement resolveInteractable(By locator, long timeoutMillis, int polling) {
         try {
             List<WebElement> matches = driver.findElements(locator);
+            if (matches.isEmpty()) {
+                matches = ShadowDomResolver.findElements(driver, locator);
+            }
             WebElement chosen = null;
             for (WebElement m : matches) {
                 if (isInteractable(m)) {

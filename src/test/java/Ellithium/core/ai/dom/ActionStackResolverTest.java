@@ -3,6 +3,7 @@ package Ellithium.core.ai.dom;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class ActionStackResolverTest {
 
@@ -20,6 +21,60 @@ public class ActionStackResolverTest {
                 frame("Pages.LoginPage", "clickSubmit"),
         };
         assertEquals(ActionStackResolver.extractAction(stack), "clickOnElement");
+    }
+
+    @Test
+    public void shadowDomResolverFramesNeverLeakAsAction() {
+        StackTraceElement[] stack = {
+                frame("Ellithium.Utilities.interactions.ShadowDomResolver", "findDeepJsElement"),
+                frame("Ellithium.Utilities.interactions.ShadowDomResolver", "findNativeShadowElements"),
+                frame("Ellithium.Utilities.interactions.ShadowDomResolver", "findElement"),
+                frame("Ellithium.Utilities.interactions.BaseActions", "rawVisibleElement"),
+                frame("Ellithium.Utilities.interactions.ElementActions", "sendData"),
+                frame("Pages.LoginPage", "enterPassword"),
+        };
+        assertEquals(ActionStackResolver.extractAction(stack), "sendData");
+    }
+
+    @Test
+    public void networkActionsFramesNeverLeakAsAction() {
+        StackTraceElement[] stack = {
+                frame("Ellithium.Utilities.interactions.NetworkActions", "mockResponse"),
+                frame("Ellithium.Utilities.interactions.ElementActions", "clickOnElement"),
+                frame("Pages.CheckoutPage", "submitOrder"),
+        };
+        assertEquals(ActionStackResolver.extractAction(stack), "clickOnElement");
+    }
+
+    @Test
+    public void addedInternalMethodsAreExcludedEvenIfClassMatches() {
+        StackTraceElement[] stack = {
+                frame("Ellithium.Utilities.interactions.ElementActions", "rawVisibleElement"),
+                frame("Ellithium.Utilities.interactions.ElementActions", "waitForVisibilityAndFindElement"),
+                frame("Ellithium.Utilities.interactions.ElementActions", "getText"),
+                frame("Pages.ProfilePage", "getHeaderTitle"),
+        };
+        assertEquals(ActionStackResolver.extractAction(stack), "getText");
+    }
+
+    @Test
+    public void sanitizeStackTrace_stripsAllAddedAndInfraFrames() {
+        StackTraceElement[] raw = {
+                frame("java.lang.Thread", "getStackTrace"),
+                frame("Ellithium.Utilities.interactions.BaseActions", "buildHealingRequest"),
+                frame("Ellithium.Utilities.interactions.ShadowDomResolver", "findElement"),
+                frame("Ellithium.Utilities.interactions.BaseActions", "rawVisibleElement"),
+                frame("Ellithium.Utilities.interactions.ElementActions", "clickOnElement"),
+                frame("Pages.LoginPage", "clickSubmit"),
+                frame("Tests.LoginTest", "testLogin"),
+        };
+
+        StackTraceElement[] cleaned = ActionStackResolver.sanitizeStackTrace(raw);
+
+        assertEquals(cleaned.length, 3);
+        assertEquals(cleaned[0].getMethodName(), "clickOnElement");
+        assertEquals(cleaned[1].getClassName(), "Pages.LoginPage");
+        assertEquals(cleaned[2].getClassName(), "Tests.LoginTest");
     }
 
     @Test

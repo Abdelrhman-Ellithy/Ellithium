@@ -88,6 +88,11 @@ class BaseActions<T extends WebDriver> {
                 return recovered;
             }
             if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+            WebElement shadowElement = ShadowDomResolver.findElement(driver, locator);
+            if (shadowElement != null) {
+                BaselineStore.capture(driver, locator, shadowElement);
+                return shadowElement;
+            }
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
             HealOutcome outcome = HEALING_PORT.heal(buildHealingRequest(locator, stack));
             if (outcome != null && outcome.element() != null) {
@@ -98,12 +103,13 @@ class BaseActions<T extends WebDriver> {
     }
 
     private HealingRequest buildHealingRequest(By locator, StackTraceElement[] stack) {
-        String actionType   = extractActionFromStack(stack);
-        String callerMethod = extractCallerMethodName(stack);
-        String fieldName    = extractFieldNameFromStack(stack, locator);
+        StackTraceElement[] cleanStack = Ellithium.core.ai.dom.ActionStackResolver.sanitizeStackTrace(stack);
+        String actionType   = extractActionFromStack(cleanStack);
+        String callerMethod = extractCallerMethodName(cleanStack);
+        String fieldName    = extractFieldNameFromStack(cleanStack, locator);
         String locatorValue = extractLocatorValue(locator);
         ElementFingerprint baseline = BaselineStore.getBaseline(driver, locator);
-        return new HealingRequest(driver, locator, stack, actionType, callerMethod,
+        return new HealingRequest(driver, locator, cleanStack, actionType, callerMethod,
                 fieldName, locatorValue, baseline);
     }
 
@@ -123,6 +129,8 @@ class BaseActions<T extends WebDriver> {
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
         } catch (WebDriverException e) {
             if (recoverContextOrAlert(e, locator)) return findWebElement(locator);
+            WebElement shadowElement = ShadowDomResolver.findVisibleElement(driver, locator, timeout * 1000L, pollingEvery);
+            if (shadowElement != null) return shadowElement;
             if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             By cached = HEALING_PORT.getCachedLocator(driver, locator);
             if (cached != null && !cached.equals(locator)) {
@@ -155,6 +163,11 @@ class BaseActions<T extends WebDriver> {
             if (recoverContextOrAlert(e, locator)) {
                 try { return driver.findElements(locator); } catch (WebDriverException ignored) {}
                 return new ArrayList<>();
+            }
+            List<WebElement> shadowHits = ShadowDomResolver.findElements(driver, locator);
+            if (!shadowHits.isEmpty()) {
+                rememberSetSize(locator, shadowHits.size());
+                return shadowHits;
             }
             if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             List<WebElement> cachedHits = findByCachedHeal(locator);
@@ -314,6 +327,8 @@ class BaseActions<T extends WebDriver> {
         try {
             List<WebElement> hits = driver.findElements(locator);
             if (!hits.isEmpty()) return hits;
+            List<WebElement> shadowHits = ShadowDomResolver.findElements(driver, locator);
+            if (!shadowHits.isEmpty()) return shadowHits;
             List<WebElement> cachedHits = findByCachedHeal(locator);
             return cachedHits != null ? cachedHits : hits;
         } catch (WebDriverException e) {
@@ -322,6 +337,8 @@ class BaseActions<T extends WebDriver> {
                 return new ArrayList<>();
             }
             if (SeleniumFailurePolicy.isTerminal(e)) throw e;
+            List<WebElement> shadowHits = ShadowDomResolver.findElements(driver, locator);
+            if (!shadowHits.isEmpty()) return shadowHits;
             List<WebElement> cachedHits = findByCachedHeal(locator);
             if (cachedHits != null) return cachedHits;
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
@@ -867,6 +884,8 @@ class BaseActions<T extends WebDriver> {
             return getFluentWaitMillis(timeoutMillis, polling)
                     .until(ExpectedConditions.visibilityOfElementLocated(locator));
         } catch (TimeoutException te) {
+            WebElement shadowElement = ShadowDomResolver.findVisibleElement(driver, locator, timeoutMillis, polling);
+            if (shadowElement != null) return shadowElement;
             By cached = HEALING_PORT.getCachedLocator(driver, locator);
             if (cached != null && !cached.equals(locator)) {
                 try {
@@ -892,6 +911,8 @@ class BaseActions<T extends WebDriver> {
             return getFluentWaitMillis(timeoutMillis, polling)
                     .until(ExpectedConditions.presenceOfElementLocated(locator));
         } catch (TimeoutException te) {
+            WebElement shadowElement = ShadowDomResolver.findElement(driver, locator);
+            if (shadowElement != null) return shadowElement;
             By cached = HEALING_PORT.getCachedLocator(driver, locator);
             if (cached != null && !cached.equals(locator)) {
                 try {

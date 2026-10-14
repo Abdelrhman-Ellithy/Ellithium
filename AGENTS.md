@@ -163,8 +163,16 @@ overloads, and auto-heals broken locators per your `ai-config.properties`. No
 | `.cookies()` | `CookieActions` | `addCookie(Cookie)`, `getCookies()`, `deleteAllCookies()` |
 | `.navigation()` | `NavigationActions` | `navigateToUrl(String)`, `refreshPage()`, `navigateBack()/navigateForward()` |
 | `.JSActions()` | `JavaScriptActions` | `javascriptClick(By)`, `scrollToElement(By)`, `setElementValueUsingJS(By, String)` |
-| `.mobileActions()` | `MobileActions` (Appium only) | `tap(By)`, `longPress(By)`, `swipe(By, direction, percent)`, `scroll(By, direction)`, `pinch(By, zoomIn, percent)` |
+| `.mobileActions()` | `MobileActions` (Appium only) | `tap(By)`, `longPress(By)`, `swipe(By, direction, percent)`, `scroll(By, direction)`, `pinch(By, zoomIn, percent)`, `setSetting(key, value)`, `getSettings()` |
+| `.network()` | `NetworkActions` | `mockResponse(urlPattern, status, body, type)`, `mockJsonResponse(...)`, `intercept(filter, responseFunction)` |
 | `.sleep()` | `Sleep` | static-style `sleepMillis/Seconds/Minutes` — last resort only, prefer `.waits()` |
+
+### Automatic & Transparent Shadow DOM Resolution
+
+Ellithium automatically pierces and handles open Shadow DOM elements across `.elements()`, `.waits()`, and `.mouse()` without requiring explicit shadow actions or manual root chaining:
+- **Zero Overhead on Normal Elements:** Standard document-level Selenium element queries execute first; shadow resolution triggers only if the element is not found in the main DOM.
+- **Native Selenium 4 SearchContext First:** Automatically uses native W3C `host.getShadowRoot()` with zero JavaScript. Supports direct locators, chained compound selectors (`host-card >>> button`), and parent-child selectors (`host-card button`).
+- **Deep Recursive JS Piercing Fallback:** Deep DOM walker recursively pierces nested shadow roots to handle complex XPath, text/link matches, and deeply nested components.
 
 ## Database & API testing
 
