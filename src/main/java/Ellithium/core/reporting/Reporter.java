@@ -82,7 +82,7 @@ public class Reporter {
             // afterward via updateStep, which applies the given mutation directly with no such override.
             Allure.getLifecycle().startStep(key, result);
             Allure.getLifecycle().updateStep(key, sr -> sr.setStart(startMillis));
-            Allure.getLifecycle().stopStep(key);
+            Allure.getLifecycle().stopStep();
         }
     }
 
@@ -100,7 +100,7 @@ public class Reporter {
         PENDING_STEP.remove();
         try {
             Allure.getLifecycle().updateStep(pending.key(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
-            Allure.getLifecycle().stopStep(pending.key());
+            Allure.getLifecycle().stopStep();
         } catch (Exception e) {
             Logger.debug("Could not stop pending Allure step: " + e.getMessage());
         }
