@@ -274,7 +274,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
         context.failedScreenShot = testFailed(
                 driverName,
                 context.scenarioName);
-        Allure.getLifecycle().updateTestCase(stepResult -> {
+        Allure.getLifecycle().updateTest(stepResult -> {
             if (context.failedScreenShot != null) {
                 String description = driverName +
                         " - " + context.scenarioName + " - FAILED";
@@ -294,7 +294,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles step success - updates Allure status
      */
     private void handleStepSuccess(io.qameta.allure.model.Status status) {
-        Allure.getLifecycle().updateTestCase(stepResult -> {
+        Allure.getLifecycle().updateTest(stepResult -> {
             Reporter.flushPendingStep();
             GeneralHandler.addAttachments();
             stepResult.setStatus(status);
