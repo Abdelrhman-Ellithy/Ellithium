@@ -30,6 +30,10 @@ public class APIListener implements Filter {
             "license", "bearer", "basic", "username", "user", "login", "pass"
     ));
 
+    public static Set<String> getSensitiveFields() {
+        return java.util.Collections.unmodifiableSet(SENSITIVE_FIELDS);
+    }
+
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}");
     private static final Pattern PHONE_PATTERN = Pattern.compile("(\\+\\d{1,3}[- ]?)?\\d{10,}");
     private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile("\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}");

@@ -37,7 +37,7 @@ import static org.testng.ITestResult.*;
 @Listeners({ AllureTestNg.class })
 public class CustomTestNGListener extends TestListenerAdapter implements IAlterSuiteListener,
         IAnnotationTransformer, IExecutionListener, ISuiteListener, IInvokedMethodListener, ITestListener,
-        IHookable {
+        IHookable, IMethodInterceptor {
     private long timeStartMills;
     private TestResultCollector testResultCollector;
 
@@ -285,9 +285,22 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             }
         }
         if (method.isTestMethod()) {
+            Reporter.stage("Action");
+            String testName = testResult != null ? testResult.getName() : "";
+            if (HealingTelemetryStore.hasHealsForTest(testName)) {
+                io.qameta.allure.Allure.label("flaky", "true");
+                io.qameta.allure.Allure.label("ai-healed", "true");
+            }
             ensureRecordingStarted(testResult);
-        } else if (method.getTestMethod() != null && method.getTestMethod().isBeforeMethodConfiguration() && testResult != null) {
-            VideoRecordingManager.prepareRecording(getTestName(testResult), getTestIdentifier(testResult));
+        } else if (method.isConfigurationMethod()) {
+            if (method.getTestMethod() != null && (method.getTestMethod().isBeforeClassConfiguration() || method.getTestMethod().isBeforeMethodConfiguration())) {
+                Reporter.stage("Setup");
+            } else if (method.getTestMethod() != null && (method.getTestMethod().isAfterClassConfiguration() || method.getTestMethod().isAfterMethodConfiguration())) {
+                Reporter.stage("TearDown");
+            }
+            if (method.getTestMethod() != null && method.getTestMethod().isBeforeMethodConfiguration() && testResult != null) {
+                VideoRecordingManager.prepareRecording(getTestName(testResult), getTestIdentifier(testResult));
+            }
         }
     }
 
@@ -298,6 +311,23 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         if (recordingId != null) {
             testResultToRecordingId.put(getResultKey(testResult), recordingId);
         }
+    }
+
+    @Override
+    public java.util.List<IMethodInstance> intercept(java.util.List<IMethodInstance> methods, ITestContext context) {
+        if (methods == null || methods.size() <= 1) {
+            return methods;
+        }
+        // Dynamic re-ordering: Prioritize tests that previously healed or had failure telemetry
+        java.util.List<IMethodInstance> sorted = new java.util.ArrayList<>(methods);
+        sorted.sort((m1, m2) -> {
+            boolean m1Healed = m1 != null && m1.getMethod() != null && HealingTelemetryStore.hasHealsForTest(m1.getMethod().getMethodName());
+            boolean m2Healed = m2 != null && m2.getMethod() != null && HealingTelemetryStore.hasHealsForTest(m2.getMethod().getMethodName());
+            if (m1Healed && !m2Healed) return -1;
+            if (!m1Healed && m2Healed) return 1;
+            return 0;
+        });
+        return sorted;
     }
 
     @Override

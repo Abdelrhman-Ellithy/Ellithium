@@ -73,6 +73,18 @@ public class HealingTelemetryStore {
         CURRENT_TEST.set(testId == null ? CLEARED : testId);
     }
 
+    /**
+     * Checks if a test method/identifier has recorded AI heals.
+     *
+     * @param testId Test name or identifier
+     * @return true if heals were recorded for this test
+     */
+    public static boolean hasHealsForTest(String testId) {
+        if (testId == null) return false;
+        var list = byTestId.get(testId);
+        return list != null && !list.isEmpty();
+    }
+
     /** Clears the current-thread test attribution — heals recorded after this call get null testId. */
     public static void clearCurrentTest() {
         CURRENT_TEST.set(CLEARED);

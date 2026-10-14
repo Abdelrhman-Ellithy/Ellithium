@@ -1357,4 +1357,43 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void pressAndroidKey(AndroidKey key) {
         pressKey(new KeyEvent(key));
     }
+
+    // ========================================================================================
+    // APPIUM SETTINGS API (Cross-platform)
+    // ========================================================================================
+
+    /**
+     * Sets an Appium driver setting (e.g. image match threshold, wait settings).
+     *
+     * @param setting The Appium setting enum
+     * @param value The value to apply
+     * @return this instance
+     */
+    public MobileActions<T> setSetting(io.appium.java_client.Setting setting, Object value) {
+        driver.setSetting(setting, value);
+        Reporter.log("Appium setting updated: " + setting.name() + " = " + value, LogLevel.INFO_BLUE);
+        return this;
+    }
+
+    /**
+     * Sets an Appium driver setting by name.
+     *
+     * @param settingName The name of the setting
+     * @param value The value to apply
+     * @return this instance
+     */
+    public MobileActions<T> setSetting(String settingName, Object value) {
+        driver.setSetting(settingName, value);
+        Reporter.log("Appium setting updated: " + settingName + " = " + value, LogLevel.INFO_BLUE);
+        return this;
+    }
+
+    /**
+     * Gets the current Appium driver settings.
+     *
+     * @return Map of current setting names and values
+     */
+    public Map<String, Object> getSettings() {
+        return driver.getSettings();
+    }
 }

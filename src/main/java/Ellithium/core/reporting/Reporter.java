@@ -49,6 +49,22 @@ public class Reporter {
     private static final ThreadLocal<PendingStep> PENDING_STEP = new ThreadLocal<>();
 
     /**
+     * Sets the current execution stage in the Allure report (e.g. "Setup", "Action", "Verification", "AI Self-Healing").
+     *
+     * @param stageName The name of the test execution stage
+     */
+    public static void stage(String stageName) {
+        if (stageName != null && !stageName.isBlank()) {
+            try {
+                flushPendingStep();
+                Allure.stage(stageName);
+            } catch (Exception ignored) {
+                // Ignore if called outside an active Allure test context
+            }
+        }
+    }
+
+    /**
      * Logs a message with specified log level and additional parameter.
      * @param message The main message to log
      * @param logLevel The logging level
@@ -251,6 +267,60 @@ public class Reporter {
             return;
         }
         attachFileToReport(new File(filePath), name);
+    }
+
+    /**
+     * Asynchronously attaches any file (e.g. video recordings) to the Allure test report.
+     * Prevents I/O blocking during large file attachments.
+     *
+     * @param file File to attach
+     * @param name Name of the attachment in the report
+     * @return CompletableFuture that completes when the file is attached
+     */
+    public static java.util.concurrent.CompletableFuture<Void> attachFileToReportAsync(File file, String name) {
+        if (file == null || !file.exists()) {
+            log("Attachment failed: file does not exist -> " + file, LogLevel.ERROR);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+        try {
+            String mimeType = Files.probeContentType(file.toPath());
+            if (mimeType == null) {
+                mimeType = "application/octet-stream";
+            }
+            String fileName = file.getName();
+            String extension = "";
+            int dotIndex = fileName.lastIndexOf(".");
+            if (dotIndex != -1) {
+                extension = fileName.substring(dotIndex);
+            }
+            flushPendingStep();
+            java.util.concurrent.CompletableFuture<FileInputStream> streamFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return new FileInputStream(file);
+                } catch (IOException e) {
+                    throw new java.util.concurrent.CompletionException(e);
+                }
+            });
+            return Allure.attachmentAsync(name, mimeType, streamFuture, AttachmentOptions.withFileExtension(extension));
+        } catch (Exception e) {
+            Logger.logException(e);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * Asynchronously attaches any file to the Allure test report using a file path.
+     *
+     * @param filePath Relative or absolute path to the file
+     * @param name Name of the attachment in the report
+     * @return CompletableFuture that completes when the file is attached
+     */
+    public static java.util.concurrent.CompletableFuture<Void> attachFileToReportAsync(String filePath, String name) {
+        if (filePath == null || filePath.isEmpty()) {
+            log("File attachment failed: path is null or empty.", LogLevel.ERROR);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+        return attachFileToReportAsync(new File(filePath), name);
     }
 
     /**

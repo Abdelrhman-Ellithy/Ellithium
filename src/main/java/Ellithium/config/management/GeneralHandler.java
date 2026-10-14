@@ -49,11 +49,42 @@ public class GeneralHandler {
             
             // Trigger AI Vision RCA
             AIVisionRCA.analyze(screenShotFile, "Test Failed: " + testName, AISelfHealer.getEffectiveProvider());
+
+            // Safely capture browser console logs without interfering with CDP screencast
+            attachBrowserConsoleLogs();
             
             return screenShotFile;
         } catch (IOException e) {
             Logger.logException(e);
             return null;
+        }
+    }
+
+    /**
+     * Safely captures browser console logs and JavaScript errors upon test failure
+     * and attaches them to the Allure report without competing for the CDP screencast WebSocket.
+     */
+    public static void attachBrowserConsoleLogs() {
+        try {
+            org.openqa.selenium.WebDriver driver = DriverFactory.getCurrentDriver();
+            if (driver == null) return;
+            org.openqa.selenium.logging.LogEntries logEntries = driver.manage().logs().get(org.openqa.selenium.logging.LogType.BROWSER);
+            if (logEntries != null) {
+                StringBuilder consoleLog = new StringBuilder();
+                for (org.openqa.selenium.logging.LogEntry entry : logEntries) {
+                    consoleLog.append("[").append(new java.util.Date(entry.getTimestamp())).append("] ")
+                            .append("[").append(entry.getLevel()).append("] ")
+                            .append(entry.getMessage()).append("\n");
+                }
+                if (!consoleLog.isEmpty()) {
+                    Reporter.flushPendingStep();
+                    try (InputStream is = new ByteArrayInputStream(consoleLog.toString().getBytes(StandardCharsets.UTF_8))) {
+                        Allure.attachment("Browser Console Logs", "text/plain", is, AttachmentOptions.withFileExtension(".log"));
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Some driver types or remote nodes do not support BROWSER log retrieval
         }
     }
     

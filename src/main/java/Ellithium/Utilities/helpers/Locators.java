@@ -54,4 +54,41 @@ public final class Locators {
         }
         return out.toString();
     }
+
+    /**
+     * Parses a string representation of a locator into a Selenium {@link By} object.
+     * Supports prefix format (e.g. {@code "id=username"}, {@code "xpath=//button"},
+     * {@code "css=.submit-btn"}) as well as raw XPath and CSS strings.
+     *
+     * @param locatorStr The locator string to parse
+     * @return Resolved {@link By} locator
+     */
+    public static By fromString(String locatorStr) {
+        if (locatorStr == null || locatorStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Locator string cannot be null or empty");
+        }
+        String trimmed = locatorStr.trim();
+        int eq = trimmed.indexOf('=');
+        if (eq > 0) {
+            String strategy = trimmed.substring(0, eq).trim().toLowerCase();
+            String value = trimmed.substring(eq + 1).trim();
+            return switch (strategy) {
+                case "id" -> By.id(value);
+                case "name" -> By.name(value);
+                case "class", "classname" -> className(value);
+                case "css", "cssselector" -> By.cssSelector(value);
+                case "xpath" -> By.xpath(value);
+                case "tag", "tagname" -> By.tagName(value);
+                case "link", "linktext" -> By.linkText(value);
+                case "partiallink", "partiallinktext" -> By.partialLinkText(value);
+                default -> (trimmed.startsWith("//") || trimmed.startsWith("(") || trimmed.startsWith("./"))
+                        ? By.xpath(trimmed)
+                        : By.cssSelector(trimmed);
+            };
+        }
+        if (trimmed.startsWith("//") || trimmed.startsWith("(") || trimmed.startsWith("./")) {
+            return By.xpath(trimmed);
+        }
+        return By.cssSelector(trimmed);
+    }
 }
