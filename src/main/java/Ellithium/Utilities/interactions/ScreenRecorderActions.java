@@ -13,6 +13,8 @@ import com.google.common.io.Files;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.jcodec.api.awt.AWTSequenceEncoder;
+import org.jcodec.common.model.Picture;
+import org.jcodec.scale.AWTUtil;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -83,6 +85,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Pre-converted Picture struct pairing a YUV picture with its run-length repeat count.
+     * Prevents redundant RGB-to-YUV matrix conversions when repeating identical frames.
+     */
+    private static final class PreparedFrame {
+        final Picture picture;
+        final int count;
+        PreparedFrame(Picture picture, int count) {
+            this.picture = picture;
+            this.count = count;
+        }
+    }
+
+    /**
      * Stores video frames captured during recording by this instance.
      * ConcurrentLinkedDeque is used because the CDP listener / snapshot executor writes
      * from a background thread while the main thread reads during stop. peekLast() is O(1).
@@ -125,9 +140,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * CDP screencast JPEG quality (0-100).
-     * Higher quality = larger frames but better video quality.
+     * High 80% quality ensures crisp UI text and icons without compression artifacts.
      */
-    private static final int CDP_JPEG_QUALITY = 50;
+    private static final int CDP_JPEG_QUALITY = 80;
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
@@ -135,6 +150,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_MS = 2000;
 
     private Long recordingStartTime;
+
+    private String activeCdpVersion;
+    private static final java.util.Set<Integer> cdpUnsupportedDrivers = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private static volatile String cdpVersionCache = null;
     private static final String CDP_NOT_FOUND = "";
@@ -243,11 +261,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             DriverType driverType= DriverFactory.getCurrentDriverConfiguration().getDriverType();
             if (driverType== LocalDriverType.Chrome || driverType==LocalDriverType.Edge ||driverType== RemoteDriverType.REMOTE_Chrome || driverType==RemoteDriverType.REMOTE_Edge) {
-                boolean cdpStarted = startCDPRecording(sanitizedName);
-                if (cdpStarted) {
-                    return;
+                int driverId = System.identityHashCode(driver);
+                if (!cdpUnsupportedDrivers.contains(driverId)) {
+                    boolean cdpStarted = startCDPRecording(sanitizedName);
+                    if (cdpStarted) {
+                        return;
+                    }
+                    cdpUnsupportedDrivers.add(driverId);
+                    Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
                 }
-                Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
             }
 
             startSnapshotRecording(sanitizedName);
@@ -347,7 +369,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 return false;
             }
             DevTools devTools = chromiumDriver.getDevTools();
-            devTools.createSession();
+            devTools.createSessionIfThereIsNotOne();
             devToolsSession = devTools;
 
             String detectedVersion = detectCDPVersion(chromiumDriver);
@@ -355,6 +377,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 Reporter.log("No CDP version found in classpath", LogLevel.WARN);
                 return false;
             }
+            activeCdpVersion = detectedVersion;
             Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
 
             Object enableCommand = null;
@@ -392,32 +415,50 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (enableCommand == null) {
                 Reporter.log("Could not find CDP enable command in " + detectedVersion, LogLevel.WARN);
                 Logger.logException(lastException);
-                devTools.close();
-                devToolsSession = null;
+                cleanupDevTools();
                 return false;
             }
 
-            Object startCommand;
+            Object startCommand = null;
+            Method startMethod = findStartScreencastMethod(pageClass);
+            if (startMethod == null) {
+                Reporter.log("startScreencast method not found in " + detectedVersion, LogLevel.WARN);
+                cleanupDevTools();
+                return false;
+            }
+
             try {
-                java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast",
-                        Optional.class, Optional.class, Optional.class, Optional.class, Optional.class);
-                startCommand = startMethod.invoke(null,
-                        Optional.of(getScreencastFormat(pageClass)),
-                        Optional.of(CDP_JPEG_QUALITY),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(4)
-                );
-            } catch (NoSuchMethodException e) {
-                try {
-                    java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast");
+                Class<?>[] paramTypes = startMethod.getParameterTypes();
+                if (paramTypes.length == 0) {
                     startCommand = startMethod.invoke(null);
-                } catch (NoSuchMethodException e2) {
-                    Reporter.log("startScreencast method not found in " + detectedVersion, LogLevel.WARN);
-                    devTools.close();
-                    devToolsSession = null;
-                    return false;
+                } else {
+                    Object[] args = new Object[paramTypes.length];
+                    for (int i = 0; i < paramTypes.length; i++) {
+                        if (paramTypes[i].equals(Optional.class)) {
+                            if (i == 0) {
+                                try {
+                                    args[i] = Optional.of(getScreencastFormat(pageClass));
+                                } catch (Exception ignored) {
+                                    args[i] = Optional.empty();
+                                }
+                            } else if (i == 1) {
+                                args[i] = Optional.of(CDP_JPEG_QUALITY);
+                            } else if (i == 4) {
+                                args[i] = Optional.of(4);
+                            } else {
+                                args[i] = Optional.empty();
+                            }
+                        } else {
+                            args[i] = null;
+                        }
+                    }
+                    startCommand = startMethod.invoke(null, args);
                 }
+            } catch (Exception e) {
+                Reporter.log("Failed to invoke startScreencast in " + detectedVersion + ": " + e.getMessage(), LogLevel.WARN);
+                Logger.logException(e);
+                cleanupDevTools();
+                return false;
             }
 
             addScreencastFrameListener(devTools, pageClass);
@@ -507,7 +548,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     for (int v = major; v >= Math.max(85, major - 5); v--) {
                         try {
                             Class.forName("org.openqa.selenium.devtools.v" + v + ".page.Page");
-                            return "v" + v;
+                            cdpVersionCache = "v" + v;
+                            return cdpVersionCache;
                         } catch (ClassNotFoundException ignored) {}
                     }
                 } catch (Exception ignored) {}
@@ -526,7 +568,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         synchronized (ScreenRecorderActions.class) {
             cached = cdpVersionCache;
             if (cached != null) return cached.isEmpty() ? null : cached;
-            for (int version = 150; version >= 85; version--) {
+            for (int version = 200; version >= 85; version--) {
                 try {
                     Class.forName("org.openqa.selenium.devtools.v" + version + ".page.Page");
                     cdpVersionCache = "v" + version;
@@ -579,14 +621,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Method getSessionIdMethod = frameData.getClass().getMethod("getSessionId");
                     Integer sessionId = (Integer) getSessionIdMethod.invoke(frameData);
 
-                    Method ackMethod;
-                    try {
-                        ackMethod = pageClass.getMethod("screencastFrameAck", Integer.class);
-                    } catch (NoSuchMethodException nsme) {
-                        ackMethod = pageClass.getMethod("screencastFrameAck", int.class);
+                    Method ackMethod = null;
+                    for (Method m : pageClass.getMethods()) {
+                        if ("screencastFrameAck".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())
+                                && m.getParameterCount() == 1) {
+                            ackMethod = m;
+                            break;
+                        }
                     }
-                    Object ackCommand = ackMethod.invoke(null, sessionId);
-                    devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
+                    if (ackMethod != null) {
+                        Object ackCommand = ackMethod.invoke(null, sessionId);
+                        devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
+                    }
                 } catch (Exception e) {
                     Logger.debug("Error processing screencast frame: " + e.getMessage());
                 }
@@ -777,31 +823,28 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             DevTools devTools = devToolsSession;
             if (devTools != null) {
-                String detectedVersion = detectCDPVersion();
+                String detectedVersion = (activeCdpVersion != null) ? activeCdpVersion : detectCDPVersion(driver);
                 if (detectedVersion != null) {
                     try {
                         Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
                         Object stopCommand = null;
-                        try {
-                            Method stopMethod = pageClass.getMethod("stopScreencast", Optional.class);
-                            stopCommand = stopMethod.invoke(null, Optional.empty());
-                        } catch (NoSuchMethodException e) {
-                            try {
-                                Method stopMethod = pageClass.getMethod("stopScreencast");
+                        Method stopMethod = findStopScreencastMethod(pageClass);
+                        if (stopMethod != null) {
+                            if (stopMethod.getParameterCount() == 0) {
                                 stopCommand = stopMethod.invoke(null);
-                            } catch (NoSuchMethodException e2) {
-                                try {
-                                    java.lang.reflect.Field stopField = pageClass.getField("stopScreencast");
-                                    stopCommand = stopField.get(null);
-                                } catch (NoSuchFieldException e3) {
-                                    try {
-                                        java.lang.reflect.Field stopField = pageClass.getDeclaredField("stopScreencast");
-                                        stopField.setAccessible(true);
-                                        stopCommand = stopField.get(null);
-                                    } catch (Exception e4) {
-                                        Reporter.log("Could not find stopScreencast command", LogLevel.WARN);
-                                    }
-                                }
+                            } else {
+                                Object[] args = new Object[stopMethod.getParameterCount()];
+                                java.util.Arrays.fill(args, Optional.empty());
+                                stopCommand = stopMethod.invoke(null, args);
+                            }
+                        } else {
+                            try {
+                                java.lang.reflect.Field stopField = pageClass.getField("stopScreencast");
+                                stopCommand = stopField.get(null);
+                            } catch (NoSuchFieldException e3) {
+                                java.lang.reflect.Field stopField = pageClass.getDeclaredField("stopScreencast");
+                                stopField.setAccessible(true);
+                                stopCommand = stopField.get(null);
                             }
                         }
 
@@ -809,16 +852,38 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
                         }
                     } catch (Exception e) {
-                        Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.WARN);
+                        Logger.debug("Could not send CDP stopScreencast: " + e.getMessage());
                     }
                 }
-                devTools.close();
+                cleanupDevTools();
             }
         } catch (Exception e) {
-            Reporter.log("Error closing DevTools: " + e.getMessage(), LogLevel.WARN);
+            Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.WARN);
         } finally {
             devToolsSession = null;
         }
+    }
+
+    private Method findStartScreencastMethod(Class<?> pageClass) {
+        Method fallback = null;
+        for (Method m : pageClass.getMethods()) {
+            if ("startScreencast".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                if (m.getParameterCount() > 0) {
+                    return m;
+                }
+                fallback = m;
+            }
+        }
+        return fallback;
+    }
+
+    private Method findStopScreencastMethod(Class<?> pageClass) {
+        for (Method m : pageClass.getMethods()) {
+            if ("stopScreencast".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                return m;
+            }
+        }
+        return null;
     }
 
     /**
@@ -862,8 +927,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        final int MAX_WIDTH = 854;
-        final int MAX_HEIGHT = 480;
+        final int MAX_WIDTH = 1280;
+        final int MAX_HEIGHT = 720;
         int batchSize = 50;
         try {
             FrameEntry firstEntry = frames.peek();
@@ -896,7 +961,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
                 if (entryBatch.isEmpty()) continue;
 
-                List<BufferedImage> processedBatch = entryBatch.parallelStream()
+                // Parallelize frame decode, bicubic scaling, and YUV Picture conversion across all CPU cores
+                List<PreparedFrame> processedBatch = entryBatch.parallelStream()
                         .map(entry -> {
                             try {
                                 BufferedImage original = ImageIO.read(new ByteArrayInputStream(entry.data));
@@ -918,38 +984,43 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                 int evenW = (newW % 2 == 0) ? newW : newW - 1;
                                 int evenH = (newH % 2 == 0) ? newH : newH - 1;
 
+                                BufferedImage readyImage;
                                 if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-                                    return original;
+                                    readyImage = original;
+                                } else {
+                                    readyImage = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
+                                    Graphics2D g2d = readyImage.createGraphics();
+                                    try {
+                                        if (needsScaling) {
+                                            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                                            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                                            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                                        }
+                                        g2d.drawImage(original, 0, 0, evenW, evenH, null);
+                                    } finally {
+                                        g2d.dispose();
+                                    }
                                 }
 
-                                BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
-                                Graphics2D g2d = resized.createGraphics();
-                                try {
-                                    if (needsScaling) {
-                                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                                    }
-                                    g2d.drawImage(original, 0, 0, evenW, evenH, null);
-                                } finally {
-                                    g2d.dispose();
-                                }
-                                return resized;
+                                Picture pic = AWTUtil.fromBufferedImageRGB(readyImage);
+                                return new PreparedFrame(pic, entry.count);
                             } catch (Exception e) {
                                 return null;
                             }
                         })
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
-                for (int i = 0; i < processedBatch.size(); i++) {
-                    BufferedImage img = processedBatch.get(i);
-                    if (img == null) continue;
-                    int repeatCount = entryBatch.get(i).count;
+                // Sequential bitstream encoding: encodes the pre-converted Picture directly without redundant YUV conversion
+                for (PreparedFrame pf : processedBatch) {
+                    if (pf.picture == null) continue;
                     try {
-                        for (int r = 0; r < repeatCount; r++) {
-                            encoder.encodeImage(img);
+                        for (int r = 0; r < pf.count; r++) {
+                            encoder.encodeNativeFrame(pf.picture);
                             successfulFrames++;
                         }
                     } catch (Exception e) {
-                        Reporter.log("Failed to encode frame " + i + ": " + e.getMessage(), LogLevel.DEBUG);
+                        Reporter.log("Failed to encode frame: " + e.getMessage(), LogLevel.DEBUG);
                     }
                 }
 

@@ -9,35 +9,12 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
         super(driver);
     }
 
-    private boolean tryHandlePromptBiDi(boolean accept, String promptText) {
-        if (driver instanceof org.openqa.selenium.bidi.HasBiDi hasBiDi) {
-            try {
-                if (hasBiDi.getBiDi() == null) return false;
-                String handle = driver.getWindowHandle();
-                org.openqa.selenium.bidi.browsingcontext.BrowsingContext context =
-                        new org.openqa.selenium.bidi.browsingcontext.BrowsingContext(driver, handle);
-                if (promptText != null) {
-                    context.handleUserPrompt(accept, promptText);
-                } else {
-                    context.handleUserPrompt(accept);
-                }
-                Ellithium.core.reporting.Reporter.log("BiDi: Handled user prompt (accept=" + accept + ")", Ellithium.core.logging.LogLevel.INFO_GREEN);
-                return true;
-            } catch (Exception ignored) {
-                // BiDi prompt handling not supported on current context or prompt not open; fall through to wait
-            }
-        }
-        return false;
-    }
-
     /**
      * Accepts an alert with specified timeout.
-     * Uses WebDriver BiDi if active on the current session, falling back to fluent wait.
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
     public void accept(int timeout, int pollingEvery) {
-        if (tryHandlePromptBiDi(true, null)) return;
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         alert.accept();
@@ -45,12 +22,10 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Dismisses an alert with specified timeout.
-     * Uses WebDriver BiDi if active on the current session, falling back to fluent wait.
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
     public void dismiss(int timeout, int pollingEvery) {
-        if (tryHandlePromptBiDi(false, null)) return;
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         alert.dismiss();
@@ -70,13 +45,11 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Sends data to an alert with specified timeout.
-     * Uses WebDriver BiDi if active on the current session, falling back to fluent wait.
      * @param data The data to send
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(String data, int timeout, int pollingEvery) {
-        if (tryHandlePromptBiDi(true, data)) return;
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         alert.sendKeys(data);
