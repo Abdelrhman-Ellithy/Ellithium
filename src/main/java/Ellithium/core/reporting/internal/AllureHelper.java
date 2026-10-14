@@ -116,7 +116,10 @@ public class AllureHelper {
                     Logger.warn("Failed to delete temporary report directory: " + e.getMessage());
                 }
             }
-            String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+            String openFlag = System.getProperty("allure.open.afterExecution");
+            if (openFlag == null || openFlag.isBlank()) {
+                openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+            }
             if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
                 CommandExecutor.openFile(renamedFile.getPath());
             }
