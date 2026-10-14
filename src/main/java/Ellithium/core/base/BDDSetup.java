@@ -3,6 +3,7 @@ import Ellithium.core.execution.listener.CustomTestNGListener;
 import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
 import io.qameta.allure.testng.AllureTestNg;
+import org.testng.ITestContext;
 import org.testng.annotations.*;
 @Listeners({CustomTestNGListener.class, AllureTestNg.class})
 @CucumberOptions(
@@ -17,7 +18,7 @@ import org.testng.annotations.*;
 public class BDDSetup extends AbstractTestNGCucumberTests {
         @Override
         @DataProvider(parallel = true)
-        public Object[][] scenarios() {
-                        return super.scenarios();
+        public Object[][] scenarios(ITestContext context) {
+                        return super.scenarios(context);
         }
 }
