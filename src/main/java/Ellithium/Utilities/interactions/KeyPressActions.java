@@ -6,6 +6,8 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
 import io.appium.java_client.android.nativekey.KeyEvent;
+import io.qameta.allure.Step;
+
 /**
  * Provides keyboard and key press actions for both web and mobile drivers.
  * Handles Android KeyEvents and iOS key press operations.
@@ -21,6 +23,7 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param keyEvent KeyEvent to press
      * @throws UnsupportedOperationException if not using AndroidDriver
      */
+    @Step("Press key: {keyEvent}")
     public void pressKey(KeyEvent keyEvent) {
         if (!(driver instanceof AndroidDriver)) {
             Reporter.log("pressKey requires AndroidDriver", LogLevel.ERROR);
@@ -40,6 +43,7 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param durationMillis Requested hold duration in milliseconds; not honored by the underlying
      *                       driver call, which uses its own fixed press duration
      */
+    @Step("Long press key: {keyEvent}")
     public void longPressKey(KeyEvent keyEvent, long durationMillis) {
         if (driver instanceof AndroidDriver) {
             try {

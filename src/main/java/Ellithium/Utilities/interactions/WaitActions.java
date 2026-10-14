@@ -10,6 +10,7 @@ import java.util.List;
 import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import io.qameta.allure.Step;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitActions <T extends WebDriver> extends BaseActions<T>{
@@ -29,6 +30,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         waitForElementToDisappear(locator, timeout, pollingEvery, false);
     }
 
+    @Step("Wait for element to disappear: {locator}")
     public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element To Disappear: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -55,6 +57,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementToBeClickable(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element to be clickable: {locator}")
     public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Wait For Element To Be Clickable: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -85,6 +88,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementToBeVisible(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element to be visible: {locator}")
     public  WebElement waitForElementToBeVisible( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Wait For Element To Be Visible: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -108,6 +112,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      *             timeout; {@code false} (default, from {@code ai.healing.waits.enabled}) to honor
      *             the timeout and throw, so a genuinely-absent element surfaces as a real failure.
      */
+    @Step("Wait for element presence: {locator}")
     public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element Presence: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -140,6 +145,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForTextToBePresentInElement(locator, text, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for text '{text}' to be present in element: {locator}")
     public  WebElement waitForTextToBePresentInElement( By locator, String text, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Text: '" + text + "' to be present in Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -174,6 +180,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementToBeSelected(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element to be selected: {locator}")
     public  boolean waitForElementToBeSelected( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element to be Selected: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -206,6 +213,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementAttributeToBe(locator, attribute, value, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element attribute '{attribute}' to be '{value}': {locator}")
     public  boolean waitForElementAttributeToBe( By locator, String attribute, String value, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element Attribute: '" + attribute + "' to be: '" + value + "' for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -238,6 +246,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementAttributeContains(locator, attribute, value, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element attribute '{attribute}' to contain '{value}': {locator}")
     public  boolean waitForElementAttributeContains( By locator, String attribute, String value, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element Attribute: '" + attribute + "' to contain: '" + value + "' for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -265,6 +274,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the element becomes stale, false otherwise
      */
+    @Step("Wait for element staleness: {locator}")
     public  boolean waitForElementStaleness( By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Element Staleness: " + locator.toString(), LogLevel.INFO_BLUE);
         By normalized = BaseActions.normalizeLocator(locator);
@@ -299,6 +309,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the title contains the text, false otherwise
      */
+    @Step("Wait for title to contain '{titlePart}'")
     public  boolean waitForTitleContains( String titlePart, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Title to Contain: '" + titlePart + "'", LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -312,6 +323,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the URL contains the text, false otherwise
      */
+    @Step("Wait for URL to contain '{urlPart}'")
     public  boolean waitForUrlContains( String urlPart, int timeout, int pollingEvery) {
         Reporter.log("Waiting for URL to Contain: '" + urlPart + "'", LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -335,6 +347,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      *             the timeout; {@code false} (default, from {@code ai.healing.waits.enabled}) to
      *             honor the timeout and throw {@code TimeoutException}/{@code NoSuchFrameException}.
      */
+    @Step("Wait for frame to be available and switch to it: {locator}")
     public  WebDriver waitForFrameToBeAvailableAndSwitchToIt( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Frame to be Available and Switching to it: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -358,6 +371,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return The WebDriver instance switched to the frame
      */
+    @Step("Wait for frame '{nameOrId}' to be available and switch to it")
     public  WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt( String nameOrId, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available by Name or ID: '" + nameOrId + "'", LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -371,6 +385,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return The WebDriver instance switched to the frame
      */
+    @Step("Wait for frame by index {index} to be available and switch to it")
     public  WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt( int index, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Frame to be Available by Index: " + index, LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -388,6 +403,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementToBeEnabled(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element to be enabled: {locator}")
     public  boolean waitForElementToBeEnabled( By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element to be Enabled: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -422,6 +438,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the title matches the expected title, false otherwise
      */
+    @Step("Wait for title to be '{title}'")
     public  boolean waitForTitleIs( String title, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Title to be: '" + title + "'", LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -435,6 +452,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the URL matches the expected URL, false otherwise
      */
+    @Step("Wait for URL to be '{url}'")
     public  boolean waitForUrlToBe( String url, int timeout, int pollingEvery) {
         Reporter.log("Waiting for URL to be: '" + url + "'", LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -453,6 +471,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForElementSelectionStateToBe(locator, selected, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for element selection state to be {selected}: {locator}")
     public  boolean waitForElementSelectionStateToBe( By locator, boolean selected, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Element Selection State to be: " + selected + " for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -485,6 +504,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForTextToBePresentInElementValue(locator, text, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for text '{text}' to be present in element value: {locator}")
     public  boolean waitForTextToBePresentInElementValue( By locator, String text, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Text to be Present in Element Value: '" + text + "' for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -512,6 +532,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the number of windows matches the expected number, false otherwise
      */
+    @Step("Wait for number of windows to be {numberOfWindows}")
     public  boolean waitForNumberOfWindowsToBe( int numberOfWindows, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Windows to be: " + numberOfWindows, LogLevel.INFO_BLUE);
         return getFluentWait( timeout, pollingEvery)
@@ -530,6 +551,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForNumberOfElementsToBeMoreThan(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for number of elements to be more than {number}: {locator}")
     public  boolean waitForNumberOfElementsToBeMoreThan( By locator, int number, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Number of Elements to be More Than: " + number + " for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -570,6 +592,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForNumberOfElementsToBeLessThan(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for number of elements to be less than {number}: {locator}")
     public  boolean waitForNumberOfElementsToBeLessThan( By locator, int number, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Number of Elements to be Less Than: " + number + " for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -596,6 +619,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForVisibilityOfAllElements(locator, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for visibility of all elements: {locator}")
     public List<WebElement> waitForVisibilityOfAllElements(By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Visibility of All Elements for: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
@@ -614,6 +638,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         return waitForNumberOfElementsToBe(locator, number, timeout, pollingEvery, AIConfigLoader.isHealOnWaitsEnabled());
     }
 
+    @Step("Wait for number of elements to be {number}: {locator}")
     public  boolean waitForNumberOfElementsToBe( By locator, int number, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Waiting for Number of Elements to be: " + number + " for Element: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);

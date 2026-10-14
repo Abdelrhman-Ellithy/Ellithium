@@ -2,6 +2,7 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
+import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -21,6 +22,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      */
+    @Step("Hover over element: {locator}")
     public void hoverOverElement(By locator, int timeout) {
         Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
@@ -34,6 +36,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Hover over '{locatorToHover}' and click '{locatorToClick}'")
     public void hoverAndClick(By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locatorToHover, timeout, pollingEvery, elementToHover -> {
@@ -48,6 +51,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param sourceLocator Source element locator
      * @param targetLocator Target element locator
      */
+    @Step("Drag and drop from '{sourceLocator}' to '{targetLocator}'")
     public void dragAndDrop(By sourceLocator, By targetLocator) {
         performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
                 source -> {
@@ -72,6 +76,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param xOffset X offset to move
      * @param yOffset Y offset to move
      */
+    @Step("Drag and drop '{sourceLocator}' by offset ({xOffset}, {yOffset})")
     public void dragAndDropByOffset(By sourceLocator, int xOffset, int yOffset) {
         performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
                 source -> new Actions(driver).clickAndHold(source).moveByOffset(xOffset, yOffset).release().perform());
@@ -84,6 +89,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Right-click on element: {locator}")
     public void rightClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to right-click: " + locator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locator, timeout, pollingEvery,
@@ -97,6 +103,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Double-click on element: {locator}")
     public void doubleClick(By locator, int timeout, int pollingEvery) {
         Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
         // Explicit click-pause-click instead of the composite Actions.doubleClick(): under heavy CPU
@@ -114,6 +121,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param targetValue Target value to move the slider to
      * @return The final value of the slider
      */
+    @Step("Move slider '{sliderLocator}' to target value {targetValue}")
     public float moveSliderTo(By sliderLocator, By rangeLocator, float targetValue) {
         final float EPSILON = 0.01f;
         // Cache element references; only re-locate on StaleElementReferenceException.
@@ -178,6 +186,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Move slider '{sliderLocator}' by offset ({xOffset}, {yOffset})")
     public void moveSliderByOffset(By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
         Reporter.log("Waiting for slider to be visible: " + sliderLocator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(sliderLocator, timeout, pollingEvery,

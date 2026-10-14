@@ -286,22 +286,12 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             }
         }
         if (method.isTestMethod()) {
-            Reporter.stage("Action");
             String testName = testResult != null ? testResult.getName() : "";
             if (HealingTelemetryStore.hasHealsForTest(testName)) {
                 io.qameta.allure.Allure.label("flaky", "true");
                 io.qameta.allure.Allure.label("ai-healed", "true");
             }
             ensureRecordingStarted(testResult);
-        } else if (method.isConfigurationMethod()) {
-            if (method.getTestMethod() != null && (method.getTestMethod().isBeforeClassConfiguration() || method.getTestMethod().isBeforeMethodConfiguration())) {
-                Reporter.stage("Setup");
-            } else if (method.getTestMethod() != null && (method.getTestMethod().isAfterClassConfiguration() || method.getTestMethod().isAfterMethodConfiguration())) {
-                Reporter.stage("TearDown");
-            }
-            if (method.getTestMethod() != null && method.getTestMethod().isBeforeMethodConfiguration() && testResult != null) {
-                VideoRecordingManager.prepareRecording(getTestName(testResult), getTestIdentifier(testResult));
-            }
         }
     }
 

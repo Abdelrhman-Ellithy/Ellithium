@@ -1,5 +1,6 @@
 package Ellithium.Utilities.interactions;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -16,6 +17,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingTime Polling interval in milliseconds
      */
+    @Step("Switch to frame by index {index}")
     public void switchToFrameByIndex(int index, int timeout, int pollingTime) {
         getFluentWait(timeout, pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
@@ -27,6 +29,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingTime Polling interval in milliseconds
      */
+    @Step("Switch to frame by name or ID '{nameOrID}'")
     public void switchToFrameByNameOrID(String nameOrID, int timeout, int pollingTime) {
         getFluentWait(timeout, pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrID));
@@ -38,6 +41,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingTime Polling interval in milliseconds
      */
+    @Step("Switch to frame by element: {locator}")
     public void switchToFrameByElement(By locator, int timeout, int pollingTime) {
         performFrameSwitch(locator, timeout, pollingTime);
     }
@@ -45,6 +49,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Switches back to the default content from a frame.
      */
+    @Step("Switch to default content")
     public void switchToDefaultContent() {
         driver.switchTo().defaultContent();
     }
@@ -56,6 +61,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The WebDriver instance switched to the frame
      */
+    @Step("Wait for frame to be available and switch to it: {locator}")
     public WebDriver waitForFrameToBeAvailableAndSwitchToIt(By locator, int timeout, int pollingEvery) {
         return performFrameSwitch(locator, timeout, pollingEvery);
     }
@@ -67,6 +73,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The WebDriver instance switched to the frame
      */
+    @Step("Wait for frame '{nameOrId}' to be available and switch to it")
     public WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(String nameOrId, int timeout, int pollingEvery) {
         return getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
@@ -79,6 +86,7 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The WebDriver instance switched to the frame
      */
+    @Step("Wait for frame by index {index} to be available and switch to it")
     public WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt(int index, int timeout, int pollingEvery) {
         return getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));

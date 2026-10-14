@@ -1,5 +1,6 @@
 package Ellithium.Utilities.interactions;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -14,6 +15,7 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Accept alert")
     public void accept(int timeout, int pollingEvery) {
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
@@ -25,6 +27,7 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Dismiss alert")
     public void dismiss(int timeout, int pollingEvery) {
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
@@ -37,6 +40,7 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The alert text
      */
+    @Step("Get alert text")
     public String getText(int timeout, int pollingEvery) {
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
@@ -49,6 +53,7 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
+    @Step("Send data '{data}' to alert")
     public void sendData(String data, int timeout, int pollingEvery) {
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
