@@ -244,8 +244,7 @@ public class SemanticLocatorResolver {
         if (value.matches("[0-9]+")) return true;
         if (value.matches(":[a-zA-Z][a-zA-Z0-9]{0,4}:")) return true;
         if (value.length() <= 12 && value.matches("[0-9a-f]{4,12}")) return true;
-        if (value.matches(".*[-_][0-9]+")) return true;
-        return false;
+        return value.matches(".*[-_][0-9]+");
     }
 
     private static String lc(Object o) { return o == null ? null : o.toString().toLowerCase(); }

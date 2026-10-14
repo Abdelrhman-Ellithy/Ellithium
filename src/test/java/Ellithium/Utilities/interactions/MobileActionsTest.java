@@ -19,7 +19,6 @@ public class MobileActionsTest {
 
     private AppiumDriver driver;
     private MobileActions<AppiumDriver> actions;
-    private RemoteWebElement element;
     private static final By LOCATOR = By.id("el");
 
     @BeforeMethod
@@ -28,7 +27,7 @@ public class MobileActionsTest {
                 Mockito.withSettings().extraInterfaces(
                         org.openqa.selenium.JavascriptExecutor.class,
                         org.openqa.selenium.TakesScreenshot.class));
-        element = Mockito.mock(RemoteWebElement.class);
+        RemoteWebElement element = Mockito.mock(RemoteWebElement.class);
         Mockito.when(element.getId()).thenReturn("element-id-001");
         actions = new MobileActions<>(driver);
 
@@ -52,7 +51,19 @@ public class MobileActionsTest {
                 (org.openqa.selenium.JavascriptExecutor) driver;
         Mockito.when(js.executeScript(Mockito.anyString(), Mockito.any()))
                 .thenThrow(new UnsupportedCommandException("unknown command: mobile: tapGesture"));
+        Mockito.doThrow(new UnsupportedCommandException("unknown command: w3c actions"))
+                .when(driver).perform(Mockito.any());
         actions.tap(0.5, 0.5);
+    }
+
+    @Test
+    public void tap_coordinate_unsupportedCommand_fallsBackToW3cTap() {
+        org.openqa.selenium.JavascriptExecutor js =
+                (org.openqa.selenium.JavascriptExecutor) driver;
+        Mockito.when(js.executeScript(Mockito.anyString(), Mockito.any()))
+                .thenThrow(new UnsupportedCommandException("unknown command: mobile: tapGesture"));
+        actions.tap(0.5, 0.5);
+        Mockito.verify(driver).perform(Mockito.any());
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
@@ -61,6 +72,8 @@ public class MobileActionsTest {
                 (org.openqa.selenium.JavascriptExecutor) driver;
         Mockito.when(js.executeScript(Mockito.anyString(), Mockito.any()))
                 .thenThrow(new RuntimeException("is not implemented for this driver"));
+        Mockito.doThrow(new UnsupportedCommandException("not implemented"))
+                .when(driver).perform(Mockito.any());
         actions.tap(0.5, 0.5);
     }
 
@@ -128,6 +141,8 @@ public class MobileActionsTest {
                 (org.openqa.selenium.JavascriptExecutor) driver;
         Mockito.when(js.executeScript(Mockito.anyString(), Mockito.any()))
                 .thenThrow(new RuntimeException("unknown command: tap"));
+        Mockito.doThrow(new UnsupportedCommandException("unknown command: w3c actions"))
+                .when(driver).perform(Mockito.any());
         actions.tap(0.5, 0.5);
     }
 
@@ -137,6 +152,8 @@ public class MobileActionsTest {
                 (org.openqa.selenium.JavascriptExecutor) driver;
         Mockito.when(js.executeScript(Mockito.anyString(), Mockito.any()))
                 .thenThrow(new RuntimeException("did not match a supported gesture"));
+        Mockito.doThrow(new UnsupportedCommandException("did not match: w3c actions"))
+                .when(driver).perform(Mockito.any());
         actions.tap(0.5, 0.5);
     }
 

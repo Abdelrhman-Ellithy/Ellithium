@@ -275,7 +275,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Key set successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set key: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set key: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set key: " + key, e);
         }
     }
 
@@ -285,7 +285,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      * @param key     the key
      * @param value   the value
      * @param seconds the expiration time in seconds
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void setWithExpiry(String key, String value, int seconds) {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -294,7 +294,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Key set with expiry successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set key with expiry: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set key with expiry: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set key with expiry: " + key, e);
         }
     }
 
@@ -321,7 +321,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      *
      * @param key  the key
      * @param hash the hash map of field-value pairs
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void hset(String key, Map<String, String> hash) {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -330,7 +330,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Hash fields set successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to set hash fields for key: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to set hash fields for key: " + key, e);
+            throw new NoSQLRuntimeException("Failed to set hash fields for key: " + key, e);
         }
     }
 
@@ -366,7 +366,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Values pushed successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to push values to list: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to push values to list: " + key, e);
+            throw new NoSQLRuntimeException("Failed to push values to list: " + key, e);
         }
     }
 
@@ -395,7 +395,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      *
      * @param key     the key
      * @param members the members to add
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void sadd(String key, String... members) {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -404,7 +404,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Members added successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to add members to set: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to add members to set: " + key, e);
+            throw new NoSQLRuntimeException("Failed to add members to set: " + key, e);
         }
     }
 
@@ -430,7 +430,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      * Executes multiple commands in a pipeline.
      *
      * @param commands the commands to execute
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void pipeline(Consumer<Pipeline> commands) {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -441,7 +441,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Pipeline commands executed successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to execute pipeline commands. Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to execute pipeline commands", e);
+            throw new NoSQLRuntimeException("Failed to execute pipeline commands", e);
         }
     }
 }

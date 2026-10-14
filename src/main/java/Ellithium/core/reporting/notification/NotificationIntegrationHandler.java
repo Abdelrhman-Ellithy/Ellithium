@@ -59,12 +59,10 @@ public class NotificationIntegrationHandler implements TestResultCollector {
      * Only initializes when notifications are actually enabled.
      */
     private void ensureNotificationSystemInitialized() {
-        if (config == null || sender == null) {
-            if (isNotificationSystemEnabled()) {
-                this.config = NotificationConfig.getInstance();
-                this.sender = new NotificationSender();
-                initializeTestResultCollection();
-            }
+        if ((config == null || sender == null) && isNotificationSystemEnabled()) {
+            this.config = NotificationConfig.getInstance();
+            this.sender = new NotificationSender();
+            initializeTestResultCollection();
         }
     }
 

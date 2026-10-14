@@ -108,7 +108,7 @@ public class JsonHelperTests {
             Reporter.log("JSON null-value key test failed: ", LogLevel.ERROR, e.getMessage());
             throw e;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new java.io.UncheckedIOException(e);
         }
     }
 

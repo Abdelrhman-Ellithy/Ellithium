@@ -77,10 +77,7 @@ public final class ActionStackResolver {
         for (String infra : INFRA_CLASSES) {
             if (className.equals(infra) || className.startsWith(infra + "$")) return true;
         }
-        if (methodName != null && EXCLUDED_METHODS.contains(methodName)) {
-            return true;
-        }
-        return false;
+        return methodName != null && EXCLUDED_METHODS.contains(methodName);
     }
 
     public static boolean isInfraFrame(String className) {

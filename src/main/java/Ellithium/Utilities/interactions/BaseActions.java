@@ -605,17 +605,19 @@ class BaseActions<T extends WebDriver> {
      */
     private static String extractCallerMethodName(StackTraceElement[] stack) {
         for (StackTraceElement frame : stack) {
-            String cls = frame.getClassName();
-            if (cls.startsWith("Ellithium.") || cls.startsWith("org.openqa.selenium")
-                    || cls.startsWith("java.") || cls.startsWith("jdk.") || cls.startsWith("sun.")
-                    || cls.startsWith("io.cucumber") || cls.startsWith("io.qameta")
-                    || cls.startsWith("org.testng") || cls.startsWith("org.junit")
-                    || cls.startsWith("net.bytebuddy")) {
-                continue;
+            if (!isExcludedCallerClass(frame.getClassName())) {
+                return frame.getMethodName();
             }
-            return frame.getMethodName();
         }
         return "unknown";
+    }
+
+    private static boolean isExcludedCallerClass(String cls) {
+        return cls.startsWith("Ellithium.") || cls.startsWith("org.openqa.selenium")
+                || cls.startsWith("java.") || cls.startsWith("jdk.") || cls.startsWith("sun.")
+                || cls.startsWith("io.cucumber") || cls.startsWith("io.qameta")
+                || cls.startsWith("org.testng") || cls.startsWith("org.junit")
+                || cls.startsWith("net.bytebuddy");
     }
 
     /**
@@ -632,42 +634,43 @@ class BaseActions<T extends WebDriver> {
                     || cls.startsWith("java.") || cls.startsWith("sun.")) {
                 continue;
             }
-            // Resolve source file
-            String classFilePart = cls.replace('.', '/') + ".java";
-            for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
-                String path = root + classFilePart;
-                if (new java.io.File(path).exists()) {
-                    try {
-                        long mtime = new java.io.File(path).lastModified();
-                        CachedSource cached = SOURCE_CACHE.get(path);
-                        if (cached == null || cached.mtime() != mtime) {
-                            cached = new CachedSource(mtime,
-                                    java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path)));
-                            SOURCE_CACHE.put(path, cached);
-                        }
-                        java.util.List<String> lines = cached.lines();
-                        int lineNum = frame.getLineNumber();
-                        if (lineNum >= 1 && lineNum <= lines.size()) {
-                            // Look for By field variable used at call site
-                            String callLine = lines.get(lineNum - 1).trim();
-                            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
-                                    "(?:this\\.)?([a-zA-Z_][a-zA-Z0-9_]*)").matcher(callLine);
-                            while (m.find()) {
-                                String candidate = m.group(1);
-                                // Check if it's declared as a By field above
-                                for (int i = Math.min(lineNum - 2, lines.size() - 1); i >= 0; i--) {
-                                    if (lines.get(i).contains("By " + candidate)
-                                            || lines.get(i).contains("By\t" + candidate)) {
-                                        return candidate;
-                                    }
+            return resolveFieldNameFromFrame(frame);
+        }
+        return null;
+    }
+
+    private static String resolveFieldNameFromFrame(StackTraceElement frame) {
+        String classFilePart = frame.getClassName().replace('.', '/') + ".java";
+        for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
+            String path = root + classFilePart;
+            if (new java.io.File(path).exists()) {
+                try {
+                    long mtime = new java.io.File(path).lastModified();
+                    CachedSource cached = SOURCE_CACHE.get(path);
+                    if (cached == null || cached.mtime() != mtime) {
+                        cached = new CachedSource(mtime,
+                                java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path)));
+                        SOURCE_CACHE.put(path, cached);
+                    }
+                    java.util.List<String> lines = cached.lines();
+                    int lineNum = frame.getLineNumber();
+                    if (lineNum >= 1 && lineNum <= lines.size()) {
+                        String callLine = lines.get(lineNum - 1).trim();
+                        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                                "(?:this\\.)?([a-zA-Z_][a-zA-Z0-9_]*)").matcher(callLine);
+                        while (m.find()) {
+                            String candidate = m.group(1);
+                            for (int i = Math.min(lineNum - 2, lines.size() - 1); i >= 0; i--) {
+                                if (lines.get(i).contains("By " + candidate)
+                                        || lines.get(i).contains("By\t" + candidate)) {
+                                    return candidate;
                                 }
                             }
                         }
-                    } catch (Exception ignored) {}
-                    break;
-                }
+                    }
+                } catch (Exception ignored) {}
+                break;
             }
-            break; // only check first user frame
         }
         return null;
     }

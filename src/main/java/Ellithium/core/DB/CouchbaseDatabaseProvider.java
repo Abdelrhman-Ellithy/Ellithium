@@ -303,7 +303,7 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document inserted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to insert document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to insert document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to insert document: " + docId, e);
         }
     }
 
@@ -312,7 +312,7 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
      *
      * @param docId    the document ID
      * @param document the document to upsert
-     * @throws RuntimeException if the operation fails
+     * @throws NoSQLRuntimeException if the operation fails
      */
     public void upsert(String docId, JsonObject document) {
         try {
@@ -321,7 +321,7 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
             Reporter.log("Document upserted successfully", LogLevel.INFO_YELLOW);
         } catch (Exception e) {
             Reporter.log("Failed to upsert document: " + docId + ". Error: " + e.getMessage(), LogLevel.ERROR);
-            throw new RuntimeException("Failed to upsert document: " + docId, e);
+            throw new NoSQLRuntimeException("Failed to upsert document: " + docId, e);
         }
     }
 

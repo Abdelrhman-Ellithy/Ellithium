@@ -624,9 +624,7 @@ public class EnsembleHealer {
             WebElement candidate = candidates.get(i);
             Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
             if (batch != null && attrs == null) continue;
-            if (attrs != null) {
-                if (Boolean.FALSE.equals(attrs.get("visible"))) continue;
-            }
+            if (attrs != null && Boolean.FALSE.equals(attrs.get("visible"))) continue;
             boolean isResolver = resolverWeights.containsKey(candidate);
             double rawAttrW = (attrs != null)
                     ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)

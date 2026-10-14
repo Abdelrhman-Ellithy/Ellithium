@@ -1,5 +1,6 @@
 package Ellithium.Utilities.assertion;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collections;
@@ -356,7 +357,7 @@ public class AssertionExecutorTests {
         s.assertEquals("a", "b", "failure 2");
         try {
             s.assertAll();
-            throw new RuntimeException("assertAll should have thrown");
+            Assert.fail("assertAll should have thrown");
         } catch (AssertionError e) {
             // expected: both failures are collected before throwing
         }
@@ -380,7 +381,7 @@ public class AssertionExecutorTests {
         s2.assertAll();
         try {
             s1.assertAll();
-            throw new RuntimeException("s1.assertAll should have thrown");
+            Assert.fail("s1.assertAll should have thrown");
         } catch (AssertionError e) {
             // expected
         }

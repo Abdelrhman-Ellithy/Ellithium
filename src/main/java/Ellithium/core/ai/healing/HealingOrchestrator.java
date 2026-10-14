@@ -81,101 +81,110 @@ public final class HealingOrchestrator implements ElementHealingPort {
             HealingTelemetryStore.record(0, request.brokenLocator().toString(), null, 0.0, false);
             return null;
         }
+
         for (HealingTier tier : tiers) {
             if (!tier.isAvailable()) continue;
 
-            HealingTelemetryStore.markAttemptStart();
-            HealOutcome raw;
-            try {
-                raw = tier.heal(request);
-            } catch (Throwable e) {
-                // Re-interrupt so executor-shutdown signals are not silently swallowed
-                // by this catch(Throwable) — without this, parallel-suite shutdown hangs.
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                Reporter.log("[TIER " + tier.order() + "] heal raised " + e.getClass().getSimpleName()
-                        + " — falling through", LogLevel.WARN);
-                Reporter.log("[TIER " + tier.order() + "] cause: "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-                        LogLevel.DEBUG);
-                if (!HealingTelemetryStore.wasRecordedSinceMark()) {
-                    HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(),
-                            null, 0.0, false, null, null, "backstop-exception");
-                }
-                continue;
+            HealOutcome outcome = processTier(tier, request, strategy);
+            if (outcome != null) {
+                return strategy == HealingStrategy.SUGGEST_ONLY ? null : outcome;
             }
-            // Structural backstop: guarantees a minimum telemetry entry for every tier attempted,
-            // even if the tier's own internal code path skips record() on some exit.
-            if (!HealingTelemetryStore.wasRecordedSinceMark()) {
-                HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(), null, 0.0,
-                        raw != null && raw.element() != null, null, null, "backstop");
-            }
-            if (raw == null || raw.element() == null) continue;
-
-            double rawScore = raw.score();
-            if (Double.isNaN(rawScore) || rawScore <= 0.0) {
-                continue;
-            }
-            if (tier.order() > 1 && rawScore < AIConfigLoader.getConfidenceThreshold()) {
-                continue;
-            }
-
-            WebElement resolved = resolveInteractiveElement(
-                    raw.element(), request.actionType(), "TIER " + tier.order(), request.driver());
-            if (resolved == null) continue;
-
-            By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
-                    ? raw.reconstructedLocator()
-                    : reconstructBest(request.driver(), resolved, request.baseline());
-
-            if (locator != null && locator.equals(request.brokenLocator())) {
-                continue;
-            }
-
-            WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
-            if (guarded == null) continue;
-
-            AISelfHealer.cacheHealedLocator(request.driver(), request.brokenLocator(),
-                    locator, raw.score(), request.fieldName());
-
-            if (!tier.persistsOwnHeal()) {
-                BaselineStore.capture(request.driver(), request.brokenLocator(), guarded,
-                        raw.score(), tier.order());
-
-                HealingContextBuilder.SourceLocation srcLoc =
-                        HealingContextBuilder.resolveSourceLocation(request.stackTrace());
-
-                if (locator != null) {
-                    AISelfHealer.queueSourcePatch(request.brokenLocator(), locator,
-                            srcLoc, raw.score(), tier.order());
-                }
-
-                String expr = locator != null ? AISelfHealer.byToJavaExpression(locator) : null;
-                if (expr == null && locator != null) expr = locator.toString();
-                AIHealingReporter.queueChange(
-                        srcLoc != null && srcLoc.filePath != null ? srcLoc.filePath : "unknown",
-                        request.brokenLocator().toString(),
-                        new HealingResult(expr != null ? expr : "unknown",
-                                raw.score(), "[TIER " + tier.order() + "]"),
-                        srcLoc != null ? srcLoc.className : null,
-                        srcLoc != null ? srcLoc.methodName : null,
-                        request.actionType(),
-                        srcLoc != null ? srcLoc.lineNumber : 0);
-            }
-            if (strategy == HealingStrategy.SUGGEST_ONLY) {
-                Reporter.log("[AI SUGGESTION] Locator " + request.brokenLocator() + " could be healed to: "
-                        + locator + " (score " + String.format("%.2f", raw.score()) + " via TIER " + tier.order() + ")",
-                        LogLevel.INFO_YELLOW);
-                return null;
-            }
-            return new HealOutcome(guarded, locator, raw.score(), tier.order());
         }
         Reporter.log("[AI] All healing tiers exhausted for " + request.brokenLocator()
                 + ". Known limitations: elements inside <iframe> (switch frame context before the"
                 + " action) and inside Shadow DOM roots (use CSS ::part() or pierce selector)"
                 + " are not reachable by standard WebDriver and will not heal.", LogLevel.DEBUG);
         return null;
+    }
+
+    private HealOutcome processTier(HealingTier tier, HealingRequest request, HealingStrategy strategy) {
+        HealingTelemetryStore.markAttemptStart();
+        HealOutcome raw = executeTierSafe(tier, request);
+        if (raw == null || raw.element() == null) return null;
+
+        double rawScore = raw.score();
+        if (Double.isNaN(rawScore) || rawScore <= 0.0) return null;
+        if (tier.order() > 1 && rawScore < AIConfigLoader.getConfidenceThreshold()) return null;
+
+        WebElement resolved = resolveInteractiveElement(
+                raw.element(), request.actionType(), "TIER " + tier.order(), request.driver());
+        if (resolved == null) return null;
+
+        By locator = (resolved == raw.element() && raw.reconstructedLocator() != null)
+                ? raw.reconstructedLocator()
+                : reconstructBest(request.driver(), resolved, request.baseline());
+
+        if (locator != null && locator.equals(request.brokenLocator())) return null;
+
+        WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
+        if (guarded == null) return null;
+
+        persistAndRecordHeal(tier, request, locator, guarded, raw.score());
+
+        if (strategy == HealingStrategy.SUGGEST_ONLY) {
+            Reporter.log("[AI SUGGESTION] Locator " + request.brokenLocator() + " could be healed to: "
+                    + locator + " (score " + String.format("%.2f", raw.score()) + " via TIER " + tier.order() + ")",
+                    LogLevel.INFO_YELLOW);
+        }
+        return new HealOutcome(guarded, locator, raw.score(), tier.order());
+    }
+
+    private static HealOutcome executeTierSafe(HealingTier tier, HealingRequest request) {
+        HealOutcome raw = null;
+        try {
+            raw = tier.heal(request);
+        } catch (Throwable e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            Reporter.log("[TIER " + tier.order() + "] heal raised " + e.getClass().getSimpleName()
+                    + " — falling through", LogLevel.WARN);
+            Reporter.log("[TIER " + tier.order() + "] cause: "
+                    + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+                    LogLevel.DEBUG);
+            if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+                HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(),
+                        null, 0.0, false, null, null, "backstop-exception");
+            }
+            return null;
+        }
+
+        if (!HealingTelemetryStore.wasRecordedSinceMark()) {
+            HealingTelemetryStore.record(tier.order(), request.brokenLocator().toString(), null, 0.0,
+                    raw != null && raw.element() != null, null, null, "backstop");
+        }
+        return raw;
+    }
+
+    private static void persistAndRecordHeal(HealingTier tier, HealingRequest request, By locator,
+                                              WebElement guarded, double score) {
+        AISelfHealer.cacheHealedLocator(request.driver(), request.brokenLocator(),
+                locator, score, request.fieldName());
+
+        if (!tier.persistsOwnHeal()) {
+            BaselineStore.capture(request.driver(), request.brokenLocator(), guarded,
+                    score, tier.order());
+
+            HealingContextBuilder.SourceLocation srcLoc =
+                    HealingContextBuilder.resolveSourceLocation(request.stackTrace());
+
+            if (locator != null) {
+                AISelfHealer.queueSourcePatch(request.brokenLocator(), locator,
+                        srcLoc, score, tier.order());
+            }
+
+            String expr = locator != null ? AISelfHealer.byToJavaExpression(locator) : null;
+            if (expr == null && locator != null) expr = locator.toString();
+            AIHealingReporter.queueChange(
+                    srcLoc != null && srcLoc.filePath != null ? srcLoc.filePath : "unknown",
+                    request.brokenLocator().toString(),
+                    new HealingResult(expr != null ? expr : "unknown",
+                            score, "[TIER " + tier.order() + "]"),
+                    srcLoc != null ? srcLoc.className : null,
+                    srcLoc != null ? srcLoc.methodName : null,
+                    request.actionType(),
+                    srcLoc != null ? srcLoc.lineNumber : 0);
+        }
     }
 
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
@@ -225,56 +234,64 @@ public final class HealingOrchestrator implements ElementHealingPort {
         }
     }
 
+    private static final java.util.Set<String> NON_TEXT_INPUT_TYPES = java.util.Set.of(
+            "hidden", "button", "submit", "checkbox", "radio", "image");
+
+    private record TextAttributes(String tag, String role, String type, String contentEditable) {}
+
+    private static TextAttributes extractTextAttributes(WebElement healed, WebDriver driver) {
+        try {
+            Object[] res = (Object[]) ((org.openqa.selenium.JavascriptExecutor) driver)
+                    .executeScript("var e=arguments[0]; return [e.tagName.toLowerCase(), e.getAttribute('role'), e.getAttribute('type'), e.getAttribute('contenteditable')];", healed);
+            if (res != null && res.length >= 4) {
+                return new TextAttributes(
+                        res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase(),
+                        res[1] != null ? res[1].toString() : null,
+                        res[2] != null ? res[2].toString() : null,
+                        res[3] != null ? res[3].toString() : null
+                );
+            }
+        } catch (Exception ignored) {}
+        return new TextAttributes(
+                healed.getTagName().toLowerCase(),
+                healed.getAttribute("role"),
+                healed.getAttribute("type"),
+                healed.getAttribute("contenteditable")
+        );
+    }
+
+    private static boolean isTextInputTarget(TextAttributes attrs) {
+        boolean isInputTag = InteractiveElements.TEXT_INPUT_TAGS.contains(attrs.tag());
+        boolean isNonTextType = attrs.type() != null && NON_TEXT_INPUT_TYPES.contains(attrs.type().toLowerCase(java.util.Locale.ROOT));
+        boolean isEditable = "true".equalsIgnoreCase(attrs.contentEditable());
+        boolean isRoleText = attrs.role() != null && InteractiveElements.TEXT_INPUT_ROLES.contains(attrs.role().toLowerCase(java.util.Locale.ROOT));
+        return (isInputTag && !isNonTextType) || isEditable || isRoleText;
+    }
+
+    private static WebElement findInnerEditable(WebElement healed, String tag, String tierLabel) {
+        for (String selector : InteractiveElements.INNER_TEXT_SELECTORS) {
+            try {
+                WebElement inner = healed.findElement(By.cssSelector(selector));
+                if (inner.isDisplayed() && inner.isEnabled()) {
+                    Reporter.log("[" + tierLabel + "] Resolved container <" + tag
+                            + "> → inner editable <" + inner.getTagName() + ">", LogLevel.INFO_YELLOW);
+                    return inner;
+                }
+            } catch (NoSuchElementException ignored) {}
+        }
+        Reporter.log("[" + tierLabel + "] Healed element is container <" + tag
+                + "> with no editable child for text input action — skipping", LogLevel.WARN);
+        return null;
+    }
+
     private static WebElement resolveTextInputElement(WebElement healed, String actionType,
                                                       String tierLabel, WebDriver driver) {
         try {
-            String tag, role, type, contentEditable;
-            try {
-                Object[] res = (Object[]) ((org.openqa.selenium.JavascriptExecutor) driver)
-                        .executeScript("var e=arguments[0]; return [e.tagName.toLowerCase(), e.getAttribute('role'), e.getAttribute('type'), e.getAttribute('contenteditable')];", healed);
-                if (res != null && res.length >= 4) {
-                    tag = res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase();
-                    role = res[1] != null ? res[1].toString() : null;
-                    type = res[2] != null ? res[2].toString() : null;
-                    contentEditable = res[3] != null ? res[3].toString() : null;
-                } else {
-                    tag = healed.getTagName().toLowerCase();
-                    role = healed.getAttribute("role");
-                    type = healed.getAttribute("type");
-                    contentEditable = healed.getAttribute("contenteditable");
-                }
-            } catch (Exception jse) {
-                tag = healed.getTagName().toLowerCase();
-                role = healed.getAttribute("role");
-                type = healed.getAttribute("type");
-                contentEditable = healed.getAttribute("contenteditable");
-            }
-
-            boolean isInputTag = InteractiveElements.TEXT_INPUT_TAGS.contains(tag);
-            boolean isNonTextType = type != null && ("hidden".equalsIgnoreCase(type) || "button".equalsIgnoreCase(type)
-                    || "submit".equalsIgnoreCase(type) || "checkbox".equalsIgnoreCase(type)
-                    || "radio".equalsIgnoreCase(type) || "image".equalsIgnoreCase(type));
-            boolean isEditable = "true".equalsIgnoreCase(contentEditable);
-            boolean isRoleText = role != null && InteractiveElements.TEXT_INPUT_ROLES.contains(role.toLowerCase(java.util.Locale.ROOT));
-
-            if ((isInputTag && !isNonTextType) || isEditable || isRoleText) {
+            TextAttributes attrs = extractTextAttributes(healed, driver);
+            if (isTextInputTarget(attrs)) {
                 return healed;
             }
-
-            for (String selector : InteractiveElements.INNER_TEXT_SELECTORS) {
-                try {
-                    WebElement inner = healed.findElement(By.cssSelector(selector));
-                    if (inner.isDisplayed() && inner.isEnabled()) {
-                        Reporter.log("[" + tierLabel + "] Resolved container <" + tag
-                                + "> → inner editable <" + inner.getTagName() + ">", LogLevel.INFO_YELLOW);
-                        return inner;
-                    }
-                } catch (NoSuchElementException ignored) {}
-            }
-
-            Reporter.log("[" + tierLabel + "] Healed element is container <" + tag
-                    + "> with no editable child for text input action — skipping", LogLevel.WARN);
-            return null;
+            return findInnerEditable(healed, attrs.tag(), tierLabel);
         } catch (Exception ex) {
             return healed;
         }

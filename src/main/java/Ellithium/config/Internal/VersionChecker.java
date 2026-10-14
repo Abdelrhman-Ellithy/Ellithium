@@ -25,8 +25,8 @@ public class VersionChecker {
             JsonHelper.setJsonKeyValue(path,"LastRunDate",Date);
             try {
                 String latestVersion=getLatestVersion();
-                if (latestVersion==null)latestVersion=getLatestVersion();
-                if (latestVersion==null) throw new Exception("Version check failed after retry");
+                if (latestVersion == null) latestVersion = getLatestVersion();
+                if (latestVersion == null) throw new IllegalStateException("Version check failed after retry");
                 String currentVersion= ConfigContext.getEllithuiumVersion();
                 if(!latestVersion.toLowerCase().contains(currentVersion.toLowerCase())){
                     Logger.info(CYAN + "-------------------[VERSION CHECKER]---------------------"  + RESET);
