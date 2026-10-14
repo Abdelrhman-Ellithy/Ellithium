@@ -82,24 +82,38 @@ public class Reporter {
 
     /**
      * As {@link #log(String, LogLevel, String)}, but records the step with an explicit start
-     * time, so its reported duration is the real elapsed time since {@code startMillis}.
+     * time, logging it as a sub-step under any currently open step without closing the parent step.
      */
     public static void log(String message, LogLevel logLevel, String additionalParameter, long startMillis) {
+        logSubStep(message, logLevel, additionalParameter, startMillis);
+    }
+
+    /**
+     * Logs a sub-step to the console/logger and attaches it as a sub-step under the currently
+     * active step (e.g. pending action step, Cucumber step, or @Step) without closing the parent step.
+     */
+    public static void logSubStep(String message, LogLevel logLevel, String additionalParameter, long startMillis) {
         String coloredMessage = logMap.get(logLevel) + message + additionalParameter + Colors.RESET;
         logByLevel(logLevel, coloredMessage);
         if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
-            closePendingStep(startMillis);
             AllureExternalKey key = AllureExternalKey.random(StepResult.class);
             StepResult result = new StepResult()
                     .setName(message + additionalParameter)
                     .setStatus(allureStatusMap.get(logLevel));
-            // AllureLifecycle#startStep unconditionally overwrites StepResult.start with "now" —
-            // any pre-set value is silently discarded — so the real start time must be restored
-            // afterward via updateStep, which applies the given mutation directly with no such override.
             Allure.getLifecycle().startStep(key, result);
-            Allure.getLifecycle().updateStep(key, sr -> sr.setStart(startMillis));
+            if (startMillis > 0) {
+                Allure.getLifecycle().updateStep(key, sr -> sr.setStart(startMillis));
+            }
             Allure.getLifecycle().stopStep();
         }
+    }
+
+    public static void logSubStep(String message, LogLevel logLevel, String additionalParameter) {
+        logSubStep(message, logLevel, additionalParameter, 0);
+    }
+
+    public static void logSubStep(String message, LogLevel logLevel) {
+        logSubStep(message, logLevel, "", 0);
     }
 
     private static void openPendingStep(String name, LogLevel logLevel, long start) {

@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -23,7 +22,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Select dropdown option '{option}' by text: {locator}")
     public void selectDropdownByText(By locator, String option, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByVisibleText(option));
         Reporter.log("Selecting Dropdown Option By Text: " + option + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -36,7 +34,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Select dropdown option '{value}' by value: {locator}")
     public void selectDropdownByValue(By locator, String value, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByValue(value));
         Reporter.log("Selecting Dropdown Option By Value: " + value + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -49,7 +46,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Select dropdown option by index {index}: {locator}")
     public void selectDropdownByIndex(By locator, int index, int timeout, int pollingEvery) {
         Reporter.log("Selecting Dropdown Option By Index: " + index + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).selectByIndex(index));
@@ -61,7 +57,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Deselect all options from dropdown: {locator}")
     public void deselectAll(By locator, int timeout, int pollingEvery) {
         Reporter.log("Deselecting All Options From Element: ", LogLevel.INFO_BLUE, locator.toString());
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectAll());
@@ -74,7 +69,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Deselect dropdown option '{option}' by text: {locator}")
     public void deselectDropdownByText(By locator, String option, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByVisibleText(option));
         Reporter.log("Deselecting Dropdown Option By Text: " + option + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -87,7 +81,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Deselect dropdown option '{value}' by value: {locator}")
     public void deselectDropdownByValue(By locator, String value, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByValue(value));
         Reporter.log("Deselecting Dropdown Option By Value: " + value + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
@@ -100,7 +93,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Deselect dropdown option by index {index}: {locator}")
     public void deselectDropdownByIndex(By locator, int index, int timeout, int pollingEvery) {
         Reporter.log("Deselecting Dropdown Option By Index: " + index + " From Element: ", LogLevel.INFO_BLUE, locator.toString());
         performWithStaleRetry(locator, timeout, pollingEvery, el -> new Select(el).deselectByIndex(index));
@@ -113,7 +105,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return List of selected options' texts
      */
-    @Step("Get selected dropdown options: {locator}")
     public List<String> getDropdownSelectedOptions(By locator, int timeout, int pollingEvery) {
         Reporter.log("Getting Dropdown Selected Options: ", LogLevel.INFO_BLUE, locator.toString());
         return performAndGet(locator, timeout, pollingEvery,
@@ -127,7 +118,6 @@ public class SelectActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Select dropdown option '{option}' by text for multiple elements: {locator}")
     public void selectDropdownByTextForMultipleElements(By locator, String option, int timeout, int pollingEvery) {
         Reporter.log("Selecting dropdown option by text for multiple elements: " + option + " for locator: " + locator.toString(), LogLevel.INFO_BLUE);
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);

@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -25,7 +24,6 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("JavaScript click on element: {locator}")
     public void javascriptClick(By locator, int timeout, int pollingEvery) {
         requireJavascriptContext("javascriptClick");
         performWithStaleRetry(locator, timeout, pollingEvery,
@@ -38,7 +36,10 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param locator Element locator
      */
     public void javascriptClick(By locator) {
-        javascriptClick(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime());
+        requireJavascriptContext("javascriptClick");
+        performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el));
+        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
     /**
@@ -47,14 +48,16 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      */
     public void javascriptClick(By locator, int timeout) {
-        javascriptClick(locator, timeout, WaitManager.getDefaultPollingTime());
+        requireJavascriptContext("javascriptClick");
+        performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
+                el -> ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el));
+        Reporter.log("JavaScript Click On Element: ", LogLevel.INFO_BLUE, locator.toString());
     }
 
     /**
      * Scrolls the page to bring an element into view.
      * @param locator Element locator
      */
-    @Step("Scroll to element: {locator}")
     public void scrollToElement(By locator) {
         requireJavascriptContext("scrollToElement");
         performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
@@ -67,7 +70,6 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param xOffset X offset to scroll
      * @param yOffset Y offset to scroll
      */
-    @Step("Scroll by offset ({xOffset}, {yOffset})")
     public void scrollByOffset(int xOffset, int yOffset) {
         requireJavascriptContext("scrollByOffset");
         ((JavascriptExecutor) driver).executeScript("window.scrollBy(arguments[0], arguments[1]);", xOffset, yOffset);
@@ -79,7 +81,6 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param locator Element locator
      * @param value Value to set
      */
-    @Step("Set element '{locator}' value to '{value}' using JavaScript")
     public void setElementValueUsingJS(By locator, String value) {
         requireJavascriptContext("setElementValueUsingJS");
         performWithStaleRetry(locator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
@@ -105,7 +106,6 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @throws IllegalArgumentException if file does not exist
      */
-    @Step("Upload file '{filePath}' to element: {fileUploadLocator}")
     public void uploadFileUsingJS(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
         File file = new File(filePath);
         if (!file.exists()) {

@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
@@ -352,7 +351,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *
      * @param locator Locator to the element to tap
      */
-    @Step("Tap mobile element: {locator}")
     public void tap(By locator) {
         Reporter.log("Performing tap gesture on element", LogLevel.INFO_BLUE);
         performOnElement("tap gesture", locator, element -> {
@@ -382,7 +380,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param x The X coordinate
      * @param y The Y coordinate
      */
-    @Step("Tap mobile coordinates ({x}, {y})")
     public void tap(double x, double y) {
         Reporter.log("Performing tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
         performGesture("tap gesture", () -> {
@@ -414,7 +411,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      *
      * @param locator Locator to the element to double-tap
      */
-    @Step("Double-tap mobile element: {locator}")
     public void doubleTap(By locator) {
         Reporter.log("Performing double-tap gesture on element", LogLevel.INFO_BLUE);
         performOnElement("double-tap gesture", locator, element -> {
@@ -443,7 +439,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param x The X coordinate
      * @param y The Y coordinate
      */
-    @Step("Double-tap mobile coordinates ({x}, {y})")
     public void doubleTap(double x, double y) {
         Reporter.log("Performing double-tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
         performGesture("double-tap gesture", () -> {
@@ -555,7 +550,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param locator Locator to the element to long press
      * @param durationSeconds The duration in seconds
      */
-    @Step("Long press mobile element: {locator}")
     public void longPress(By locator, double durationSeconds) {
         Reporter.log("Performing long press gesture on element for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performOnElement("long press gesture", locator, element -> {
@@ -600,7 +594,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param y The Y coordinate
      * @param durationSeconds The duration in seconds
      */
-    @Step("Long press mobile coordinates ({x}, {y})")
     public void longPress(double x, double y, double durationSeconds) {
         Reporter.log("Performing long press gesture at coordinates (" + x + ", " + y + ") for " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performGesture("long press gesture", () -> {
@@ -661,7 +654,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param direction The direction to swipe (up, down, left, right)
      * @param percent The swipe distance as percentage (0.0 to 1.0)
      */
-    @Step("Swipe '{direction}' on element: {locator}")
     public void swipe(By locator, String direction, double percent) {
         Reporter.log("Performing swipe gesture on element in direction " + direction + " with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         performOnElement("swipe gesture", locator, element -> {
@@ -695,7 +687,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param endY The ending Y coordinate (absolute viewport)
      * @param durationSeconds The gesture duration in seconds
      */
-    @Step("Swipe from ({startX}, {startY}) to ({endX}, {endY})")
     public void swipe(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing swipe gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performGesture("swipe gesture", () -> {
@@ -785,7 +776,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param direction The direction to scroll (up, down, left, right)
      * @param percent The scroll distance as percentage (0-100)
      */
-    @Step("Scroll '{direction}' on element: {locator}")
     public void scroll(By locator, String direction, int percent) {
         Reporter.log("Performing scroll gesture on element in direction " + direction + " with " + percent + "%", LogLevel.INFO_BLUE);
         performOnElement("scroll gesture", locator, element -> {
@@ -846,7 +836,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param endY The ending Y coordinate (absolute viewport)
      * @param durationSeconds The gesture duration in seconds (applied on both platforms)
      */
-    @Step("Scroll from ({startX}, {startY}) to ({endX}, {endY})")
     public void scroll(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing scroll gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performGesture("scroll gesture", () -> {
@@ -905,7 +894,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param selector The predicate string (iOS) or UiSelector string (Android)
      * @param direction The direction to scroll
      */
-    @Step("Scroll to element '{selector}' in direction '{direction}'")
     public void scrollToElement(By locator, String selector, String direction) {
         Reporter.log("Scrolling to element with selector: " + selector + " in direction: " + direction, LogLevel.INFO_BLUE);
         if (isAndroid()) {
@@ -979,7 +967,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param endY The end Y coordinate
      * @param durationSeconds The duration in seconds
      */
-    @Step("Drag element '{locator}' to ({endX}, {endY})")
     public void drag(By locator, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture on element to coordinates (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performOnElement("drag gesture", locator, element -> {
@@ -1034,7 +1021,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param endY The ending Y coordinate
      * @param durationSeconds The duration in seconds
      */
-    @Step("Drag from ({startX}, {startY}) to ({endX}, {endY})")
     public void drag(double startX, double startY, double endX, double endY, double durationSeconds) {
         Reporter.log("Performing drag gesture from (" + startX + ", " + startY + ") to (" + endX + ", " + endY + ") over " + durationSeconds + " seconds", LogLevel.INFO_BLUE);
         performGesture("drag gesture", () -> {
@@ -1076,7 +1062,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param zoomIn true to zoom in (pinch open), false to zoom out (pinch close)
      * @param percent The pinch percentage (0.0 to 1.0) - Android only, ignored on iOS
      */
-    @Step("Pinch on element: {locator}")
     public void pinch(By locator, boolean zoomIn, double percent) {
         Reporter.log("Performing pinch " + (zoomIn ? "open" : "close") + " gesture on element with " + (percent * 100) + "%", LogLevel.INFO_BLUE);
         performOnElement("pinch gesture", locator, element -> {
@@ -1116,7 +1101,6 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param scale The scale factor (> 1 zooms in, < 1 zooms out)
      * @param velocity The velocity of the pinch
      */
-    @Step("Pinch on element with scale {scale}: {locator}")
     public void pinch(By locator, double scale, double velocity) {
         Reporter.log("Performing pinch gesture on element with scale: " + scale + " and velocity: " + velocity, LogLevel.INFO_BLUE);
         performOnElement("pinch gesture", locator, element -> {

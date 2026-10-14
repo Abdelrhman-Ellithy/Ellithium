@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import org.openqa.selenium.NoSuchWindowException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -29,7 +28,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param windowTitle The title of the window to switch to
      * @throws org.openqa.selenium.NoSuchWindowException if the window handle is invalid
      */
-    @Step("Switch to new window with title: {windowTitle}")
     public void switchToNewWindow(String windowTitle) {
         String originalWindow = driver.getWindowHandle();
         for (String windowHandle : driver.getWindowHandles()) {
@@ -46,7 +44,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Note: After closing, you need to switch to another window to continue interacting.
      * @throws org.openqa.selenium.NoSuchWindowException if the window is already closed
      */
-    @Step("Close current window")
     public void closeCurrentWindow() {
         driver.close();
     }
@@ -55,7 +52,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Switches to the original window.
      * @param originalWindowHandle The handle of the original window
      */
-    @Step("Switch to original window: {originalWindowHandle}")
     public void switchToOriginalWindow(String originalWindowHandle) {
         driver.switchTo().window(originalWindowHandle);
     }
@@ -66,7 +62,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingTime Polling interval in milliseconds
      */
-    @Step("Switch to popup window with title: {expectedPopupTitle}")
     public void switchToPopupWindow(String expectedPopupTitle, int timeout, int pollingTime) {
         String mainWindow = driver.getWindowHandle();
         Reporter.log("Waiting for popup window to appear.", LogLevel.INFO_BLUE);
@@ -94,7 +89,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Closes the popup window and switches back to the main window.
      */
-    @Step("Close popup window")
     public void closePopupWindow() {
         Set<String> allHandles = new java.util.HashSet<>(driver.getWindowHandles());
         String popupHandle = driver.getWindowHandle();
@@ -115,7 +109,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return True if the number of windows matches the expected number, false otherwise
      */
-    @Step("Wait for number of windows to be {numberOfWindows}")
     public boolean waitForNumberOfWindowsToBe(int numberOfWindows, int timeout, int pollingEvery) {
         Reporter.log("Waiting for Number of Windows to be: " + numberOfWindows, LogLevel.INFO_BLUE);
         return getFluentWait(timeout, pollingEvery)
@@ -125,7 +118,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Maximizes the browser window.
      */
-    @Step("Maximize window")
     public void maximizeWindow() {
         driver.manage().window().maximize();
     }
@@ -133,7 +125,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
     /**
      * Minimizes the browser window.
      */
-    @Step("Minimize window")
     public void minimizeWindow() {
         driver.manage().window().minimize();
     }
@@ -161,7 +152,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param y Y coordinate (vertical position)
      * @throws org.openqa.selenium.WebDriverException if the driver fails to set position
      */
-    @Step("Set window position to ({x}, {y})")
     public void setWindowPosition(int x, int y) {
         try {
             driver.manage().window().setPosition(new Point(x, y));
@@ -176,7 +166,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param height Height of the window in pixels
      * @throws org.openqa.selenium.WebDriverException if the driver fails to set size
      */
-    @Step("Set window size to ({width}, {height})")
     public void setWindowSize(int width, int height) {
         try {
             driver.manage().window().setSize(new Dimension(width, height));
@@ -190,7 +179,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Different from maximize - uses the entire screen without window decorations.
      * @throws org.openqa.selenium.WebDriverException if fullscreen mode is not supported
      */
-    @Step("Fullscreen window")
     public void fullscreenWindow() {
         try {
             driver.manage().window().fullscreen();
@@ -204,7 +192,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return Point object containing x,y coordinates of the window
      * @throws org.openqa.selenium.WebDriverException if position cannot be determined
      */
-    @Step("Get window position")
     public Point getWindowPosition() {
         return driver.manage().window().getPosition();
     }
@@ -214,7 +201,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return Dimension object containing width and height of the window
      * @throws org.openqa.selenium.WebDriverException if size cannot be determined
      */
-    @Step("Get window size")
     public Dimension getWindowSize() {
         return driver.manage().window().getSize();
     }
@@ -224,7 +210,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of window handle strings
      * @throws org.openqa.selenium.WebDriverException if handles cannot be retrieved
      */
-    @Step("Get all window handles")
     public List<String> getAllWindowHandles() {
         return new ArrayList<>(driver.getWindowHandles());
     }
@@ -234,7 +219,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return String representing the current window handle
      * @throws org.openqa.selenium.NoSuchWindowException if the current window is closed
      */
-    @Step("Get current window handle")
     public String getCurrentWindowHandle() {
         return driver.getWindowHandle();
     }
@@ -245,7 +229,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if switch was successful, false if index invalid or switch failed
      * @throws org.openqa.selenium.WebDriverException if window switching fails
      */
-    @Step("Switch to window by index {index}")
     public boolean switchToWindowByIndex(int index) {
         try {
             List<String> handles = getAllWindowHandles();
@@ -267,7 +250,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if switch successful, false if no windows available
      * @throws org.openqa.selenium.WebDriverException if window switching fails
      */
-    @Step("Switch to last window")
     public boolean switchToLastWindow() {
         try {
             List<String> handles = getAllWindowHandles();
@@ -288,7 +270,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Automatically switches back to the main window after closing others.
      * @throws org.openqa.selenium.WebDriverException if closing operations fail
      */
-    @Step("Close all windows except main")
     public void closeAllExceptMain() {
         String mainHandle = getCurrentWindowHandle();
         for (String handle : getAllWindowHandles()) {
@@ -306,7 +287,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return Integer representing the number of open windows
      * @throws org.openqa.selenium.WebDriverException if handle count cannot be retrieved
      */
-    @Step("Get number of windows")
     public int getNumberOfWindows() {
         return driver.getWindowHandles().size();
     }
@@ -318,7 +298,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if window exists, false otherwise
      * @throws org.openqa.selenium.WebDriverException if window checking fails
      */
-    @Step("Check if window with title '{title}' exists")
     public boolean doesWindowExist(String title) {
         String currentHandle = getCurrentWindowHandle();
         boolean exists = false;
@@ -338,7 +317,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param handle The window handle to switch to
      * @throws org.openqa.selenium.NoSuchWindowException if the handle is invalid
      */
-    @Step("Switch to window handle: {handle}")
     public void switchToWindowByHandle(String handle) {
         try {
             driver.switchTo().window(handle);
@@ -356,7 +334,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param handle The window handle
      * @return true if the window is open, false otherwise
      */
-    @Step("Check if window handle '{handle}' is open")
     public boolean isWindowOpen(String handle) {
         boolean open = driver.getWindowHandles().contains(handle);
         Reporter.log(open ? "Window is open: " + handle : "Window is closed: " + handle,
@@ -367,7 +344,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Switches to the parent (default content) window.
      * Useful when nested in frames or shadow DOM.
      */
-    @Step("Switch to parent window")
     public void switchToParentWindow() {
         try {
             driver.switchTo().parentFrame();
@@ -380,7 +356,6 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * Gets the title of the currently focused window.
      * @return The window title
      */
-    @Step("Get current window title")
     public String getCurrentWindowTitle() {
         try {
             return driver.getTitle();

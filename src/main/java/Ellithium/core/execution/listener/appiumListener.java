@@ -20,11 +20,11 @@ public class appiumListener implements MethodCallListener {
             // ── Locator ──────────────────────────────────────────────────────
             case "findElement" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Finding element using: " + formatLocator(args[0]), LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Finding element using: " + formatLocator(args[0]), LogLevel.INFO_BLUE);
             }
             case "findElements" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Finding elements using: " + formatLocator(args[0]), LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Finding elements using: " + formatLocator(args[0]), LogLevel.INFO_BLUE);
             }
 
             // ── Mobile script execution ───────────────────────────────────────
@@ -35,7 +35,7 @@ public class appiumListener implements MethodCallListener {
                     String action = script.startsWith("mobile: ")
                             ? script.substring("mobile: ".length())
                             : script;
-                    Reporter.log(action, LogLevel.INFO_BLUE);
+                    Reporter.logSubStep(action, LogLevel.INFO_BLUE);
                 }
             }
 
@@ -43,11 +43,11 @@ public class appiumListener implements MethodCallListener {
             // args[0] = KeyEvent; decode via AndroidKey enum lookup
             case "pressKey" -> {
                 String key = (args != null && args.length > 0) ? decodeKeyEvent(args[0]) : "UNKNOWN";
-                Reporter.log("Pressing key: " + key, LogLevel.INFO_BLUE);
+                Reporter.logSubStep("Pressing key: " + key, LogLevel.INFO_BLUE);
             }
             case "longPressKey" -> {
                 String key = (args != null && args.length > 0) ? decodeKeyEvent(args[0]) : "UNKNOWN";
-                Reporter.log("Long pressing key: " + key, LogLevel.INFO_BLUE);
+                Reporter.logSubStep("Long pressing key: " + key, LogLevel.INFO_BLUE);
             }
 
             // ── W3C pointer/touch actions (PointerInput swipe/scroll/drag) ───
@@ -55,58 +55,58 @@ public class appiumListener implements MethodCallListener {
             case "perform" -> {
                 int count = (args != null && args.length > 0 && args[0] instanceof Collection<?> c)
                         ? c.size() : 0;
-                Reporter.log("Performing W3C action sequence (" + count + " pointer" + (count != 1 ? "s" : "") + ")", LogLevel.INFO_BLUE);
+                Reporter.logSubStep("Performing W3C action sequence (" + count + " pointer" + (count != 1 ? "s" : "") + ")", LogLevel.INFO_BLUE);
             }
 
             // ── Navigation ────────────────────────────────────────────────────
             case "get", "to" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Navigating to: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Navigating to: " + args[0], LogLevel.INFO_BLUE);
             }
-            case "back"    -> Reporter.log("Navigating back", LogLevel.INFO_BLUE);
-            case "forward" -> Reporter.log("Navigating forward", LogLevel.INFO_BLUE);
-            case "refresh" -> Reporter.log("Refreshing page", LogLevel.INFO_BLUE);
+            case "back"    -> Reporter.logSubStep("Navigating back", LogLevel.INFO_BLUE);
+            case "forward" -> Reporter.logSubStep("Navigating forward", LogLevel.INFO_BLUE);
+            case "refresh" -> Reporter.logSubStep("Refreshing page", LogLevel.INFO_BLUE);
 
             // ── App management ────────────────────────────────────────────────
             case "activateApp" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Activating app: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Activating app: " + args[0], LogLevel.INFO_BLUE);
             }
             case "terminateApp" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Terminating app: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Terminating app: " + args[0], LogLevel.INFO_BLUE);
             }
             case "installApp" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Installing app: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Installing app: " + args[0], LogLevel.INFO_BLUE);
             }
             case "removeApp" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Removing app: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Removing app: " + args[0], LogLevel.INFO_BLUE);
             }
 
             // ── Device control ────────────────────────────────────────────────
-            case "lock", "lockDevice"     -> Reporter.log("Locking device", LogLevel.INFO_BLUE);
-            case "unlock", "unlockDevice" -> Reporter.log("Unlocking device", LogLevel.INFO_BLUE);
-            case "hideKeyboard"           -> Reporter.log("Hiding keyboard", LogLevel.INFO_BLUE);
+            case "lock", "lockDevice"     -> Reporter.logSubStep("Locking device", LogLevel.INFO_BLUE);
+            case "unlock", "unlockDevice" -> Reporter.logSubStep("Unlocking device", LogLevel.INFO_BLUE);
+            case "hideKeyboard"           -> Reporter.logSubStep("Hiding keyboard", LogLevel.INFO_BLUE);
             case "rotate" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Rotating device: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Rotating device: " + args[0], LogLevel.INFO_BLUE);
             }
             case "setContext" -> {
                 if (args != null && args.length > 0)
-                    Reporter.log("Switching context to: " + args[0], LogLevel.INFO_BLUE);
+                    Reporter.logSubStep("Switching context to: " + args[0], LogLevel.INFO_BLUE);
             }
 
             // ── Driver lifecycle ──────────────────────────────────────────────
-            case "quit"            -> Reporter.log("Driver quit", LogLevel.INFO_BLUE);
-            case "close"           -> Reporter.log("Window closed", LogLevel.INFO_BLUE);
-            case "getScreenshotAs" -> Reporter.log("Taking screenshot", LogLevel.INFO_BLUE);
+            case "quit"            -> Reporter.logSubStep("Driver quit", LogLevel.INFO_BLUE);
+            case "close"           -> Reporter.logSubStep("Window closed", LogLevel.INFO_BLUE);
+            case "getScreenshotAs" -> Ellithium.core.logging.Logger.info("Taking screenshot");
 
             // ── Default: log method name; suppress infrastructure noise ──────────
             default -> {
                 if (!isUtilityMethod(methodName))
-                    Reporter.log(toReadable(methodName), LogLevel.INFO_BLUE);
+                    Reporter.logSubStep(toReadable(methodName), LogLevel.INFO_BLUE);
             }
         }
     }

@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import org.openqa.selenium.*;
 import java.io.File;
 import java.util.List;
@@ -20,7 +19,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Send data '{data}' to element: {locator}")
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
@@ -32,7 +30,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Send key '{data}' to element: {locator}")
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
@@ -43,7 +40,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Click on element: {locator}")
     public void clickOnElement(By locator, int timeout, int pollingEvery) {
         performWithStaleRetry(locator, timeout, pollingEvery, WebElement::click);
     }
@@ -55,7 +51,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return Text content of the element
      */
-    @Step("Get text from element: {locator}")
     public String getText(By locator, int timeout, int pollingEvery) {
         return performAndGet(locator, timeout, pollingEvery, WebElement::getText);
     }
@@ -67,7 +62,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return List of text from the elements
      */
-    @Step("Get text from multiple elements: {locator}")
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
@@ -82,7 +76,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return List of attribute values from the elements
      */
-    @Step("Get attribute '{attribute}' from multiple elements: {locator}")
     public List<String> getAttributeFromMultipleElements(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
@@ -96,7 +89,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return List of attribute values from the elements
      */
-    @Step("Get property '{property}' from multiple elements: {locator}")
     public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
@@ -109,7 +101,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Click on multiple elements: {locator}")
     public void clickOnMultipleElements(By locator, int timeout, int pollingEvery) {
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         Reporter.log("Clicking on multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
@@ -124,7 +115,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The attribute value
      */
-    @Step("Get attribute '{attribute}' from element: {locator}")
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute), false);
@@ -138,7 +128,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return The attribute value
      */
-    @Step("Get property '{property}' from element: {locator}")
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property), false);
@@ -350,7 +339,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @throws IllegalArgumentException if file does not exist
      */
-    @Step("Upload file '{filePath}' to element: {fileUploadLocator}")
     public void uploadFile(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -370,7 +358,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @throws IllegalArgumentException if any file does not exist
      */
-    @Step("Upload multiple files to element: {fileUploadLocator}")
     public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
         if (filePaths == null || filePaths.length == 0) {
             Reporter.log("uploadMultipleFiles: filePaths must not be null or empty", LogLevel.ERROR);
@@ -423,7 +410,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param heal whether to attempt healing when the locator never resolves
      * @return true if the element is present, false otherwise
      */
-    @Step("Check if element is present: {locator}")
     public boolean isElementPresent(By locator, int timeout, int pollingEvery, boolean heal) {
         Reporter.log("Element present check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, el -> Boolean.TRUE, Boolean.FALSE, heal);
@@ -467,7 +453,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if the element is displayed, false otherwise
      */
-    @Step("Check if element is displayed: {locator}")
     public boolean isElementDisplayed(By locator, int timeout, int pollingEvery) {
         Reporter.log("Element is displayed check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isDisplayed, false);
@@ -499,7 +484,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if the element is enabled, false otherwise
      */
-    @Step("Check if element is enabled: {locator}")
     public boolean isElementEnabled(By locator, int timeout, int pollingEvery) {
         Reporter.log("Element is enabled check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isEnabled, false);
@@ -531,7 +515,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if the element is selected, false otherwise
      */
-    @Step("Check if element is selected: {locator}")
     public boolean isElementSelected(By locator, int timeout, int pollingEvery) {
         Reporter.log("Element is selected check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isSelected, false);
@@ -563,7 +546,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if the element is clickable, false otherwise
      */
-    @Step("Check if element is clickable: {locator}")
     public boolean isElementClickable(By locator, int timeout, int pollingEvery) {
         Reporter.log("Element is clickable check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,
@@ -594,7 +576,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Clear element: {locator}")
     public void clearElement(By locator, int timeout, int pollingEvery) {
         try {
             performWithStaleRetry(locator, timeout, pollingEvery, WebElement::clear);
@@ -630,7 +611,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param timeout Maximum wait time in seconds
      * @param pollingEvery Polling interval in milliseconds
      */
-    @Step("Scroll element into view: {locator}")
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
         requireJavascriptContext("scrollIntoView");
         performWithStaleRetry(locator, timeout, pollingEvery,
@@ -662,7 +642,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if text contains substring, false otherwise
      */
-    @Step("Check if text contains '{substring}' in element: {locator}")
     public boolean isTextContains(By locator, String substring, int timeout, int pollingEvery) {
         Reporter.log("Text contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,
@@ -698,7 +677,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if attribute contains substring, false otherwise
      */
-    @Step("Check if attribute '{attribute}' contains '{substring}' in element: {locator}")
     public boolean isAttributeContains(By locator, String attribute, String substring, int timeout, int pollingEvery) {
         Reporter.log("Attribute '" + attribute + "' contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, el -> {
@@ -737,7 +715,6 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      * @return true if text matches exactly, false otherwise
      */
-    @Step("Check if text equals '{expected}' in element: {locator}")
     public boolean isTextEqual(By locator, String expected, int timeout, int pollingEvery) {
         Reporter.log("Text equal '" + expected + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,

@@ -185,18 +185,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     public File captureScreenshot(String screenshotName) {
         if (screenshotName == null || screenshotName.trim().isEmpty()) {
-            Reporter.log("Screenshot name cannot be null or empty, using default", LogLevel.WARN);
+            Logger.warn("Screenshot name cannot be null or empty, using default");
             screenshotName = "screenshot";
         }
 
         try {
             if (!(driver instanceof TakesScreenshot camera)) {
-                Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
+                Logger.error("Driver does not support screenshots");
                 return null;
             }
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             if (screenshot == null || !screenshot.exists()) {
-                Reporter.log("Screenshot file was not created", LogLevel.ERROR);
+                Logger.error("Screenshot file was not created");
                 return null;
             }
 
@@ -204,8 +204,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (!screenShotFolder.exists()) {
                 boolean created = screenShotFolder.mkdirs();
                 if (!created) {
-                    Reporter.log("Failed to create screenshot folder: " + screenShotFolder.getPath(),
-                        LogLevel.ERROR);
+                    Logger.error("Failed to create screenshot folder: " + screenShotFolder.getPath());
                     return null;
                 }
             }
@@ -213,14 +212,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             String name = sanitizedName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File(screenShotFolder.getPath() + File.separator + name + ".png");
             Files.move(screenshot, screenShotFile);
-            Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_GREEN);
+            Logger.info("Screenshot captured: " + screenShotFile.getPath());
             Reporter.attachScreenshotToReport(screenShotFile, name, "Captured Screenshot");
             return screenShotFile;
         } catch (IOException e) {
-            Reporter.log("Failed to save screenshot: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to save screenshot: " + e.getMessage());
             return null;
         } catch (Exception e) {
-            Reporter.log("Failed to capture screenshot: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to capture screenshot: " + e.getMessage());
             return null;
         }
     }
@@ -243,7 +242,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void startRecording(String name) {
         if (name == null || name.trim().isEmpty()) {
-            Reporter.log("Recording name cannot be null or empty, using default", LogLevel.WARN);
+            Logger.warn("Recording name cannot be null or empty, using default");
             name = "recording";
         }
 
@@ -268,14 +267,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         return;
                     }
                     cdpUnsupportedDrivers.add(driverId);
-                    Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
+                    Logger.warn("CDP recording failed, falling back to snapshot mode");
                 }
             }
 
             startSnapshotRecording(sanitizedName);
 
         } catch (Exception e) {
-            Reporter.log("Failed to start recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to start recording: " + e.getMessage());
             isRecording.set(false);
             recordingStartTime = null;
             cleanup();
@@ -301,7 +300,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         String name = videoName;
 
         if (name == null) {
-            Reporter.log("No active recording found to stop", LogLevel.WARN);
+            Logger.warn("No active recording found to stop");
             cleanup();
             return null;
         }
@@ -310,7 +309,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         if (!videoFolder.exists()) {
             boolean created = videoFolder.mkdirs();
             if (!created) {
-                Reporter.log("Failed to create video folder: " + videoFolder.getPath(), LogLevel.ERROR);
+                Logger.error("Failed to create video folder: " + videoFolder.getPath());
                 cleanup();
                 return null;
             }
@@ -325,10 +324,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 path = stopWebRecording(name, videoFolder);
             }
             if (path != null) {
-                Reporter.log("Video recording saved: " + path, LogLevel.INFO_GREEN);
+                Logger.info("Video recording saved: " + path);
             }
         } catch (Exception e) {
-            Reporter.log("Error stopping recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Error stopping recording: " + e.getMessage());
         } finally {
             cleanup();
         }
@@ -345,9 +344,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else if (driver instanceof IOSDriver) {
                 ((IOSDriver) driver).startRecordingScreen();
             }
-            Reporter.log("Started mobile screen recording: " + name, LogLevel.INFO_GREEN);
+            Logger.info("Started mobile screen recording: " + name);
         } catch (Exception e) {
-            Reporter.log("Failed to start mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to start mobile recording: " + e.getMessage());
             throw e;
         }
     }
@@ -365,7 +364,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             ChromiumDriver chromiumDriver = unwrapChromiumDriver(driver);
             if (chromiumDriver == null) {
-                Reporter.log("Could not unwrap ChromiumDriver, falling back to snapshot", LogLevel.WARN);
+                Logger.warn("Could not unwrap ChromiumDriver, falling back to snapshot");
                 return false;
             }
             DevTools devTools = chromiumDriver.getDevTools();
@@ -374,7 +373,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             String detectedVersion = detectCDPVersion(chromiumDriver);
             if (detectedVersion == null) {
-                Reporter.log("No CDP version found in classpath", LogLevel.WARN);
+                Logger.warn("No CDP version found in classpath");
                 return false;
             }
             activeCdpVersion = detectedVersion;
@@ -413,7 +412,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (enableCommand == null) {
-                Reporter.log("Could not find CDP enable command in " + detectedVersion, LogLevel.WARN);
+                Logger.warn("Could not find CDP enable command in " + detectedVersion);
                 Logger.logException(lastException);
                 cleanupDevTools();
                 return false;
@@ -422,7 +421,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             Object startCommand = null;
             Method startMethod = findStartScreencastMethod(pageClass);
             if (startMethod == null) {
-                Reporter.log("startScreencast method not found in " + detectedVersion, LogLevel.WARN);
+                Logger.warn("startScreencast method not found in " + detectedVersion);
                 cleanupDevTools();
                 return false;
             }
@@ -459,7 +458,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     startCommand = startMethod.invoke(null, args);
                 }
             } catch (Exception e) {
-                Reporter.log("Failed to invoke startScreencast in " + detectedVersion + ": " + e.getMessage(), LogLevel.WARN);
+                Logger.warn("Failed to invoke startScreencast in " + detectedVersion + ": " + e.getMessage());
                 Logger.logException(e);
                 cleanupDevTools();
                 return false;
@@ -468,15 +467,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             addScreencastFrameListener(devTools, pageClass);
             devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
             devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
-            Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.DEBUG);
+            Logger.debug("Started web recording (CDP " + detectedVersion + "): " + name);
             return true;
 
         } catch (ClassNotFoundException e) {
-            Reporter.log("CDP Page class not found: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("CDP Page class not found: " + e.getMessage());
             cleanupDevTools();
             return false;
         } catch (Exception e) {
-            Reporter.log("CDP recording initialization failed: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("CDP recording initialization failed: " + e.getMessage());
             Logger.logException(e);
             cleanupDevTools();
             return false;
@@ -684,7 +683,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         } catch (Exception ignored) {}
 
         if (!(rawDriver instanceof TakesScreenshot)) {
-            Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
+            Logger.error("Driver does not support screenshots");
             throw new UnsupportedOperationException("Driver does not support screenshots");
         }
 
@@ -702,7 +701,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         executor.scheduleAtFixedRate(() -> {
             if (recordingFlag.get()) {
                 try {
-                    byte[] screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
+                    Ellithium.core.execution.listener.ListenerLogSuppression.suppress();
+                    byte[] screenshot;
+                    try {
+                        screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
+                    } finally {
+                        Ellithium.core.execution.listener.ListenerLogSuppression.resume();
+                    }
                     if (screenshot != null && screenshot.length > 0) {
                         byte[] prevBytes = prevBytesRef.get();
                         if (prevBytes != null && java.util.Arrays.equals(prevBytes, screenshot)) {
@@ -725,7 +730,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
         }, 0, SNAPSHOT_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.DEBUG);
+        Logger.debug("Started web recording (Snapshot): " + name);
     }
 
     /**
@@ -741,7 +746,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (base64Video == null || base64Video.isEmpty()) {
-                Reporter.log("Mobile recording returned empty data", LogLevel.ERROR);
+                Logger.error("Mobile recording returned empty data");
                 return null;
             }
 
@@ -753,17 +758,17 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 fos.write(videoData);
                 fos.flush();
             }
-            Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_GREEN);
+            Logger.info("Mobile video recording saved: " + videoFile.getPath());
             return videoFile.getAbsolutePath();
 
         } catch (IllegalArgumentException e) {
-            Reporter.log("Invalid Base64 data from mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Invalid Base64 data from mobile recording: " + e.getMessage());
             return null;
         } catch (IOException e) {
-            Reporter.log("Failed to write mobile video file: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to write mobile video file: " + e.getMessage());
             return null;
         } catch (Exception e) {
-            Reporter.log("Failed to stop mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to stop mobile recording: " + e.getMessage());
             return null;
         }
     }
@@ -807,7 +812,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (frames.isEmpty()) {
-                Reporter.log("No frames captured during recording", LogLevel.WARN);
+                Logger.warn("No frames captured during recording");
                 return null;
             }
 
@@ -819,7 +824,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             boolean needsAttachment = isAttachmentEnabled();
             if (needsAttachment) {
-                Reporter.log("Compiling video synchronously for report attachment", LogLevel.INFO_GREEN);
+                Logger.info("Compiling video synchronously for report attachment");
                 return compileFramesToMP4(frames, videoFile, durationMs);
             } else {
                 final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
@@ -851,14 +856,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
                 }
 
-                Reporter.log("Video compilation started in background (" + frameCount + " frames)",
-                        LogLevel.INFO_BLUE);
+                Logger.info("Video compilation started in background (" + frameCount + " frames)");
 
                 return videoFile.getAbsolutePath();
             }
 
         } catch (Exception e) {
-            Reporter.log("Failed to stop web recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to stop web recording: " + e.getMessage());
             return null;
         }
     }
@@ -907,7 +911,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 cleanupDevTools();
             }
         } catch (Exception e) {
-            Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("Error stopping screencast: " + e.getMessage());
         } finally {
             devToolsSession = null;
         }
@@ -971,7 +975,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                        File outputFile, long recordingDurationMs) {
         int totalFrames = frames.size();
         if (totalFrames == 0) {
-            Reporter.log("No frames to encode", LogLevel.WARN);
+            Logger.warn("No frames to encode");
             return null;
         }
         AWTSequenceEncoder encoder = null;
@@ -989,7 +993,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 }
             }
         } catch (Exception e) {
-            Reporter.log("Failed to calculate dynamic batch size, using default: " + e.getMessage(), LogLevel.DEBUG);
+            Logger.debug("Failed to calculate dynamic batch size, using default: " + e.getMessage());
         }
 
         try {
@@ -1069,7 +1073,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             successfulFrames++;
                         }
                     } catch (Exception e) {
-                        Reporter.log("Failed to encode frame: " + e.getMessage(), LogLevel.DEBUG);
+                        Logger.debug("Failed to encode frame: " + e.getMessage());
                     }
                 }
 
@@ -1078,20 +1082,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (successfulFrames == 0) {
-                Reporter.log("No valid frames encoded", LogLevel.ERROR);
+                Logger.error("No valid frames encoded");
                 if (outputFile.exists()) outputFile.delete();
                 return null;
             }
 
             double expectedDuration = (double) successfulFrames / outputFPS;
-            Reporter.log("Encoded " + successfulFrames + " frames (" + totalFrames +
-                    " unique states) at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)",
-                    LogLevel.INFO_GREEN);
+            Logger.info("Encoded " + successfulFrames + " frames (" + totalFrames +
+                    " unique states) at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)");
 
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
-            Reporter.log("Video compilation failed: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Video compilation failed: " + e.getMessage());
             if (outputFile.exists()) outputFile.delete();
             return null;
         } finally {
@@ -1258,7 +1261,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             lastCaptureTimestamp.set(0);
 
         } catch (Exception e) {
-            Reporter.log("Error during cleanup: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("Error during cleanup: " + e.getMessage());
         }
     }
 

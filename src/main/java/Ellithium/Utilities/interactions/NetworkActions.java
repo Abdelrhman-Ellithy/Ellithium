@@ -2,7 +2,6 @@ package Ellithium.Utilities.interactions;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import io.qameta.allure.Step;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.devtools.NetworkInterceptor;
 import org.openqa.selenium.remote.http.Contents;
@@ -37,7 +36,6 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @param responseBody Raw body string to return
      * @return this instance for fluent chaining
      */
-    @Step("Mock network response for pattern '{urlPattern}' with status {statusCode}")
     public NetworkActions<T> mockResponse(String urlPattern, int statusCode, String contentType, String responseBody) {
         Route route = Route.matching(req -> req.getUri() != null && req.getUri().contains(urlPattern))
                 .to(() -> req -> new HttpResponse()
@@ -80,7 +78,6 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @param filter Selenium HTTP filter
      * @return this instance for fluent chaining
      */
-    @Step("Apply custom network interceptor filter")
     public NetworkActions<T> intercept(Filter filter) {
         NetworkInterceptor interceptor = new NetworkInterceptor(driver, filter);
         activeInterceptors.add(interceptor);
@@ -111,7 +108,6 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @param password The authentication password
      * @return this instance for fluent chaining
      */
-    @Step("Authenticate network requests with username '{username}'")
     public NetworkActions<T> authenticate(java.util.function.Predicate<java.net.URI> urlFilter, String username, String password) {
         if (driver instanceof org.openqa.selenium.bidi.HasBiDi hasBiDi) {
             try {
@@ -156,7 +152,6 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * Closes and clears all active network interceptors and BiDi network handlers on this driver instance.
      */
     @Override
-    @Step("Reset active network interceptors")
     public void close() {
         for (NetworkInterceptor interceptor : activeInterceptors) {
             try {
