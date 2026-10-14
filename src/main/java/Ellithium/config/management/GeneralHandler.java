@@ -18,6 +18,7 @@ import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.internal.AllureHelper;
 import com.google.common.io.Files;
 import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Step;
 import io.qameta.allure.model.Parameter;
 import org.openqa.selenium.Capabilities;
@@ -65,7 +66,7 @@ public class GeneralHandler {
                 : ((testId != null && !testId.isBlank()) ? "Execution Log File - " + testId : "Execution Log File");
         try (InputStream logStream = new ByteArrayInputStream(logs.getBytes(StandardCharsets.UTF_8))) {
             Reporter.flushPendingStep();
-            Allure.addAttachment(attachmentName, "text/plain", logStream, ".log");
+            Allure.attachment(attachmentName, "text/plain", logStream, AttachmentOptions.withFileExtension(".log"));
             Logger.info("Execution logs successfully attached to the Allure report.");
         } catch (IOException e) {
             Logger.error("Failed to attach execution logs: " + e.getMessage());

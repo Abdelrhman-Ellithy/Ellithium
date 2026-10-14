@@ -108,6 +108,10 @@ public class VideoRecordingManager {
      * @return true if recording is enabled, false otherwise
      */
     public static boolean isRecordingEnabled() {
+        String sysProp = System.getProperty(RECORD_GUI_EXECUTION_KEY);
+        if (sysProp != null && !sysProp.isBlank()) {
+            return Boolean.parseBoolean(sysProp);
+        }
         String configPath = ConfigContext.getConfigFilePath();
         if (configPath == null || !PropertyHelper.keyExists(configPath, RECORD_GUI_EXECUTION_KEY)) {
             Reporter.log("Recording configuration key not found, defaulting to false", LogLevel.WARN);
@@ -123,14 +127,22 @@ public class VideoRecordingManager {
      * @return true if attachment is enabled, false otherwise
      */
     public static boolean isAttachmentEnabled() {
+        String sysAttachment = System.getProperty(ATTACH_RECORDED_EXECUTION_KEY);
+        String isAttachmentEnabled = sysAttachment;
         String configPath = ConfigContext.getConfigFilePath();
-        if (!PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
-            Reporter.log("Attachment configuration key not found, defaulting to false", LogLevel.WARN);
-            return false;
+        if (isAttachmentEnabled == null || isAttachmentEnabled.isBlank()) {
+            if (configPath != null && PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
+                isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
+            } else {
+                Reporter.log("Attachment configuration key not found, defaulting to false", LogLevel.WARN);
+                return false;
+            }
         }
-        String isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
-        String isReportGenerated = PropertyHelper.getDataFromProperties(ConfigContext.getAllureFilePath(),
-                GENERATE_REPORT_KEY);
+        String isReportGenerated = System.getProperty(GENERATE_REPORT_KEY);
+        if (isReportGenerated == null || isReportGenerated.isBlank()) {
+            isReportGenerated = PropertyHelper.getDataFromProperties(ConfigContext.getAllureFilePath(),
+                    GENERATE_REPORT_KEY);
+        }
         return Boolean.parseBoolean(isAttachmentEnabled) && Boolean.parseBoolean(isReportGenerated);
     }
 

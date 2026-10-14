@@ -62,7 +62,7 @@ public class AIVisionRCA {
             Reporter.log("AI Vision RCA Result: " + rcaResult, LogLevel.INFO_YELLOW);
             
             // Attach to Allure Report
-            Allure.addAttachment("AI Vision RCA", "text/plain", rcaResult);
+            Allure.attachment("AI Vision RCA", "text/plain", rcaResult);
             
         } catch (Exception e) {
             Reporter.log("AIVisionRCA failed: " + e.getMessage(), LogLevel.ERROR);

@@ -5,6 +5,8 @@ import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.internal.Colors;
 import Ellithium.core.logging.LogLevel;
 import io.qameta.allure.Allure;
+import io.qameta.allure.AllureExternalKey;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.model.Parameter;
 import io.qameta.allure.model.Status;
 import io.qameta.allure.model.StepResult;
@@ -43,7 +45,7 @@ public class Reporter {
             Map.entry(DEBUG, Status.PASSED)
     );
 
-    private record PendingStep(String uuid, long start) {}
+    private record PendingStep(AllureExternalKey key, long start) {}
     private static final ThreadLocal<PendingStep> PENDING_STEP = new ThreadLocal<>();
 
     /**
@@ -71,25 +73,25 @@ public class Reporter {
         logByLevel(logLevel, coloredMessage);
         if (ConfigContext.isOnExecution() && shouldAttachToReport(logLevel)) {
             closePendingStep(startMillis);
-            String uuid = UUID.randomUUID().toString();
+            AllureExternalKey key = AllureExternalKey.random(StepResult.class);
             StepResult result = new StepResult()
                     .setName(message + additionalParameter)
                     .setStatus(allureStatusMap.get(logLevel));
             // AllureLifecycle#startStep unconditionally overwrites StepResult.start with "now" —
             // any pre-set value is silently discarded — so the real start time must be restored
             // afterward via updateStep, which applies the given mutation directly with no such override.
-            Allure.getLifecycle().startStep(uuid, result);
-            Allure.getLifecycle().updateStep(uuid, sr -> sr.setStart(startMillis));
-            Allure.getLifecycle().stopStep(uuid);
+            Allure.getLifecycle().startStep(key, result);
+            Allure.getLifecycle().updateStep(key, sr -> sr.setStart(startMillis));
+            Allure.getLifecycle().stopStep();
         }
     }
 
     private static void openPendingStep(String name, LogLevel logLevel, long start) {
-        String uuid = UUID.randomUUID().toString();
+        AllureExternalKey key = AllureExternalKey.random(StepResult.class);
         StepResult result = new StepResult().setName(name).setStatus(allureStatusMap.get(logLevel));
-        Allure.getLifecycle().startStep(uuid, result);
-        Allure.getLifecycle().updateStep(uuid, sr -> sr.setStart(start));
-        PENDING_STEP.set(new PendingStep(uuid, start));
+        Allure.getLifecycle().startStep(key, result);
+        Allure.getLifecycle().updateStep(key, sr -> sr.setStart(start));
+        PENDING_STEP.set(new PendingStep(key, start));
     }
 
     private static void closePendingStep(long stopAt) {
@@ -97,8 +99,8 @@ public class Reporter {
         if (pending == null) return;
         PENDING_STEP.remove();
         try {
-            Allure.getLifecycle().updateStep(pending.uuid(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
-            Allure.getLifecycle().stopStep(pending.uuid());
+            Allure.getLifecycle().updateStep(pending.key(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
+            Allure.getLifecycle().stopStep();
         } catch (Exception e) {
             Logger.debug("Could not stop pending Allure step: " + e.getMessage());
         }
@@ -187,7 +189,7 @@ public class Reporter {
             // (this call has no log() of its own to open a step for it), instead of at the
             // current test/fixture level.
             flushPendingStep();
-            Allure.addAttachment(name + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, ".png");
+            Allure.attachment(name + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, AttachmentOptions.withFileExtension(".png"));
         }catch (IOException e) {
             Logger.logException(e);
         }
@@ -217,7 +219,7 @@ public class Reporter {
                 extension = fileName.substring(dotIndex); // includes the dot
             }
             flushPendingStep();
-            Allure.addAttachment(name, mimeType, fis, extension);
+            Allure.attachment(name, mimeType, fis, AttachmentOptions.withFileExtension(extension));
         } catch (IOException e) {
             Logger.logException(e);
         }
@@ -256,7 +258,7 @@ public class Reporter {
      * @param Name Test case name
      */
     public static void setTestCaseName(String Name) {
-        Allure.getLifecycle().updateTestCase(testResult -> testResult.setName(Name));
+        Allure.getLifecycle().updateTest(testResult -> testResult.setName(Name));
     }
 
     /**
@@ -264,7 +266,7 @@ public class Reporter {
      * @param description Test case description
      */
     public static void setTestCaseDescription(String description) {
-        Allure.getLifecycle().updateTestCase(testResult -> testResult.setDescriptionHtml(description));
+        Allure.getLifecycle().updateTest(testResult -> testResult.setDescriptionHtml(description));
     }
 
     /**
@@ -272,8 +274,25 @@ public class Reporter {
      * @param uuid Step identifier
      * @param status New status
      */
-    public static void setStepStatus(String uuid,Status status) {
-        Allure.getLifecycle().updateStep(uuid, stepResult -> stepResult.setStatus(status));
+    public static void setStepStatus(String uuid, Status status) {
+        if (uuid != null) {
+            Allure.getLifecycle().updateStep(AllureExternalKey.of(StepResult.class, uuid), stepResult -> stepResult.setStatus(status));
+        } else {
+            Allure.getLifecycle().updateStep(stepResult -> stepResult.setStatus(status));
+        }
+    }
+
+    /**
+     * Updates the status of a test step.
+     * @param key Step key
+     * @param status New status
+     */
+    public static void setStepStatus(AllureExternalKey key, Status status) {
+        if (key != null) {
+            Allure.getLifecycle().updateStep(key, stepResult -> stepResult.setStatus(status));
+        } else {
+            Allure.getLifecycle().updateStep(stepResult -> stepResult.setStatus(status));
+        }
     }
 
     /**
@@ -296,8 +315,8 @@ public class Reporter {
      * Adds parameters to the test case.
      * @param parameters List of parameters to add
      */
-    public static void addParams(List<Parameter>parameters) {
-        Allure.getLifecycle().updateTestCase(testResult ->{
+    public static void addParams(List<Parameter> parameters) {
+        Allure.getLifecycle().updateTest(testResult -> {
             testResult.setParameters(parameters);
         });
     }

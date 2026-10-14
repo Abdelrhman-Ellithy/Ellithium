@@ -25,9 +25,18 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 public class AllureHelper {
     public static void allureOpen() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
-        String generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
-        String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
-        String reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
+        String generateReportFlag = System.getProperty("allure.generate.report");
+        if (generateReportFlag == null || generateReportFlag.isBlank()) {
+            generateReportFlag = getDataFromProperties(allurePropertiesFilePath, "allure.generate.report");
+        }
+        String resultsPath = System.getProperty("allure.results.directory");
+        if (resultsPath == null || resultsPath.isBlank()) {
+            resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
+        }
+        String reportPath = System.getProperty("allure.report.directory");
+        if (reportPath == null || reportPath.isBlank()) {
+            reportPath = getDataFromProperties(allurePropertiesFilePath, "allure.report.directory");
+        }
         String lastReportPath = "LastReport";
         if (generateReportFlag != null && generateReportFlag.equalsIgnoreCase("true")) {
             String allureBinaryPath = resolveAllureBinaryPath();
