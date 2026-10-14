@@ -5,9 +5,6 @@ import Ellithium.config.management.ConfigContext;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-import io.appium.java_client.AppiumFluentWait;
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.NoAlertPresentException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
@@ -101,17 +98,10 @@ public class WaitManager <T extends WebDriver>{
      * collapsing to whole seconds.
      */
     public static <T> FluentWait<T> getFluentWaitMillis(T driver, long timeoutMillis, int pollingEveryInMillis) {
-        if (driver instanceof AndroidDriver || driver instanceof IOSDriver) {
-            return  new AppiumFluentWait<>(driver)
-                    .withTimeout(Duration.ofMillis(timeoutMillis))
-                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
-                    .ignoreAll(expectedExceptions);
-        } else {
-            return  new FluentWait<>(driver)
-                    .withTimeout(Duration.ofMillis(timeoutMillis))
-                    .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
-                    .ignoreAll(expectedExceptions);
-        }
+        return new FluentWait<>(driver)
+                .withTimeout(Duration.ofMillis(timeoutMillis))
+                .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                .ignoreAll(expectedExceptions);
     }
 
 }
