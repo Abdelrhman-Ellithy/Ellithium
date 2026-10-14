@@ -461,6 +461,11 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             return getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.elementSelectionStateToBe(normalized, selected));
         } catch (WebDriverException e) {
+            WebElement shadowElement = ShadowDomResolver.findElement(driver, normalized);
+            if (shadowElement != null) {
+                return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
+                        .until(ExpectedConditions.elementSelectionStateToBe(shadowElement, selected));
+            }
             if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             WebElement element = findWebElement(normalized);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
@@ -488,6 +493,11 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
             return getFluentWait(timeout, pollingEvery)
                     .until(ExpectedConditions.textToBePresentInElementValue(normalized, text));
         } catch (WebDriverException e) {
+            WebElement shadowElement = ShadowDomResolver.findElement(driver, normalized);
+            if (shadowElement != null) {
+                return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)
+                        .until(ExpectedConditions.textToBePresentInElementValue(shadowElement, text));
+            }
             if (!heal || SeleniumFailurePolicy.isTerminal(e)) throw e;
             WebElement element = findWebElement(normalized);
             return getFluentWait(Math.min(timeout, HEAL_RETRY_TIMEOUT), pollingEvery)

@@ -60,19 +60,29 @@ public final class ShadowDomResolver {
             "    } else if (strategy === 'xpath') {" +
             "      var q = sel;" +
             "      if (root.nodeType === 11 && q.indexOf('//') === 0) q = '.' + q;" +
+            "      var found = false;" +
             "      try {" +
             "        var snap = document.evaluate(q, root, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);" +
-            "        for (var j = 0; j < snap.snapshotLength; j++) {" +
-            "          out.push(snap.snapshotItem(j));" +
-            "          if (!matchAll) return;" +
+            "        if (snap && snap.snapshotLength > 0) {" +
+            "          for (var j = 0; j < snap.snapshotLength; j++) {" +
+            "            out.push(snap.snapshotItem(j));" +
+            "            if (!matchAll) return;" +
+            "          }" +
+            "          found = true;" +
             "        }" +
-            "      } catch(e) {" +
+            "      } catch(e) {}" +
+            "      if (!found) {" +
             "        var all = root.querySelectorAll('*');" +
             "        for (var k = 0; k < all.length; k++) {" +
             "          var el = all[k];" +
             "          if (q.indexOf('text()') !== -1) {" +
             "            var tm = q.match(/text\\(\\)\\s*=\\s*['\"]([^'\"]+)['\"]/);" +
             "            if (tm && el.textContent.trim() === tm[1]) {" +
+            "              out.push(el);" +
+            "              if (!matchAll) return;" +
+            "            }" +
+            "            var tmc = q.match(/contains\\s*\\(\\s*text\\(\\)\\s*,\\s*['\"]([^'\"]+)['\"]\\s*\\)/);" +
+            "            if (tmc && el.textContent.indexOf(tmc[1]) !== -1) {" +
             "              out.push(el);" +
             "              if (!matchAll) return;" +
             "            }" +
@@ -290,27 +300,29 @@ public final class ShadowDomResolver {
         }
 
         // Strategy C: Pure native scan of candidate elements in current DOM using host.getShadowRoot()
-        try {
-            By cssBy = By.cssSelector(cssSelector);
-            List<WebElement> candidates = driver.findElements(By.cssSelector("*"));
-            int checked = 0;
-            final int maxNativeChecks = 150; // Bound pure native calls to prevent wire latency
+        if (!cssSelector.contains(">>>")) {
+            try {
+                By cssBy = By.cssSelector(cssSelector);
+                List<WebElement> candidates = driver.findElements(By.cssSelector("*"));
+                int checked = 0;
+                final int maxNativeChecks = 150; // Bound pure native calls to prevent wire latency
 
-            for (WebElement candidate : candidates) {
-                if (checked++ >= maxNativeChecks) break;
-                try {
-                    SearchContext shadow = candidate.getShadowRoot();
-                    if (shadow != null) {
-                        List<WebElement> found = shadow.findElements(cssBy);
-                        if (!found.isEmpty()) {
-                            results.addAll(found);
-                            if (firstOnly) return results;
+                for (WebElement candidate : candidates) {
+                    if (checked++ >= maxNativeChecks) break;
+                    try {
+                        SearchContext shadow = candidate.getShadowRoot();
+                        if (shadow != null) {
+                            List<WebElement> found = shadow.findElements(cssBy);
+                            if (!found.isEmpty()) {
+                                results.addAll(found);
+                                if (firstOnly) return results;
+                            }
                         }
-                    }
-                } catch (NoSuchShadowRootException | UnsupportedOperationException ignored) {
-                } catch (Exception ignored) {}
-            }
-        } catch (Exception ignored) {}
+                    } catch (NoSuchShadowRootException | UnsupportedOperationException ignored) {
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+        }
 
         return results;
     }
