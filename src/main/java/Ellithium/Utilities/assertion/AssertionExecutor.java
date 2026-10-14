@@ -18,7 +18,6 @@ public class AssertionExecutor {
     public static class hard {
 
         private static void execute(Runnable assertion, String passMsg, String failMsg) {
-            Reporter.stage("Verification");
             try {
                 assertion.run();
                 Reporter.log("Hard Assert: ", LogLevel.INFO_GREEN, passMsg);
@@ -862,7 +861,6 @@ public class AssertionExecutor {
         }
 
         public void assertAll() {
-            Reporter.stage("Verification");
             try {
                 softAssert.assertAll();
                 Reporter.log("Soft Assertions Completed and Passed. Validating all collected conditions.", LogLevel.INFO_GREEN);

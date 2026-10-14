@@ -265,42 +265,117 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
                 || lm.contains("unknown command") || lm.contains("did not match a supported");
     }
 
+    private org.openqa.selenium.Point getElementCenter(WebElement element) {
+        org.openqa.selenium.Rectangle rect = element.getRect();
+        return new org.openqa.selenium.Point(rect.getX() + rect.getWidth() / 2, rect.getY() + rect.getHeight() / 2);
+    }
+
+    /**
+     * Performs a standard W3C touch tap gesture at the specified viewport coordinates.
+     * Compatible with all Appium 2.x drivers, W3C endpoints, and cloud providers.
+     *
+     * @param x The viewport X coordinate
+     * @param y The viewport Y coordinate
+     */
+    public void w3cTap(int x, int y) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence tapSeq = new Sequence(finger, 1);
+        tapSeq.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+        tapSeq.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        tapSeq.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(Collections.singletonList(tapSeq));
+    }
+
+    /**
+     * Performs a standard W3C double-tap gesture at the specified viewport coordinates.
+     *
+     * @param x The viewport X coordinate
+     * @param y The viewport Y coordinate
+     */
+    public void w3cDoubleTap(int x, int y) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence doubleTapSeq = new Sequence(finger, 1);
+        doubleTapSeq.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+        doubleTapSeq.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        doubleTapSeq.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        doubleTapSeq.addAction(finger.createPointerMove(Duration.ofMillis(100), PointerInput.Origin.viewport(), x, y));
+        doubleTapSeq.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        doubleTapSeq.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(Collections.singletonList(doubleTapSeq));
+    }
+
+    /**
+     * Performs a standard W3C long-press gesture at the specified viewport coordinates.
+     *
+     * @param x The viewport X coordinate
+     * @param y The viewport Y coordinate
+     * @param duration Duration to hold the press
+     */
+    public void w3cLongPress(int x, int y, Duration duration) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence longPressSeq = new Sequence(finger, 1);
+        longPressSeq.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+        longPressSeq.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        longPressSeq.addAction(finger.createPointerMove(duration != null ? duration : Duration.ofSeconds(1), PointerInput.Origin.viewport(), x, y));
+        longPressSeq.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(Collections.singletonList(longPressSeq));
+    }
+
+    /**
+     * Performs a standard W3C drag and drop gesture between two elements.
+     *
+     * @param source The starting element
+     * @param target The target destination element
+     * @param duration The drag move duration
+     */
+    public void w3cDragAndDrop(WebElement source, WebElement target, Duration duration) {
+        org.openqa.selenium.Point start = getElementCenter(source);
+        org.openqa.selenium.Point end = getElementCenter(target);
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence dragSeq = new Sequence(finger, 1);
+        dragSeq.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), start.getX(), start.getY()));
+        dragSeq.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        dragSeq.addAction(finger.createPointerMove(Duration.ofMillis(250), PointerInput.Origin.viewport(), start.getX(), start.getY()));
+        dragSeq.addAction(finger.createPointerMove(duration != null ? duration : Duration.ofSeconds(1), PointerInput.Origin.viewport(), end.getX(), end.getY()));
+        dragSeq.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(Collections.singletonList(dragSeq));
+    }
+
     // ========================================================================================
     // TAP GESTURES (Cross-platform)
     // ========================================================================================
 
     /**
      * Performs a tap gesture on an element.
-     *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>iOS: Uses 'mobile: tap' command</li>
-     *   <li>Android: Uses 'mobile: tapGesture' command</li>
-     * </ul>
+     * Uses optimized mobile commands with automatic fallback to standard W3C PointerInput actions.
      *
      * @param locator Locator to the element to tap
      */
     public void tap(By locator) {
         Reporter.log("Performing tap gesture on element", LogLevel.INFO_BLUE);
         performOnElement("tap gesture", locator, element -> {
-            Map<String, Object> params = new HashMap<>();
-            putElement(params, element);
-            if (isIOS()) {
-                driver.executeScript("mobile: tap", params);
-            } else {
-                driver.executeScript("mobile: tapGesture", params);
+            try {
+                Map<String, Object> params = new HashMap<>();
+                putElement(params, element);
+                if (isIOS()) {
+                    driver.executeScript("mobile: tap", params);
+                } else {
+                    driver.executeScript("mobile: tapGesture", params);
+                }
+            } catch (Exception e) {
+                if (isUnsupportedCommand(e)) {
+                    org.openqa.selenium.Point center = getElementCenter(element);
+                    w3cTap(center.getX(), center.getY());
+                } else {
+                    throw e;
+                }
             }
         });
     }
 
     /**
      * Performs a tap gesture at specified coordinates.
-     *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>iOS: Uses 'mobile: tap' command</li>
-     *   <li>Android: Uses 'mobile: tapGesture' command</li>
-     * </ul>
+     * Uses optimized mobile commands with automatic fallback to standard W3C PointerInput actions.
      *
      * @param x The X coordinate
      * @param y The Y coordinate
@@ -308,13 +383,21 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     public void tap(double x, double y) {
         Reporter.log("Performing tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
         performGesture("tap gesture", () -> {
-            Map<String, Object> params = new HashMap<>();
-            params.put("x", convertCoordinate(x));
-            params.put("y", convertCoordinate(y));
-            if (isIOS()) {
-                driver.executeScript("mobile: tap", params);
-            } else {
-                driver.executeScript("mobile: tapGesture", params);
+            try {
+                Map<String, Object> params = new HashMap<>();
+                params.put("x", convertCoordinate(x));
+                params.put("y", convertCoordinate(y));
+                if (isIOS()) {
+                    driver.executeScript("mobile: tap", params);
+                } else {
+                    driver.executeScript("mobile: tapGesture", params);
+                }
+            } catch (Exception e) {
+                if (isUnsupportedCommand(e)) {
+                    w3cTap((int) x, (int) y);
+                } else {
+                    throw e;
+                }
             }
         });
     }
@@ -326,23 +409,26 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     /**
      * Performs a double-tap gesture on an element.
      *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>iOS: Uses 'mobile: doubleTap' command</li>
-     *   <li>Android: Uses 'mobile: doubleClickGesture' command</li>
-     * </ul>
-     *
      * @param locator Locator to the element to double-tap
      */
     public void doubleTap(By locator) {
         Reporter.log("Performing double-tap gesture on element", LogLevel.INFO_BLUE);
         performOnElement("double-tap gesture", locator, element -> {
-            Map<String, Object> params = new HashMap<>();
-            putElement(params, element);
-            if (isIOS()) {
-                driver.executeScript("mobile: doubleTap", params);
-            } else {
-                driver.executeScript("mobile: doubleClickGesture", params);
+            try {
+                Map<String, Object> params = new HashMap<>();
+                putElement(params, element);
+                if (isIOS()) {
+                    driver.executeScript("mobile: doubleTap", params);
+                } else {
+                    driver.executeScript("mobile: doubleClickGesture", params);
+                }
+            } catch (Exception e) {
+                if (isUnsupportedCommand(e)) {
+                    org.openqa.selenium.Point center = getElementCenter(element);
+                    w3cDoubleTap(center.getX(), center.getY());
+                } else {
+                    throw e;
+                }
             }
         });
     }
@@ -350,25 +436,27 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
     /**
      * Performs a double-tap gesture at specified coordinates.
      *
-     * <p><b>Platform Support:</b>
-     * <ul>
-     *   <li>iOS: Uses 'mobile: doubleTap' command</li>
-     *   <li>Android: Uses 'mobile: doubleClickGesture' command</li>
-     * </ul>
-     *
      * @param x The X coordinate
      * @param y The Y coordinate
      */
     public void doubleTap(double x, double y) {
         Reporter.log("Performing double-tap gesture at coordinates (" + x + ", " + y + ")", LogLevel.INFO_BLUE);
         performGesture("double-tap gesture", () -> {
-            Map<String, Object> params = new HashMap<>();
-            params.put("x", convertCoordinate(x));
-            params.put("y", convertCoordinate(y));
-            if (isIOS()) {
-                driver.executeScript("mobile: doubleTap", params);
-            } else {
-                driver.executeScript("mobile: doubleClickGesture", params);
+            try {
+                Map<String, Object> params = new HashMap<>();
+                params.put("x", convertCoordinate(x));
+                params.put("y", convertCoordinate(y));
+                if (isIOS()) {
+                    driver.executeScript("mobile: doubleTap", params);
+                } else {
+                    driver.executeScript("mobile: doubleClickGesture", params);
+                }
+            } catch (Exception e) {
+                if (isUnsupportedCommand(e)) {
+                    w3cDoubleTap((int) x, (int) y);
+                } else {
+                    throw e;
+                }
             }
         });
     }

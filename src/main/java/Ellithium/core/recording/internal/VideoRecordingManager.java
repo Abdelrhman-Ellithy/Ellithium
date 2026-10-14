@@ -114,7 +114,7 @@ public class VideoRecordingManager {
         }
         String configPath = ConfigContext.getConfigFilePath();
         if (configPath == null || !PropertyHelper.keyExists(configPath, RECORD_GUI_EXECUTION_KEY)) {
-            Reporter.log("Recording configuration key not found, defaulting to false", LogLevel.WARN);
+            Logger.warn("Recording configuration key not found, defaulting to false");
             return false;
         }
         String value = PropertyHelper.getDataFromProperties(configPath, RECORD_GUI_EXECUTION_KEY);
@@ -134,7 +134,7 @@ public class VideoRecordingManager {
             if (configPath != null && PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
                 isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
             } else {
-                Reporter.log("Attachment configuration key not found, defaulting to false", LogLevel.WARN);
+                Logger.warn("Attachment configuration key not found, defaulting to false");
                 return false;
             }
         }
@@ -154,7 +154,7 @@ public class VideoRecordingManager {
     public static boolean isAttachmentOnFailureOnlyEnabled() {
         String configPath = ConfigContext.getConfigFilePath();
         if (configPath == null || !PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY)) {
-            Reporter.log("Attachment on Failure configuration key not found, defaulting to true", LogLevel.WARN);
+            Logger.warn("Attachment on Failure configuration key not found, defaulting to true");
             return true;
         }
         String value = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY);
@@ -285,12 +285,12 @@ public class VideoRecordingManager {
      */
     public static String stopRecordingById(String recordingId, String testStatus) {
         if (recordingId == null) {
-            Reporter.log("Recording ID is null, cannot stop recording", LogLevel.WARN);
+            Logger.warn("Recording ID is null, cannot stop recording");
             return null;
         }
         RecordingContext context = recordingContextMap.get(recordingId);
         if (context == null) {
-            Reporter.log("No recording context found for ID: " + recordingId, LogLevel.WARN);
+            Logger.warn("No recording context found for ID: " + recordingId);
             return null;
         }
         try {
@@ -299,17 +299,15 @@ public class VideoRecordingManager {
             long duration = System.currentTimeMillis() - context.getStartTime();
             String videoPath = recorder.stopRecording();
             if (videoPath != null) {
-                Reporter.log("Stopped video recording for: " + testName + " - " + " (Duration: " + duration + "ms)",
-                        LogLevel.INFO_BLUE);
+                Logger.info("Stopped video recording for: " + testName + " - (Duration: " + duration + "ms)");
                 handleVideoAttachment(videoPath, testName, testStatus);
                 return videoPath;
             } else {
-                Reporter.log("Failed to save video recording for: " + testName, LogLevel.ERROR);
+                Logger.error("Failed to save video recording for: " + testName);
                 return null;
             }
         } catch (Exception e) {
-            Reporter.log("Error while stopping video recording [ID: " + recordingId + "]: " +
-                    e.getMessage(), LogLevel.ERROR);
+            Logger.error("Error while stopping video recording [ID: " + recordingId + "]: " + e.getMessage());
             Logger.logException(e);
             return null;
         } finally {
@@ -330,7 +328,7 @@ public class VideoRecordingManager {
         long threadId = Thread.currentThread().threadId();
         String recordingId = threadToRecordingMap.get(threadId);
         if (recordingId == null) {
-            Reporter.log("No active recording found for thread: " + threadId, LogLevel.DEBUG);
+            Logger.debug("No active recording found for thread: " + threadId);
             return null;
         }
         return stopRecordingById(recordingId, testStatus);
@@ -348,7 +346,7 @@ public class VideoRecordingManager {
         pendingRecording.remove();
         String recordingId = testToRecordingMap.get(testIdentifier);
         if (recordingId == null) {
-            Reporter.log("No active recording found for test: " + testIdentifier, LogLevel.DEBUG);
+            Logger.debug("No active recording found for test: " + testIdentifier);
             return null;
         }
         return stopRecordingById(recordingId, testStatus);
@@ -511,14 +509,14 @@ public class VideoRecordingManager {
             try {
                 stopRecordingById(recordingId, "CLEANUP");
             } catch (Exception e) {
-                Reporter.log("Failed to stop recording during cleanup [ID: " + recordingId + "]: " +
-                        e.getMessage(), LogLevel.ERROR);
+                Logger.error("Failed to stop recording during cleanup [ID: " + recordingId + "]: " +
+                        e.getMessage());
             }
         });
         recordingContextMap.clear();
         threadToRecordingMap.clear();
         testToRecordingMap.clear();
-        Reporter.log("Force cleanup completed. Stopped " + activeRecordings +
-                " active recordings.", LogLevel.INFO_BLUE);
+        Logger.info("Force cleanup completed. Stopped " + activeRecordings +
+                " active recordings.");
     }
 }

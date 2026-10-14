@@ -54,7 +54,7 @@ public class seleniumListener implements WebDriverListener {
         RECORDING_DRIVER.set(driver);
         RECORDING.set(true);
         injectRecordingToolbar(driver);
-        Reporter.log("seleniumListener: Recording started", LogLevel.INFO_YELLOW);
+        Reporter.logSubStep("seleniumListener: Recording started", LogLevel.INFO_YELLOW);
     }
 
     /** Stops capturing, removes the toolbar, returns the captured interactions. */
@@ -64,7 +64,7 @@ public class seleniumListener implements WebDriverListener {
         List<RecordedInteraction> snapshot = new ArrayList<>(RECORDED.get());
         RECORDING_DRIVER.remove();
         RECORDED.get().clear();
-        Reporter.log("seleniumListener: Recording stopped — " + snapshot.size() + " interactions captured",
+        Reporter.logSubStep("seleniumListener: Recording stopped — " + snapshot.size() + " interactions captured",
                 LogLevel.INFO_GREEN);
         return snapshot;
     }
@@ -73,12 +73,12 @@ public class seleniumListener implements WebDriverListener {
     public static void generateCode(LLMProvider llmProvider) {
         List<RecordedInteraction> recorded = RECORDED.get();
         if (recorded.isEmpty()) {
-            Reporter.log("seleniumListener: No interactions recorded — nothing to generate", LogLevel.WARN);
+            Reporter.logSubStep("seleniumListener: No interactions recorded — nothing to generate", LogLevel.WARN);
             return;
         }
         WebDriver driver = RECORDING_DRIVER.get();
         if (driver == null) {
-            Reporter.log("seleniumListener: generateCode called with no active driver", LogLevel.WARN);
+            Reporter.logSubStep("seleniumListener: generateCode called with no active driver", LogLevel.WARN);
             return;
         }
         LiveContextGenerator.generateFromRecording(driver, llmProvider, new ArrayList<>(recorded));
@@ -91,7 +91,7 @@ public class seleniumListener implements WebDriverListener {
         try {
             if (driver instanceof JavascriptExecutor js) js.executeScript(TOOLBAR_INJECT_SCRIPT);
         } catch (Exception e) {
-            Reporter.log("seleniumListener: Toolbar inject failed (non-fatal): " + e.getMessage(), LogLevel.DEBUG);
+            Reporter.logSubStep("seleniumListener: Toolbar inject failed (non-fatal): " + e.getMessage(), LogLevel.DEBUG);
         }
     }
 
@@ -165,6 +165,22 @@ public class seleniumListener implements WebDriverListener {
     /** Returns true if logging is currently suppressed. */
     private static boolean isSuppressed() { return ListenerLogSuppression.isSuppressed(); }
 
+    private static final ThreadLocal<StateEvaluation> LAST_STATE_EVAL = new ThreadLocal<>();
+    private record StateEvaluation(String op, int elementHash, Object result, long timestamp) {}
+
+    private static boolean shouldSuppressRepeatedState(String op, WebElement element, Object result) {
+        if (element == null) return false;
+        long now = System.currentTimeMillis();
+        int hash = System.identityHashCode(element);
+        StateEvaluation last = LAST_STATE_EVAL.get();
+        if (last != null && last.op().equals(op) && last.elementHash() == hash
+                && Objects.equals(last.result(), result) && (now - last.timestamp() < 5000)) {
+            return true;
+        }
+        LAST_STATE_EVAL.set(new StateEvaluation(op, hash, result, now));
+        return false;
+    }
+
     // Recorded by the generic beforeAnyXCall hooks below and consumed by the matching afterXxx
     // method so each step's reported duration is the real elapsed time of that WebDriver call.
     private static final ThreadLocal<Long> OP_START = new ThreadLocal<>();
@@ -229,8 +245,9 @@ public class seleniumListener implements WebDriverListener {
 
     @Override
     public void afterSendKeys(WebElement element, CharSequence... keysToSend) {
+        if (isSuppressed()) return;
         String sentData = buildSentDataString(keysToSend);
-        Reporter.log("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE, "", takeStart());
+        Reporter.logSubStep("Sent Data: \"" + sentData + "\" into " + nameOf(element) + ".", LogLevel.INFO_BLUE, "", takeStart());
         if (RECORDING.get()) {
             RECORDED.get().add(new RecordedInteraction("sendData", reconstructLocatorExpression(element),
                     sentData, recordedElementName(element), recordedTag(element)));
@@ -251,59 +268,67 @@ public class seleniumListener implements WebDriverListener {
     }
    @Override
    public void afterGet(WebDriver driver, String url) {
-       Reporter.log("Navigating to URL: ", LogLevel.INFO_BLUE, url, takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Navigating to URL: ", LogLevel.INFO_BLUE, url, takeStart());
    }
    @Override
     public void afterGetCurrentUrl(WebDriver driver, String url) {
         if (isSuppressed()) return;
-        Reporter.log("Current URL retrieved: " + url, LogLevel.DEBUG, "", takeStart());
+        Reporter.logSubStep("Current URL retrieved: " + url, LogLevel.DEBUG, "", takeStart());
     }
     @Override
     public void afterDefaultContent(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-        Reporter.log("Switched Back To Default Content From Frame" , LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Switched Back To Default Content From Frame" , LogLevel.INFO_BLUE, "", takeStart());
     }
    @Override
    public void afterGetTitle(WebDriver driver, String title) {
-       Reporter.log("Page title retrieved: " + title, LogLevel.DEBUG, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Page title retrieved: " + title, LogLevel.DEBUG, "", takeStart());
    }
    @Override
     public void afterGetPageSource(WebDriver driver, String source) {
         if (isSuppressed()) return;
-        Reporter.log("Page source retrieved", LogLevel.DEBUG, "", takeStart());
+        Reporter.logSubStep("Page source retrieved", LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterClose(WebDriver driver) {
-       Reporter.log("WebDriver closed", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("WebDriver closed", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterQuit(WebDriver driver) {
-       Reporter.log("WebDriver quit", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("WebDriver quit", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetWindowHandles(WebDriver driver, Set<String> result) {
-       Reporter.log("Window handles retrieved: " + result, LogLevel.DEBUG, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window handles retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
    public void afterGetWindowHandle(WebDriver driver, String result) {
-       Reporter.log("Window handle retrieved: " + result, LogLevel.DEBUG, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window handle retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
     public void afterExecuteScript(WebDriver driver, String script, Object[] args, Object result) {
         if (isSuppressed()) return;
-        Reporter.log("Executed script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
+        Reporter.logSubStep("Executed script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterExecuteAsyncScript(WebDriver driver, String script, Object[] args, Object result) {
        if (isSuppressed()) return;
-       Reporter.log("Executed async script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
+       Reporter.logSubStep("Executed async script (" + scriptLen(script) + " chars)", LogLevel.DEBUG, "", takeStart());
    }
 
    private static int scriptLen(String script) { return script != null ? script.length() : 0; }
    @Override
    public void afterClick(WebElement element) {
-       Reporter.log("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Clicked on element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("click", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
@@ -312,7 +337,8 @@ public class seleniumListener implements WebDriverListener {
    }
    @Override
    public void afterSubmit(WebElement element) {
-       Reporter.log("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Submitted element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("submit", reconstructLocatorExpression(element),
                    null, recordedElementName(element), recordedTag(element)));
@@ -322,42 +348,53 @@ public class seleniumListener implements WebDriverListener {
     @Override
     public void afterGetTagName(WebElement element, String result) {
         if (isSuppressed()) return;
-        Reporter.log("Tag name retrieved: " + result, LogLevel.DEBUG, "", takeStart());
+        Reporter.logSubStep("Tag name retrieved: " + result, LogLevel.DEBUG, "", takeStart());
     }
    @Override
    public void afterGetAttribute(WebElement element, String name, String result) {
        if (isSuppressed()) return;
-       Reporter.log("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.DEBUG, "", takeStart());
+       Reporter.logSubStep("Attribute \"" + name + "\" retrieved with value: " + result, LogLevel.DEBUG, "", takeStart());
    }
    @Override
    public void afterIsSelected(WebElement element, boolean result) {
-       Reporter.log("Element selected: " + result, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed() || shouldSuppressRepeatedState("isSelected", element, result)) return;
+       Reporter.logSubStep("Element selected: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterIsEnabled(WebElement element, boolean result) {
-       Reporter.log("Element enabled: " + result, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed() || shouldSuppressRepeatedState("isEnabled", element, result)) return;
+       Reporter.logSubStep("Element enabled: " + result, LogLevel.INFO_BLUE, "", takeStart());
+   }
+
+   @Override
+   public void afterIsDisplayed(WebElement element, boolean result) {
+       if (isSuppressed() || shouldSuppressRepeatedState("isDisplayed", element, result)) return;
+       Reporter.logSubStep("Element displayed: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetLocation(WebElement element, Point result) {
-       Reporter.log("Location retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Location retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetSize(WebElement element, Dimension result) {
-       Reporter.log("Size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCssValue(WebElement element, String propertyName, String result) {
-       Reporter.log("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.DEBUG, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("CSS value for \"" + propertyName + "\" retrieved: " + result, LogLevel.DEBUG, "", takeStart());
    }
 
    @Override
    public void afterTo(WebDriver.Navigation navigation, String url) {
        if (isSuppressed()) return;
-       Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
+       Reporter.logSubStep("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
        if (RECORDING.get()) {
            RECORDED.get().add(new RecordedInteraction("navigate", null, url, null, null));
            updateRecordingToolbar();
@@ -366,198 +403,228 @@ public class seleniumListener implements WebDriverListener {
 
    @Override
    public void afterBack(WebDriver.Navigation navigation) {
-       Reporter.log("Navigated back", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Navigated back", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterForward(WebDriver.Navigation navigation) {
-       Reporter.log("Navigated forward", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Navigated forward", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterRefresh(WebDriver.Navigation navigation) {
-       Reporter.log("Page refreshed", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Page refreshed", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterAccept(Alert alert) {
-       Reporter.log("Accepted alert", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Accepted alert", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDismiss(Alert alert) {
-       Reporter.log("Dismissed alert", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Dismissed alert", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetText(Alert alert, String result) {
-       Reporter.log("Alert text retrieved: " + result, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Alert text retrieved: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSendKeys(Alert alert, String text) {
-       Reporter.log("Sent keys to alert: " + text, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Sent keys to alert: " + text, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterAddCookie(WebDriver.Options options, Cookie cookie) {
-       Reporter.log("Added cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Added cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteCookieNamed(WebDriver.Options options, String name) {
-       Reporter.log("Deleted cookie by name: " + name, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Deleted cookie by name: " + name, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteCookie(WebDriver.Options options, Cookie cookie) {
-       Reporter.log("Deleted cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Deleted cookie: " + cookie.getName(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterDeleteAllCookies(WebDriver.Options options) {
-       Reporter.log("Deleted all cookies", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Deleted all cookies", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCookies(WebDriver.Options options, Set<Cookie> result) {
-       Reporter.log("Retrieved cookies: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Retrieved cookies: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetCookieNamed(WebDriver.Options options, String name, Cookie result) {
-       Reporter.log("Retrieved cookie by name: " + name + ", Result: " + result, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Retrieved cookie by name: " + name + ", Result: " + result, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterImplicitlyWait(WebDriver.Timeouts timeouts, Duration duration) {
-       Reporter.log("Set implicit wait timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Set implicit wait timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
    }
 
    @Override
    public void afterPageLoadTimeout(WebDriver.Timeouts timeouts, Duration duration) {
-       Reporter.log("Set page load timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Set page load timeout to: " + duration.toMillis(), LogLevel.INFO_BLUE, " mills", takeStart());
    }
 
    @Override
    public void afterGetSize(WebDriver.Window window, Dimension result) {
-       Reporter.log("Window size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window size retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSetSize(WebDriver.Window window, Dimension size) {
-       Reporter.log("Window size set to: " + size.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window size set to: " + size.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterGetPosition(WebDriver.Window window, Point result) {
-       Reporter.log("Window position retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window position retrieved: " + result.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterSetPosition(WebDriver.Window window, Point position) {
-       Reporter.log("Window position set to: " + position.toString(), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window position set to: " + position.toString(), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterMaximize(WebDriver.Window window) {
-       Reporter.log("Window maximized", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window maximized", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFullscreen(WebDriver.Window window) {
-       Reporter.log("Window set to fullscreen", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Window set to fullscreen", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, int index, WebDriver driver) {
-       Reporter.log("Switched to frame by index: " + index, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to frame by index: " + index, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, String nameOrId, WebDriver driver) {
-       Reporter.log("Switched to frame by name or ID: " + nameOrId, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to frame by name or ID: " + nameOrId, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterFrame(WebDriver.TargetLocator targetLocator, WebElement frameElement, WebDriver driver) {
-       Reporter.log("Switched to frame by element: " + nameOf(frameElement), LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to frame by element: " + nameOf(frameElement), LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterParentFrame(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-       Reporter.log("Switched to parent frame", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to parent frame", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterWindow(WebDriver.TargetLocator targetLocator, String nameOrHandle, WebDriver driver) {
-       Reporter.log("Switched to window: " + nameOrHandle, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to window: " + nameOrHandle, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterNewWindow(WebDriver.TargetLocator targetLocator, WindowType typeHint, WebDriver driver) {
-       Reporter.log("New window opened with type: " + typeHint, LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("New window opened with type: " + typeHint, LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void afterActiveElement(WebDriver.TargetLocator targetLocator, WebDriver driver) {
-       Reporter.log("Switched to active element", LogLevel.INFO_BLUE, "", takeStart());
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Switched to active element", LogLevel.INFO_BLUE, "", takeStart());
    }
 
    @Override
    public void beforeAlert(WebDriver.TargetLocator targetLocator) {
-       Reporter.log("Handling alert", LogLevel.INFO_BLUE);
+       if (isSuppressed()) return;
+       Reporter.logSubStep("Handling alert", LogLevel.INFO_BLUE);
    }
     @Override
     public void afterClear(WebElement element) {
-        Reporter.log("Cleared element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Cleared element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterGetText(WebElement element, String result) {
         if (isSuppressed()) return;
-        Reporter.log("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.DEBUG, "", takeStart());
+        Reporter.logSubStep("Text retrieved: \"" + result + "\" from " + nameOf(element), LogLevel.DEBUG, "", takeStart());
     }
-
-//    @Override
-//    public void afterIsDisplayed(WebElement element, boolean result) {
-//        Reporter.log("Element displayed: " + result +" "+ nameOf(element), LogLevel.INFO_BLUE);
-//    }
 
     @Override
     public  <X> void afterGetScreenshotAs(WebElement element, OutputType<X> target, X result) {
-        Reporter.log("Screenshot taken of element: " + nameOf(element), LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Ellithium.core.logging.Logger.info("Screenshot taken of element: " + nameOf(element));
     }
 
-    public  <X> void afterGetScreenshotAs(WebDriver
-                                                  driver, OutputType<X> target, X result) {
-        Reporter.log("Full page screenshot taken", LogLevel.INFO_BLUE, "", takeStart());
+    public  <X> void afterGetScreenshotAs(WebDriver driver, OutputType<X> target, X result) {
+        if (isSuppressed()) return;
+        Ellithium.core.logging.Logger.info("Full page screenshot taken");
     }
 
     @Override
     public void afterPerform(WebDriver driver, Collection<Sequence> actions) {
-        Reporter.log("Actions performed (e.g., drag-drop, hover, etc.)", LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Actions performed (e.g., drag-drop, hover, etc.)", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterResetInputState(WebDriver driver) {
-        Reporter.log("Input state reset", LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Input state reset", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterScriptTimeout(WebDriver.Timeouts timeouts, Duration duration) {
-        Reporter.log("Script timeout set to: " + duration.toMillis() + " ms", LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Script timeout set to: " + duration.toMillis() + " ms", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterAlert(WebDriver.TargetLocator targetLocator, Alert alert) {
-        Reporter.log("Switched to alert", LogLevel.INFO_BLUE, "", takeStart());
+        if (isSuppressed()) return;
+        Reporter.logSubStep("Switched to alert", LogLevel.INFO_BLUE, "", takeStart());
     }
 
     @Override
     public void afterTo(WebDriver.Navigation navigation, URL url) {
         if (isSuppressed()) return;
-        Reporter.log("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
+        Reporter.logSubStep("Navigated to URL: " + url, LogLevel.INFO_BLUE, "", takeStart());
     }
     private String nameOf(WebElement element) {
         if (element == null) return "";

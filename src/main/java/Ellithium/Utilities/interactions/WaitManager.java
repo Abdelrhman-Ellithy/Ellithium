@@ -96,12 +96,29 @@ public class WaitManager <T extends WebDriver>{
      * Millisecond-granularity FluentWait. {@link FluentWait} timeout is a {@link Duration}, so a
      * sub-second budget (e.g. a per-attempt slice of a divided total) is honored exactly without
      * collapsing to whole seconds.
+     * Automatically suppresses repetitive listener logging during the condition polling loop.
      */
     public static <T> FluentWait<T> getFluentWaitMillis(T driver, long timeoutMillis, int pollingEveryInMillis) {
-        return new FluentWait<>(driver)
+        return new PollingFluentWait<>(driver)
                 .withTimeout(Duration.ofMillis(timeoutMillis))
                 .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
                 .ignoreAll(expectedExceptions);
+    }
+
+    private static class PollingFluentWait<T> extends FluentWait<T> {
+        public PollingFluentWait(T input) {
+            super(input);
+        }
+
+        @Override
+        public <V> V until(java.util.function.Function<? super T, ? extends V> isTrue) {
+            Ellithium.core.execution.listener.ListenerLogSuppression.suppress();
+            try {
+                return super.until(isTrue);
+            } finally {
+                Ellithium.core.execution.listener.ListenerLogSuppression.resume();
+            }
+        }
     }
 
 }

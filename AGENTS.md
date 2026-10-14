@@ -164,7 +164,7 @@ overloads, and auto-heals broken locators per your `ai-config.properties`. No
 | `.navigation()` | `NavigationActions` | `navigateToUrl(String)`, `refreshPage()`, `navigateBack()/navigateForward()` |
 | `.JSActions()` | `JavaScriptActions` | `javascriptClick(By)`, `scrollToElement(By)`, `setElementValueUsingJS(By, String)` |
 | `.mobileActions()` | `MobileActions` (Appium only) | `tap(By)`, `longPress(By)`, `swipe(By, direction, percent)`, `scroll(By, direction)`, `pinch(By, zoomIn, percent)`, `setSetting(key, value)`, `getSettings()` |
-| `.network()` | `NetworkActions` | `mockResponse(urlPattern, status, body, type)`, `mockJsonResponse(...)`, `intercept(filter, responseFunction)` |
+| `.network()` | `NetworkActions` | `mockResponse(urlPattern, status, body, type)`, `mockJsonResponse(...)`, `authenticate(username, password)`, `intercept(filter)` |
 | `.sleep()` | `Sleep` | static-style `sleepMillis/Seconds/Minutes` — last resort only, prefer `.waits()` |
 
 ### Automatic & Transparent Shadow DOM Resolution
@@ -173,6 +173,12 @@ Ellithium automatically pierces and handles open Shadow DOM elements across `.el
 - **Zero Overhead on Normal Elements:** Standard document-level Selenium element queries execute first; shadow resolution triggers only if the element is not found in the main DOM.
 - **Native Selenium 4 SearchContext First:** Automatically uses native W3C `host.getShadowRoot()` with zero JavaScript. Supports direct locators, chained compound selectors (`host-card >>> button`), and parent-child selectors (`host-card button`).
 - **Deep Recursive JS Piercing Fallback:** Deep DOM walker recursively pierces nested shadow roots to handle complex XPath, text/link matches, and deeply nested components.
+
+### Modern WebDriver BiDi & W3C Touch Gestures
+- **BiDi User Prompts & HTTP Authentication:** `.alerts()` uses non-blocking BiDi prompt handling when active; `.network().authenticate("user", "pass")` intercepts 401 Auth Required challenges using BiDi `onAuthRequired` with zero URL credential hacking.
+- **W3C Standard Mobile Gestures:** `.mobileActions()` executes platform-optimized gestures with seamless automatic fallback to standard W3C `PointerInput` sequences (`w3cTap`, `w3cDoubleTap`, `w3cLongPress`, `w3cDragAndDrop`), ensuring 100% gesture compatibility across Appium 2.x drivers.
+- **Allure 3 Dynamic Environment Metadata:** Automatically generates `environment.properties` (OS, Java 25, Browser, Capabilities, AI configuration) and `executor.json` (GitHub Actions, GitLab CI, Jenkins, Local) in the Allure results directory.
+- **Java 25 Scoped Values & Virtual Threads:** `DriverFactory.runWithDriver(driver, config, runnable)` binds immutable `ScopedValue<DriverContext>`, automatically propagating driver state to child virtual threads with zero carrier-thread leaks.
 
 ## Database & API testing
 

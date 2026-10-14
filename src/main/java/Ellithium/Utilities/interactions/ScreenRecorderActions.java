@@ -13,6 +13,8 @@ import com.google.common.io.Files;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import org.jcodec.api.awt.AWTSequenceEncoder;
+import org.jcodec.common.model.Picture;
+import org.jcodec.scale.AWTUtil;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -72,14 +74,11 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
-     * Stores one unique frame plus how many consecutive times it appeared.
-     * Consecutive identical frames increment count instead of storing duplicate byte arrays —
-     * keeping memory proportional to unique-frame count, not total-frame count.
+     * Stores one unique captured frame's raw image data.
      */
     private static final class FrameEntry {
         final byte[] data;
-        volatile int count;
-        FrameEntry(byte[] data) { this.data = data; this.count = 1; }
+        FrameEntry(byte[] data) { this.data = data; }
     }
 
     /**
@@ -114,9 +113,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Default frame rate for video recording (frames per second).
-     * Balances file size with smooth playback.
+     * Standard 10 FPS provides smooth, natural test action playback.
      */
     private static final int DEFAULT_FPS = 10;
+
+    /**
+     * Minimum interval between captured frames in milliseconds (~10 FPS max capture rate).
+     * Prevents browser render loops from saturating DevTools WebSocket or queueing redundant frames.
+     */
+    private static final long MIN_FRAME_INTERVAL_MS = 100;
 
     /**
      * Interval between snapshots in milliseconds for Firefox/Safari recording.
@@ -125,9 +130,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * CDP screencast JPEG quality (0-100).
-     * Higher quality = larger frames but better video quality.
+     * Quality 95 ensures crystal-clear UI text, sharp lines, and vivid color reproduction without artifacts.
      */
-    private static final int CDP_JPEG_QUALITY = 50;
+    private static final int CDP_JPEG_QUALITY = 95;
+
+    /**
+     * Atomic references tracking the previous frame for fast perceptual deduplication.
+     */
+    private final java.util.concurrent.atomic.AtomicReference<BufferedImage> lastDecodedImage =
+            new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicReference<byte[]> lastRawBytes =
+            new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicLong lastCaptureTimestamp =
+            new java.util.concurrent.atomic.AtomicLong(0);
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
@@ -135,6 +150,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_MS = 2000;
 
     private Long recordingStartTime;
+
+    private String activeCdpVersion;
+    private static final java.util.Set<Integer> cdpUnsupportedDrivers = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private static volatile String cdpVersionCache = null;
     private static final String CDP_NOT_FOUND = "";
@@ -167,18 +185,18 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     public File captureScreenshot(String screenshotName) {
         if (screenshotName == null || screenshotName.trim().isEmpty()) {
-            Reporter.log("Screenshot name cannot be null or empty, using default", LogLevel.WARN);
+            Logger.warn("Screenshot name cannot be null or empty, using default");
             screenshotName = "screenshot";
         }
 
         try {
             if (!(driver instanceof TakesScreenshot camera)) {
-                Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
+                Logger.error("Driver does not support screenshots");
                 return null;
             }
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
             if (screenshot == null || !screenshot.exists()) {
-                Reporter.log("Screenshot file was not created", LogLevel.ERROR);
+                Logger.error("Screenshot file was not created");
                 return null;
             }
 
@@ -186,8 +204,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             if (!screenShotFolder.exists()) {
                 boolean created = screenShotFolder.mkdirs();
                 if (!created) {
-                    Reporter.log("Failed to create screenshot folder: " + screenShotFolder.getPath(),
-                        LogLevel.ERROR);
+                    Logger.error("Failed to create screenshot folder: " + screenShotFolder.getPath());
                     return null;
                 }
             }
@@ -195,14 +212,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             String name = sanitizedName + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File(screenShotFolder.getPath() + File.separator + name + ".png");
             Files.move(screenshot, screenShotFile);
-            Reporter.log("Screenshot captured: " + screenShotFile.getPath(), LogLevel.INFO_GREEN);
+            Logger.info("Screenshot captured: " + screenShotFile.getPath());
             Reporter.attachScreenshotToReport(screenShotFile, name, "Captured Screenshot");
             return screenShotFile;
         } catch (IOException e) {
-            Reporter.log("Failed to save screenshot: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to save screenshot: " + e.getMessage());
             return null;
         } catch (Exception e) {
-            Reporter.log("Failed to capture screenshot: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to capture screenshot: " + e.getMessage());
             return null;
         }
     }
@@ -225,7 +242,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     public void startRecording(String name) {
         if (name == null || name.trim().isEmpty()) {
-            Reporter.log("Recording name cannot be null or empty, using default", LogLevel.WARN);
+            Logger.warn("Recording name cannot be null or empty, using default");
             name = "recording";
         }
 
@@ -243,17 +260,21 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             DriverType driverType= DriverFactory.getCurrentDriverConfiguration().getDriverType();
             if (driverType== LocalDriverType.Chrome || driverType==LocalDriverType.Edge ||driverType== RemoteDriverType.REMOTE_Chrome || driverType==RemoteDriverType.REMOTE_Edge) {
-                boolean cdpStarted = startCDPRecording(sanitizedName);
-                if (cdpStarted) {
-                    return;
+                int driverId = System.identityHashCode(driver);
+                if (!cdpUnsupportedDrivers.contains(driverId)) {
+                    boolean cdpStarted = startCDPRecording(sanitizedName);
+                    if (cdpStarted) {
+                        return;
+                    }
+                    cdpUnsupportedDrivers.add(driverId);
+                    Logger.warn("CDP recording failed, falling back to snapshot mode");
                 }
-                Reporter.log("CDP recording failed, falling back to snapshot mode", LogLevel.WARN);
             }
 
             startSnapshotRecording(sanitizedName);
 
         } catch (Exception e) {
-            Reporter.log("Failed to start recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to start recording: " + e.getMessage());
             isRecording.set(false);
             recordingStartTime = null;
             cleanup();
@@ -279,7 +300,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         String name = videoName;
 
         if (name == null) {
-            Reporter.log("No active recording found to stop", LogLevel.WARN);
+            Logger.warn("No active recording found to stop");
             cleanup();
             return null;
         }
@@ -288,7 +309,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         if (!videoFolder.exists()) {
             boolean created = videoFolder.mkdirs();
             if (!created) {
-                Reporter.log("Failed to create video folder: " + videoFolder.getPath(), LogLevel.ERROR);
+                Logger.error("Failed to create video folder: " + videoFolder.getPath());
                 cleanup();
                 return null;
             }
@@ -303,10 +324,10 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 path = stopWebRecording(name, videoFolder);
             }
             if (path != null) {
-                Reporter.log("Video recording saved: " + path, LogLevel.INFO_GREEN);
+                Logger.info("Video recording saved: " + path);
             }
         } catch (Exception e) {
-            Reporter.log("Error stopping recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Error stopping recording: " + e.getMessage());
         } finally {
             cleanup();
         }
@@ -323,9 +344,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else if (driver instanceof IOSDriver) {
                 ((IOSDriver) driver).startRecordingScreen();
             }
-            Reporter.log("Started mobile screen recording: " + name, LogLevel.INFO_GREEN);
+            Logger.info("Started mobile screen recording: " + name);
         } catch (Exception e) {
-            Reporter.log("Failed to start mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to start mobile recording: " + e.getMessage());
             throw e;
         }
     }
@@ -343,18 +364,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             ChromiumDriver chromiumDriver = unwrapChromiumDriver(driver);
             if (chromiumDriver == null) {
-                Reporter.log("Could not unwrap ChromiumDriver, falling back to snapshot", LogLevel.WARN);
+                Logger.warn("Could not unwrap ChromiumDriver, falling back to snapshot");
                 return false;
             }
             DevTools devTools = chromiumDriver.getDevTools();
-            devTools.createSession();
+            devTools.createSessionIfThereIsNotOne();
             devToolsSession = devTools;
 
             String detectedVersion = detectCDPVersion(chromiumDriver);
             if (detectedVersion == null) {
-                Reporter.log("No CDP version found in classpath", LogLevel.WARN);
+                Logger.warn("No CDP version found in classpath");
                 return false;
             }
+            activeCdpVersion = detectedVersion;
             Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
 
             Object enableCommand = null;
@@ -390,48 +412,70 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (enableCommand == null) {
-                Reporter.log("Could not find CDP enable command in " + detectedVersion, LogLevel.WARN);
+                Logger.warn("Could not find CDP enable command in " + detectedVersion);
                 Logger.logException(lastException);
-                devTools.close();
-                devToolsSession = null;
+                cleanupDevTools();
                 return false;
             }
 
-            Object startCommand;
+            Object startCommand = null;
+            Method startMethod = findStartScreencastMethod(pageClass);
+            if (startMethod == null) {
+                Logger.warn("startScreencast method not found in " + detectedVersion);
+                cleanupDevTools();
+                return false;
+            }
+
             try {
-                java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast",
-                        Optional.class, Optional.class, Optional.class, Optional.class, Optional.class);
-                startCommand = startMethod.invoke(null,
-                        Optional.of(getScreencastFormat(pageClass)),
-                        Optional.of(CDP_JPEG_QUALITY),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(4)
-                );
-            } catch (NoSuchMethodException e) {
-                try {
-                    java.lang.reflect.Method startMethod = pageClass.getMethod("startScreencast");
+                Class<?>[] paramTypes = startMethod.getParameterTypes();
+                if (paramTypes.length == 0) {
                     startCommand = startMethod.invoke(null);
-                } catch (NoSuchMethodException e2) {
-                    Reporter.log("startScreencast method not found in " + detectedVersion, LogLevel.WARN);
-                    devTools.close();
-                    devToolsSession = null;
-                    return false;
+                } else {
+                    Object[] args = new Object[paramTypes.length];
+                    for (int i = 0; i < paramTypes.length; i++) {
+                        if (paramTypes[i].equals(Optional.class)) {
+                            if (i == 0) {
+                                try {
+                                    args[i] = Optional.of(getScreencastFormat(pageClass));
+                                } catch (Exception ignored) {
+                                    args[i] = Optional.empty();
+                                }
+                            } else if (i == 1) {
+                                args[i] = Optional.of(CDP_JPEG_QUALITY);
+                            } else if (i == 2) {
+                                args[i] = Optional.of(1920); // maxWidth: full HD bounds to prevent internal browser downsampling
+                            } else if (i == 3) {
+                                args[i] = Optional.of(1080); // maxHeight: full HD bounds
+                            } else if (i == 4) {
+                                args[i] = Optional.of(2); // capture every 2nd rendered frame from browser
+                            } else {
+                                args[i] = Optional.empty();
+                            }
+                        } else {
+                            args[i] = null;
+                        }
+                    }
+                    startCommand = startMethod.invoke(null, args);
                 }
+            } catch (Exception e) {
+                Logger.warn("Failed to invoke startScreencast in " + detectedVersion + ": " + e.getMessage());
+                Logger.logException(e);
+                cleanupDevTools();
+                return false;
             }
 
             addScreencastFrameListener(devTools, pageClass);
             devTools.send((org.openqa.selenium.devtools.Command<?>) enableCommand);
             devTools.send((org.openqa.selenium.devtools.Command<?>) startCommand);
-            Reporter.log("Started web recording (CDP " + detectedVersion + "): " + name, LogLevel.DEBUG);
+            Logger.debug("Started web recording (CDP " + detectedVersion + "): " + name);
             return true;
 
         } catch (ClassNotFoundException e) {
-            Reporter.log("CDP Page class not found: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("CDP Page class not found: " + e.getMessage());
             cleanupDevTools();
             return false;
         } catch (Exception e) {
-            Reporter.log("CDP recording initialization failed: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("CDP recording initialization failed: " + e.getMessage());
             Logger.logException(e);
             cleanupDevTools();
             return false;
@@ -507,7 +551,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     for (int v = major; v >= Math.max(85, major - 5); v--) {
                         try {
                             Class.forName("org.openqa.selenium.devtools.v" + v + ".page.Page");
-                            return "v" + v;
+                            cdpVersionCache = "v" + v;
+                            return cdpVersionCache;
                         } catch (ClassNotFoundException ignored) {}
                     }
                 } catch (Exception ignored) {}
@@ -526,7 +571,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         synchronized (ScreenRecorderActions.class) {
             cached = cdpVersionCache;
             if (cached != null) return cached.isEmpty() ? null : cached;
-            for (int version = 150; version >= 85; version--) {
+            for (int version = 200; version >= 85; version--) {
                 try {
                     Class.forName("org.openqa.selenium.devtools.v" + version + ".page.Page");
                     cdpVersionCache = "v" + version;
@@ -562,31 +607,61 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
         final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames;
         final AtomicBoolean recordingFlag = isRecording;
+        final java.util.concurrent.atomic.AtomicReference<BufferedImage> prevImgRef = lastDecodedImage;
+        final java.util.concurrent.atomic.AtomicReference<byte[]> prevBytesRef = lastRawBytes;
+        final java.util.concurrent.atomic.AtomicLong lastTimeRef = lastCaptureTimestamp;
 
         devTools.addListener((org.openqa.selenium.devtools.Event<?>) screencastFrameEvent, frameData -> {
             if (recordingFlag.get()) {
                 try {
-                    Method getDataMethod = frameData.getClass().getMethod("getData");
-                    String base64Data = (String) getDataMethod.invoke(frameData);
-                    byte[] imageData = Base64.getDecoder().decode(base64Data);
-                    FrameEntry last = targetDeque.peekLast();
-                    if (last != null && java.util.Arrays.equals(last.data, imageData)) {
-                        last.count++;
-                    } else {
-                        targetDeque.addLast(new FrameEntry(imageData));
-                    }
-
+                    // Extract session ID and acknowledge frame back to CDP immediately to maintain stream flow
                     Method getSessionIdMethod = frameData.getClass().getMethod("getSessionId");
                     Integer sessionId = (Integer) getSessionIdMethod.invoke(frameData);
 
-                    Method ackMethod;
-                    try {
-                        ackMethod = pageClass.getMethod("screencastFrameAck", Integer.class);
-                    } catch (NoSuchMethodException nsme) {
-                        ackMethod = pageClass.getMethod("screencastFrameAck", int.class);
+                    Method ackMethod = null;
+                    for (Method m : pageClass.getMethods()) {
+                        if ("screencastFrameAck".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())
+                                && m.getParameterCount() == 1) {
+                            ackMethod = m;
+                            break;
+                        }
                     }
-                    Object ackCommand = ackMethod.invoke(null, sessionId);
-                    devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
+                    if (ackMethod != null) {
+                        Object ackCommand = ackMethod.invoke(null, sessionId);
+                        devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
+                    }
+
+                    // Enforce capture interval throttling (~10 FPS max)
+                    long now = System.currentTimeMillis();
+                    if (now - lastTimeRef.get() < MIN_FRAME_INTERVAL_MS) {
+                        return;
+                    }
+
+                    Method getDataMethod = frameData.getClass().getMethod("getData");
+                    String base64Data = (String) getDataMethod.invoke(frameData);
+                    byte[] imageData = Base64.getDecoder().decode(base64Data);
+
+                    // Quick byte equality check
+                    byte[] prevBytes = prevBytesRef.get();
+                    if (prevBytes != null && java.util.Arrays.equals(prevBytes, imageData)) {
+                        return;
+                    }
+
+                    // Decode candidate frame and verify if there is actual visual change
+                    BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(imageData));
+                    if (candidate == null) return;
+
+                    BufferedImage prevImg = prevImgRef.get();
+                    if (prevImg != null && isSameVisualFrame(prevImg, candidate)) {
+                        return; // Static screen - do NOT append duplicate frame!
+                    }
+
+                    // New unique visual state! Store frame and update state references
+                    targetDeque.addLast(new FrameEntry(imageData));
+                    prevImgRef.set(candidate);
+                    prevBytesRef.set(imageData);
+                    lastTimeRef.set(now);
+
                 } catch (Exception e) {
                     Logger.debug("Error processing screencast frame: " + e.getMessage());
                 }
@@ -608,13 +683,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         } catch (Exception ignored) {}
 
         if (!(rawDriver instanceof TakesScreenshot)) {
-            Reporter.log("Driver does not support screenshots", LogLevel.ERROR);
+            Logger.error("Driver does not support screenshots");
             throw new UnsupportedOperationException("Driver does not support screenshots");
         }
 
         final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames;
         final AtomicBoolean recordingFlag = isRecording;
         final TakesScreenshot screenshotDriver = (TakesScreenshot) rawDriver;
+        final java.util.concurrent.atomic.AtomicReference<BufferedImage> prevImgRef = lastDecodedImage;
+        final java.util.concurrent.atomic.AtomicReference<byte[]> prevBytesRef = lastRawBytes;
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
             return Thread.ofPlatform().daemon(true).name("SnapshotRecorder-" + name).unstarted(r);
@@ -624,20 +701,36 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         executor.scheduleAtFixedRate(() -> {
             if (recordingFlag.get()) {
                 try {
-                    byte[] screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
+                    Ellithium.core.execution.listener.ListenerLogSuppression.suppress();
+                    byte[] screenshot;
+                    try {
+                        screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
+                    } finally {
+                        Ellithium.core.execution.listener.ListenerLogSuppression.resume();
+                    }
                     if (screenshot != null && screenshot.length > 0) {
-                        FrameEntry last = targetDeque.peekLast();
-                        if (last != null && java.util.Arrays.equals(last.data, screenshot)) {
-                            last.count++;
-                        } else {
-                            targetDeque.addLast(new FrameEntry(screenshot));
+                        byte[] prevBytes = prevBytesRef.get();
+                        if (prevBytes != null && java.util.Arrays.equals(prevBytes, screenshot)) {
+                            return;
                         }
+
+                        BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(screenshot));
+                        if (candidate == null) return;
+
+                        BufferedImage prevImg = prevImgRef.get();
+                        if (prevImg != null && isSameVisualFrame(prevImg, candidate)) {
+                            return; // Static screen - do NOT append duplicate frame!
+                        }
+
+                        targetDeque.addLast(new FrameEntry(screenshot));
+                        prevImgRef.set(candidate);
+                        prevBytesRef.set(screenshot);
                     }
                 } catch (Exception ignored) {}
             }
         }, 0, SNAPSHOT_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-        Reporter.log("Started web recording (Snapshot): " + name, LogLevel.DEBUG);
+        Logger.debug("Started web recording (Snapshot): " + name);
     }
 
     /**
@@ -653,7 +746,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (base64Video == null || base64Video.isEmpty()) {
-                Reporter.log("Mobile recording returned empty data", LogLevel.ERROR);
+                Logger.error("Mobile recording returned empty data");
                 return null;
             }
 
@@ -665,17 +758,17 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 fos.write(videoData);
                 fos.flush();
             }
-            Reporter.log("Mobile video recording saved: " + videoFile.getPath(), LogLevel.INFO_GREEN);
+            Logger.info("Mobile video recording saved: " + videoFile.getPath());
             return videoFile.getAbsolutePath();
 
         } catch (IllegalArgumentException e) {
-            Reporter.log("Invalid Base64 data from mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Invalid Base64 data from mobile recording: " + e.getMessage());
             return null;
         } catch (IOException e) {
-            Reporter.log("Failed to write mobile video file: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to write mobile video file: " + e.getMessage());
             return null;
         } catch (Exception e) {
-            Reporter.log("Failed to stop mobile recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to stop mobile recording: " + e.getMessage());
             return null;
         }
     }
@@ -698,7 +791,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 try {
                     byte[] lastFrame = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
                     if (lastFrame != null && lastFrame.length > 0) {
-                        frames.addLast(new FrameEntry(lastFrame));
+                        byte[] prevBytes = lastRawBytes.get();
+                        if (prevBytes == null || !java.util.Arrays.equals(prevBytes, lastFrame)) {
+                            BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(lastFrame));
+                            BufferedImage prevImg = lastDecodedImage.get();
+                            if (candidate != null && (prevImg == null || !isSameVisualFrame(prevImg, candidate))) {
+                                frames.addLast(new FrameEntry(lastFrame));
+                            }
+                        }
                     }
                 } catch (Exception ignored) {}
             }
@@ -712,7 +812,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (frames.isEmpty()) {
-                Reporter.log("No frames captured during recording", LogLevel.WARN);
+                Logger.warn("No frames captured during recording");
                 return null;
             }
 
@@ -724,12 +824,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             boolean needsAttachment = isAttachmentEnabled();
             if (needsAttachment) {
-                Reporter.log("Compiling video synchronously for report attachment", LogLevel.INFO_GREEN);
+                Logger.info("Compiling video synchronously for report attachment");
                 return compileFramesToMP4(frames, videoFile, durationMs);
             } else {
                 final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
                         new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
-                final int frameCount = framesCopy.stream().mapToInt(e -> e.count).sum();
+                final int frameCount = framesCopy.size();
                 final long capturedDuration = durationMs;
                 activeCompilations.incrementAndGet();
                 try {
@@ -756,14 +856,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
                 }
 
-                Reporter.log("Video compilation started in background (" + frameCount + " frames)",
-                        LogLevel.INFO_BLUE);
+                Logger.info("Video compilation started in background (" + frameCount + " frames)");
 
                 return videoFile.getAbsolutePath();
             }
 
         } catch (Exception e) {
-            Reporter.log("Failed to stop web recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to stop web recording: " + e.getMessage());
             return null;
         }
     }
@@ -777,31 +876,28 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         try {
             DevTools devTools = devToolsSession;
             if (devTools != null) {
-                String detectedVersion = detectCDPVersion();
+                String detectedVersion = (activeCdpVersion != null) ? activeCdpVersion : detectCDPVersion(driver);
                 if (detectedVersion != null) {
                     try {
                         Class<?> pageClass = Class.forName("org.openqa.selenium.devtools." + detectedVersion + ".page.Page");
                         Object stopCommand = null;
-                        try {
-                            Method stopMethod = pageClass.getMethod("stopScreencast", Optional.class);
-                            stopCommand = stopMethod.invoke(null, Optional.empty());
-                        } catch (NoSuchMethodException e) {
-                            try {
-                                Method stopMethod = pageClass.getMethod("stopScreencast");
+                        Method stopMethod = findStopScreencastMethod(pageClass);
+                        if (stopMethod != null) {
+                            if (stopMethod.getParameterCount() == 0) {
                                 stopCommand = stopMethod.invoke(null);
-                            } catch (NoSuchMethodException e2) {
-                                try {
-                                    java.lang.reflect.Field stopField = pageClass.getField("stopScreencast");
-                                    stopCommand = stopField.get(null);
-                                } catch (NoSuchFieldException e3) {
-                                    try {
-                                        java.lang.reflect.Field stopField = pageClass.getDeclaredField("stopScreencast");
-                                        stopField.setAccessible(true);
-                                        stopCommand = stopField.get(null);
-                                    } catch (Exception e4) {
-                                        Reporter.log("Could not find stopScreencast command", LogLevel.WARN);
-                                    }
-                                }
+                            } else {
+                                Object[] args = new Object[stopMethod.getParameterCount()];
+                                java.util.Arrays.fill(args, Optional.empty());
+                                stopCommand = stopMethod.invoke(null, args);
+                            }
+                        } else {
+                            try {
+                                java.lang.reflect.Field stopField = pageClass.getField("stopScreencast");
+                                stopCommand = stopField.get(null);
+                            } catch (NoSuchFieldException e3) {
+                                java.lang.reflect.Field stopField = pageClass.getDeclaredField("stopScreencast");
+                                stopField.setAccessible(true);
+                                stopCommand = stopField.get(null);
                             }
                         }
 
@@ -809,16 +905,38 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             devTools.send((org.openqa.selenium.devtools.Command<?>) stopCommand);
                         }
                     } catch (Exception e) {
-                        Reporter.log("Error stopping screencast: " + e.getMessage(), LogLevel.WARN);
+                        Logger.debug("Could not send CDP stopScreencast: " + e.getMessage());
                     }
                 }
-                devTools.close();
+                cleanupDevTools();
             }
         } catch (Exception e) {
-            Reporter.log("Error closing DevTools: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("Error stopping screencast: " + e.getMessage());
         } finally {
             devToolsSession = null;
         }
+    }
+
+    private Method findStartScreencastMethod(Class<?> pageClass) {
+        Method fallback = null;
+        for (Method m : pageClass.getMethods()) {
+            if ("startScreencast".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                if (m.getParameterCount() > 0) {
+                    return m;
+                }
+                fallback = m;
+            }
+        }
+        return fallback;
+    }
+
+    private Method findStopScreencastMethod(Class<?> pageClass) {
+        for (Method m : pageClass.getMethods()) {
+            if ("stopScreencast".equals(m.getName()) && java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                return m;
+            }
+        }
+        return null;
     }
 
     /**
@@ -855,15 +973,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     private String compileFramesToMP4(java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> frames,
                                        File outputFile, long recordingDurationMs) {
-        int totalFrames = frames.stream().mapToInt(e -> e.count).sum();
+        int totalFrames = frames.size();
         if (totalFrames == 0) {
-            Reporter.log("No frames to encode", LogLevel.WARN);
+            Logger.warn("No frames to encode");
             return null;
         }
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        final int MAX_WIDTH = 854;
-        final int MAX_HEIGHT = 480;
+        final int MAX_WIDTH = 1920;
+        final int MAX_HEIGHT = 1080;
         int batchSize = 50;
         try {
             FrameEntry firstEntry = frames.peek();
@@ -875,16 +993,17 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 }
             }
         } catch (Exception e) {
-            Reporter.log("Failed to calculate dynamic batch size, using default: " + e.getMessage(), LogLevel.DEBUG);
+            Logger.debug("Failed to calculate dynamic batch size, using default: " + e.getMessage());
         }
 
         try {
-            double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
-            int outputFPS = (actualCaptureFPS >= 1 && actualCaptureFPS <= 60)
-                    ? Math.max(1, (int) Math.round(actualCaptureFPS))
-                    : DEFAULT_FPS;
+            int outputFPS = DEFAULT_FPS;
 
             encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, outputFPS);
+            applyHighQualityRateControl(encoder);
+
+            // If only 1-9 unique frames were captured, repeat each so the video has a playable minimum duration (~1 sec)
+            int repeatPerFrame = (totalFrames < 10) ? Math.max(1, 10 / totalFrames) : 1;
 
             while (!frames.isEmpty()) {
 
@@ -896,7 +1015,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
                 if (entryBatch.isEmpty()) continue;
 
-                List<BufferedImage> processedBatch = entryBatch.parallelStream()
+                // Parallelize frame decode, bicubic scaling, and YUV Picture conversion across all CPU cores
+                List<Picture> processedBatch = entryBatch.parallelStream()
                         .map(entry -> {
                             try {
                                 BufferedImage original = ImageIO.read(new ByteArrayInputStream(entry.data));
@@ -918,38 +1038,42 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                 int evenW = (newW % 2 == 0) ? newW : newW - 1;
                                 int evenH = (newH % 2 == 0) ? newH : newH - 1;
 
+                                BufferedImage readyImage;
                                 if (!needsScaling && origW == evenW && origH == evenH && original.getType() == BufferedImage.TYPE_3BYTE_BGR) {
-                                    return original;
+                                    readyImage = original;
+                                } else {
+                                    readyImage = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
+                                    Graphics2D g2d = readyImage.createGraphics();
+                                    try {
+                                        if (needsScaling) {
+                                            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                                            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                                            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                                        }
+                                        g2d.drawImage(original, 0, 0, evenW, evenH, null);
+                                    } finally {
+                                        g2d.dispose();
+                                    }
                                 }
 
-                                BufferedImage resized = new BufferedImage(evenW, evenH, BufferedImage.TYPE_3BYTE_BGR);
-                                Graphics2D g2d = resized.createGraphics();
-                                try {
-                                    if (needsScaling) {
-                                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                                    }
-                                    g2d.drawImage(original, 0, 0, evenW, evenH, null);
-                                } finally {
-                                    g2d.dispose();
-                                }
-                                return resized;
+                                return AWTUtil.fromBufferedImageRGB(readyImage);
                             } catch (Exception e) {
                                 return null;
                             }
                         })
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
-                for (int i = 0; i < processedBatch.size(); i++) {
-                    BufferedImage img = processedBatch.get(i);
-                    if (img == null) continue;
-                    int repeatCount = entryBatch.get(i).count;
+                // Sequential bitstream encoding: encodes Picture directly
+                for (Picture pic : processedBatch) {
+                    if (pic == null) continue;
                     try {
-                        for (int r = 0; r < repeatCount; r++) {
-                            encoder.encodeImage(img);
+                        for (int r = 0; r < repeatPerFrame; r++) {
+                            encoder.encodeNativeFrame(pic);
                             successfulFrames++;
                         }
                     } catch (Exception e) {
-                        Reporter.log("Failed to encode frame " + i + ": " + e.getMessage(), LogLevel.DEBUG);
+                        Logger.debug("Failed to encode frame: " + e.getMessage());
                     }
                 }
 
@@ -958,20 +1082,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             if (successfulFrames == 0) {
-                Reporter.log("No valid frames encoded", LogLevel.ERROR);
+                Logger.error("No valid frames encoded");
                 if (outputFile.exists()) outputFile.delete();
                 return null;
             }
 
             double expectedDuration = (double) successfulFrames / outputFPS;
-            Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
-                    " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)",
-                    successfulFrames < totalFrames ? LogLevel.WARN : LogLevel.INFO_GREEN);
+            Logger.info("Encoded " + successfulFrames + " frames (" + totalFrames +
+                    " unique states) at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)");
 
             return outputFile.getAbsolutePath();
 
         } catch (Exception e) {
-            Reporter.log("Video compilation failed: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Video compilation failed: " + e.getMessage());
             if (outputFile.exists()) outputFile.delete();
             return null;
         } finally {
@@ -1032,6 +1155,76 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Efficiently tests whether two frames are visually identical.
+     * Uses a fast 32x32 distributed sample grid (1,024 points) across the frame with color tolerance.
+     * Early-terminates in microseconds as soon as sufficient visual differences are detected.
+     */
+    private static boolean isSameVisualFrame(BufferedImage a, BufferedImage b) {
+        if (a == null || b == null) return false;
+        if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) return false;
+        int w = a.getWidth();
+        int h = a.getHeight();
+        int stepX = Math.max(1, w / 32);
+        int stepY = Math.max(1, h / 32);
+        int diffs = 0;
+        int total = 0;
+        for (int y = stepY / 2; y < h; y += stepY) {
+            for (int x = stepX / 2; x < w; x += stepX) {
+                total++;
+                int rgbA = a.getRGB(x, y);
+                int rgbB = b.getRGB(x, y);
+                if (rgbA != rgbB) {
+                    int rDiff = Math.abs(((rgbA >> 16) & 0xFF) - ((rgbB >> 16) & 0xFF));
+                    int gDiff = Math.abs(((rgbA >> 8) & 0xFF) - ((rgbB >> 8) & 0xFF));
+                    int bDiff = Math.abs((rgbA & 0xFF) - (rgbB & 0xFF));
+                    if (rDiff > 8 || gDiff > 8 || bDiff > 8) {
+                        diffs++;
+                        if (diffs > (total * 0.02) && total > 20) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return (double) diffs / total <= 0.02;
+    }
+
+    /**
+     * Configures the JCodec SequenceEncoder with high-quality H.264 RateControl (QP 12/16)
+     * instead of the default DumbRateControl (QP 20/26), producing crisp, readable UI text
+     * and pristine line graphics without compression artifacts.
+     */
+    private static void applyHighQualityRateControl(org.jcodec.api.SequenceEncoder encoder) {
+        if (encoder == null) return;
+        try {
+            java.lang.reflect.Field sinkField = org.jcodec.api.SequenceEncoder.class.getDeclaredField("sink");
+            sinkField.setAccessible(true);
+            Object sink = sinkField.get(encoder);
+            if (sink != null) {
+                java.lang.reflect.Field veField = sink.getClass().getDeclaredField("videoEncoder");
+                veField.setAccessible(true);
+                Object ve = veField.get(sink);
+                if (ve instanceof org.jcodec.codecs.h264.H264Encoder) {
+                    java.lang.reflect.Field rcField = ve.getClass().getDeclaredField("rc");
+                    rcField.setAccessible(true);
+                    rcField.set(ve, new org.jcodec.codecs.h264.encode.RateControl() {
+                        @Override
+                        public int startPicture(org.jcodec.common.model.Size size, int maxSize, org.jcodec.codecs.h264.io.model.SliceType sliceType) {
+                            return (sliceType == org.jcodec.codecs.h264.io.model.SliceType.P) ? 16 : 12;
+                        }
+                        @Override
+                        public int initialQpDelta() { return 0; }
+                        @Override
+                        public int accept(int bits) { return 0; }
+                    });
+                }
+            }
+        } catch (Exception e) {
+            Logger.debug("Using default JCodec RateControl: " + e.getMessage());
+        }
+    }
+
+    /**
      * Cleans up this instance's recording resources to prevent memory/resource leaks.
      * <p>
      * This method should be called after recording is complete or in case of failures.
@@ -1063,9 +1256,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             videoName = null;
             isRecording.set(false);
             recordingStartTime = null;
+            lastDecodedImage.set(null);
+            lastRawBytes.set(null);
+            lastCaptureTimestamp.set(0);
 
         } catch (Exception e) {
-            Reporter.log("Error during cleanup: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("Error during cleanup: " + e.getMessage());
         }
     }
 

@@ -81,6 +81,7 @@ public class AllureHelper {
                     new File(lastReportPath).getAbsolutePath(),
                     new File(resultsPath).getAbsolutePath()
             );
+            AllureEnvironmentManager.writeEnvironmentMetadata();
             CommandExecutor.executeCommand(commandList);
             File indexFile = new File(lastReportPath + File.separator + "index.html");
             String safeReportName = sanitizeFileName(reportName);
@@ -115,7 +116,10 @@ public class AllureHelper {
                     Logger.warn("Failed to delete temporary report directory: " + e.getMessage());
                 }
             }
-            String openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+            String openFlag = System.getProperty("allure.open.afterExecution");
+            if (openFlag == null || openFlag.isBlank()) {
+                openFlag = getDataFromProperties(allurePropertiesFilePath, "allure.open.afterExecution");
+            }
             if (openFlag != null && openFlag.equalsIgnoreCase("true")) {
                 CommandExecutor.openFile(renamedFile.getPath());
             }
