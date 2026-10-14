@@ -57,6 +57,9 @@ import static io.appium.java_client.proxy.Helpers.createProxy;
  * </pre>
  */
 public class DriverFactory {
+    public record DriverContext(WebDriver driver, DriverConfiguration config) {}
+    public static final ScopedValue<DriverContext> SCOPED_DRIVER = ScopedValue.newInstance();
+
     private static final ThreadLocal<WebDriver> WebDriverThread = new ThreadLocal<>();
     private static final ThreadLocal<AndroidDriver> AndroidDriverThread = new ThreadLocal<>();
     private static final ThreadLocal<IOSDriver> IOSDriverThread = new ThreadLocal<>();
@@ -634,6 +637,9 @@ public class DriverFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getCurrentDriver() {
+        if (SCOPED_DRIVER.isBound()) {
+            return (T) SCOPED_DRIVER.get().driver();
+        }
         DriverConfiguration currentDriverConfigurationThread = driverConfigurationThread.get();
         if (currentDriverConfigurationThread != null) {
             DriverType driverType = driverConfigurationThread.get().getDriverType();
@@ -749,12 +755,49 @@ public class DriverFactory {
     }
 
     /**
-     * Gets the current driver configuration for the executing thread.
+     * Gets the current driver configuration for the executing thread or scope.
      *
      * @return Current driver configuration
      */
     public static DriverConfiguration getCurrentDriverConfiguration() {
+        if (SCOPED_DRIVER.isBound()) {
+            return SCOPED_DRIVER.get().config();
+        }
         return driverConfigurationThread.get();
+    }
+
+    /**
+     * Executes a task within a Java 25 ScopedValue driver context.
+     * Guarantees that any child virtual threads or StructuredTaskScope workers inherit the
+     * driver context safely, with automatic and deterministic cleanup upon exit.
+     *
+     * @param driver The WebDriver instance
+     * @param config The DriverConfiguration
+     * @param action The code block to execute
+     */
+    public static void runWithDriver(WebDriver driver, DriverConfiguration config, Runnable action) {
+        if (driver == null || config == null || action == null) return;
+        adoptCurrentThread(driver, config);
+        try {
+            ScopedValue.where(SCOPED_DRIVER, new DriverContext(driver, config)).run(action);
+        } finally {
+            removeDriver();
+        }
+    }
+
+    /**
+     * Checks whether an active driver instance is currently bound and alive on this thread or scope.
+     *
+     * @return true if driver exists and session is valid, false otherwise
+     */
+    public static boolean isDriverAlive() {
+        try {
+            WebDriver driver = getCurrentDriver();
+            if (driver == null) return false;
+            return driver.getWindowHandle() != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

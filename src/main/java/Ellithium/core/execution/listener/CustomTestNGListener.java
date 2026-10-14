@@ -236,6 +236,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             AISelfHealer.cleanup();
             EnsembleHealer.shutdown();
             AIHealingReporter.generateReport();
+            Ellithium.core.reporting.internal.AllureEnvironmentManager.writeEnvironmentMetadata();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
         }

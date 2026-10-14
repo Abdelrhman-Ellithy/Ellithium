@@ -81,6 +81,7 @@ public class AllureHelper {
                     new File(lastReportPath).getAbsolutePath(),
                     new File(resultsPath).getAbsolutePath()
             );
+            AllureEnvironmentManager.writeEnvironmentMetadata();
             CommandExecutor.executeCommand(commandList);
             File indexFile = new File(lastReportPath + File.separator + "index.html");
             String safeReportName = sanitizeFileName(reportName);

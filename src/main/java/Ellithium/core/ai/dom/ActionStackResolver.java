@@ -61,7 +61,13 @@ public final class ActionStackResolver {
             "drillToInteractive",
             "isInteractable",
             "normalizeLocator",
-            "cleanStackTrace");
+            "cleanStackTrace",
+            "tryHandlePromptBiDi",
+            "getElementCenter",
+            "w3cTap",
+            "w3cDoubleTap",
+            "w3cLongPress",
+            "w3cDragAndDrop");
 
     public static boolean isInfraFrame(String className, String methodName) {
         if (className == null) return false;

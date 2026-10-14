@@ -85,8 +85,71 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
         return this;
     }
 
+    private final List<org.openqa.selenium.bidi.module.Network> activeBidiNetworks = new ArrayList<>();
+
     /**
-     * Closes and clears all active network interceptors on this driver instance.
+     * Configures automatic HTTP Basic / Digest authentication for all requests requiring credentials.
+     * Powered by WebDriver BiDi with seamless fallback to HasAuthentication.
+     *
+     * @param username The authentication username
+     * @param password The authentication password
+     * @return this instance for fluent chaining
+     */
+    public NetworkActions<T> authenticate(String username, String password) {
+        return authenticate(uri -> true, username, password);
+    }
+
+    /**
+     * Configures automatic HTTP Basic / Digest authentication for requests matching the given URI filter.
+     * Powered by WebDriver BiDi with seamless fallback to HasAuthentication.
+     *
+     * @param urlFilter Predicate to match target URIs requiring authentication
+     * @param username The authentication username
+     * @param password The authentication password
+     * @return this instance for fluent chaining
+     */
+    public NetworkActions<T> authenticate(java.util.function.Predicate<java.net.URI> urlFilter, String username, String password) {
+        if (driver instanceof org.openqa.selenium.bidi.HasBiDi hasBiDi) {
+            try {
+                if (hasBiDi.getBiDi() != null) {
+                    org.openqa.selenium.bidi.module.Network network = new org.openqa.selenium.bidi.module.Network(driver);
+                    activeBidiNetworks.add(network);
+                    network.onAuthRequired(response -> {
+                        try {
+                            String reqUrl = response.getRequest() != null ? response.getRequest().getUrl() : "";
+                            String reqId = response.getRequest() != null ? response.getRequest().getRequestId() : null;
+                            if (reqId == null) return;
+                            java.net.URI uri = java.net.URI.create(reqUrl);
+                            if (urlFilter == null || urlFilter.test(uri)) {
+                                network.continueWithAuth(reqId, new org.openqa.selenium.UsernameAndPassword(username, password));
+                                Reporter.log("BiDi: Authenticated request to [" + reqUrl + "]", LogLevel.INFO_GREEN);
+                            } else {
+                                network.continueWithAuthNoCredentials(reqId);
+                            }
+                        } catch (Exception e) {
+                            if (response.getRequest() != null && response.getRequest().getRequestId() != null) {
+                                network.continueWithAuth(response.getRequest().getRequestId(), new org.openqa.selenium.UsernameAndPassword(username, password));
+                            }
+                        }
+                    });
+                    Reporter.log("Registered BiDi HTTP authentication handler for user: " + username, LogLevel.INFO_BLUE);
+                    return this;
+                }
+            } catch (Exception e) {
+                Reporter.log("BiDi authentication setup deferred to HasAuthentication: " + e.getMessage(), LogLevel.WARN);
+            }
+        }
+        if (driver instanceof org.openqa.selenium.HasAuthentication hasAuth) {
+            hasAuth.register(urlFilter != null ? urlFilter : uri -> true, () -> new org.openqa.selenium.UsernameAndPassword(username, password));
+            Reporter.log("Registered HasAuthentication handler for user: " + username, LogLevel.INFO_BLUE);
+        } else {
+            Reporter.log("Driver does not support BiDi or HasAuthentication", LogLevel.WARN);
+        }
+        return this;
+    }
+
+    /**
+     * Closes and clears all active network interceptors and BiDi network handlers on this driver instance.
      */
     @Override
     public void close() {
@@ -96,6 +159,12 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
             } catch (Exception ignored) {}
         }
         activeInterceptors.clear();
+        for (org.openqa.selenium.bidi.module.Network network : activeBidiNetworks) {
+            try {
+                network.close();
+            } catch (Exception ignored) {}
+        }
+        activeBidiNetworks.clear();
         Reporter.log("Cleared active network interceptors", LogLevel.DEBUG);
     }
 
