@@ -35,6 +35,8 @@ public class AIConfigLoader {
     private static int     llmHealMaxWaitMs           = 15_000;
     private static int     llmMaxRetries              = 3;
     private static int     telemetryMaxRecords        = 100_000;
+    private static boolean tier1Enabled               = true;
+    private static boolean tier2Enabled               = true;
     private static boolean tier3Enabled               = true;
     private static int     ciHealAlertThreshold       = -1;
     private static int     baselineMaxLocators        = 0;
@@ -91,6 +93,8 @@ public class AIConfigLoader {
             llmHealMaxWaitMs            = parseInt(p, "ai.llm.healMaxWaitMs", llmHealMaxWaitMs);
             llmMaxRetries               = parseInt(p, "ai.llm.maxRetries", llmMaxRetries);
             telemetryMaxRecords         = parseInt(p, "ai.telemetry.maxRecords", telemetryMaxRecords);
+            tier1Enabled                = parseBool(p, "ai.tier1.enabled", tier1Enabled);
+            tier2Enabled                = parseBool(p, "ai.tier2.enabled", tier2Enabled);
             tier3Enabled                = parseBool(p, "ai.tier3.enabled", tier3Enabled);
             ciHealAlertThreshold        = parseInt(p, "ai.healing.ciAlertThreshold", ciHealAlertThreshold);
             baselineMaxLocators         = parseInt(p, "ai.healing.baselineMaxLocators", baselineMaxLocators);
@@ -200,6 +204,8 @@ public class AIConfigLoader {
     public static int    getLlmMaxRetries()                     { return llmMaxRetries; }
     public static int    getTelemetryMaxRecords()               { return telemetryMaxRecords; }
     public static double getTier3BaselineMatchFloor()           { return tier3BaselineMatchFloor; }
+    public static boolean isTier1Enabled()                      { return tier1Enabled; }
+    public static boolean isTier2Enabled()                      { return tier2Enabled; }
     public static boolean isTier3Enabled()                      { return tier3Enabled; }
     public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
     public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }

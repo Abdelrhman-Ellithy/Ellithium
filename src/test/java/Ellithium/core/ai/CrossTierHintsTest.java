@@ -38,7 +38,14 @@ public class CrossTierHintsTest {
         WebDriver driver = mock(WebDriver.class);
         when(driver.findElement(any(By.class)))
                 .thenThrow(new NoSuchElementException("no such element"));
-        lenient().when(driver.findElements(any(By.class))).thenReturn(containsMatches);
+        lenient().when(driver.findElements(any(By.class))).thenAnswer(inv -> {
+            By by = inv.getArgument(0);
+            String s = by != null ? by.toString() : "";
+            if (s.contains("*=") || s.contains("contains(")) {
+                return containsMatches;
+            }
+            return Collections.emptyList();
+        });
         return driver;
     }
 

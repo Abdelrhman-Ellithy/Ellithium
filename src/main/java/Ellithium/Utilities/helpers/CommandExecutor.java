@@ -7,6 +7,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,33 @@ public class CommandExecutor {
             Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
         }
     }
-    
+
+    /**
+     * Executes a command synchronously with explicit arguments to avoid shell quoting issues.
+     * @param commandList list of command arguments.
+     * @return exit code of the process.
+     */
+    public static int executeCommand(List<String> commandList) {
+        String cmdStr = String.join(" ", commandList);
+        Reporter.log("Attempting to execute command: " + cmdStr, LogLevel.INFO_GREEN);
+        try {
+            ProcessBuilder builder = new ProcessBuilder(commandList);
+            builder.redirectErrorStream(true);
+            Process process = builder.start();
+            String output = captureProcessOutput(process);
+            int exitCode = process.waitFor();
+            logCommandResult(cmdStr, exitCode, output);
+            return exitCode;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
+            return -1;
+        } catch (IOException e) {
+            Reporter.log("Command execution error: " + e.getMessage(), LogLevel.ERROR);
+            return -1;
+        }
+    }
+
     private static String captureProcessOutput(Process process) throws IOException {
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -46,7 +73,7 @@ public class CommandExecutor {
         }
         return output.toString();
     }
-    
+
     private static void logCommandResult(String command, int exitCode, String output) {
         if (exitCode == 0) {
             Reporter.log("Command executed successfully. Exit code: " + exitCode, LogLevel.INFO_GREEN);
@@ -81,15 +108,20 @@ public class CommandExecutor {
     public static void openFile(String filePath) {
         try {
             File file = new File(filePath);
-            if (Desktop.isDesktopSupported() && file.exists()) {
+            if (!GraphicsEnvironment.isHeadless() && Desktop.isDesktopSupported()
+                    && Desktop.getDesktop().isSupported(Desktop.Action.OPEN) && file.exists()) {
                 Desktop.getDesktop().open(file);
                 Reporter.log("Successfully opened file: ", LogLevel.INFO_GREEN, filePath);
             } else {
                 executeOSSpecificOpen(filePath);
             }
-        } catch (IOException e) {
-            Reporter.log("Failed to open file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        } catch (Exception e) {
+            try {
+                executeOSSpecificOpen(filePath);
+            } catch (Exception ex) {
+                Reporter.log("Failed to open file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, ex.getMessage());
+            }
         }
     }
 
@@ -101,7 +133,7 @@ public class CommandExecutor {
     private static void executeOSSpecificOpen(String filePath) throws IOException {
         String[] command;
         if (SystemUtils.IS_OS_WINDOWS) {
-            command = new String[]{"cmd", "/c", "start", filePath};
+            command = new String[]{"cmd", "/c", "start", "", filePath};
         } else if (SystemUtils.IS_OS_MAC) {
             command = new String[]{"open", filePath};
         } else if (SystemUtils.IS_OS_LINUX) {

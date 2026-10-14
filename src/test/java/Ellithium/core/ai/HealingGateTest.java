@@ -111,4 +111,33 @@ public class HealingGateTest {
         Assert.assertTrue(query.contains("sign in"),
                 "Non-READABLE query should still use last-known text — got: " + query);
     }
+
+    @Test
+    public void healingStrategy_disabled_returnsNullImmediately() {
+        try (MockedStatic<AIConfigLoader> cfg = Mockito.mockStatic(AIConfigLoader.class, Mockito.CALLS_REAL_METHODS)) {
+            cfg.when(AIConfigLoader::getHealingStrategy).thenReturn(Ellithium.Utilities.ai.HealingStrategy.DISABLED);
+
+            WebDriver driver = mock(WebDriver.class);
+            Ellithium.core.ai.models.HealingRequest req = new Ellithium.core.ai.models.HealingRequest(
+                    driver, By.id("test-btn"), new StackTraceElement[0], "clickOnElement", "testMethod", "btnField", "By.id: test-btn", null);
+
+            Ellithium.core.ai.models.HealOutcome healed = Ellithium.core.ai.healing.HealingOrchestrator.get().heal(req);
+            Assert.assertNull(healed, "When strategy is DISABLED, heal() must return null immediately");
+            verifyNoInteractions(driver);
+        }
+    }
+
+    @Test
+    public void tier1_and_tier2_toggles_respected() {
+        try (MockedStatic<AIConfigLoader> cfg = Mockito.mockStatic(AIConfigLoader.class, Mockito.CALLS_REAL_METHODS)) {
+            cfg.when(AIConfigLoader::isTier1Enabled).thenReturn(false);
+            cfg.when(AIConfigLoader::isTier2Enabled).thenReturn(false);
+
+            Ellithium.core.ai.spi.Tier1AlgorithmicHealer tier1 = new Ellithium.core.ai.spi.Tier1AlgorithmicHealer();
+            Ellithium.core.ai.spi.Tier2EnsembleHealer tier2 = new Ellithium.core.ai.spi.Tier2EnsembleHealer();
+
+            Assert.assertFalse(tier1.isAvailable(), "Tier 1 must be unavailable when isTier1Enabled is false");
+            Assert.assertFalse(tier2.isAvailable(), "Tier 2 must be unavailable when isTier2Enabled is false");
+        }
+    }
 }

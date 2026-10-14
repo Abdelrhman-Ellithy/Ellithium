@@ -13,7 +13,7 @@ public final class Tier1AlgorithmicHealer implements HealingTier {
 
     @Override
     public boolean isAvailable() {
-        return true;
+        return Ellithium.core.ai.config.AIConfigLoader.isTier1Enabled();
     }
 
     @Override

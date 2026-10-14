@@ -96,8 +96,12 @@ public class Reporter {
         PendingStep pending = PENDING_STEP.get();
         if (pending == null) return;
         PENDING_STEP.remove();
-        Allure.getLifecycle().updateStep(pending.uuid(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
-        Allure.getLifecycle().stopStep(pending.uuid());
+        try {
+            Allure.getLifecycle().updateStep(pending.uuid(), sr -> sr.setStop(Math.max(stopAt, pending.start())));
+            Allure.getLifecycle().stopStep(pending.uuid());
+        } catch (Exception e) {
+            Logger.debug("Could not stop pending Allure step: " + e.getMessage());
+        }
     }
 
     /**
@@ -105,9 +109,7 @@ public class Reporter {
      * without opening a new one. Call at fixture/test/step boundaries.
      */
     public static void flushPendingStep() {
-        if (ConfigContext.isOnExecution()) {
-            closePendingStep(System.currentTimeMillis());
-        }
+        closePendingStep(System.currentTimeMillis());
     }
 
     /**
@@ -150,6 +152,7 @@ public class Reporter {
      */
     public static void logReportOnly(String message, LogLevel logLevel, String additionalParameter) {
         if (ConfigContext.isOnExecution()) {
+            flushPendingStep();
             Allure.step(message + additionalParameter, allureStatusMap.get(logLevel));
         }
     }

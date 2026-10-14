@@ -79,6 +79,7 @@ public class GeneralHandler {
 
     @Step("Attachments")
     public static void addAttachments(){
+        Reporter.flushPendingStep();
         GeneralHandler.AttachLogs();
     }
     

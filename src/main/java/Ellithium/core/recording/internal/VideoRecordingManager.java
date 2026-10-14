@@ -173,12 +173,12 @@ public class VideoRecordingManager {
      */
     public static String startRecording(String testName, String testIdentifier) {
         if (!isRecordingEnabled()) {
-            Reporter.log("Video recording is disabled in configuration", LogLevel.DEBUG);
+            Logger.debug("Video recording is disabled in configuration");
             return null;
         }
         WebDriver driver = DriverFactory.getCurrentDriver();
         if (driver == null) {
-            Reporter.log("No active driver found, skipping video recording", LogLevel.WARN);
+            Logger.warn("No active driver found, skipping video recording");
             return null;
         }
         long threadId = Thread.currentThread().threadId();
@@ -197,8 +197,8 @@ public class VideoRecordingManager {
                 if (existingContext.getTestName().equals(testName) || existingRecordingId.equals(existingTestRecordingId)) {
                     return existingRecordingId;
                 }
-                Reporter.log("Thread " + threadId + " already has active recording for: " +
-                        existingContext.getTestName() + ". Stopping previous recording.", LogLevel.WARN);
+                Logger.warn("Thread " + threadId + " already has active recording for: " +
+                        existingContext.getTestName() + ". Stopping previous recording.");
                 stopRecordingById(existingRecordingId, "INTERRUPTED");
             }
         }
@@ -212,10 +212,10 @@ public class VideoRecordingManager {
             threadToRecordingMap.put(threadId, recordingId);
             testToRecordingMap.put(testIdentifier, recordingId);
             recorder.startRecording(recordingName);
-            Reporter.log("Started video recording for: " + testName + " on thread: " + threadId, LogLevel.INFO_BLUE);
+            Logger.info("Started video recording for: " + testName + " on thread: " + threadId);
             return recordingId;
         } catch (Exception e) {
-            Reporter.log("Failed to start video recording: " + e.getMessage(), LogLevel.ERROR);
+            Logger.error("Failed to start video recording: " + e.getMessage());
             Logger.logException(e);
             return null;
         }
@@ -359,9 +359,9 @@ public class VideoRecordingManager {
         if (shouldAttach) {
             try {
                 Reporter.attachFileToReport(videoPath, testName + "_recording");
-                Reporter.log("Video attached to report: " + testName, LogLevel.INFO_GREEN);
+                Logger.info("Video attached to report: " + testName);
             } catch (Exception e) {
-                Reporter.log("Failed to attach video to report: " + e.getMessage(), LogLevel.ERROR);
+                Logger.error("Failed to attach video to report: " + e.getMessage());
             }
         } else {
             deleteVideoFile(videoPath);
@@ -377,10 +377,10 @@ public class VideoRecordingManager {
         try {
             File videoFile = new File(videoPath);
             if (videoFile.exists() && videoFile.delete()) {
-                Reporter.log("Deleted video file: " + videoPath, LogLevel.DEBUG);
+                Logger.debug("Deleted video file: " + videoPath);
             }
         } catch (Exception e) {
-            Reporter.log("Failed to delete video file: " + e.getMessage(), LogLevel.WARN);
+            Logger.warn("Failed to delete video file: " + e.getMessage());
         }
     }
 
@@ -394,8 +394,7 @@ public class VideoRecordingManager {
         if (context != null) {
             threadToRecordingMap.remove(context.getThreadId(), recordingId);
             testToRecordingMap.entrySet().removeIf(entry -> entry.getValue().equals(recordingId));
-            Reporter.log("Cleaned up recording context [ID: " + recordingId.substring(0, 8) + "]",
-                    LogLevel.DEBUG);
+            Logger.debug("Cleaned up recording context [ID: " + recordingId.substring(0, 8) + "]");
         }
     }
 

@@ -71,4 +71,22 @@ public class ReportNamingTest {
         Assert.assertFalse(name.contains("UnknownSuite"), "UnknownSuite placeholder must be omitted: " + name);
         Assert.assertFalse(name.startsWith("-"), "Name should not start with hyphen: " + name);
     }
+
+    @Test
+    public void testSanitizeFileNameWithSpacesAndIllegalChars() {
+        Assert.assertEquals(AllureHelper.sanitizeFileName("Fuel Transportation Report"), "Fuel Transportation Report");
+        Assert.assertEquals(AllureHelper.sanitizeFileName("Report: Test/Suite *?"), "Report_ Test_Suite __");
+        Assert.assertEquals(AllureHelper.sanitizeFileName("Trailing Dots and Spaces...   "), "Trailing Dots and Spaces");
+        Assert.assertEquals(AllureHelper.sanitizeFileName(null), "Report");
+        Assert.assertEquals(AllureHelper.sanitizeFileName("   "), "Report");
+        Assert.assertEquals(AllureHelper.sanitizeFileName("Invalid: <tag> | \"quotes\""), "Invalid_ _tag_ _ _quotes_");
+    }
+
+    @Test
+    public void testFlushPendingStepSafety() {
+        // Calling flushPendingStep when no step is active should be completely safe and not throw
+        Ellithium.core.reporting.Reporter.flushPendingStep();
+        Ellithium.core.reporting.Reporter.flushPendingStep();
+    }
 }
+

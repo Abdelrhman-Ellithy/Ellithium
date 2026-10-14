@@ -15,7 +15,7 @@ public final class Tier2EnsembleHealer implements HealingTier {
 
     @Override
     public boolean isAvailable() {
-        return true;
+        return Ellithium.core.ai.config.AIConfigLoader.isTier2Enabled();
     }
 
     @Override
@@ -26,18 +26,18 @@ public final class Tier2EnsembleHealer implements HealingTier {
     @Override
     public HealOutcome heal(HealingRequest request) {
         if (EnsembleHealer.isAvailable()) {
-            return EnsembleHealer.tryEnsembleHeal(request.driver(), request.brokenLocator(),
+            HealOutcome outcome = EnsembleHealer.tryEnsembleHeal(request.driver(), request.brokenLocator(),
                     request.actionType(), request.callerMethod(), request.fieldName(),
                     request.locatorValue(), request.baseline(), request.hints());
+            if (outcome != null) {
+                if (Double.isNaN(outcome.score()) || outcome.score() < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
+                    return null;
+                }
+                return outcome;
+            }
         }
-        WebElement el = SemanticLocatorResolver.trySemanticHeal(request.driver(),
+        return SemanticLocatorResolver.trySemanticHealOutcome(request.driver(),
                 request.callerMethod(), request.fieldName(),
                 request.actionType(), request.locatorValue(), request.baseline());
-        if (el == null) return null;
-        double score = EnsembleHealer.scoreWithBatchedAttrs(request.baseline(), request.driver(), el);
-        if (score < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
-            return null;
-        }
-        return HealOutcome.of(el, score, 2);
     }
 }

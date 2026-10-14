@@ -56,6 +56,20 @@ public class SemanticNameExtractor {
     // Pattern to split camelCase: "UserName" → ["User", "Name"]
     private static final Pattern CAMEL_SPLIT = Pattern.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])");
 
+    // State and utility modifier tokens that describe transient UI state rather than element identity
+    public static final Set<String> STATE_AND_UTILITY_MODIFIERS = Set.of(
+            "active", "disabled", "enabled", "selected", "checked", "focused",
+            "open", "closed", "show", "hide", "hidden", "visible", "collapsed",
+            "expanded", "current", "valid", "invalid", "loading", "busy",
+            "success", "danger", "warning", "info", "primary", "secondary",
+            "item", "btn", "true", "false"
+    );
+
+    public static boolean isStateOrUtilityModifier(String token) {
+        if (token == null || token.isBlank()) return true;
+        return STATE_AND_UTILITY_MODIFIERS.contains(token.toLowerCase(java.util.Locale.ROOT).trim());
+    }
+
     /**
      * Extracts semantic name candidates from all available context.
      *

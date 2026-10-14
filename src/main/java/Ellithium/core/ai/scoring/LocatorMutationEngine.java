@@ -412,12 +412,12 @@ public class LocatorMutationEngine {
             for (String v : variants) {
                 if (!v.isBlank()) out.add(By.cssSelector("." + v));
             }
-            if (cls.length() >= 3) {
+            if (cls.length() >= 3 && !SemanticNameExtractor.isStateOrUtilityModifier(cls)) {
                 out.add(By.cssSelector("[class*='" + cssEscape(cls) + "']"));
             }
             List<String> tokens = tokenize(cls);
             for (String t : tokens) {
-                if (t.length() >= 3) {
+                if (t.length() >= 3 && !SemanticNameExtractor.isStateOrUtilityModifier(t)) {
                     out.add(By.cssSelector("[class*='" + cssEscape(t) + "']"));
                 }
             }
