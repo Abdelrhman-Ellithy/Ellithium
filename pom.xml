@@ -660,11 +660,6 @@
                         <artifactId>aspectjweaver</artifactId>
                         <version>1.9.25.1</version>
                     </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-testng</artifactId>
-                        <version>3.5.6</version>
-                    </dependency>
                 </dependencies>
             </plugin>
             <plugin>
