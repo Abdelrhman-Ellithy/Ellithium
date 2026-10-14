@@ -74,27 +74,11 @@ import static Ellithium.core.recording.internal.VideoRecordingManager.isAttachme
 public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
-     * Stores one unique frame plus how many consecutive times it appeared.
-     * Consecutive identical frames increment count instead of storing duplicate byte arrays —
-     * keeping memory proportional to unique-frame count, not total-frame count.
+     * Stores one unique captured frame's raw image data.
      */
     private static final class FrameEntry {
         final byte[] data;
-        volatile int count;
-        FrameEntry(byte[] data) { this.data = data; this.count = 1; }
-    }
-
-    /**
-     * Pre-converted Picture struct pairing a YUV picture with its run-length repeat count.
-     * Prevents redundant RGB-to-YUV matrix conversions when repeating identical frames.
-     */
-    private static final class PreparedFrame {
-        final Picture picture;
-        final int count;
-        PreparedFrame(Picture picture, int count) {
-            this.picture = picture;
-            this.count = count;
-        }
+        FrameEntry(byte[] data) { this.data = data; }
     }
 
     /**
@@ -129,9 +113,15 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * Default frame rate for video recording (frames per second).
-     * Balances file size with smooth playback.
+     * Standard 10 FPS provides smooth, natural test action playback.
      */
     private static final int DEFAULT_FPS = 10;
+
+    /**
+     * Minimum interval between captured frames in milliseconds (~10 FPS max capture rate).
+     * Prevents browser render loops from saturating DevTools WebSocket or queueing redundant frames.
+     */
+    private static final long MIN_FRAME_INTERVAL_MS = 100;
 
     /**
      * Interval between snapshots in milliseconds for Firefox/Safari recording.
@@ -140,9 +130,19 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * CDP screencast JPEG quality (0-100).
-     * Quality 90 ensures crystal-clear UI text, sharp lines, and vivid color reproduction.
+     * Quality 95 ensures crystal-clear UI text, sharp lines, and vivid color reproduction without artifacts.
      */
-    private static final int CDP_JPEG_QUALITY = 90;
+    private static final int CDP_JPEG_QUALITY = 95;
+
+    /**
+     * Atomic references tracking the previous frame for fast perceptual deduplication.
+     */
+    private final java.util.concurrent.atomic.AtomicReference<BufferedImage> lastDecodedImage =
+            new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicReference<byte[]> lastRawBytes =
+            new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicLong lastCaptureTimestamp =
+            new java.util.concurrent.atomic.AtomicLong(0);
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
@@ -443,8 +443,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                 }
                             } else if (i == 1) {
                                 args[i] = Optional.of(CDP_JPEG_QUALITY);
+                            } else if (i == 2) {
+                                args[i] = Optional.of(1920); // maxWidth: full HD bounds to prevent internal browser downsampling
+                            } else if (i == 3) {
+                                args[i] = Optional.of(1080); // maxHeight: full HD bounds
                             } else if (i == 4) {
-                                args[i] = Optional.of(1); // capture every rendered frame (1:1)
+                                args[i] = Optional.of(2); // capture every 2nd rendered frame from browser
                             } else {
                                 args[i] = Optional.empty();
                             }
@@ -604,20 +608,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
         final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames;
         final AtomicBoolean recordingFlag = isRecording;
+        final java.util.concurrent.atomic.AtomicReference<BufferedImage> prevImgRef = lastDecodedImage;
+        final java.util.concurrent.atomic.AtomicReference<byte[]> prevBytesRef = lastRawBytes;
+        final java.util.concurrent.atomic.AtomicLong lastTimeRef = lastCaptureTimestamp;
 
         devTools.addListener((org.openqa.selenium.devtools.Event<?>) screencastFrameEvent, frameData -> {
             if (recordingFlag.get()) {
                 try {
-                    Method getDataMethod = frameData.getClass().getMethod("getData");
-                    String base64Data = (String) getDataMethod.invoke(frameData);
-                    byte[] imageData = Base64.getDecoder().decode(base64Data);
-                    FrameEntry last = targetDeque.peekLast();
-                    if (last != null && java.util.Arrays.equals(last.data, imageData)) {
-                        last.count++;
-                    } else {
-                        targetDeque.addLast(new FrameEntry(imageData));
-                    }
-
+                    // Extract session ID and acknowledge frame back to CDP immediately to maintain stream flow
                     Method getSessionIdMethod = frameData.getClass().getMethod("getSessionId");
                     Integer sessionId = (Integer) getSessionIdMethod.invoke(frameData);
 
@@ -633,6 +631,38 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         Object ackCommand = ackMethod.invoke(null, sessionId);
                         devTools.send((org.openqa.selenium.devtools.Command<?>) ackCommand);
                     }
+
+                    // Enforce capture interval throttling (~10 FPS max)
+                    long now = System.currentTimeMillis();
+                    if (now - lastTimeRef.get() < MIN_FRAME_INTERVAL_MS) {
+                        return;
+                    }
+
+                    Method getDataMethod = frameData.getClass().getMethod("getData");
+                    String base64Data = (String) getDataMethod.invoke(frameData);
+                    byte[] imageData = Base64.getDecoder().decode(base64Data);
+
+                    // Quick byte equality check
+                    byte[] prevBytes = prevBytesRef.get();
+                    if (prevBytes != null && java.util.Arrays.equals(prevBytes, imageData)) {
+                        return;
+                    }
+
+                    // Decode candidate frame and verify if there is actual visual change
+                    BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(imageData));
+                    if (candidate == null) return;
+
+                    BufferedImage prevImg = prevImgRef.get();
+                    if (prevImg != null && isSameVisualFrame(prevImg, candidate)) {
+                        return; // Static screen - do NOT append duplicate frame!
+                    }
+
+                    // New unique visual state! Store frame and update state references
+                    targetDeque.addLast(new FrameEntry(imageData));
+                    prevImgRef.set(candidate);
+                    prevBytesRef.set(imageData);
+                    lastTimeRef.set(now);
+
                 } catch (Exception e) {
                     Logger.debug("Error processing screencast frame: " + e.getMessage());
                 }
@@ -661,6 +691,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> targetDeque = videoFrames;
         final AtomicBoolean recordingFlag = isRecording;
         final TakesScreenshot screenshotDriver = (TakesScreenshot) rawDriver;
+        final java.util.concurrent.atomic.AtomicReference<BufferedImage> prevImgRef = lastDecodedImage;
+        final java.util.concurrent.atomic.AtomicReference<byte[]> prevBytesRef = lastRawBytes;
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
             return Thread.ofPlatform().daemon(true).name("SnapshotRecorder-" + name).unstarted(r);
@@ -672,12 +704,22 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 try {
                     byte[] screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
                     if (screenshot != null && screenshot.length > 0) {
-                        FrameEntry last = targetDeque.peekLast();
-                        if (last != null && java.util.Arrays.equals(last.data, screenshot)) {
-                            last.count++;
-                        } else {
-                            targetDeque.addLast(new FrameEntry(screenshot));
+                        byte[] prevBytes = prevBytesRef.get();
+                        if (prevBytes != null && java.util.Arrays.equals(prevBytes, screenshot)) {
+                            return;
                         }
+
+                        BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(screenshot));
+                        if (candidate == null) return;
+
+                        BufferedImage prevImg = prevImgRef.get();
+                        if (prevImg != null && isSameVisualFrame(prevImg, candidate)) {
+                            return; // Static screen - do NOT append duplicate frame!
+                        }
+
+                        targetDeque.addLast(new FrameEntry(screenshot));
+                        prevImgRef.set(candidate);
+                        prevBytesRef.set(screenshot);
                     }
                 } catch (Exception ignored) {}
             }
@@ -744,7 +786,14 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 try {
                     byte[] lastFrame = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
                     if (lastFrame != null && lastFrame.length > 0) {
-                        frames.addLast(new FrameEntry(lastFrame));
+                        byte[] prevBytes = lastRawBytes.get();
+                        if (prevBytes == null || !java.util.Arrays.equals(prevBytes, lastFrame)) {
+                            BufferedImage candidate = ImageIO.read(new ByteArrayInputStream(lastFrame));
+                            BufferedImage prevImg = lastDecodedImage.get();
+                            if (candidate != null && (prevImg == null || !isSameVisualFrame(prevImg, candidate))) {
+                                frames.addLast(new FrameEntry(lastFrame));
+                            }
+                        }
                     }
                 } catch (Exception ignored) {}
             }
@@ -775,7 +824,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             } else {
                 final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
                         new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
-                final int frameCount = framesCopy.stream().mapToInt(e -> e.count).sum();
+                final int frameCount = framesCopy.size();
                 final long capturedDuration = durationMs;
                 activeCompilations.incrementAndGet();
                 try {
@@ -920,7 +969,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      */
     private String compileFramesToMP4(java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> frames,
                                        File outputFile, long recordingDurationMs) {
-        int totalFrames = frames.stream().mapToInt(e -> e.count).sum();
+        int totalFrames = frames.size();
         if (totalFrames == 0) {
             Reporter.log("No frames to encode", LogLevel.WARN);
             return null;
@@ -944,12 +993,13 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
 
         try {
-            double actualCaptureFPS = (double) totalFrames / (recordingDurationMs / 1000.0);
-            int outputFPS = (actualCaptureFPS >= 1 && actualCaptureFPS <= 60)
-                    ? Math.max(1, (int) Math.round(actualCaptureFPS))
-                    : DEFAULT_FPS;
+            int outputFPS = DEFAULT_FPS;
 
             encoder = AWTSequenceEncoder.createSequenceEncoder(outputFile, outputFPS);
+            applyHighQualityRateControl(encoder);
+
+            // If only 1-9 unique frames were captured, repeat each so the video has a playable minimum duration (~1 sec)
+            int repeatPerFrame = (totalFrames < 10) ? Math.max(1, 10 / totalFrames) : 1;
 
             while (!frames.isEmpty()) {
 
@@ -962,7 +1012,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 if (entryBatch.isEmpty()) continue;
 
                 // Parallelize frame decode, bicubic scaling, and YUV Picture conversion across all CPU cores
-                List<PreparedFrame> processedBatch = entryBatch.parallelStream()
+                List<Picture> processedBatch = entryBatch.parallelStream()
                         .map(entry -> {
                             try {
                                 BufferedImage original = ImageIO.read(new ByteArrayInputStream(entry.data));
@@ -1002,8 +1052,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                                     }
                                 }
 
-                                Picture pic = AWTUtil.fromBufferedImageRGB(readyImage);
-                                return new PreparedFrame(pic, entry.count);
+                                return AWTUtil.fromBufferedImageRGB(readyImage);
                             } catch (Exception e) {
                                 return null;
                             }
@@ -1011,12 +1060,12 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
-                // Sequential bitstream encoding: encodes the pre-converted Picture directly without redundant YUV conversion
-                for (PreparedFrame pf : processedBatch) {
-                    if (pf.picture == null) continue;
+                // Sequential bitstream encoding: encodes Picture directly
+                for (Picture pic : processedBatch) {
+                    if (pic == null) continue;
                     try {
-                        for (int r = 0; r < pf.count; r++) {
-                            encoder.encodeNativeFrame(pf.picture);
+                        for (int r = 0; r < repeatPerFrame; r++) {
+                            encoder.encodeNativeFrame(pic);
                             successfulFrames++;
                         }
                     } catch (Exception e) {
@@ -1035,9 +1084,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             }
 
             double expectedDuration = (double) successfulFrames / outputFPS;
-            Reporter.log("Encoded " + successfulFrames + "/" + totalFrames +
-                    " frames at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)",
-                    successfulFrames < totalFrames ? LogLevel.WARN : LogLevel.INFO_GREEN);
+            Reporter.log("Encoded " + successfulFrames + " frames (" + totalFrames +
+                    " unique states) at " + outputFPS + " FPS (~" + String.format("%.1f", expectedDuration) + "s video)",
+                    LogLevel.INFO_GREEN);
 
             return outputFile.getAbsolutePath();
 
@@ -1103,6 +1152,76 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     /**
+     * Efficiently tests whether two frames are visually identical.
+     * Uses a fast 32x32 distributed sample grid (1,024 points) across the frame with color tolerance.
+     * Early-terminates in microseconds as soon as sufficient visual differences are detected.
+     */
+    private static boolean isSameVisualFrame(BufferedImage a, BufferedImage b) {
+        if (a == null || b == null) return false;
+        if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) return false;
+        int w = a.getWidth();
+        int h = a.getHeight();
+        int stepX = Math.max(1, w / 32);
+        int stepY = Math.max(1, h / 32);
+        int diffs = 0;
+        int total = 0;
+        for (int y = stepY / 2; y < h; y += stepY) {
+            for (int x = stepX / 2; x < w; x += stepX) {
+                total++;
+                int rgbA = a.getRGB(x, y);
+                int rgbB = b.getRGB(x, y);
+                if (rgbA != rgbB) {
+                    int rDiff = Math.abs(((rgbA >> 16) & 0xFF) - ((rgbB >> 16) & 0xFF));
+                    int gDiff = Math.abs(((rgbA >> 8) & 0xFF) - ((rgbB >> 8) & 0xFF));
+                    int bDiff = Math.abs((rgbA & 0xFF) - (rgbB & 0xFF));
+                    if (rDiff > 8 || gDiff > 8 || bDiff > 8) {
+                        diffs++;
+                        if (diffs > (total * 0.02) && total > 20) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return (double) diffs / total <= 0.02;
+    }
+
+    /**
+     * Configures the JCodec SequenceEncoder with high-quality H.264 RateControl (QP 12/16)
+     * instead of the default DumbRateControl (QP 20/26), producing crisp, readable UI text
+     * and pristine line graphics without compression artifacts.
+     */
+    private static void applyHighQualityRateControl(org.jcodec.api.SequenceEncoder encoder) {
+        if (encoder == null) return;
+        try {
+            java.lang.reflect.Field sinkField = org.jcodec.api.SequenceEncoder.class.getDeclaredField("sink");
+            sinkField.setAccessible(true);
+            Object sink = sinkField.get(encoder);
+            if (sink != null) {
+                java.lang.reflect.Field veField = sink.getClass().getDeclaredField("videoEncoder");
+                veField.setAccessible(true);
+                Object ve = veField.get(sink);
+                if (ve instanceof org.jcodec.codecs.h264.H264Encoder) {
+                    java.lang.reflect.Field rcField = ve.getClass().getDeclaredField("rc");
+                    rcField.setAccessible(true);
+                    rcField.set(ve, new org.jcodec.codecs.h264.encode.RateControl() {
+                        @Override
+                        public int startPicture(org.jcodec.common.model.Size size, int maxSize, org.jcodec.codecs.h264.io.model.SliceType sliceType) {
+                            return (sliceType == org.jcodec.codecs.h264.io.model.SliceType.P) ? 16 : 12;
+                        }
+                        @Override
+                        public int initialQpDelta() { return 0; }
+                        @Override
+                        public int accept(int bits) { return 0; }
+                    });
+                }
+            }
+        } catch (Exception e) {
+            Logger.debug("Using default JCodec RateControl: " + e.getMessage());
+        }
+    }
+
+    /**
      * Cleans up this instance's recording resources to prevent memory/resource leaks.
      * <p>
      * This method should be called after recording is complete or in case of failures.
@@ -1134,6 +1253,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             videoName = null;
             isRecording.set(false);
             recordingStartTime = null;
+            lastDecodedImage.set(null);
+            lastRawBytes.set(null);
+            lastCaptureTimestamp.set(0);
 
         } catch (Exception e) {
             Reporter.log("Error during cleanup: " + e.getMessage(), LogLevel.WARN);
