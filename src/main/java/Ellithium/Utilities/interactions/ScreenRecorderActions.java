@@ -140,9 +140,9 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
     /**
      * CDP screencast JPEG quality (0-100).
-     * High 80% quality ensures crisp UI text and icons without compression artifacts.
+     * Quality 90 ensures crystal-clear UI text, sharp lines, and vivid color reproduction.
      */
-    private static final int CDP_JPEG_QUALITY = 80;
+    private static final int CDP_JPEG_QUALITY = 90;
 
     /**
      * Maximum wait time in milliseconds for executor shutdown.
@@ -444,7 +444,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                             } else if (i == 1) {
                                 args[i] = Optional.of(CDP_JPEG_QUALITY);
                             } else if (i == 4) {
-                                args[i] = Optional.of(4);
+                                args[i] = Optional.of(1); // capture every rendered frame (1:1)
                             } else {
                                 args[i] = Optional.empty();
                             }
@@ -927,8 +927,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
         }
         AWTSequenceEncoder encoder = null;
         int successfulFrames = 0;
-        final int MAX_WIDTH = 1280;
-        final int MAX_HEIGHT = 720;
+        final int MAX_WIDTH = 1920;
+        final int MAX_HEIGHT = 1080;
         int batchSize = 50;
         try {
             FrameEntry firstEntry = frames.peek();
