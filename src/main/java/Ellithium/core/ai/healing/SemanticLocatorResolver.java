@@ -50,11 +50,13 @@ public class SemanticLocatorResolver {
      * action method (sendData, clickOnElement, etc.).
      */
     public enum ElementCategory {
-        INPUT,      // sendData, type, enterText → input, textarea
-        CLICKABLE,  // click, tap, press → button, a, role=button
-        SELECT,     // selectDropdown → select
-        READABLE,   // getText, getTitle → any visible text-bearing element
-        ANY         // fallback
+        CLICK,   // click, tap, press, hover → button, a, role=button
+        TYPE,    // sendData, enterText, clear, upload → input, textarea
+        SELECT,  // selectDropdown → select
+        READ,    // getText, getTitle, getAttribute → visible text-bearing element
+        CHECK,   // isElementClickable, isElementEnabled, isElementSelected, isElementDisplayed
+        WAIT,    // waitForElementToBeClickable, waitForElementToBeVisible, waitForElementToDisappear
+        ANY      // fallback
     }
 
     /**
@@ -79,7 +81,7 @@ public class SemanticLocatorResolver {
 
         ElementCategory category = categorizeAction(actionType);
         boolean isMobile = driver instanceof AppiumDriver;
-        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
+        String semanticMethodName = (category == ElementCategory.READ) ? null : methodName;
         List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
         if (semanticNames.isEmpty()) return hits;
 
@@ -304,7 +306,7 @@ public class SemanticLocatorResolver {
 
         ElementCategory category = categorizeAction(actionType);
         boolean isMobile = driver instanceof AppiumDriver;
-        String semanticMethodName = (category == ElementCategory.READABLE) ? null : methodName;
+        String semanticMethodName = (category == ElementCategory.READ) ? null : methodName;
         List<String> semanticNames = SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
         if (semanticNames.isEmpty()) {
             HealingTelemetryStore.record(2, locatorValue, null, 0.0, false);
@@ -521,25 +523,79 @@ public class SemanticLocatorResolver {
             tokenOverlap = 0.40;
         }
 
-        double tagAffinity = 0.50;
+        double tagAffinity = 0.70;
         if (tag != null) {
-            if (category == ElementCategory.CLICKABLE) {
-                if ("button".equals(tag) || "a".equals(tag) || "summary".equals(tag)
-                        || "button".equals(role) || "tab".equals(role) || "link".equals(role) || "menuitem".equals(role)) {
-                    tagAffinity = 1.0;
-                } else if ("div".equals(tag) || "span".equals(tag) || "p".equals(tag) || "li".equals(tag)) {
-                    tagAffinity = 0.20;
+            switch (category) {
+                case CLICK -> {
+                    boolean isClickableTag = "button".equals(tag) || "a".equals(tag) || "summary".equals(tag);
+                    boolean isClickableRole = "button".equals(role) || "tab".equals(role) || "link".equals(role)
+                            || "menuitem".equals(role) || "checkbox".equals(role) || "radio".equals(role) || "switch".equals(role);
+                    boolean isClickableInput = "input".equals(tag) && (cls != null && (cls.contains("btn") || cls.contains("button")
+                            || cls.contains("submit") || cls.contains("checkbox") || cls.contains("radio")));
+                    boolean isClickableContainer = (cls != null && (cls.contains("btn") || cls.contains("clickable")
+                            || cls.contains("nav-link") || cls.contains("card") || cls.contains("tab")));
+                    if (isClickableTag || isClickableRole || isClickableInput || isClickableContainer) {
+                        tagAffinity = 1.00;
+                    } else if ("p".equals(tag) || "h1".equals(tag) || "h2".equals(tag) || "h3".equals(tag)) {
+                        tagAffinity = 0.20;
+                    } else {
+                        tagAffinity = 0.60;
+                    }
                 }
-            } else if (category == ElementCategory.INPUT) {
-                if ("input".equals(tag) || "textarea".equals(tag) || "select".equals(tag)) {
-                    tagAffinity = 1.0;
-                } else {
-                    tagAffinity = 0.20;
+                case TYPE -> {
+                    boolean isInputTag = "input".equals(tag) || "textarea".equals(tag);
+                    boolean isEditableRole = "textbox".equals(role) || "searchbox".equals(role);
+                    boolean isEditableDiv = ("div".equals(tag) || "span".equals(tag))
+                            && ((attrs != null && "true".equalsIgnoreCase(String.valueOf(attrs.get("contenteditable"))))
+                            || (cls != null && (cls.contains("input") || cls.contains("editor") || cls.contains("field"))));
+                    if (isInputTag || isEditableRole || isEditableDiv) {
+                        tagAffinity = 1.00;
+                    } else {
+                        tagAffinity = 0.20;
+                    }
                 }
-            } else if (category == ElementCategory.SELECT) {
-                tagAffinity = "select".equals(tag) ? 1.0 : 0.20;
-            } else {
-                tagAffinity = 0.70;
+                case SELECT -> {
+                    boolean isSelectTag = "select".equals(tag);
+                    boolean isComboboxRole = "combobox".equals(role) || "listbox".equals(role);
+                    boolean isDropdownContainer = cls != null && (cls.contains("dropdown") || cls.contains("select")
+                            || cls.contains("many2one") || cls.contains("picker") || cls.contains("choices"));
+                    if (isSelectTag || isComboboxRole || isDropdownContainer) {
+                        tagAffinity = 1.00;
+                    } else {
+                        tagAffinity = 0.30;
+                    }
+                }
+                case READ -> {
+                    boolean isTextTag = "span".equals(tag) || "p".equals(tag) || "label".equals(tag)
+                            || tag.startsWith("h") || "td".equals(tag) || "th".equals(tag);
+                    boolean isReadRole = "heading".equals(role) || "status".equals(role) || "alert".equals(role) || "cell".equals(role);
+                    if (isTextTag || isReadRole || (text != null && !text.isBlank())) {
+                        tagAffinity = 1.00;
+                    } else {
+                        tagAffinity = 0.60;
+                    }
+                }
+                case CHECK -> {
+                    boolean isCheckInput = "input".equals(tag);
+                    boolean isCheckRole = "checkbox".equals(role) || "radio".equals(role) || "switch".equals(role);
+                    boolean isCheckableBtn = "button".equals(tag) || (cls != null && (cls.contains("check") || cls.contains("toggle") || cls.contains("switch")));
+                    if (isCheckInput || isCheckRole || isCheckableBtn) {
+                        tagAffinity = 1.00;
+                    } else {
+                        tagAffinity = 0.70;
+                    }
+                }
+                case WAIT -> {
+                    // Waiting can apply to any UI component: buttons appearing, inputs visible, spinners/modals
+                    boolean isWaitTarget = "button".equals(tag) || "input".equals(tag) || "div".equals(tag) || "span".equals(tag);
+                    boolean isLoaderIndicator = cls != null && (cls.contains("spin") || cls.contains("load") || cls.contains("wait") || cls.contains("modal"));
+                    if (isLoaderIndicator || isWaitTarget) {
+                        tagAffinity = 1.00;
+                    } else {
+                        tagAffinity = 0.80;
+                    }
+                }
+                default -> tagAffinity = 0.70;
             }
         }
 
@@ -746,27 +802,32 @@ public class SemanticLocatorResolver {
             addSilverStrategies(silver, name, lower, scopePrefix);
 
             switch (category) {
-                case INPUT:
+                case TYPE:
                     addInputStrategies(bronze, name, lower, scopePrefix, driver);
                     if (!isMobile) addRelativeInputStrategies(iron, name, driver);
                     addNeighborhoodInputStrategies(iron, name);
                     break;
-                case CLICKABLE:
+                case CLICK:
                     addClickableStrategies(bronze, name, lower, scopePrefix);
                     break;
                 case SELECT:
                     addSelectStrategies(bronze, name, lower, scopePrefix);
                     break;
-                case READABLE:
+                case READ:
                     addReadableStrategies(bronze, name, lower);
                     addNeighborhoodReadableStrategies(iron, name);
                     break;
+                case CHECK:
+                case WAIT:
                 case ANY:
+                    addClickableStrategies(bronze, name, lower, scopePrefix);
+                    addInputStrategies(bronze, name, lower, scopePrefix, driver);
+                    addReadableStrategies(bronze, name, lower);
                     addBronzeUniversalStrategies(bronze, name, lower, scopePrefix);
                     break;
             }
 
-            if (category != ElementCategory.ANY) {
+            if (category != ElementCategory.ANY && category != ElementCategory.CHECK && category != ElementCategory.WAIT) {
                 addBronzeUniversalStrategies(bronze, name, lower, scopePrefix);
             }
         }
@@ -914,8 +975,11 @@ public class SemanticLocatorResolver {
         out.add(attempt(By.xpath(multiCaseXpath("select", "id",         name, scopePrefix)), "select[id~='"         + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("select", "name",       name, scopePrefix)), "select[name~='"       + name + "']"));
         out.add(attempt(By.xpath(multiCaseXpath("select", "aria-label", name, scopePrefix)), "select[aria-label~='" + name + "']"));
+        out.add(attempt(By.xpath(scopePrefix + "div[contains(@class,'o_field_many2one') and .//input[@id=" + xpathLiteral(name) + " or @name=" + xpathLiteral(name) + "]]"), "odoo many2one '" + name + "'"));
         out.add(attempt(By.xpath("//label[contains(normalize-space(text())," + xpathLiteral(name) + ")]/following::select[1]"),
                 "select after label '" + name + "'"));
+        out.add(attempt(By.xpath("//label[contains(normalize-space(text())," + xpathLiteral(name) + ")]/following::*[@role='combobox'][1]"),
+                "combobox after label '" + name + "'"));
         out.add(attempt(By.xpath(childOfTextContainer("select", name)), "select inside element with text '" + name + "'"));
     }
 
@@ -1080,17 +1144,21 @@ public class SemanticLocatorResolver {
         if (actionType == null || actionType.equals("unknown")) return ElementCategory.ANY;
 
         return switch (actionType) {
-            case "sendData", "clearElement",
-                 "setElementValueUsingJS",
-                 "uploadFile", "uploadMultipleFiles", "uploadFileUsingJS"
-                    -> ElementCategory.INPUT;
-
             case "clickOnElement", "clickOnMultipleElements",
                  "hoverOverElement", "hoverAndClick", "doubleClick", "rightClick",
                  "dragAndDrop", "dragAndDropByOffset",
                  "javascriptClick",
-                 "tap", "doubleTap", "longPress", "twoFingerTap"
-                    -> ElementCategory.CLICKABLE;
+                 "tap", "doubleTap", "longPress", "twoFingerTap",
+                 "scrollIntoView", "scrollToElement",
+                 "moveSliderTo", "moveSliderByOffset",
+                 "swipe", "scroll", "scrollToElementBySelector",
+                 "drag", "pinch", "fling"
+                    -> ElementCategory.CLICK;
+
+            case "sendData", "clearElement",
+                 "setElementValueUsingJS",
+                 "uploadFile", "uploadMultipleFiles", "uploadFileUsingJS"
+                    -> ElementCategory.TYPE;
 
             case "selectDropdownByText", "selectDropdownByValue", "selectDropdownByIndex",
                  "deselectAll", "deselectDropdownByText", "deselectDropdownByValue",
@@ -1099,17 +1167,17 @@ public class SemanticLocatorResolver {
 
             case "getText", "getTextFromMultipleElements",
                  "getAttributeValue", "getAttributeFromMultipleElements", "getPropertyValue",
-                 "getDropdownSelectedOptions",
-                 "isTextContains", "isAttributeContains",
-                 "isElementPresent", "isElementDisplayed", "isElementEnabled",
-                 "isElementSelected", "isElementClickable"
-                    -> ElementCategory.READABLE;
+                 "getDropdownSelectedOptions"
+                    -> ElementCategory.READ;
 
-            case "scrollIntoView", "scrollToElement",
-                 "moveSliderTo", "moveSliderByOffset",
-                 "swipe", "scroll", "scrollToElementBySelector",
-                 "drag", "pinch", "fling"
-                    -> ElementCategory.ANY;
+            case "isElementClickable", "isElementEnabled", "isElementSelected",
+                 "isElementPresent", "isElementDisplayed",
+                 "isTextContains", "isAttributeContains"
+                    -> ElementCategory.CHECK;
+
+            case "waitForElementToBeClickable", "waitForElementToBeVisible",
+                 "waitForElementPresence", "waitForVisibility", "waitForElementToDisappear"
+                    -> ElementCategory.WAIT;
 
             default -> ElementCategory.ANY;
         };

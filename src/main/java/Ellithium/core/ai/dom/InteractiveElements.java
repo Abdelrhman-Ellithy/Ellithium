@@ -17,7 +17,7 @@ public final class InteractiveElements {
 
     /** Tags that are natively interactive. */
     public static final Set<String> TAGS =
-            Set.of("button", "a", "input", "select", "textarea", "option");
+            Set.of("button", "a", "input", "select", "textarea", "option", "label");
 
     /** ARIA roles that mark an element interactive. */
     public static final Set<String> ROLES =
@@ -35,7 +35,7 @@ public final class InteractiveElements {
 
     /** Priority-ordered inner interactive targets when a matched element is a container. */
     public static final String[] INNER_SELECTORS = {
-            "button[type='submit']", "input[type='submit']", "button", "input[type='button']", "a"
+            "button[type='submit']", "input[type='submit']", "button", "input[type='button']", "a", "input"
     };
 
     /** Actions that semantically perform a click/tap/press/hover. */

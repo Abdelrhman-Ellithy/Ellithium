@@ -83,7 +83,7 @@ public class EnsembleValidationTest {
 
     private EntryResult scoreEntry(Entry e) {
         Map<String, String> fp = e.fingerprint != null ? e.fingerprint : Map.of();
-        boolean readable = SemanticLocatorResolver.ElementCategory.READABLE
+        boolean readable = SemanticLocatorResolver.ElementCategory.READ
                 == SemanticLocatorResolver.categorizeAction(e.action);
         // Mirror SemanticQueryBuilder.buildFromContext: READABLE drops last-known text (de-poisoning).
         String fpText = readable ? null : fp.get("text");

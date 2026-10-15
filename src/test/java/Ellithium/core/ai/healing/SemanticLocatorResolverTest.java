@@ -48,28 +48,28 @@ public class SemanticLocatorResolverTest {
     }
 
     @Test
-    public void categorizeAction_sendData_isInput() {
-        Assert.assertEquals(categorizeAction("sendData"), SemanticLocatorResolver.ElementCategory.INPUT);
+    public void categorizeAction_sendData_isType() {
+        Assert.assertEquals(categorizeAction("sendData"), SemanticLocatorResolver.ElementCategory.TYPE);
     }
 
     @Test
-    public void categorizeAction_clearElement_isInput() {
-        Assert.assertEquals(categorizeAction("clearElement"), SemanticLocatorResolver.ElementCategory.INPUT);
+    public void categorizeAction_clearElement_isType() {
+        Assert.assertEquals(categorizeAction("clearElement"), SemanticLocatorResolver.ElementCategory.TYPE);
     }
 
     @Test
-    public void categorizeAction_uploadFile_isInput() {
-        Assert.assertEquals(categorizeAction("uploadFile"), SemanticLocatorResolver.ElementCategory.INPUT);
+    public void categorizeAction_uploadFile_isType() {
+        Assert.assertEquals(categorizeAction("uploadFile"), SemanticLocatorResolver.ElementCategory.TYPE);
     }
 
     @Test
-    public void categorizeAction_clickOnElement_isClickable() {
-        Assert.assertEquals(categorizeAction("clickOnElement"), SemanticLocatorResolver.ElementCategory.CLICKABLE);
+    public void categorizeAction_clickOnElement_isClick() {
+        Assert.assertEquals(categorizeAction("clickOnElement"), SemanticLocatorResolver.ElementCategory.CLICK);
     }
 
     @Test
-    public void categorizeAction_doubleClick_isClickable() {
-        Assert.assertEquals(categorizeAction("doubleClick"), SemanticLocatorResolver.ElementCategory.CLICKABLE);
+    public void categorizeAction_doubleClick_isClick() {
+        Assert.assertEquals(categorizeAction("doubleClick"), SemanticLocatorResolver.ElementCategory.CLICK);
     }
 
     @Test
@@ -78,8 +78,28 @@ public class SemanticLocatorResolverTest {
     }
 
     @Test
-    public void categorizeAction_getText_isReadable() {
-        Assert.assertEquals(categorizeAction("getText"), SemanticLocatorResolver.ElementCategory.READABLE);
+    public void categorizeAction_getText_isRead() {
+        Assert.assertEquals(categorizeAction("getText"), SemanticLocatorResolver.ElementCategory.READ);
+    }
+
+    @Test
+    public void categorizeAction_isElementClickable_isCheck() {
+        Assert.assertEquals(categorizeAction("isElementClickable"), SemanticLocatorResolver.ElementCategory.CHECK);
+    }
+
+    @Test
+    public void categorizeAction_waitForElementToBeClickable_isWait() {
+        Assert.assertEquals(categorizeAction("waitForElementToBeClickable"), SemanticLocatorResolver.ElementCategory.WAIT);
+    }
+
+    @Test
+    public void categorizeAction_isElementSelected_isCheck() {
+        Assert.assertEquals(categorizeAction("isElementSelected"), SemanticLocatorResolver.ElementCategory.CHECK);
+    }
+
+    @Test
+    public void categorizeAction_isElementDisplayed_isCheck() {
+        Assert.assertEquals(categorizeAction("isElementDisplayed"), SemanticLocatorResolver.ElementCategory.CHECK);
     }
 
     @Test
@@ -177,7 +197,7 @@ public class SemanticLocatorResolverTest {
         Mockito.when(mockEl.getText()).thenReturn("Quotations");
 
         double score = SemanticLocatorResolver.scoreColdStart(null, mockEl, ".nav-link.active",
-                SemanticLocatorResolver.ElementCategory.CLICKABLE, "class*='active'");
+                SemanticLocatorResolver.ElementCategory.CLICK, "class*='active'");
         Assert.assertEquals(score, 0.0, "State-modifier false candidate with no discriminative token overlap must score 0.0");
     }
 
@@ -189,7 +209,7 @@ public class SemanticLocatorResolverTest {
         Mockito.when(mockEl.getDomAttribute("name")).thenReturn("username");
 
         double score = SemanticLocatorResolver.scoreColdStart(null, mockEl, "input#user_name",
-                SemanticLocatorResolver.ElementCategory.INPUT, "input[id~='user_name']");
+                SemanticLocatorResolver.ElementCategory.TYPE, "input[id~='user_name']");
         Assert.assertTrue(score >= 0.70, "Legitimate cold-start candidate with token and tag overlap must clear threshold, got: " + score);
     }
 }

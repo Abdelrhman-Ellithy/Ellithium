@@ -18,27 +18,31 @@ public class SemanticQueryBuilder {
     private static final Map<String, String> ACTION_EXPANSIONS = new LinkedHashMap<>();
 
     static {
-        ACTION_EXPANSIONS.put("senddata",          "type input enter text");
         ACTION_EXPANSIONS.put("clickonelement",     "click press");
-        ACTION_EXPANSIONS.put("tap",                "tap click press");
+        ACTION_EXPANSIONS.put("click",              "click press");
+        ACTION_EXPANSIONS.put("tap",                "click press");
         ACTION_EXPANSIONS.put("doubletap",          "double tap click");
-        ACTION_EXPANSIONS.put("doubleclick",        "double click press");
+        ACTION_EXPANSIONS.put("doubleclick",        "click press");
         ACTION_EXPANSIONS.put("rightclick",         "right click context menu");
         ACTION_EXPANSIONS.put("longpress",          "long press hold");
+        ACTION_EXPANSIONS.put("javascriptclick",    "click press");
+        ACTION_EXPANSIONS.put("senddata",           "type input enter text");
+        ACTION_EXPANSIONS.put("settext",            "type input enter text");
+        ACTION_EXPANSIONS.put("clearelement",       "type input enter text");
+        ACTION_EXPANSIONS.put("uploadfile",         "type input enter text");
+        ACTION_EXPANSIONS.put("uploadmultiplefiles","type input enter text");
         ACTION_EXPANSIONS.put("selectdropdown",     "select dropdown option choose");
         ACTION_EXPANSIONS.put("selectdropdownby",   "select dropdown option choose");
         ACTION_EXPANSIONS.put("gettext",            "read text label value");
-        ACTION_EXPANSIONS.put("getattributevalue",  "read attribute property");
-        ACTION_EXPANSIONS.put("iselementdisplayed", "check visible display");
-        ACTION_EXPANSIONS.put("iselementpresent",   "check exists present");
-        ACTION_EXPANSIONS.put("iselementclickable", "check clickable enabled");
-        ACTION_EXPANSIONS.put("iselementselected",  "check selected state");
-        ACTION_EXPANSIONS.put("uploadfile",         "upload file input attach");
-        ACTION_EXPANSIONS.put("uploadmultiplefiles","upload file input attach multiple");
+        ACTION_EXPANSIONS.put("getattributevalue",  "read text label value");
+        ACTION_EXPANSIONS.put("iselementclickable", "check clickable button");
+        ACTION_EXPANSIONS.put("iselementenabled",   "check enabled button input");
+        ACTION_EXPANSIONS.put("iselementselected",  "check selected option radio");
+        ACTION_EXPANSIONS.put("iselementdisplayed", "check visible display present");
+        ACTION_EXPANSIONS.put("iselementpresent",   "check visible display present");
         ACTION_EXPANSIONS.put("hoverelement",       "hover mouse over");
         ACTION_EXPANSIONS.put("hoveroverelement",   "hover mouse over");
         ACTION_EXPANSIONS.put("hoverandclick",      "hover mouse click");
-        ACTION_EXPANSIONS.put("clearelement",       "clear input reset");
         ACTION_EXPANSIONS.put("movetoelement",      "scroll move element");
         ACTION_EXPANSIONS.put("scrollintoelement",  "scroll into view");
         ACTION_EXPANSIONS.put("dragandrop",         "drag drop move");
@@ -47,16 +51,18 @@ public class SemanticQueryBuilder {
         ACTION_EXPANSIONS.put("scroll",             "scroll swipe");
         ACTION_EXPANSIONS.put("movesliderto",       "slider range move");
         ACTION_EXPANSIONS.put("movesliderbyoffset", "slider range offset");
-        ACTION_EXPANSIONS.put("javascriptclick",    "click javascript");
-        ACTION_EXPANSIONS.put("waitforvisibility",  "wait visible appear");
-        ACTION_EXPANSIONS.put("waitforelement",     "wait element appear");
+        ACTION_EXPANSIONS.put("waitforelementtobeclickable", "wait clickable button appear");
+        ACTION_EXPANSIONS.put("waitforelementtobevisible",   "wait visible appear present");
+        ACTION_EXPANSIONS.put("waitforelementpresence",      "wait visible appear present");
+        ACTION_EXPANSIONS.put("waitforvisibility",           "wait visible appear present");
+        ACTION_EXPANSIONS.put("waitforelementtodisappear",   "wait disappear hidden loader");
     }
 
     private static final String[] METHOD_PREFIXES_V2 = {
             "click", "tap", "doubletap", "press", "longpress", "submit", "send", "senddata", "sendkeys",
             "type", "fill", "enter", "set", "settext", "input", "get", "gettext", "getvalue", "read",
             "extract", "fetch", "verify", "check", "assert", "select", "choose", "pick", "upload",
-            "download", "clear", "reset", "hover", "focus", "scroll", "swipe", "wait", "is",
+            "download", "clear", "reset", "hover", "focus", "scroll", "swipe", "waitfor", "wait", "is",
             "isdisplayed", "isenabled", "isselected", "navigate", "goto", "go", "open", "close",
             "dismiss", "accept", "cancel", "search", "filter", "sort", "expand", "collapse", "toggle",
             "enable", "disable", "add", "remove", "delete", "edit", "save", "update", "create",
@@ -80,7 +86,7 @@ public class SemanticQueryBuilder {
         String lastAccId       = fingerprint != null ? fingerprint.getAccessibilityId()  : null;
         String lastContentDesc = fingerprint != null ? fingerprint.getContentDesc()      : null;
 
-        boolean isReadable = SemanticLocatorResolver.ElementCategory.READABLE
+        boolean isReadable = SemanticLocatorResolver.ElementCategory.READ
                 == SemanticLocatorResolver.categorizeAction(actionType);
         if (isReadable) {
             lastText = null;
@@ -211,13 +217,6 @@ public class SemanticQueryBuilder {
 
     static String expandAction(String actionType) {
         if (actionType == null || actionType.isBlank()) return "";
-        switch (SemanticLocatorResolver.categorizeAction(actionType)) {
-            case READABLE:  return "read text label value";
-            case INPUT:     return "type input enter text";
-            case CLICKABLE: return "click press";
-            case SELECT:    return "select dropdown option choose";
-            default:        break;
-        }
         String key = actionType.toLowerCase().replace("-", "").replace("_", "");
         if (ACTION_EXPANSIONS.containsKey(key)) {
             return ACTION_EXPANSIONS.get(key);
@@ -227,7 +226,15 @@ public class SemanticQueryBuilder {
                 return entry.getValue();
             }
         }
-        return deCamelCase(actionType);
+        return switch (SemanticLocatorResolver.categorizeAction(actionType)) {
+            case READ   -> "read text label value";
+            case TYPE   -> "type input enter text";
+            case CLICK  -> "click press";
+            case SELECT -> "select dropdown option choose";
+            case CHECK  -> "check visible display present";
+            case WAIT   -> "wait visible appear present";
+            default     -> deCamelCase(actionType);
+        };
     }
 
     static String extractLocatorValue(String locatorOrValue) {

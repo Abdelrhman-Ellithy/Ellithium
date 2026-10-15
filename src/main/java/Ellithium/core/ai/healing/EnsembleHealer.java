@@ -439,7 +439,7 @@ public class EnsembleHealer {
                         bestCosine), LogLevel.INFO_GREEN);
                 HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, true,
                         query, category, "shortlist-single");
-                return HealOutcome.of(best, bestCosine, 2);
+                return HealOutcome.of(resolveInteractiveTarget(driver, best, cat), bestCosine, 2);
             }
             return null;
         }
@@ -450,7 +450,7 @@ public class EnsembleHealer {
                     bestCosine, margin, live.size()), LogLevel.INFO_GREEN);
             HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCosine, true,
                     query, category, "shortlist-clear");
-            return HealOutcome.of(best, bestCosine, 2);
+            return HealOutcome.of(resolveInteractiveTarget(driver, best, cat), bestCosine, 2);
         }
         Reporter.log(String.format(
                 "[TIER 2 - Shortlist] narrow margin %.3f between %d finalists (top=%.3f) — deferring"
@@ -579,7 +579,7 @@ public class EnsembleHealer {
         SemanticLocatorResolver.ElementCategory cat =
                 SemanticLocatorResolver.categorizeAction(actionType);
         String category      = cat != null ? cat.name() : null;
-        boolean isReadable    = SemanticLocatorResolver.ElementCategory.READABLE == cat;
+        boolean isReadable    = SemanticLocatorResolver.ElementCategory.READ == cat;
         double  threshold     = AIConfigLoader.getOnnxSimilarityThreshold();
         int     maxCandidates = AIConfigLoader.getOnnxMaxCandidates();
 
@@ -625,6 +625,17 @@ public class EnsembleHealer {
             Map<String, Object> attrs = (batch != null && i < batch.size()) ? batch.get(i) : null;
             if (batch != null && attrs == null) continue;
             if (attrs != null && Boolean.FALSE.equals(attrs.get("visible"))) continue;
+            if (cat == SemanticLocatorResolver.ElementCategory.TYPE && attrs != null) {
+                String tag = strOf(attrs.get("tag"));
+                if ("label".equalsIgnoreCase(tag) || "h1".equalsIgnoreCase(tag) || "h2".equalsIgnoreCase(tag)
+                        || "h3".equalsIgnoreCase(tag) || "h4".equalsIgnoreCase(tag) || "h5".equalsIgnoreCase(tag)
+                        || "h6".equalsIgnoreCase(tag) || "p".equalsIgnoreCase(tag)) {
+                    Object ce = attrs.get("contenteditable");
+                    if (!"true".equalsIgnoreCase(strOf(ce)) && !"".equals(strOf(ce))) {
+                        continue;
+                    }
+                }
+            }
             boolean isResolver = resolverWeights.containsKey(candidate);
             double rawAttrW = (attrs != null)
                     ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
@@ -722,6 +733,7 @@ public class EnsembleHealer {
         GateResult gate = decideGate(bestCombined, threshold - relief, bestF2,
                 true, bestCosine);
         if (gate.accept) {
+            bestElement = resolveInteractiveTarget(driver, bestElement, cat);
             Reporter.log(String.format("[TIER 2] healed via %s (combined=%.3f f2=%.2f f3=%.3f)",
                     gate.via, gate.score, bestF2, bestCosine), LogLevel.INFO_GREEN);
             HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, gate.score, true, query, category, "full-scan");
@@ -730,6 +742,47 @@ public class EnsembleHealer {
         Reporter.log(String.format("[TIER 2] no heal — combined=%.3f < threshold=%.3f", bestCombined, threshold), LogLevel.DEBUG);
         HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category, "full-scan");
         return null;
+    }
+
+    /**
+     * Category-aware target resolution for interactive actions.
+     * When the healed element is a <label>:
+     * - READ actions (getText, isTextContains): returns the label untouched.
+     * - CHECK actions (isElementSelected): resolves to the enclosed/referenced <input> since labels cannot be selected in WebDriver.
+     * - CLICK actions: resolves to the enclosed/referenced control ONLY IF displayed & enabled (protecting display:none styled radios/checkboxes).
+     * - TYPE actions: resolves to the enclosed/referenced input.
+     */
+    static WebElement resolveInteractiveTarget(WebDriver driver, WebElement element,
+                                               SemanticLocatorResolver.ElementCategory cat) {
+        if (element == null) return null;
+        if (cat == SemanticLocatorResolver.ElementCategory.READ) {
+            return element;
+        }
+        try {
+            String tag = element.getTagName();
+            if ("label".equalsIgnoreCase(tag)) {
+                List<WebElement> nested = element.findElements(By.cssSelector("input, select, textarea"));
+                WebElement target = !nested.isEmpty() ? nested.get(0) : null;
+                if (target == null) {
+                    String forId = element.getAttribute("for");
+                    if (forId != null && !forId.isBlank()) {
+                        try { target = driver.findElement(By.id(forId)); } catch (Exception ignored) {}
+                    }
+                }
+                if (target != null) {
+                    if (cat == SemanticLocatorResolver.ElementCategory.CHECK) {
+                        return target;
+                    }
+                    if (cat == SemanticLocatorResolver.ElementCategory.CLICK && target.isDisplayed() && target.isEnabled()) {
+                        return target;
+                    }
+                    if (cat == SemanticLocatorResolver.ElementCategory.TYPE) {
+                        return target;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return element;
     }
 
     // DOM mutation detection — generation counter approach.

@@ -71,16 +71,27 @@ public class SemanticQueryParityTest {
                 {"is enabled", "clickOnElement", "By.name: submit", "isCheckoutEnabled",
                         null, "submit", null, null, "checkout-btn", "button",
                         "click press submit checkout enabled btn button"},
-                // READ-family serve skew fix: is*/getAttribute actions categorize READABLE → must
-                // expand to "read text label value" (what training used for the collapsed 'read' key),
-                // NOT the old bespoke "check visible display" / "read attribute property". READABLE
-                // drops lastText (null), mirroring buildFromContext.
-                {"isDisplayed→read", "isElementDisplayed", "By.id: loginBtn", "isLoginButtonVisible",
+                {"isDisplayed", "isElementDisplayed", "By.id: loginBtn", "isLoginButtonVisible",
                         null, "loginBtn", null, null, null, "button",
-                        "read text label value login btn button visible"},
+                        "check visible display present login btn button"},
                 {"getAttr→read", "getAttributeValue", "By.id: email", "getEmailFieldValue",
                         null, "email", null, null, null, "input",
                         "read text label value email field input"},
+                {"check clickable", "isElementClickable", "By.id: submitBtn", "isSubmitButtonClickable",
+                        null, "submitBtn", null, null, null, "button",
+                        "check clickable button submit btn"},
+                {"check enabled", "isElementEnabled", "By.id: submitBtn", "isSubmitButtonEnabled",
+                        null, "submitBtn", null, null, null, "button",
+                        "check enabled button input submit btn"},
+                {"wait clickable", "waitForElementToBeClickable", "By.id: submitBtn", "waitForSubmitClickable",
+                        null, "submitBtn", null, null, null, "button",
+                        "wait clickable button appear submit btn"},
+                {"wait visible", "waitForElementToBeVisible", "By.id: modalDialog", "waitForModalVisible",
+                        null, "modalDialog", null, null, null, "div",
+                        "wait visible appear present modal dialog div"},
+                {"wait disappear", "waitForElementToDisappear", "By.id: loadingSpinner", "waitForSpinnerDisappear",
+                        null, "loadingSpinner", null, null, null, "div",
+                        "wait disappear hidden loader loading spinner div"},
         };
     }
 
@@ -160,6 +171,9 @@ public class SemanticQueryParityTest {
                 {"role status kept for readable", "getText", "By.id: message", "getStatusMessage",
                         "message", "div", "status", null,
                         "read text label value message status div"},
+                {"check selected", "isElementSelected", "By.id: rememberMe", "isRememberMeSelected",
+                        "rememberMe", "input", null, "checkbox",
+                        "check selected option radio remember me input checkbox"},
         };
     }
 

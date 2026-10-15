@@ -91,7 +91,7 @@ public class WaitActionsArenaTest extends ArenaBaseTest {
      */
     @Test(groups = "arena")
     public void waitForTextToBePresentInElement_counterReachesDone() {
-        elementActions.clickOnElement(By.id("start-counter-btn"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("begin-counter-timer"), SHORT, POLL);
         WebElement counter = waitActions.waitForTextToBePresentInElement(
                 By.id("polling-counter"), "DONE", LONG, POLL);
         Assert.assertNotNull(counter);

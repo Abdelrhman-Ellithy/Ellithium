@@ -51,7 +51,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void sendData_text_typesIntoVisibleTextField() {
-        elementActions.sendData(By.id("js-set-value-target"), "HelloArena", SHORT, POLL);
+        elementActions.sendData(By.id("set-value-target"), "HelloArena", SHORT, POLL);
         String value = elementActions.getPropertyValue(By.id("js-set-value-target"), "value", SHORT, POLL);
         Assert.assertEquals(value, "HelloArena",
                 "sendData must set input value to 'HelloArena'");
@@ -69,7 +69,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void sendData_textarea_multilineInput() {
         String multiLine = "Line1\nLine2\nLine3";
-        elementActions.sendData(By.id("textarea-input"), multiLine, SHORT, POLL);
+        elementActions.sendData(By.id("textarea-field"), multiLine, SHORT, POLL);
         String value = elementActions.getPropertyValue(By.id("textarea-input"), "value", SHORT, POLL);
         Assert.assertTrue(value.contains("Line1") && value.contains("Line3"),
                 "Textarea must contain all lines; got: " + value);
@@ -138,7 +138,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void clickOnElement_clicksRadioButton_selectsIt() {
-        elementActions.clickOnElement(By.id("radio-firefox"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("radio-option-firefox"), SHORT, POLL);
         Assert.assertTrue(elementActions.isElementSelected(By.id("radio-firefox"), SHORT, POLL),
                 "Radio B must be selected after clickOnElement");
         Assert.assertFalse(elementActions.isElementSelected(By.id("radio-chrome"), SHORT, POLL),
@@ -149,7 +149,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     public void clickOnElement_onSubmitButton_triggersFormAction() {
         elementActions.sendData(By.id("form-name"),  "Arena",        SHORT, POLL);
         elementActions.sendData(By.id("form-email"), "a@arena.test", SHORT, POLL);
-        elementActions.clickOnElement(By.id("form-submit-btn"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("submit-form-button"), SHORT, POLL);
         waitActions.waitForElementToBeVisible(By.id("form-result"), SHORT, POLL);
         String result = elementActions.getText(By.id("form-result"), SHORT, POLL);
         Assert.assertTrue(result.contains("Arena") || result.contains("✅"),
@@ -159,7 +159,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void clickOnElement_withTimeout_onDelayedButton() {
         goTo("waits.html");
-        elementActions.clickOnElement(By.id("trigger-enable-btn"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("start-enable-timer-btn"), SHORT, POLL);
         elementActions.clickOnElement(By.id("enable-me-btn"), MEDIUM, POLL);
         String result = elementActions.getText(By.id("enable-status"), SHORT, POLL);
         Assert.assertTrue(result.contains("✅") || result.contains("clicked"),
@@ -186,7 +186,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void getText_returnsElementInnerText() {
         // page-title is a static heading
-        String text = elementActions.getText(By.className("page-title"), SHORT, POLL);
+        String text = elementActions.getText(By.id("main-page-title"), SHORT, POLL);
         Assert.assertFalse(text.isEmpty(), "getText must return non-empty heading text");
         Assert.assertTrue(text.length() > 3, "Heading text must have meaningful content");
     }
@@ -234,7 +234,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
     @Test(groups = "arena")
     public void getAttributeValue_returnsDataAttribute() {
         goTo("state.html");
-        elementActions.clickOnElement(By.id("start-cycle"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("start-mutation-btn"), SHORT, POLL);
         waitActions.waitForElementAttributeToBe(By.id("mutating-el"), "data-state", "active", LONG, POLL);
         String state = elementActions.getAttributeValue(
                 By.id("mutating-el"), "data-state", SHORT, POLL);
@@ -250,7 +250,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void getPropertyValue_returnsCheckboxCheckedProperty() {
-        By cb = By.id("screenshots-checkbox");
+        By cb = By.id("cb-screenshots");
         // Initially unchecked
         String checked = elementActions.getPropertyValue(cb, "checked", SHORT, POLL);
         Assert.assertEquals(checked, "false", "Unchecked checkbox 'checked' property must be 'false'");
@@ -488,7 +488,7 @@ public class ElementActionsArenaTest extends ArenaBaseTest {
                 elementActions.isAttributeContains(
                         By.id("mutating-el"), "data-state", "active", SHORT, POLL),
                 "data-state should not contain 'active' before click");
-        elementActions.clickOnElement(By.id("start-cycle"), SHORT, POLL);
+        elementActions.clickOnElement(By.id("start-mutation-btn"), SHORT, POLL);
         waitActions.waitForElementAttributeToBe(By.id("mutating-el"), "data-state", "active", LONG, POLL);
         Assert.assertTrue(
                 elementActions.isAttributeContains(

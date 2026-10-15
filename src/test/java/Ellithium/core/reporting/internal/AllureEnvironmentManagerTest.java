@@ -46,7 +46,7 @@ public class AllureEnvironmentManagerTest {
             props.load(fis);
         }
 
-        assertEqualsValue(props.getProperty("Framework"), "Ellithium 3.2.0");
+        assertEqualsValue(props.getProperty("Framework"), "Ellithium 3.3.0");
         assertNotNull(props.getProperty("Operating.System"), "Operating.System should be recorded");
         assertNotNull(props.getProperty("Java.Version"), "Java.Version should be recorded");
         assertNotNull(props.getProperty("Host.Name"), "Host.Name should be recorded");

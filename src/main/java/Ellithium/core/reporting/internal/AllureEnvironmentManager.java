@@ -76,7 +76,7 @@ public final class AllureEnvironmentManager {
         File envFile = new File(resultsDir, "environment.properties");
 
         Properties props = new Properties();
-        props.setProperty("Framework", "Ellithium 3.2.0");
+        props.setProperty("Framework", "Ellithium 3.3.0");
         props.setProperty("Java.Version", System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")");
         props.setProperty("Operating.System", SystemUtils.OS_NAME + " " + SystemUtils.OS_VERSION + " (" + System.getProperty("os.arch") + ")");
         

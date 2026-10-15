@@ -3,10 +3,6 @@ target/*
 !**/src/main/**/target/
 !**/src/test/**/target/
 Ellithium.pptx
-website/
-NOTIFICATION_README.md
-docker-entrypoint.sh
-Dockerfile
 # Test Output Management
 Test-Output/*
 !Test-Output/.gitkeep
@@ -47,7 +43,12 @@ Test-Output/Logs/*
 *.iml
 *.ipr
 *.iws
-context-features/
+# AI Pipeline Data & Artifacts (scripts & skills tracked, large binaries ignored)
+data/
+*.onnx
+*.bin
+*.safetensors
+ai-pipeline/**
 native-crypto/
 src/test/resources/TestData/*
 
@@ -60,16 +61,6 @@ src/test/resources/TestData/*
 .springBeans
 .sts4-cache
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
 ### VS Code ###
 .vscode/
 
@@ -78,17 +69,13 @@ build/
 
 .allure/
 
-ellithium-locator-picker
 # Test Data Files
 src/test/resources/TestData/DB-Info.json
 src/test/resources/TestData/Items and Prices.xlsx
-finetune
 src/main/resources/Ellithium-ai-model
 src/main/resources/native
-native-crypto
-PR_description.md
 src/test/resources/TestData/MobileApps/browserstack.json
-.claude
+.claude/
 Test-Output/Reports/healing-report.md
 src/test/resources/TestData/samename.jar
 src/main/resources/properties/allure.properties
