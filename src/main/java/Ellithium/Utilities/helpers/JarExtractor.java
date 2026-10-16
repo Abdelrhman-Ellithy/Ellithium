@@ -166,7 +166,7 @@ public class JarExtractor {
             try (JarFile jar = new JarFile(jarFile)) {
                 JarEntry entry = jar.getJarEntry(filePathInJar);
                 if (entry != null) {
-                    if (!outputFile.getParentFile().exists()) {
+                    if (outputFile.getParentFile() != null && !outputFile.getParentFile().exists()) {
                         outputFile.getParentFile().mkdirs();
                     }
                     Files.copy(jar.getInputStream(entry), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

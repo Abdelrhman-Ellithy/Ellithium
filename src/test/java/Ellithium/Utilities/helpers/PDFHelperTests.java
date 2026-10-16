@@ -340,4 +340,39 @@ public class PDFHelperTests {
             }
         }
     }
+
+    @Test(groups = {"pdf"})
+    public void testWritePdf_sanitizesNewlinesAndCarriageReturns() throws IOException {
+        String newlinePdf = TEST_DIR + "newline_test.pdf";
+        try {
+            List<String> content = List.of(
+                "First line with\nembedded newline",
+                "Second line with\rcarriage return",
+                "Third line clean"
+            );
+            PDFHelper.writePdf(newlinePdf, content);
+            String text = PDFHelper.readPdf(newlinePdf);
+            assertTrue(text.contains("First line with"));
+            assertTrue(text.contains("embedded newline"));
+            assertTrue(text.contains("Second line with"));
+            assertTrue(text.contains("carriage return"));
+            assertTrue(text.contains("Third line clean"));
+        } finally {
+            Files.deleteIfExists(Path.of(newlinePdf));
+        }
+    }
+
+    @Test(groups = {"pdf"})
+    public void testWritePdf_createsParentDirectoriesAutomatically() throws IOException {
+        String nestedPdf = TEST_DIR + "nested/docs/generated.pdf";
+        try {
+            PDFHelper.writePdf(nestedPdf, List.of("Nested Document Content"));
+            File f = new File(nestedPdf);
+            assertTrue(f.exists(), "PDF should be generated along with parent directories");
+        } finally {
+            Files.deleteIfExists(Path.of(nestedPdf));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested/docs"));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested"));
+        }
+    }
 }

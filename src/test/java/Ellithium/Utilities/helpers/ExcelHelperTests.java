@@ -235,4 +235,49 @@ public class ExcelHelperTests {
             throw e;
         }
     }
+
+    @Test
+    public void testReadExcelData_withNumericAndBooleanHeaders() throws IOException {
+        String numericHeaderFile = TEST_DIR + "numeric_headers.xlsx";
+        try {
+            try (Workbook workbook = new XSSFWorkbook()) {
+                Sheet sheet = workbook.createSheet("NumericSheet");
+                Row headerRow = sheet.createRow(0);
+                headerRow.createCell(0).setCellValue(2024);
+                headerRow.createCell(1).setCellValue(true);
+
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue("ValueA");
+                dataRow.createCell(1).setCellValue("ValueB");
+
+                try (FileOutputStream fos = new FileOutputStream(numericHeaderFile)) {
+                    workbook.write(fos);
+                }
+            }
+
+            List<Map<String, String>> data = ExcelHelper.getExcelData(numericHeaderFile, "NumericSheet");
+            assertEquals(1, data.size());
+            assertTrue(data.get(0).containsKey("2024"));
+            assertEquals("ValueA", data.get(0).get("2024"));
+        } finally {
+            Files.deleteIfExists(Path.of(numericHeaderFile));
+        }
+    }
+
+    @Test
+    public void testSetExcelData_createsParentDirectoriesAutomatically() throws IOException {
+        String nestedFile = TEST_DIR + "nested/subdir/generated.xlsx";
+        try {
+            Map<String, String> row = new HashMap<>();
+            row.put("ColA", "Val1");
+            ExcelHelper.setExcelData(nestedFile, "Sheet1", List.of(row));
+
+            File f = new File(nestedFile);
+            assertTrue(f.exists(), "File should be created along with parent directories");
+        } finally {
+            Files.deleteIfExists(Path.of(nestedFile));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested/subdir"));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested"));
+        }
+    }
 }

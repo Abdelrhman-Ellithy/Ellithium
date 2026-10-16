@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +30,7 @@ public class CSVHelper {
         Reporter.log("Attempting to read CSV data from file: ", LogLevel.INFO_GREEN, filePath);
         List<Map<String, String>> data = new ArrayList<>();
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord csvRecord : csvParser) {
                     Map<String, String> recordMap = new HashMap<>();
@@ -62,10 +63,13 @@ public class CSVHelper {
         synchronized (getFileLock(filePath)) {
             try {
                 if (!csvFile.exists()) {
+                    if (csvFile.getParentFile() != null && !csvFile.getParentFile().exists()) {
+                        csvFile.getParentFile().mkdirs();
+                    }
                     csvFile.createNewFile();
                     Reporter.log("Creating new CSV file: ", LogLevel.INFO_GREEN, filePath);
                 }
-                try (Writer writer = new FileWriter(csvFile);
+                try (Writer writer = new FileWriter(csvFile, StandardCharsets.UTF_8);
                      CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers.toArray(new String[0])).get())) {
                     for (Map<String, String> record : data) {
                         List<String> values = new ArrayList<>();
@@ -96,7 +100,7 @@ public class CSVHelper {
         List<Map<String, String>> filteredData = new ArrayList<>();
 
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
 
                 for (CSVRecord csvRecord : csvParser) {
@@ -124,7 +128,7 @@ public class CSVHelper {
         List<String> columnData = new ArrayList<>();
         Reporter.log("Attempting to read column: " + columnName + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord record : csvParser) {
                     columnData.add(record.get(columnName));
@@ -148,7 +152,7 @@ public class CSVHelper {
         String cellData = "";
         Reporter.log("Attempting to read cell at row: " + rowIndex + ", column: " + columnName, LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 List<CSVRecord> records = csvParser.getRecords();
                 if (rowIndex < records.size()) {
@@ -172,7 +176,7 @@ public class CSVHelper {
         Map<String, String> rowData = new HashMap<>();
         Reporter.log("Attempting to read row at index: " + rowIndex + " from CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 List<CSVRecord> records = csvParser.getRecords();
                 if (rowIndex < records.size()) {
@@ -232,7 +236,7 @@ public class CSVHelper {
         }
         List<String> headers = new ArrayList<>(data.get(0).keySet());
         synchronized (getFileLock(filePath)) {
-            try (Writer writer = new FileWriter(filePath, true);
+            try (Writer writer = new FileWriter(filePath, StandardCharsets.UTF_8, true);
                  CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers.toArray(new String[0])).setSkipHeaderRecord(true).get())) {
                 for (Map<String, String> record : data) {
                     List<String> values = new ArrayList<>();
@@ -375,7 +379,7 @@ public class CSVHelper {
         Reporter.log("Attempting to export CSV data to list of lists: ", LogLevel.INFO_GREEN, filePath);
         List<List<String>> listData = new ArrayList<>();
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 for (CSVRecord record : csvParser) {
                     listData.add(new ArrayList<>(record.toMap().values()));
@@ -449,7 +453,7 @@ public class CSVHelper {
     public static boolean validateFileStructure(String filePath, List<String> expectedColumns) {
         Reporter.log("Validating structure of CSV file: ", LogLevel.INFO_GREEN, filePath);
         synchronized (getFileLock(filePath)) {
-            try (Reader reader = new FileReader(filePath );
+            try (Reader reader = new FileReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get())) {
                 Set<String> actualColumns = csvParser.getHeaderMap().keySet();
                 return actualColumns.containsAll(expectedColumns);

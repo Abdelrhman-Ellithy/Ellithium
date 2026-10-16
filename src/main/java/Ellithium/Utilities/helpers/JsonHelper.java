@@ -99,6 +99,9 @@ public class JsonHelper {
         synchronized (getFileLock(filePath)) {
             if (!jsonFile.exists()) {
                 try {
+                    if (jsonFile.getParentFile() != null && !jsonFile.getParentFile().exists()) {
+                        jsonFile.getParentFile().mkdirs();
+                    }
                     if (jsonFile.createNewFile()) {
                         log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
                     }
@@ -190,6 +193,9 @@ public class JsonHelper {
         synchronized (getFileLock(filePath)) {
             if (!jsonFile.exists()) {
                 try {
+                    if (jsonFile.getParentFile() != null && !jsonFile.getParentFile().exists()) {
+                        jsonFile.getParentFile().mkdirs();
+                    }
                     if (jsonFile.createNewFile()) {
                         log("Created new JSON file: ", LogLevel.INFO_GREEN, filePath);
                     }
@@ -428,6 +434,9 @@ public class JsonHelper {
                     json1.add(entry.getKey(), entry.getValue());
                 }
 
+                if (targetFile.getParentFile() != null && !targetFile.getParentFile().exists()) {
+                    targetFile.getParentFile().mkdirs();
+                }
                 try (FileWriter writer = new FileWriter(targetFile)) {
                     writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(json1));
                     log("Successfully merged JSON files to: ", LogLevel.INFO_GREEN, targetFilePath);

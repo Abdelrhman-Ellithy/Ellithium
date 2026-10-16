@@ -58,6 +58,9 @@ public class PDFHelper {
      */
     public static void writePdf(String filePath, List<String> content) {
         File file = new File(filePath);
+        if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
         synchronized (getFileLock(filePath)) {
             try (PDDocument document = new PDDocument()) {
                 PDPage page = new PDPage();
@@ -81,7 +84,7 @@ public class PDFHelper {
                             yPosition = 700;
                             contentStream.newLineAtOffset(100, yPosition);
                         }
-                        contentStream.showText(line);
+                        contentStream.showText(line != null ? line.replace("\r", "").replace("\n", " ") : "");
                         yPosition -= 15;
                         contentStream.newLineAtOffset(0, -15);
                     }
@@ -137,7 +140,7 @@ public class PDFHelper {
                         yPosition = 700;
                         contentStream.newLineAtOffset(100, yPosition);
                     }
-                    contentStream.showText(line);
+                    contentStream.showText(line != null ? line.replace("\r", "").replace("\n", " ") : "");
                     yPosition -= 15;
                     contentStream.newLineAtOffset(0, -15);
                 }
@@ -309,11 +312,15 @@ public class PDFHelper {
                     contentStream.setNonStrokingColor(200, 200, 200);
                     contentStream.beginText();
                     contentStream.newLineAtOffset(100, 300);
-                    contentStream.showText(watermarkText);
+                    contentStream.showText(watermarkText != null ? watermarkText.replace("\r", "").replace("\n", " ") : "");
                     contentStream.endText();
                 }
             }
-            document.save(outputFilePath);
+            File outFile = new File(outputFilePath);
+            if (outFile.getParentFile() != null && !outFile.getParentFile().exists()) {
+                outFile.getParentFile().mkdirs();
+            }
+            document.save(outFile);
             Reporter.log("Successfully added watermark to PDF: ", LogLevel.INFO_GREEN, outputFilePath);
         } catch (IOException e) {
             Reporter.log("Failed to add watermark: ", LogLevel.ERROR, outputFilePath);

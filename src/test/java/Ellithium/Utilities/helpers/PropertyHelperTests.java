@@ -335,4 +335,71 @@ public class PropertyHelperTests {
         Properties props = PropertyHelper.getAllProperties(TEST_FILE);
         assertEquals(props.size(), threadCount + 2); // +2 for initial properties
     }
+
+    @Test(groups = {"properties"}, description = "Test read queries do not create file on disk when file does not exist")
+    public void testReadQueriesDoNotCreateFileOnDisk() {
+        String nonExistent = "src/test/resources/TestData/definitely_not_existing.properties";
+        File f = new File(nonExistent);
+        if (f.exists()) f.delete();
+
+        assertNull(PropertyHelper.getDataFromProperties(nonExistent, "someKey"));
+        assertFalse(f.exists(), "File should not be created by getDataFromProperties");
+
+        assertFalse(PropertyHelper.keyExists(nonExistent, "someKey"));
+        assertFalse(f.exists(), "File should not be created by keyExists");
+
+        assertEquals(PropertyHelper.getOrDefault(nonExistent, "someKey", "myDefault"), "myDefault");
+        assertFalse(f.exists(), "File should not be created by getOrDefault");
+
+        Properties props = PropertyHelper.getAllProperties(nonExistent);
+        assertNotNull(props);
+        assertEquals(props.size(), 0);
+        assertFalse(f.exists(), "File should not be created by getAllProperties");
+
+        assertEquals(PropertyHelper.getPropertyCount(nonExistent), 0);
+        assertFalse(f.exists(), "File should not be created by getPropertyCount");
+
+        assertTrue(PropertyHelper.findValuesContaining(nonExistent, "value").isEmpty());
+        assertFalse(f.exists(), "File should not be created by findValuesContaining");
+
+        assertFalse(PropertyHelper.validatePropertyValue(nonExistent, "someKey", ".*"));
+        assertFalse(f.exists(), "File should not be created by validatePropertyValue");
+    }
+
+    @Test(groups = {"file-operations"}, description = "Test backup and sort on non-existent files do not crash")
+    public void testBackupAndSortOnNonExistentFile() {
+        String nonExistent = "src/test/resources/TestData/ghost_props.properties";
+        File f = new File(nonExistent);
+        if (f.exists()) f.delete();
+
+        PropertyHelper.backupProperties(nonExistent);
+        assertFalse(new File(nonExistent + ".backup").exists());
+
+        PropertyHelper.sortPropertiesByKey(nonExistent);
+        assertFalse(f.exists());
+    }
+
+    @Test(groups = {"file-operations"}, description = "Test clearProperties and saveWithEncoding in non-existent directory")
+    public void testWriteOperationsCreateParentDirectories() {
+        String nestedFile = "src/test/resources/TestData/nested_props/deep/test_nested.properties";
+        File f = new File(nestedFile);
+        if (f.exists()) f.delete();
+        if (f.getParentFile().exists()) f.getParentFile().delete();
+
+        try {
+            Properties p = new Properties();
+            p.setProperty("k1", "v1");
+            PropertyHelper.saveWithEncoding(nestedFile, p, "UTF-8");
+            assertTrue(f.exists());
+            assertEquals(PropertyHelper.getDataFromProperties(nestedFile, "k1"), "v1");
+
+            PropertyHelper.clearProperties(nestedFile);
+            assertEquals(PropertyHelper.getPropertyCount(nestedFile), 0);
+        } finally {
+            f.delete();
+            File p = f.getParentFile();
+            if (p != null && p.exists()) p.delete();
+            if (p != null && p.getParentFile() != null && p.getParentFile().exists()) p.getParentFile().delete();
+        }
+    }
 }

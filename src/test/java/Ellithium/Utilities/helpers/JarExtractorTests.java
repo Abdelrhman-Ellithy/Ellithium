@@ -339,5 +339,40 @@ public class JarExtractorTests {
         File sameNameFile = new File(EXTRACTED_DIR + "sameName");
         assertTrue(sameNameDir.exists());
         assertTrue(sameNameFile.exists());
+        Files.deleteIfExists(Paths.get(sameNameJarPath));
+    }
+
+    @Test
+    public void testExtractFileFromJar_successfulExtraction() {
+        File out = new File(EXTRACTED_DIR + "single_sample.txt");
+        JarExtractor.extractFileFromJar(new File(TEST_JAR), "sample.txt", out);
+        assertTrue(out.exists());
+        assertTrue(out.length() > 0);
+    }
+
+    @Test
+    public void testExtractFileFromJar_createsParentDirectoryAutomatically() {
+        File out = new File(EXTRACTED_DIR + "deep/nested/dir/nested_sample.txt");
+        JarExtractor.extractFileFromJar(new File(TEST_JAR), "testdir/sample_in_dir.txt", out);
+        assertTrue(out.exists());
+    }
+
+    @Test
+    public void testExtractFileFromJar_nonExistentEntry_doesNothing() {
+        File out = new File(EXTRACTED_DIR + "should_not_exist.txt");
+        JarExtractor.extractFileFromJar(new File(TEST_JAR), "missing.txt", out);
+        assertFalse(out.exists());
+    }
+
+    @Test
+    public void testExtractFileFromJar_fileWithoutParentDirectory() {
+        // Output file with relative name having null getParentFile()
+        File out = new File("single_file_no_parent_test.txt");
+        try {
+            JarExtractor.extractFileFromJar(new File(TEST_JAR), "sample.txt", out);
+            assertTrue(out.exists());
+        } finally {
+            if (out.exists()) out.delete();
+        }
     }
 }

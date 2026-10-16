@@ -55,6 +55,10 @@ public final class Locators {
         return out.toString();
     }
 
+    private static boolean isXPath(String selector) {
+        return selector.startsWith("/") || selector.startsWith("(") || selector.startsWith("./") || selector.startsWith("../");
+    }
+
     /**
      * Parses a string representation of a locator into a Selenium {@link By} object.
      * Supports prefix format (e.g. {@code "id=username"}, {@code "xpath=//button"},
@@ -68,6 +72,9 @@ public final class Locators {
             throw new IllegalArgumentException("Locator string cannot be null or empty");
         }
         String trimmed = locatorStr.trim();
+        if (isXPath(trimmed)) {
+            return By.xpath(trimmed);
+        }
         int eq = trimmed.indexOf('=');
         if (eq > 0) {
             String strategy = trimmed.substring(0, eq).trim().toLowerCase();
@@ -81,13 +88,10 @@ public final class Locators {
                 case "tag", "tagname" -> By.tagName(value);
                 case "link", "linktext" -> By.linkText(value);
                 case "partiallink", "partiallinktext" -> By.partialLinkText(value);
-                default -> (trimmed.startsWith("//") || trimmed.startsWith("(") || trimmed.startsWith("./"))
+                default -> isXPath(trimmed)
                         ? By.xpath(trimmed)
                         : By.cssSelector(trimmed);
             };
-        }
-        if (trimmed.startsWith("//") || trimmed.startsWith("(") || trimmed.startsWith("./")) {
-            return By.xpath(trimmed);
         }
         return By.cssSelector(trimmed);
     }

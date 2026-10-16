@@ -39,7 +39,7 @@ public class ExcelHelper {
                 if (rowIterator.hasNext()) {
                     Row headerRow = rowIterator.next();
                     List<String> headers = new ArrayList<>();
-                    headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
+                    headerRow.forEach(cell -> headers.add(getCellValueAsString(cell)));
                     while (rowIterator.hasNext()) {
                         Row row = rowIterator.next();
                         Map<String, String> recordMap = new HashMap<>();
@@ -75,6 +75,9 @@ public class ExcelHelper {
                         workbook = new XSSFWorkbook(fis);
                     }
                 } else {
+                    if (excelFile.getParentFile() != null && !excelFile.getParentFile().exists()) {
+                        excelFile.getParentFile().mkdirs();
+                    }
                     workbook = new XSSFWorkbook();
                     Reporter.log("Creating new Excel file: ", LogLevel.INFO_GREEN, filePath + ", sheet: " + sheetName);
                 }
@@ -423,7 +426,7 @@ public class ExcelHelper {
                 Row headerRow = sheet.getRow(0);
                 int columnIndex = -1;
                 for (Cell cell : headerRow) {
-                    if (cell.getStringCellValue().equals(columnName)) {
+                    if (getCellValueAsString(cell).equals(columnName)) {
                         columnIndex = cell.getColumnIndex();
                         break;
                     }
@@ -436,7 +439,7 @@ public class ExcelHelper {
                 for (Row row : sheet) {
                     if (row.getRowNum() == 0) continue; // Skip header row
                     Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    if (cell.getStringCellValue().equals(oldValue)) {
+                    if (getCellValueAsString(cell).equals(oldValue)) {
                         cell.setCellValue(newValue);
                     }
                 }
@@ -470,7 +473,7 @@ public class ExcelHelper {
                 int lastRowNum = sheet.getLastRowNum();
                 Row headerRow = sheet.getRow(0);
                 List<String> headers = new ArrayList<>();
-                headerRow.forEach(cell -> headers.add(cell.getStringCellValue()));
+                headerRow.forEach(cell -> headers.add(getCellValueAsString(cell)));
 
                 for (Map<String, String> rowData : newRows) {
                     Row row = sheet.createRow(++lastRowNum);
