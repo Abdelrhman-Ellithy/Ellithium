@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +57,16 @@ public class ExcelHelper {
             }
         }
         return data;
+    }
+
+    /**
+     * Reads Excel data from a given file path and sheet.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @return List of maps representing the rows.
+     */
+    public static List<Map<String, String>> getExcelData(Path filePath, String sheetName) {
+        return getExcelData(Objects.requireNonNull(filePath, "filePath must not be null").toString(), sheetName);
     }
 
     /**
@@ -124,6 +135,16 @@ public class ExcelHelper {
                 }
             }
         }
+    }
+
+    /**
+     * Writes data to the specified Excel file and sheet via {@link Path}.
+     * @param filePath Path to the Excel file.
+     * @param sheetName Name of the sheet.
+     * @param data List of maps containing the data.
+     */
+    public static void setExcelData(Path filePath, String sheetName, List<Map<String, String>> data) {
+        setExcelData(Objects.requireNonNull(filePath, "filePath must not be null").toString(), sheetName, data);
     }
 
     /**

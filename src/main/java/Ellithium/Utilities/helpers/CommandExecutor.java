@@ -95,7 +95,7 @@ public class CommandExecutor {
 
     private static String captureProcessOutput(Process process) throws IOException {
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line).append(System.lineSeparator());
@@ -211,7 +211,7 @@ public class CommandExecutor {
                 command = new String[]{"ps", "aux"};
             }
             Process process = new ProcessBuilder(command).start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     processes.add(line);

@@ -8,6 +8,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,6 +46,15 @@ public class CSVHelper {
             }
         }
         return data;
+    }
+
+    /**
+     * Reads data from a CSV file via {@link Path} and returns it as a list of maps.
+     * @param filePath Path to the CSV file
+     * @return List of maps where each map represents a row with column name as key
+     */
+    public static List<Map<String, String>> getCsvData(Path filePath) {
+        return getCsvData(Objects.requireNonNull(filePath, "filePath must not be null").toString());
     }
 
     /**
@@ -86,6 +96,15 @@ public class CSVHelper {
                 Reporter.log("Failed to create CSV file: ", LogLevel.ERROR, filePath);
             }
         }
+    }
+
+    /**
+     * Writes data to a CSV file via {@link Path}, creating the file if it doesn't exist.
+     * @param filePath Path where the CSV file should be created/written
+     * @param data List of maps containing the data to write
+     */
+    public static void setCsvData(Path filePath, List<Map<String, String>> data) {
+        setCsvData(Objects.requireNonNull(filePath, "filePath must not be null").toString(), data);
     }
 
     /**
@@ -221,6 +240,15 @@ public class CSVHelper {
     public static boolean doesFileExist(String filePath) {
         File csvFile = new File(filePath );
         return csvFile.exists();
+    }
+
+    /**
+     * Checks if a CSV file exists at the specified {@link Path}.
+     * @param filePath Path to check
+     * @return true if file exists, false otherwise
+     */
+    public static boolean doesFileExist(Path filePath) {
+        return doesFileExist(Objects.requireNonNull(filePath, "filePath must not be null").toString());
     }
 
     /**

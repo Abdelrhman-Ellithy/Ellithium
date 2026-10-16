@@ -30,7 +30,7 @@ public class TextHelper {
         }
         Reporter.log("Attempting to read text file: ", LogLevel.INFO_BLUE, filePath);
         synchronized (getFileLock(filePath)) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     lines.add(line);
@@ -45,6 +45,20 @@ public class TextHelper {
             }
         }
         return lines;
+    }
+
+    /**
+     * Reads all lines from a text file using Path.
+     */
+    public static List<String> readTextFile(java.nio.file.Path path) {
+        return readTextFile(path != null ? path.toString() : null);
+    }
+
+    /**
+     * Writes a list of lines to a text file using Path.
+     */
+    public static void writeTextFile(java.nio.file.Path path, List<String> lines) {
+        writeTextFile(path != null ? path.toString() : null, lines);
     }
 
     /**
@@ -66,7 +80,7 @@ public class TextHelper {
                     Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
                 }
             }
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile, StandardCharsets.UTF_8))) {
                 for (String line : lines) {
                     writer.write(line);
                     writer.newLine();
@@ -79,12 +93,16 @@ public class TextHelper {
         }
     }
 
+    public static void appendLineToFile(java.nio.file.Path path, String line) {
+        appendLineToFile(path != null ? path.toString() : null, line);
+    }
+
     // Method to append a single line to a text file
     public static void appendLineToFile(String filePath, String line) {
         Reporter.log("Attempting to append line to text file: ", LogLevel.INFO_BLUE, filePath);
         File textFile = new File(filePath);
         synchronized (getFileLock(filePath)) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile, true))) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile, StandardCharsets.UTF_8, true))) {
                 writer.write(line);
                 writer.newLine();
                 Reporter.log("Successfully appended line to text file: ", LogLevel.INFO_GREEN, filePath);
@@ -235,7 +253,7 @@ public class TextHelper {
 
         Reporter.log("Checking if text file contains keyword: ", LogLevel.INFO_BLUE, filePath);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.contains(keyword)) {
@@ -258,7 +276,7 @@ public class TextHelper {
 
         Reporter.log("Attempting to replace a line in text file: ", LogLevel.INFO_BLUE, filePath);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.equals(targetLine)) {
@@ -275,6 +293,10 @@ public class TextHelper {
         }
     }
 
+    public static int countLinesInFile(java.nio.file.Path path) {
+        return countLinesInFile(path != null ? path.toString() : null);
+    }
+
     public static int countLinesInFile(String filePath) {
         File textFile = new File(filePath);
         int count = 0;
@@ -285,7 +307,7 @@ public class TextHelper {
             return 0;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             while (reader.readLine() != null) {
                 count++;
             }
@@ -298,6 +320,10 @@ public class TextHelper {
         }
     }
 
+    public static boolean isEmptyFile(java.nio.file.Path path) {
+        return isEmptyFile(path != null ? path.toString() : null);
+    }
+
     public static boolean isEmptyFile(String filePath) {
         File textFile = new File(filePath);
         Reporter.log("Checking if file is empty: ", LogLevel.INFO_BLUE, filePath);
@@ -307,7 +333,7 @@ public class TextHelper {
             return false;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             boolean isEmpty = reader.readLine() == null;
             String msg = isEmpty ? "File is empty" : "File is not empty";
             LogLevel level = isEmpty ? LogLevel.INFO_GREEN : LogLevel.INFO_YELLOW;
@@ -318,6 +344,10 @@ public class TextHelper {
             Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             return false;
         }
+    }
+
+    public static void replaceAllOccurrences(java.nio.file.Path path, String target, String replacement) {
+        replaceAllOccurrences(path != null ? path.toString() : null, target, replacement);
     }
 
     public static void replaceAllOccurrences(String filePath, String target, String replacement) {
@@ -350,7 +380,7 @@ public class TextHelper {
             return matches;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.contains(keyword)) matches.add(line);
@@ -366,6 +396,10 @@ public class TextHelper {
         }
     }
 
+    public static void copyTextFile(java.nio.file.Path source, java.nio.file.Path dest) {
+        copyTextFile(source != null ? source.toString() : null, dest != null ? dest.toString() : null);
+    }
+
     public static void copyTextFile(String sourcePath, String destPath) {
         Reporter.log("Copying from " + sourcePath + " to " + destPath, LogLevel.INFO_BLUE);
         File sourceFile = new File(sourcePath);
@@ -376,8 +410,8 @@ public class TextHelper {
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(sourceFile));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(destFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(sourceFile, StandardCharsets.UTF_8));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(destFile, StandardCharsets.UTF_8))) {
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -391,6 +425,10 @@ public class TextHelper {
         }
     }
 
+    public static boolean areFilesIdentical(java.nio.file.Path firstPath, java.nio.file.Path secondPath) {
+        return areFilesIdentical(firstPath != null ? firstPath.toString() : null, secondPath != null ? secondPath.toString() : null);
+    }
+
     public static boolean areFilesIdentical(String firstPath, String secondPath) {
         Reporter.log("Comparing files for identity: " + firstPath + " vs " + secondPath, LogLevel.INFO_BLUE);
         File firstFile = new File(firstPath);
@@ -401,8 +439,8 @@ public class TextHelper {
             return false;
         }
 
-        try (BufferedReader reader1 = new BufferedReader(new FileReader(firstFile));
-             BufferedReader reader2 = new BufferedReader(new FileReader(secondFile))) {
+        try (BufferedReader reader1 = new BufferedReader(new FileReader(firstFile, StandardCharsets.UTF_8));
+             BufferedReader reader2 = new BufferedReader(new FileReader(secondFile, StandardCharsets.UTF_8))) {
 
             String line1, line2;
             while ((line1 = reader1.readLine()) != null && (line2 = reader2.readLine()) != null) {
@@ -437,7 +475,7 @@ public class TextHelper {
             return lineNumbers;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             String line;
             int lineNum = 0;
             while ((line = reader.readLine()) != null) {
@@ -626,7 +664,7 @@ public class TextHelper {
             return null;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
             String line;
             int currentLine = 0;
             
@@ -657,7 +695,7 @@ public class TextHelper {
         Reporter.log("Searching lines matching regex '" + regex + "' in: ", LogLevel.INFO_BLUE, filePath);
         List<String> matches = new ArrayList<>();
         
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.matches(regex)) {
@@ -700,7 +738,7 @@ public class TextHelper {
         Reporter.log("Analyzing word frequency in: ", LogLevel.INFO_BLUE, filePath);
         Map<String, Integer> frequency = new HashMap<>();
         
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] words = line.split("\\s+");
