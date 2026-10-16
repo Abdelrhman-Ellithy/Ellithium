@@ -85,7 +85,7 @@ public class NotificationConfig {
         try {
             properties = PropertyHelper.getAllProperties(NOTIFICATION_FILE);
             propertiesLoaded = true;
-            Reporter.log("Notification properties loaded successfully", LogLevel.INFO_GREEN);
+            Reporter.log("Notification properties loaded successfully", LogLevel.DEBUG);
         } catch (Exception e) {
             propertiesLoaded = false;
             Reporter.log("Failed to load notification properties: " + e.getMessage(), LogLevel.ERROR);
@@ -120,7 +120,7 @@ public class NotificationConfig {
                     envVarValue = System.getProperty(envVarName);
                 }
                 if (envVarValue == null) {
-                    Reporter.log("Environment variable '" + envVarName + "' not found. Using placeholder as-is.", LogLevel.WARN);
+                    Reporter.log("Environment variable '" + envVarName + "' not found. Using placeholder as-is.", LogLevel.DEBUG);
                     envVarValue = placeholder;
                 }
                 
@@ -361,9 +361,17 @@ public class NotificationConfig {
                 Reporter.log("SMTP username is missing from email configuration", LogLevel.ERROR);
                 return false;
             }
+            if (username.contains("${")) {
+                Reporter.log("SMTP username contains unconfigured placeholder: " + username + ". Email notifications will be skipped.", LogLevel.DEBUG);
+                return false;
+            }
             
             if (password == null || password.trim().isEmpty()) {
                 Reporter.log("SMTP password is missing from email configuration", LogLevel.ERROR);
+                return false;
+            }
+            if (password.contains("${")) {
+                Reporter.log("SMTP password contains unconfigured environment variable placeholder. Email notifications will be skipped.", LogLevel.DEBUG);
                 return false;
             }
             

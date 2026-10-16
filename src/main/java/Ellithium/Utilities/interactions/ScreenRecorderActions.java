@@ -1288,33 +1288,22 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                     new java.util.concurrent.LinkedBlockingQueue<>(),
                     Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory());
 
-        static {
+    static {
         Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().name("VideoCompilationShutdownHook").unstarted(() -> {
             int active = activeCompilations.get();
             if (active > 0) {
-                System.out.println("[Ellithium] Waiting for " + active +
-                                 " video(s) to finish compiling...");
                 try {
                     videoCompilationExecutor.shutdown();
                     boolean completed = videoCompilationExecutor.awaitTermination(45, TimeUnit.SECONDS);
-                    if (completed) {
-                        System.out.println("[Ellithium] ✓ All videos compiled successfully");
-                    } else {
-                        System.out.println("[Ellithium] ⚠ Timeout: " + activeCompilations.get() +
-                                         " video(s) may be incomplete");
+                    if (!completed) {
                         videoCompilationExecutor.shutdownNow();
                     }
                 } catch (InterruptedException e) {
-                    System.out.println("[Ellithium] Video compilation interrupted during shutdown");
                     videoCompilationExecutor.shutdownNow();
                     Thread.currentThread().interrupt();
                 }
-            } else {
-                System.out.println("[Ellithium] All videos already compiled");
             }
         }));
-        
-        System.out.println("[Ellithium] Video compilation shutdown hook registered");
     }
 
 }

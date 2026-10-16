@@ -38,6 +38,8 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
     private volatile long startTimeMs = System.currentTimeMillis();
     private volatile long lastRenderMs = 0L;
     private volatile int lastMilestonePercent = -1;
+    private final AtomicInteger lastPrintedCompleted = new AtomicInteger(-1);
+    private final AtomicInteger lastPrintedTotal = new AtomicInteger(-1);
     private volatile PrintStream outStream = System.out;
 
     SmartTestProgressBar() {}
@@ -67,6 +69,8 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         startTimeMs = System.currentTimeMillis();
         lastRenderMs = 0L;
         lastMilestonePercent = -1;
+        lastPrintedCompleted.set(-1);
+        lastPrintedTotal.set(-1);
     }
 
     /**
@@ -188,9 +192,13 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
             return;
         }
 
+        // 2. Render to Terminal
+        boolean ciMode = ProgressBarConfig.isCiMode();
+        boolean inPlace = ProgressBarConfig.isInPlaceMode() && TerminalCapabilities.isInteractive() && !ciMode;
+
         long now = System.currentTimeMillis();
         long throttle = ProgressBarConfig.getThrottleMs();
-        if (!force && (now - lastRenderMs < throttle)) {
+        if (inPlace && !force && (now - lastRenderMs < throttle)) {
             return;
         }
         lastRenderMs = now;
@@ -204,10 +212,6 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         String windowTitle = ProgressBarRenderer.renderWindowTitle(snapshot);
         TerminalCapabilities.setConsoleWindowTitle(windowTitle);
 
-        // 2. Render to Terminal
-        boolean ciMode = ProgressBarConfig.isCiMode();
-        boolean inPlace = ProgressBarConfig.isInPlaceMode() && TerminalCapabilities.isInteractive() && !ciMode;
-
         if (inPlace) {
             String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, ansi);
             outStream.print("\r" + ProgressBarRenderer.CLEAR_LINE + line);
@@ -215,17 +219,28 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         } else if (ciMode) {
             // In CI or non-interactive stdout: emit milestones to keep logs clean
             int currentPercent = (int) Math.floor(snapshot.getPercentage() / 10.0) * 10;
-            if (force || currentPercent > lastMilestonePercent) {
-                lastMilestonePercent = currentPercent;
+            int comp = snapshot.completed();
+            int lastComp = lastPrintedCompleted.get();
+            if (currentPercent > lastMilestonePercent || (force && comp > lastComp)) {
+                lastMilestonePercent = Math.max(lastMilestonePercent, currentPercent);
+                lastPrintedCompleted.set(comp);
                 String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, false);
                 outStream.println(line);
                 outStream.flush();
             }
         } else {
-            // Standard LINE mode: print clean, non-interleaved progress line on test completion or suite milestone
-            String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, ansi);
-            outStream.println(line);
-            outStream.flush();
+            // Standard LINE mode: print clean, non-interleaved progress line on test completion or suite start
+            int comp = snapshot.completed();
+            int tot = snapshot.totalExpected();
+            int lastComp = lastPrintedCompleted.get();
+            int lastTot = lastPrintedTotal.get();
+            if (comp > lastComp || (comp == 0 && lastComp == -1) || (comp == 0 && tot > 0 && tot != lastTot)) {
+                lastPrintedCompleted.set(comp);
+                lastPrintedTotal.set(tot);
+                String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, ansi);
+                outStream.println(line);
+                outStream.flush();
+            }
         }
     }
 

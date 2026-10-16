@@ -513,7 +513,8 @@ public class VideoRecordingManager {
         recordingContextMap.clear();
         threadToRecordingMap.clear();
         testToRecordingMap.clear();
-        Logger.info("Force cleanup completed. Stopped " + activeRecordings +
-                " active recordings.");
+        if (activeRecordings > 0) {
+            Logger.info("Force cleanup completed. Stopped " + activeRecordings + " active recordings.");
+        }
     }
 }

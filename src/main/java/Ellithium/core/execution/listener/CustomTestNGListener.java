@@ -193,7 +193,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         try {
             testResultCollector.collectTestResults(context);
         } catch (Throwable t) {
-            Logger.info("Notification result collection skipped: " + t.getClass().getSimpleName());
+            Logger.debug("Notification result collection skipped: " + t.getClass().getSimpleName());
         }
         testResultToRecordingId.clear();
     }

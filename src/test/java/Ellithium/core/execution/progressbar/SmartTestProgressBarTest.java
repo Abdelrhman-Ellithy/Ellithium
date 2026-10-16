@@ -148,6 +148,51 @@ public class SmartTestProgressBarTest {
     }
 
     @Test
+    public void testSmartTestProgressBar_DeduplicatesDuplicateRenderCalls() {
+        SmartTestProgressBar bar = new SmartTestProgressBar();
+        bar.setOutputStream(customOut);
+
+        bar.onExecutionStarted(new TestLifecycleEvent.ExecutionStarted("DeduplicationExec"));
+        bar.onSuiteStarted(new TestLifecycleEvent.SuiteStarted("DeduplicationSuite", 2));
+
+        // Test 1 passes
+        bar.onTestStarted(new TestLifecycleEvent.TestStarted("d1", "dedupTest1"));
+        bar.onTestPassed(new TestLifecycleEvent.TestPassed("d1", "dedupTest1", 50L));
+
+        // Multiple calls to render(true) or render(false) without count change
+        bar.render(false);
+        bar.render(true);
+
+        // Test 2 passes
+        bar.onTestStarted(new TestLifecycleEvent.TestStarted("d2", "dedupTest2"));
+        bar.onTestPassed(new TestLifecycleEvent.TestPassed("d2", "dedupTest2", 50L));
+
+        // onSuiteFinished also calls render(true)
+        bar.onSuiteFinished(new TestLifecycleEvent.SuiteFinished("DeduplicationSuite"));
+
+        String raw = outputCaptor.toString(StandardCharsets.UTF_8);
+        String captured = raw.replaceAll("\\u001B\\[[;\\d]*m", "");
+
+        // Count occurrences of "[1/2]" and "[2/2]"
+        int count1of2 = countOccurrences(captured, "[1/2]");
+        int count2of2 = countOccurrences(captured, "[2/2]");
+
+        Assert.assertEquals(count1of2, 1, "Progress line for [1/2] should be emitted exactly once");
+        Assert.assertEquals(count2of2, 1, "Progress line for [2/2] should be emitted exactly once (no duplicate onSuiteFinished)");
+    }
+
+    private static int countOccurrences(String str, String sub) {
+        if (str == null || sub == null || sub.isEmpty()) return 0;
+        int count = 0;
+        int idx = 0;
+        while ((idx = str.indexOf(sub, idx)) != -1) {
+            count++;
+            idx += sub.length();
+        }
+        return count;
+    }
+
+    @Test
     public void testSmartTestProgressBar_ThreadSafetyUnderParallelLoad() throws InterruptedException {
         SmartTestProgressBar bar = new SmartTestProgressBar();
         bar.setOutputStream(customOut);
