@@ -181,6 +181,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     public void onStart(ITestContext context) {
         Logger.info(
                 PURPLE + "[ALL TESTS STARTED]: " + context.getName().toUpperCase() + " [ALL TESTS STARTED]" + RESET);
+        if (context.getAllTestMethods() != null && context.getAllTestMethods().length > 0) {
+            Ellithium.core.execution.progressbar.SmartTestProgressBar.getInstance().setExpectedTotalTests(context.getAllTestMethods().length);
+        }
     }
 
     @Override
@@ -202,7 +205,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             System.setProperty("ellithium.suite.name", suite.getName());
         }
         Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
-        TestLifecycleEventBus.getInstance().publishSuiteStarted(suite.getName());
+        int totalMethods = (suite.getAllMethods() != null) ? suite.getAllMethods().size() : 0;
+        TestLifecycleEventBus.getInstance().publishSuiteStarted(suite.getName(), totalMethods);
     }
 
     @Override

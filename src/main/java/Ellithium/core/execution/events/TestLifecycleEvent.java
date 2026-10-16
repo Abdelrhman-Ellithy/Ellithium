@@ -29,9 +29,12 @@ public sealed interface TestLifecycleEvent permits
         }
     }
 
-    record SuiteStarted(String suiteName, long timestamp) implements TestLifecycleEvent {
+    record SuiteStarted(String suiteName, int totalTests, long timestamp) implements TestLifecycleEvent {
+        public SuiteStarted(String suiteName, int totalTests) {
+            this(suiteName, totalTests, System.currentTimeMillis());
+        }
         public SuiteStarted(String suiteName) {
-            this(suiteName, System.currentTimeMillis());
+            this(suiteName, 0, System.currentTimeMillis());
         }
     }
 

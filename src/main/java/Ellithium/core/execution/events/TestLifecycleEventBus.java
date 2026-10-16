@@ -21,6 +21,7 @@ public final class TestLifecycleEventBus {
     private TestLifecycleEventBus() {
         // Register default subscribers
         register(new ScreenRecordingLifecycleSubscriber());
+        register(Ellithium.core.execution.progressbar.SmartTestProgressBar.getInstance());
     }
 
     public static TestLifecycleEventBus getInstance() {
@@ -53,6 +54,7 @@ public final class TestLifecycleEventBus {
     public void resetToDefault() {
         subscribers.clear();
         subscribers.add(new ScreenRecordingLifecycleSubscriber());
+        subscribers.add(Ellithium.core.execution.progressbar.SmartTestProgressBar.getInstance());
     }
 
     /**
@@ -99,6 +101,10 @@ public final class TestLifecycleEventBus {
 
     public void publishSuiteStarted(String suiteName) {
         publish(new TestLifecycleEvent.SuiteStarted(suiteName));
+    }
+
+    public void publishSuiteStarted(String suiteName, int totalTests) {
+        publish(new TestLifecycleEvent.SuiteStarted(suiteName, totalTests));
     }
 
     public void publishSuiteFinished(String suiteName) {
