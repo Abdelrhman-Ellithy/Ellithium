@@ -55,6 +55,10 @@ public class ScreenRecordingLifecycleSubscriber implements TestLifecycleSubscrib
 
     private void cleanupAll() {
         try {
+            int active = Ellithium.Utilities.interactions.ScreenRecorderActions.pendingCompilations();
+            if (active > 0) {
+                Ellithium.Utilities.interactions.ScreenRecorderActions.awaitPendingCompilations(60, java.util.concurrent.TimeUnit.SECONDS);
+            }
             VideoRecordingManager.forceCleanupAll();
         } catch (Throwable t) {
             Logger.warn("ScreenRecordingLifecycleSubscriber: error during force cleanup: " + t.getMessage());

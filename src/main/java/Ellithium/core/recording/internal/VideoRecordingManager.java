@@ -297,7 +297,7 @@ public class VideoRecordingManager {
             String videoPath = recorder.stopRecording();
             if (videoPath != null) {
                 Logger.info("Stopped video recording for: " + testName + " - (Duration: " + duration + "ms)");
-                handleVideoAttachment(videoPath, testName, testStatus);
+                handleVideoAttachment(videoPath, recorder.getLastCompilationFuture(), testName, testStatus);
                 return videoPath;
             } else {
                 Logger.error("Failed to save video recording for: " + testName);
@@ -353,11 +353,14 @@ public class VideoRecordingManager {
      * Handles video attachment to the report based on configuration and test
      * status.
      * 
-     * @param videoPath  Path to the video file
-     * @param testName   Name of the test
-     * @param testStatus Status of the test
+     * @param videoPath         Path to the video file
+     * @param compilationFuture Future resolving to the compiled video File
+     * @param testName          Name of the test
+     * @param testStatus        Status of the test
      */
-    private static void handleVideoAttachment(String videoPath, String testName, String testStatus) {
+    private static void handleVideoAttachment(String videoPath,
+                                              java.util.concurrent.CompletableFuture<File> compilationFuture,
+                                              String testName, String testStatus) {
         boolean isFailed = "FAILED".equalsIgnoreCase(testStatus);
         boolean shouldAttach = isAttachmentEnabled();
         if (isAttachmentOnFailureOnlyEnabled()) {
@@ -365,13 +368,13 @@ public class VideoRecordingManager {
         }
         if (shouldAttach) {
             try {
-                Reporter.attachFileToReportAsync(videoPath, testName + "_recording");
+                Reporter.attachVideoToReportAsync(compilationFuture, videoPath, testName + "_recording");
                 Logger.info("Video attachment scheduled asynchronously for: " + testName);
             } catch (Exception e) {
                 Logger.error("Failed to attach video to report: " + e.getMessage());
             }
         } else {
-            deleteVideoFile(videoPath);
+            Logger.info("Video recording saved at: " + videoPath + " (report attachment skipped per configuration)");
         }
     }
 

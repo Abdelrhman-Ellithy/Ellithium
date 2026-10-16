@@ -158,8 +158,45 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
     private static final String CDP_NOT_FOUND = "";
 
     private static final AtomicInteger activeCompilations = new AtomicInteger(0);
+    private volatile CompletableFuture<File> lastCompilationFuture = null;
 
     public static int pendingCompilations() { return activeCompilations.get(); }
+
+    /**
+     * Gets the CompletableFuture representing the compilation of the most recent recording.
+     *
+     * @return CompletableFuture resolving to the compiled video File, or null/completed future if no compilation
+     */
+    public CompletableFuture<File> getLastCompilationFuture() {
+        return lastCompilationFuture;
+    }
+
+    /**
+     * Blocks until all in-flight asynchronous video compilations have completed,
+     * or the specified timeout elapses.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @return true if all compilations completed, false if the timeout elapsed before all finished
+     */
+    public static boolean awaitPendingCompilations(long timeout, TimeUnit unit) {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (activeCompilations.get() > 0) {
+            long remainingNanos = deadline - System.nanoTime();
+            if (remainingNanos <= 0) {
+                Logger.warn("Timed out waiting for pending video compilations (" + activeCompilations.get() + " remaining)");
+                return false;
+            }
+            try {
+                Thread.sleep(Math.min(100, TimeUnit.NANOSECONDS.toMillis(remainingNanos)));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Logger.warn("Interrupted while waiting for pending video compilations");
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Creates a new ScreenRecorderActions instance.
@@ -763,30 +800,32 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
                 fos.write(videoData);
                 fos.flush();
             }
+            this.lastCompilationFuture = CompletableFuture.completedFuture(videoFile);
             Logger.info("Mobile video recording saved: " + videoFile.getPath());
             return videoFile.getAbsolutePath();
 
         } catch (IllegalArgumentException e) {
             Logger.error("Invalid Base64 data from mobile recording: " + e.getMessage());
+            this.lastCompilationFuture = CompletableFuture.completedFuture(null);
             return null;
         } catch (IOException e) {
             Logger.error("Failed to write mobile video file: " + e.getMessage());
+            this.lastCompilationFuture = CompletableFuture.completedFuture(null);
             return null;
         } catch (Exception e) {
             Logger.error("Failed to stop mobile recording: " + e.getMessage());
+            this.lastCompilationFuture = CompletableFuture.completedFuture(null);
             return null;
         }
     }
 
     /**
-     * Stops web recording (CDP or Snapshot) and compiles frames to MP4. The deque reference is taken
-     * before stopping the executor/CDP session, and one final screenshot is appended before either is
-     * torn down — both CDP and snapshot recording stop emitting frames the instant the recording flag
-     * clears, which would otherwise leave a gap between the last captured frame and the true end state.
-     * Recording duration is captured here (on the calling thread) since the compile step may run async.
-     * When report attachment is needed the video is compiled synchronously so it's ready to attach;
-     * otherwise compilation is handed off to the background executor so the test isn't blocked, and
-     * this method returns the (not-yet-ready) output path immediately.
+     * Stops web recording (CDP or Snapshot) and compiles frames to MP4 asynchronously.
+     * The deque reference is taken before stopping the executor/CDP session, and one final
+     * screenshot is appended before either is torn down — both CDP and snapshot recording stop
+     * emitting frames the instant the recording flag clears.
+     * Compilation is handed off to the background executor so the test thread and browser driver
+     * are never blocked, allowing driver teardown and test cleanup to overlap with video compilation.
      */
     private String stopWebRecording(String name, File videoFolder) {
         try {
@@ -818,6 +857,7 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
             if (frames.isEmpty()) {
                 Logger.warn("No frames captured during recording");
+                this.lastCompilationFuture = CompletableFuture.completedFuture(null);
                 return null;
             }
 
@@ -827,44 +867,42 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
             String fileName = name + "-" + TestDataGenerator.getTimeStamp() + ".mp4";
             File videoFile = new File(videoFolder, fileName);
 
-            boolean needsAttachment = isAttachmentEnabled();
-            if (needsAttachment) {
-                Logger.info("Compiling video synchronously for report attachment");
-                return compileFramesToMP4(frames, videoFile, durationMs);
-            } else {
-                final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
-                        new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
-                final int frameCount = framesCopy.size();
-                final long capturedDuration = durationMs;
-                activeCompilations.incrementAndGet();
-                try {
-                    videoCompilationExecutor.submit(() -> {
-                        try {
-                            compileFramesToMP4(framesCopy, videoFile, capturedDuration);
+            final java.util.concurrent.ConcurrentLinkedDeque<FrameEntry> framesCopy =
+                    new java.util.concurrent.ConcurrentLinkedDeque<>(frames);
+            final int frameCount = framesCopy.size();
+            final long capturedDuration = durationMs;
+            activeCompilations.incrementAndGet();
+
+            CompletableFuture<File> compilationFuture = new CompletableFuture<>();
+            try {
+                videoCompilationExecutor.submit(() -> {
+                    try {
+                        String compiledPath = compileFramesToMP4(framesCopy, videoFile, capturedDuration);
+                        if (compiledPath != null) {
                             Logger.info("Video compiled asynchronously: " + videoFile.getName() +
                                     " (" + frameCount + " frames)");
-                            // needsAttachment was already false when this task was queued, and that
-                            // decision (isAttachmentEnabled()) is the same check handleVideoAttachment
-                            // makes later — so this file is guaranteed to never be attached. Delete it
-                            // here instead of leaving it for handleVideoAttachment's delete, which would
-                            // otherwise race this still-in-flight compilation and silently no-op.
-                            try { java.nio.file.Files.deleteIfExists(videoFile.toPath()); } catch (Exception ignored) {}
-                        } catch (Exception e) {
-                            Logger.error("Async video compilation failed: " + e.getMessage());
+                            compilationFuture.complete(videoFile);
+                        } else {
+                            compilationFuture.complete(null);
                         }
-                        finally {
-                            activeCompilations.decrementAndGet();
-                        }
-                    });
-                } catch (java.util.concurrent.RejectedExecutionException rex) {
-                    activeCompilations.decrementAndGet();
-                    Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
-                }
-
-                Logger.info("Video compilation started in background (" + frameCount + " frames)");
-
-                return videoFile.getAbsolutePath();
+                    } catch (Exception e) {
+                        Logger.error("Async video compilation failed: " + e.getMessage());
+                        compilationFuture.completeExceptionally(e);
+                    } finally {
+                        activeCompilations.decrementAndGet();
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException rex) {
+                activeCompilations.decrementAndGet();
+                compilationFuture.completeExceptionally(rex);
+                Logger.error("Video compilation rejected (executor shut down): " + rex.getMessage());
             }
+
+            this.lastCompilationFuture = compilationFuture;
+            Logger.info("Video compilation dispatched in background: " + videoFile.getName() +
+                    " (" + frameCount + " frames)");
+
+            return videoFile.getAbsolutePath();
 
         } catch (Exception e) {
             Logger.error("Failed to stop web recording: " + e.getMessage());

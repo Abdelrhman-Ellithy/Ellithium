@@ -263,6 +263,11 @@ public class CucumberListener extends AllureCucumber7Jvm {
             Logger.info(VideoRecordingManager.getDiagnosticInfo());
         }
         scenarioToRecordingId.clear();
+        int active = ScreenRecorderActions.pendingCompilations();
+        if (active > 0) {
+            Logger.info("Awaiting background video compilation (" + active + " videos in progress)...");
+            ScreenRecorderActions.awaitPendingCompilations(60, java.util.concurrent.TimeUnit.SECONDS);
+        }
         try {
             VideoRecordingManager.forceCleanupAll();
             Logger.info(GREEN + "Video recording resources cleaned up after test run completion" + RESET);
