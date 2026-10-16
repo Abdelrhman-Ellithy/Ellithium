@@ -30,4 +30,19 @@ public class VideoRecordingManagerLifecycleTest {
         VideoRecordingManager.forceCleanupAll();
         Assert.assertFalse(VideoRecordingManager.isRecordingActive());
     }
+
+    @Test
+    public void testAwaitPendingCompilationsWhenZero() {
+        Assert.assertEquals(Ellithium.Utilities.interactions.ScreenRecorderActions.pendingCompilations(), 0);
+        boolean completed = Ellithium.Utilities.interactions.ScreenRecorderActions.awaitPendingCompilations(
+                1, java.util.concurrent.TimeUnit.SECONDS);
+        Assert.assertTrue(completed);
+    }
+
+    @Test
+    public void testConfigurationDefaults() {
+        Assert.assertTrue(VideoRecordingManager.isRecordingEnabled());
+        Assert.assertTrue(VideoRecordingManager.isAttachmentEnabled());
+        Assert.assertFalse(VideoRecordingManager.isAttachmentOnFailureOnlyEnabled());
+    }
 }

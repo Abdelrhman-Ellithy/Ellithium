@@ -12,6 +12,7 @@ import io.qameta.allure.model.Status;
 import io.qameta.allure.model.StepResult;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -344,6 +345,49 @@ public class Reporter {
             return java.util.concurrent.CompletableFuture.completedFuture(null);
         }
         return attachFileToReportAsync(new File(filePath), name);
+    }
+
+    /**
+     * Asynchronously attaches a video file to the Allure report when its compilation completes.
+     * Registers a lazy InputStream stream stage with Allure that resolves upon video compilation completion.
+     *
+     * @param fileFuture CompletableFuture resolving to the compiled video File
+     * @param fallbackPath fallback file path string if fileFuture is null
+     * @param name Name of the attachment in the report
+     * @return CompletableFuture that completes when the file is attached in Allure
+     */
+    public static java.util.concurrent.CompletableFuture<Void> attachVideoToReportAsync(
+            java.util.concurrent.CompletableFuture<File> fileFuture, String fallbackPath, String name) {
+        if (fileFuture == null) {
+            if (fallbackPath != null && !fallbackPath.isBlank()) {
+                return attachFileToReportAsync(new File(fallbackPath), name);
+            }
+            log("Video attachment skipped: compilation future and fallback path are null.", LogLevel.WARN);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+        try {
+            flushPendingStep();
+            String attachmentName = (name != null && !name.isBlank()) ? name : "test_recording";
+            String mimeType = "video/mp4";
+            String extension = ".mp4";
+
+            java.util.concurrent.CompletableFuture<FileInputStream> streamFuture = fileFuture.thenApply(file -> {
+                if (file == null || !file.exists()) {
+                    throw new java.util.concurrent.CompletionException(
+                            new FileNotFoundException("Video file was not created or compilation failed: " + file));
+                }
+                try {
+                    return new FileInputStream(file);
+                } catch (IOException e) {
+                    throw new java.util.concurrent.CompletionException(e);
+                }
+            });
+
+            return Allure.attachmentAsync(attachmentName, mimeType, streamFuture, AttachmentOptions.withFileExtension(extension));
+        } catch (Exception e) {
+            Logger.logException(e);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
     }
 
     /**

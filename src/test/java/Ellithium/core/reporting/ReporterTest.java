@@ -100,6 +100,21 @@ public class ReporterTest {
         Assert.assertNotNull(fut3);
         fut3.join();
 
+        // Async video attachments
+        java.util.concurrent.CompletableFuture<java.io.File> videoFuture =
+                java.util.concurrent.CompletableFuture.completedFuture(tempFile);
+        java.util.concurrent.CompletableFuture<Void> vidFut1 = Reporter.attachVideoToReportAsync(videoFuture, null, "Async Video");
+        Assert.assertNotNull(vidFut1);
+        vidFut1.join();
+
+        java.util.concurrent.CompletableFuture<Void> vidFut2 = Reporter.attachVideoToReportAsync(null, tempFile.getAbsolutePath(), "Fallback Video");
+        Assert.assertNotNull(vidFut2);
+        vidFut2.join();
+
+        java.util.concurrent.CompletableFuture<Void> vidFutNull = Reporter.attachVideoToReportAsync(null, null, "Null Video");
+        Assert.assertNotNull(vidFutNull);
+        vidFutNull.join();
+
         // Screenshot attachments
         java.io.File tempPng = java.io.File.createTempFile("reporter_shot_", ".png");
         tempPng.deleteOnExit();

@@ -253,8 +253,13 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         int active = ScreenRecorderActions.pendingCompilations();
         try {
             if (active > 0) {
-                Logger.info("Background video compilation in progress (" + active + " videos)");
-                Logger.info("Videos will finish compiling before process exits");
+                Logger.info("Awaiting background video compilation (" + active + " videos in progress)...");
+                boolean drained = ScreenRecorderActions.awaitPendingCompilations(60, java.util.concurrent.TimeUnit.SECONDS);
+                if (drained) {
+                    Logger.info("All videos compiled");
+                } else {
+                    Logger.warn("Some background video compilations did not finish before timeout");
+                }
             } else {
                 Logger.info("All videos compiled");
             }
