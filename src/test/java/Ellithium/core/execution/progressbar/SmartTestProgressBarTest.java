@@ -56,21 +56,30 @@ public class SmartTestProgressBarTest {
         );
 
         // Unicode + ANSI
-        String unicodeLine = ProgressBarRenderer.renderLine(s, 20, true, true);
+        String unicodeLine = ProgressBarRenderer.renderLine(s, 120, true, true);
         Assert.assertTrue(unicodeLine.contains("Ellithium"));
         Assert.assertTrue(unicodeLine.contains("50.0%"));
         Assert.assertTrue(unicodeLine.contains("40"));
         Assert.assertTrue(unicodeLine.contains("80"));
         Assert.assertTrue(unicodeLine.contains("38"));
 
-        // ASCII plain text
-        String asciiLine = ProgressBarRenderer.renderLine(s, 20, false, false);
-        Assert.assertTrue(asciiLine.contains("[Ellithium]"));
-        Assert.assertTrue(asciiLine.contains("50.0%"));
-        Assert.assertTrue(asciiLine.contains("[40/80]"));
-        Assert.assertTrue(asciiLine.contains("P:38"));
-        Assert.assertTrue(asciiLine.contains("F:1"));
-        Assert.assertTrue(asciiLine.contains("S:1"));
+        // ASCII plain text (wide terminal >= 120 cols gets verbose badges)
+        String asciiLineWide = ProgressBarRenderer.renderLine(s, 140, false, false);
+        Assert.assertTrue(asciiLineWide.contains("[Ellithium]"));
+        Assert.assertTrue(asciiLineWide.contains("50.0%"));
+        Assert.assertTrue(asciiLineWide.contains("[40/80]"));
+        Assert.assertTrue(asciiLineWide.contains("PASSED: 38"));
+        Assert.assertTrue(asciiLineWide.contains("FAILED: 1"));
+        Assert.assertTrue(asciiLineWide.contains("SKIPPED: 1"));
+
+        // ASCII plain text (compact terminal < 100 cols gets compact badges)
+        String asciiLineCompact = ProgressBarRenderer.renderLine(s, 80, false, false);
+        Assert.assertTrue(asciiLineCompact.contains("[Ellithium]"));
+        Assert.assertTrue(asciiLineCompact.contains("50.0%"));
+        Assert.assertTrue(asciiLineCompact.contains("[40/80]"));
+        Assert.assertTrue(asciiLineCompact.contains("P:38"));
+        Assert.assertTrue(asciiLineCompact.contains("F:1"));
+        Assert.assertTrue(asciiLineCompact.contains("S:1"));
     }
 
     @Test
@@ -80,9 +89,9 @@ public class SmartTestProgressBarTest {
         );
         String title = ProgressBarRenderer.renderWindowTitle(s);
         Assert.assertTrue(title.contains("Ellithium [50%] 25/50"));
-        Assert.assertTrue(title.contains("23✔"));
-        Assert.assertTrue(title.contains("1✖"));
-        Assert.assertTrue(title.contains("1↷"));
+        Assert.assertTrue(title.contains("23 PASS"));
+        Assert.assertTrue(title.contains("1 FAIL"));
+        Assert.assertTrue(title.contains("1 SKIP"));
     }
 
     @Test
@@ -183,6 +192,17 @@ public class SmartTestProgressBarTest {
     }
 
     @Test
+    public void testProgressBarRenderer_LineNeverExceedsTerminalWidth() {
+        ProgressBarRenderer.Snapshot s = new ProgressBarRenderer.Snapshot(
+                100, 50, 48, 1, 1, 10_000L, "com.company.project.very.long.package.name.and.long.test.method.name.that.might.overflow.screen"
+        );
+        int terminalWidth = 80;
+        String line = ProgressBarRenderer.renderLine(s, terminalWidth, false, false);
+        int visibleLen = ProgressBarRenderer.getVisibleLength(line);
+        Assert.assertTrue(visibleLen <= terminalWidth, "Rendered line visible length (" + visibleLen + ") must not exceed terminal width (" + terminalWidth + ")");
+    }
+
+    @Test
     public void testTerminalCapabilities_SafeOperations() {
         // Assert that calling setConsoleWindowTitle with null or text does not throw
         TerminalCapabilities.setConsoleWindowTitle(null);
@@ -194,7 +214,9 @@ public class SmartTestProgressBarTest {
         boolean unicode = TerminalCapabilities.supportsUnicode();
         boolean ci = TerminalCapabilities.isCiEnvironment();
         boolean interactive = TerminalCapabilities.isInteractive();
+        int width = TerminalCapabilities.getTerminalWidth();
 
+        Assert.assertTrue(width >= 40 && width <= 500, "Detected terminal width should be within valid bounds");
         Assert.assertTrue(ansi || !ansi);
         Assert.assertTrue(unicode || !unicode);
         Assert.assertTrue(ci || !ci);

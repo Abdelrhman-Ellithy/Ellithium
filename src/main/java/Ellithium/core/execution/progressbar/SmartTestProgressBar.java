@@ -112,7 +112,7 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
     public void onExecutionStarted(TestLifecycleEvent.ExecutionStarted event) {
         reset();
         startTimeMs = event.timestamp();
-        render(true);
+        TerminalCapabilities.setConsoleWindowTitle("Ellithium [0%] Starting Test Suite...");
     }
 
     @Override
@@ -131,7 +131,12 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         if (name != null) {
             activeTests.put(tid, name);
         }
-        render(false);
+        if (ProgressBarConfig.isInPlaceMode()) {
+            render(false);
+        } else {
+            // Update OS console window title without polluting stdout logs
+            TerminalCapabilities.setConsoleWindowTitle(ProgressBarRenderer.renderWindowTitle(getSnapshot()));
+        }
     }
 
     @Override
@@ -193,7 +198,7 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         ProgressBarRenderer.Snapshot snapshot = getSnapshot();
         boolean unicode = ProgressBarConfig.isUnicodeEnabled();
         boolean ansi = TerminalCapabilities.supportsAnsi();
-        int width = ProgressBarConfig.getBarWidth();
+        int terminalWidth = TerminalCapabilities.getTerminalWidth();
 
         // 1. Update OS Console Window Title
         String windowTitle = ProgressBarRenderer.renderWindowTitle(snapshot);
@@ -201,21 +206,26 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
 
         // 2. Render to Terminal
         boolean ciMode = ProgressBarConfig.isCiMode();
-        boolean interactive = TerminalCapabilities.isInteractive() && !ciMode;
+        boolean inPlace = ProgressBarConfig.isInPlaceMode() && TerminalCapabilities.isInteractive() && !ciMode;
 
-        if (interactive) {
-            String line = ProgressBarRenderer.renderLine(snapshot, width, unicode, ansi);
+        if (inPlace) {
+            String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, ansi);
             outStream.print("\r" + ProgressBarRenderer.CLEAR_LINE + line);
             outStream.flush();
-        } else {
+        } else if (ciMode) {
             // In CI or non-interactive stdout: emit milestones to keep logs clean
             int currentPercent = (int) Math.floor(snapshot.getPercentage() / 10.0) * 10;
             if (force || currentPercent > lastMilestonePercent) {
                 lastMilestonePercent = currentPercent;
-                String line = ProgressBarRenderer.renderLine(snapshot, width, unicode, false);
+                String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, false);
                 outStream.println(line);
                 outStream.flush();
             }
+        } else {
+            // Standard LINE mode: print clean, non-interleaved progress line on test completion or suite milestone
+            String line = ProgressBarRenderer.renderLine(snapshot, terminalWidth, unicode, ansi);
+            outStream.println(line);
+            outStream.flush();
         }
     }
 
@@ -231,9 +241,10 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         boolean unicode = ProgressBarConfig.isUnicodeEnabled();
         boolean ansi = TerminalCapabilities.supportsAnsi();
 
-        // If interactive, clear the in-place line before printing summary
-        boolean interactive = TerminalCapabilities.isInteractive() && !ProgressBarConfig.isCiMode();
-        if (interactive) {
+        // If in-place mode was used, clear the in-place line before printing summary
+        boolean ciMode = ProgressBarConfig.isCiMode();
+        boolean inPlace = ProgressBarConfig.isInPlaceMode() && TerminalCapabilities.isInteractive() && !ciMode;
+        if (inPlace) {
             outStream.print("\r" + ProgressBarRenderer.CLEAR_LINE);
             outStream.flush();
         }

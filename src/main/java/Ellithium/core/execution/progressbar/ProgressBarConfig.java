@@ -15,8 +15,8 @@ public final class ProgressBarConfig {
     public static final String KEY_THROTTLE_MS = "ellithium.progressbar.throttleMs";
     public static final String KEY_UNICODE = "ellithium.progressbar.unicode";
     public static final String KEY_CI_MODE = "ellithium.progressbar.ciMode";
+    public static final String KEY_MODE = "ellithium.progressbar.mode";
 
-    private static final int DEFAULT_WIDTH = 28;
     private static final long DEFAULT_THROTTLE_MS = 50L;
 
     private ProgressBarConfig() {}
@@ -54,17 +54,21 @@ public final class ProgressBarConfig {
     }
 
     /**
-     * Gets the width (in character blocks) of the visual progress bar.
+     * Checks if in-place carriage return mode is requested.
+     * Defaults to false (LINE mode) to ensure 100% compatibility with Log4j, Surefire, and CI logs.
      */
-    public static int getBarWidth() {
-        String sys = System.getProperty(KEY_BAR_WIDTH);
+    public static boolean isInPlaceMode() {
+        String sys = System.getProperty(KEY_MODE);
         if (sys != null && !sys.isBlank()) {
-            try {
-                int w = Integer.parseInt(sys.trim());
-                if (w >= 10 && w <= 100) return w;
-            } catch (NumberFormatException ignored) {}
+            String val = sys.trim();
+            return "in_place".equalsIgnoreCase(val) || "in-place".equalsIgnoreCase(val);
         }
-        return DEFAULT_WIDTH;
+        String configPath = ConfigContext.getConfigFilePath();
+        if (configPath != null && PropertyHelper.keyExists(configPath, KEY_MODE)) {
+            String val = PropertyHelper.getDataFromProperties(configPath, KEY_MODE).trim();
+            return "in_place".equalsIgnoreCase(val) || "in-place".equalsIgnoreCase(val);
+        }
+        return false;
     }
 
     /**

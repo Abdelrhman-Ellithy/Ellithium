@@ -1,36 +1,38 @@
 package Ellithium.core.execution.progressbar;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
- * High-performance, ANSI/Unicode renderer for the Ellithium test execution progress bar,
+ * Dynamic, responsive ANSI/Unicode renderer for the Ellithium test execution progress bar,
  * status line, executive completion banner, and OS console window titles.
+ *
+ * <p>Dynamically adapts to the current terminal window column size and guarantees
+ * zero character corruption ('?' glyph degradation) on non-UTF-8 console code pages.
  */
 public final class ProgressBarRenderer {
 
     // ANSI Color Sequences
     public static final String RESET = "\u001B[0m";
     public static final String BOLD = "\u001B[1m";
-    public static final String DIM = "\u001B[2m";
     public static final String RED = "\u001B[91m";
     public static final String GREEN = "\u001B[92m";
     public static final String YELLOW = "\u001B[93m";
-    public static final String BLUE = "\u001B[94m";
-    public static final String MAGENTA = "\u001B[95m";
     public static final String CYAN = "\u001B[96m";
     public static final String WHITE_BOLD = "\u001B[1;97m";
     public static final String GRAY = "\u001B[90m";
     public static final String CLEAR_LINE = "\u001B[2K\r";
 
-    // Unicode block characters for fractional high-resolution rendering
-    private static final char UNICODE_FULL_BLOCK = '█';
-    private static final char UNICODE_EMPTY_BLOCK = '░';
-    private static final char[] UNICODE_FRACTIONS = { ' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉' };
+    private static final Pattern ANSI_STRIPPER = Pattern.compile("\\u001B\\[[;\\d]*m");
 
-    // ASCII Fallbacks
-    private static final char ASCII_FULL_BLOCK = '=';
-    private static final char ASCII_HEAD_BLOCK = '>';
-    private static final char ASCII_EMPTY_BLOCK = '-';
+    // Universal block characters (present in IBM CP437, CP850, and UTF-8)
+    private static final char BLOCK_FULL = '█';
+    private static final char BLOCK_EMPTY = '░';
+
+    // ASCII fallback characters
+    private static final char ASCII_FULL = '=';
+    private static final char ASCII_HEAD = '>';
+    private static final char ASCII_EMPTY = '-';
 
     private ProgressBarRenderer() {}
 
@@ -65,72 +67,140 @@ public final class ProgressBarRenderer {
     }
 
     /**
-     * Renders the complete, real-time terminal progress line.
+     * Renders the complete, real-time terminal progress line dynamically scaled to terminal width.
+     *
+     * @param s             snapshot state
+     * @param terminalWidth current columns width of terminal window
+     * @param unicode       whether block characters are supported
+     * @param ansi          whether ANSI colors are supported
+     * @return formatted single-line progress string
      */
-    public static String renderLine(Snapshot s, int width, boolean unicode, boolean ansi) {
+    public static String renderLine(Snapshot s, int terminalWidth, boolean unicode, boolean ansi) {
+        int width = Math.max(40, terminalWidth);
         StringBuilder sb = new StringBuilder(256);
 
-        if (ansi) {
-            sb.append(CYAN).append(BOLD).append("Ellithium").append(RESET).append(" ");
-        } else {
-            sb.append("[Ellithium] ");
+        // 1. Prefix: "[Ellithium] " (Omitted only on extremely narrow consoles < 60 cols)
+        if (width >= 60) {
+            if (ansi) {
+                sb.append(CYAN).append(BOLD).append("[Ellithium]").append(RESET).append(" ");
+            } else {
+                sb.append("[Ellithium] ");
+            }
         }
 
-        // 1. Visual Progress Bar
-        renderBar(sb, s.getPercentage(), width, unicode, ansi);
+        // 2. Dynamic column allocation based on terminal width
+        int barLength;
+        boolean verboseBadges;
+        boolean showEta;
+        boolean showRate;
 
-        // 2. Percentage
+        if (width < 75) {
+            barLength = 8;
+            verboseBadges = false;
+            showEta = false;
+            showRate = false;
+        } else if (width < 95) {
+            barLength = 10;
+            verboseBadges = false;
+            showEta = false;
+            showRate = false;
+        } else if (width < 115) {
+            barLength = 14;
+            verboseBadges = false;
+            showEta = true;
+            showRate = false;
+        } else if (width < 140) {
+            barLength = 18;
+            verboseBadges = true;
+            showEta = true;
+            showRate = true;
+        } else {
+            barLength = 24;
+            verboseBadges = true;
+            showEta = true;
+            showRate = true;
+        }
+
+        // 3. Visual Progress Bar
+        renderBar(sb, s.getPercentage(), barLength, unicode, ansi);
+
+        // 4. Percentage: " 50.0% "
         if (ansi) {
             sb.append(String.format(Locale.US, " %s%5.1f%%%s ", WHITE_BOLD, s.getPercentage(), RESET));
         } else {
             sb.append(String.format(Locale.US, " %5.1f%% ", s.getPercentage()));
         }
 
-        // 3. Counts [completed/total]
+        // 5. Counts: "[completed/total]"
+        String totalStr = s.totalExpected() > 0 ? String.valueOf(s.totalExpected()) : "?";
         if (ansi) {
             sb.append(GRAY).append("[").append(RESET);
             sb.append(BOLD).append(s.completed()).append(RESET);
-            sb.append(GRAY).append("/").append(s.totalExpected() > 0 ? s.totalExpected() : "?").append("]").append(RESET);
+            sb.append(GRAY).append("/").append(totalStr).append("]").append(RESET);
         } else {
-            sb.append("[").append(s.completed()).append("/").append(s.totalExpected() > 0 ? s.totalExpected() : "?").append("]");
+            sb.append("[").append(s.completed()).append("/").append(totalStr).append("]");
         }
 
-        // 4. Badges (Passed, Failed, Skipped)
+        // 6. Status Badges: Universal safe labels (Zero '?' character degradation)
         sb.append(" | ");
-        if (ansi) {
-            sb.append(GREEN).append(unicode ? "✔ " : "P:").append(s.passed()).append(RESET).append(" ");
-            if (s.failed() > 0) {
-                sb.append(RED).append(unicode ? "✖ " : "F:").append(s.failed()).append(RESET).append(" ");
-            }
-            if (s.skipped() > 0) {
-                sb.append(YELLOW).append(unicode ? "↷ " : "S:").append(s.skipped()).append(RESET).append(" ");
+        if (verboseBadges) {
+            if (ansi) {
+                sb.append(GREEN).append("PASSED: ").append(s.passed()).append(RESET);
+                if (s.failed() > 0) {
+                    sb.append(" ").append(RED).append("FAILED: ").append(s.failed()).append(RESET);
+                }
+                if (s.skipped() > 0) {
+                    sb.append(" ").append(YELLOW).append("SKIPPED: ").append(s.skipped()).append(RESET);
+                }
+            } else {
+                sb.append("PASSED: ").append(s.passed());
+                if (s.failed() > 0) sb.append(" FAILED: ").append(s.failed());
+                if (s.skipped() > 0) sb.append(" SKIPPED: ").append(s.skipped());
             }
         } else {
-            sb.append("P:").append(s.passed()).append(" ");
-            if (s.failed() > 0) sb.append("F:").append(s.failed()).append(" ");
-            if (s.skipped() > 0) sb.append("S:").append(s.skipped()).append(" ");
+            // Compact safe badges (P:X, F:Y, S:Z - pure ASCII, zero '?')
+            if (ansi) {
+                sb.append(GREEN).append("P:").append(s.passed()).append(RESET);
+                if (s.failed() > 0) {
+                    sb.append(" ").append(RED).append("F:").append(s.failed()).append(RESET);
+                }
+                if (s.skipped() > 0) {
+                    sb.append(" ").append(YELLOW).append("S:").append(s.skipped()).append(RESET);
+                }
+            } else {
+                sb.append("P:").append(s.passed());
+                if (s.failed() > 0) sb.append(" F:").append(s.failed());
+                if (s.skipped() > 0) sb.append(" S:").append(s.skipped());
+            }
         }
 
-        // 5. Elapsed & ETA
-        sb.append("| ");
-        sb.append(formatDuration(s.elapsedMs()));
-        long eta = s.getEtaMs();
-        if (eta > 0) {
-            sb.append(ansi ? GRAY : "").append(" (ETA ").append(formatDuration(eta)).append(")").append(ansi ? RESET : "");
+        // 7. Elapsed & ETA
+        sb.append(" | ").append(formatDuration(s.elapsedMs()));
+        if (showEta) {
+            long eta = s.getEtaMs();
+            if (eta > 0) {
+                sb.append(ansi ? GRAY : "").append(" (ETA ").append(formatDuration(eta)).append(")").append(ansi ? RESET : "");
+            }
         }
 
-        // 6. Throughput rate
-        double rate = s.getRate();
-        if (rate > 0.05) {
-            sb.append(String.format(Locale.US, " | %.1f t/s", rate));
+        // 8. Throughput rate
+        if (showRate) {
+            double rate = s.getRate();
+            if (rate > 0.05) {
+                sb.append(String.format(Locale.US, " | %.1f t/s", rate));
+            }
         }
 
-        // 7. Active running test
+        // 9. Dynamic active test name (truncated responsively to fit terminal window without wrapping)
         if (s.activeTest() != null && !s.activeTest().isBlank()) {
-            sb.append(" | ");
-            if (ansi) sb.append(YELLOW);
-            sb.append(truncate(s.activeTest(), 30));
-            if (ansi) sb.append(RESET);
+            int visibleSoFar = getVisibleLength(sb.toString());
+            int remainingSpace = width - visibleSoFar - 3; // leave buffer to prevent overflow
+            if (remainingSpace >= 12) {
+                sb.append(" | ");
+                if (ansi) sb.append(YELLOW);
+                sb.append(truncate(s.activeTest(), remainingSpace - 3));
+                if (ansi) sb.append(RESET);
+            }
         }
 
         return sb.toString();
@@ -143,44 +213,31 @@ public final class ProgressBarRenderer {
         sb.append(ansi ? GRAY : "").append("[").append(ansi ? RESET : "");
 
         double fillRatio = Math.max(0.0, Math.min(1.0, percentage / 100.0));
-        double exactBlocks = fillRatio * width;
-        int fullBlocks = (int) Math.floor(exactBlocks);
-        double remainder = exactBlocks - fullBlocks;
+        int fullBlocks = (int) Math.round(fillRatio * width);
 
         if (ansi) {
-            if (percentage >= 100.0) {
-                sb.append(GREEN);
-            } else {
-                sb.append(CYAN);
-            }
+            sb.append(percentage >= 100.0 ? GREEN : CYAN);
         }
 
         if (unicode) {
             for (int i = 0; i < fullBlocks; i++) {
-                sb.append(UNICODE_FULL_BLOCK);
-            }
-            if (fullBlocks < width) {
-                int fracIndex = (int) Math.round(remainder * (UNICODE_FRACTIONS.length - 1));
-                if (fracIndex > 0) {
-                    sb.append(UNICODE_FRACTIONS[fracIndex]);
-                    fullBlocks++;
-                }
+                sb.append(BLOCK_FULL);
             }
             if (ansi) sb.append(GRAY);
             for (int i = fullBlocks; i < width; i++) {
-                sb.append(UNICODE_EMPTY_BLOCK);
+                sb.append(BLOCK_EMPTY);
             }
         } else {
             for (int i = 0; i < fullBlocks; i++) {
-                sb.append(ASCII_FULL_BLOCK);
+                sb.append(ASCII_FULL);
             }
-            if (fullBlocks < width) {
-                sb.append(ASCII_HEAD_BLOCK);
-                fullBlocks++;
+            if (fullBlocks < width && fullBlocks > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+                sb.append(ASCII_HEAD);
             }
             if (ansi) sb.append(GRAY);
             for (int i = fullBlocks; i < width; i++) {
-                sb.append(ASCII_EMPTY_BLOCK);
+                sb.append(ASCII_EMPTY);
             }
         }
 
@@ -190,16 +247,17 @@ public final class ProgressBarRenderer {
     }
 
     /**
-     * Formats concise, clean text for updating the OS console window or tab title.
+     * Formats safe, clean text for updating the OS console window or tab title.
+     * Free of non-ASCII symbols so it never degrades to '?' on Windows.
      */
     public static String renderWindowTitle(Snapshot s) {
         StringBuilder sb = new StringBuilder(64);
         sb.append(String.format(Locale.US, "Ellithium [%.0f%%] %d/%s",
                 s.getPercentage(), s.completed(), (s.totalExpected() > 0 ? String.valueOf(s.totalExpected()) : "?")));
 
-        sb.append(" (").append(s.passed()).append("✔");
-        if (s.failed() > 0) sb.append(" ").append(s.failed()).append("✖");
-        if (s.skipped() > 0) sb.append(" ").append(s.skipped()).append("↷");
+        sb.append(" (").append(s.passed()).append(" PASS");
+        if (s.failed() > 0) sb.append(" ").append(s.failed()).append(" FAIL");
+        if (s.skipped() > 0) sb.append(" ").append(s.skipped()).append(" SKIP");
         sb.append(")");
 
         long eta = s.getEtaMs();
@@ -213,10 +271,7 @@ public final class ProgressBarRenderer {
      * Formats the final executive completion banner.
      */
     public static String renderFinalSummary(Snapshot s, boolean unicode, boolean ansi) {
-        String bar = unicode ? "═══════════════════════════════════════════════════════════════════════"
-                : "=======================================================================";
-        String check = unicode ? "✔ " : "[PASS] ";
-        String cross = unicode ? "✖ " : "[FAIL] ";
+        String bar = "=======================================================================";
 
         StringBuilder sb = new StringBuilder(512);
         if (ansi) sb.append(CYAN);
@@ -225,10 +280,10 @@ public final class ProgressBarRenderer {
 
         if (s.failed() == 0) {
             if (ansi) sb.append(GREEN).append(BOLD);
-            sb.append("[Ellithium] ").append(check).append("SUITE COMPLETED SUCCESSFULLY: ");
+            sb.append("[Ellithium] [PASS] SUITE COMPLETED SUCCESSFULLY: ");
         } else {
             if (ansi) sb.append(RED).append(BOLD);
-            sb.append("[Ellithium] ").append(cross).append("SUITE COMPLETED WITH FAILURES: ");
+            sb.append("[Ellithium] [FAIL] SUITE COMPLETED WITH FAILURES: ");
         }
         sb.append(s.completed()).append("/").append(s.totalExpected() > 0 ? s.totalExpected() : s.completed())
                 .append(String.format(Locale.US, " tests executed (%.1f%%) in %s (%.1f tests/sec)\n",
@@ -277,11 +332,20 @@ public final class ProgressBarRenderer {
     }
 
     /**
+     * Calculates visible character length after stripping ANSI color codes.
+     */
+    public static int getVisibleLength(String text) {
+        if (text == null) return 0;
+        return ANSI_STRIPPER.matcher(text).replaceAll("").length();
+    }
+
+    /**
      * Truncates long strings with ellipsis.
      */
-    private static String truncate(String text, int maxLength) {
+    public static String truncate(String text, int maxLength) {
         if (text == null) return "";
         if (text.length() <= maxLength) return text;
+        if (maxLength <= 3) return text.substring(0, Math.max(0, maxLength));
         return text.substring(0, maxLength - 3) + "...";
     }
 }
