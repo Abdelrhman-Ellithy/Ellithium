@@ -42,12 +42,12 @@ public class NotificationSender {
      */
     public boolean sendEmail(String subject, String body, boolean isHtml) {
         if (!config.isEmailEnabled()) {
-            Reporter.log("Email notifications are disabled", LogLevel.INFO_BLUE);
+            Reporter.log("Email notifications are disabled", LogLevel.DEBUG);
             return false;
         }
 
         if (!config.validateEmailConfiguration()) {
-            Reporter.log("Email notification cancelled due to incomplete configuration", LogLevel.ERROR);
+            Reporter.log("Email notification skipped due to incomplete configuration", LogLevel.DEBUG);
             return false;
         }
 
@@ -251,7 +251,7 @@ public class NotificationSender {
      */
     public boolean sendSlackMessage(String message) {
         if (!config.isSlackEnabled()) {
-            Reporter.log("Slack notifications are disabled", LogLevel.INFO_BLUE);
+            Reporter.log("Slack notifications are disabled", LogLevel.DEBUG);
             return false;
         }
 

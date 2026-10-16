@@ -76,7 +76,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             skippedTestsExecuted.set(0);
             allFailedResults.clear();
             executedTests.clear();
-            Reporter.log("Test result collection system initialized", LogLevel.INFO_BLUE);
+            Reporter.log("Test result collection system initialized", LogLevel.DEBUG);
         } catch (Exception e) {
             Reporter.log("Failed to initialize test result collection: " + e.getMessage(), LogLevel.ERROR);
         }
@@ -135,7 +135,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
 
             Reporter.log("Collected TestNG test results from context: " + context.getName() +
                     " (TestNG Tests: " + testngTests + ", Passed: " + testngPassed +
-                    ", Failed: " + testngFailed + ", Skipped: " + testngSkipped + ")", LogLevel.INFO_BLUE);
+                    ", Failed: " + testngFailed + ", Skipped: " + testngSkipped + ")", LogLevel.DEBUG);
         } catch (Exception e) {
             Reporter.log("Failed to collect test results from context: " + context.getName() + " - " + e.getMessage(),
                     LogLevel.ERROR);
@@ -192,11 +192,11 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             ensureNotificationSystemInitialized();
 
             if (config == null || !config.isNotificationEnabled()) {
-                Reporter.log("Notifications are disabled. Skipping notification sending.", LogLevel.INFO_BLUE);
+                Reporter.log("Notifications are disabled. Skipping notification sending.", LogLevel.DEBUG);
                 return false;
             }
             if (totalTestsExecuted.get() == 0) {
-                Reporter.log("No tests executed. Skipping notification sending.", LogLevel.INFO_BLUE);
+                Reporter.log("No tests executed. Skipping notification sending.", LogLevel.DEBUG);
                 return false;
             }
 
@@ -218,7 +218,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             }
             if (!shouldSendNotification) {
                 Reporter.log("No notification criteria met. Skipping execution completion notification.",
-                        LogLevel.INFO_BLUE);
+                        LogLevel.DEBUG);
                 return false;
             }
 
@@ -242,7 +242,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             if (notificationsSent) {
                 Reporter.log("Execution completion notifications sent successfully", LogLevel.INFO_GREEN);
             } else {
-                Reporter.log("Failed to send execution completion notifications", LogLevel.ERROR);
+                Reporter.log("No execution completion notifications were sent (channels unconfigured or skipped)", LogLevel.DEBUG);
             }
             return notificationsSent;
 

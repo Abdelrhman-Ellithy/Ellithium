@@ -34,7 +34,37 @@ public final class ProgressBarRenderer {
     private static final char ASCII_HEAD = '>';
     private static final char ASCII_EMPTY = '-';
 
+    private static final java.time.format.DateTimeFormatter TIMESTAMP_FORMATTER =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private ProgressBarRenderer() {}
+
+    /**
+     * Formats standard Log4j-aligned prefix: "yyyy-MM-dd HH:mm:ss INFO  [Ellithium] - "
+     */
+    public static String formatLogPrefix(boolean ansi, int width) {
+        String ts = java.time.LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+        if (width >= 90) {
+            if (ansi) {
+                return GRAY + ts + RESET + " " + CYAN + BOLD + "INFO " + RESET + " " + CYAN + "[Ellithium]" + RESET + " - ";
+            } else {
+                return ts + " INFO  [Ellithium] - ";
+            }
+        } else if (width >= 65) {
+            String shortTs = ts.substring(11);
+            if (ansi) {
+                return GRAY + shortTs + RESET + " " + CYAN + BOLD + "INFO " + RESET + " " + CYAN + "[Ellithium]" + RESET + " - ";
+            } else {
+                return shortTs + " INFO  [Ellithium] - ";
+            }
+        } else {
+            if (ansi) {
+                return CYAN + BOLD + "[Ellithium]" + RESET + " - ";
+            } else {
+                return "[Ellithium] - ";
+            }
+        }
+    }
 
     /**
      * Snapshot record capturing an atomic point-in-time view of test execution progress.
@@ -79,14 +109,8 @@ public final class ProgressBarRenderer {
         int width = Math.max(40, terminalWidth);
         StringBuilder sb = new StringBuilder(256);
 
-        // 1. Prefix: "[Ellithium] " (Omitted only on extremely narrow consoles < 60 cols)
-        if (width >= 60) {
-            if (ansi) {
-                sb.append(CYAN).append(BOLD).append("[Ellithium]").append(RESET).append(" ");
-            } else {
-                sb.append("[Ellithium] ");
-            }
-        }
+        // 1. Prefix: Standard Log4j-aligned timestamp and category header
+        sb.append(formatLogPrefix(ansi, width));
 
         // 2. Dynamic column allocation based on terminal width
         int barLength;
@@ -94,28 +118,28 @@ public final class ProgressBarRenderer {
         boolean showEta;
         boolean showRate;
 
-        if (width < 75) {
+        if (width < 85) {
             barLength = 8;
             verboseBadges = false;
             showEta = false;
             showRate = false;
-        } else if (width < 95) {
+        } else if (width < 105) {
             barLength = 10;
             verboseBadges = false;
             showEta = false;
             showRate = false;
-        } else if (width < 115) {
-            barLength = 14;
+        } else if (width < 125) {
+            barLength = 12;
             verboseBadges = false;
             showEta = true;
             showRate = false;
-        } else if (width < 140) {
-            barLength = 18;
+        } else if (width < 145) {
+            barLength = 16;
             verboseBadges = true;
             showEta = true;
             showRate = true;
         } else {
-            barLength = 24;
+            barLength = 22;
             verboseBadges = true;
             showEta = true;
             showRate = true;
@@ -203,7 +227,11 @@ public final class ProgressBarRenderer {
             }
         }
 
-        return sb.toString();
+        String result = sb.toString();
+        if (getVisibleLength(result) > width) {
+            result = truncate(result, width);
+        }
+        return result;
     }
 
     /**
@@ -272,25 +300,26 @@ public final class ProgressBarRenderer {
      */
     public static String renderFinalSummary(Snapshot s, boolean unicode, boolean ansi) {
         String bar = "=======================================================================";
+        String prefix = formatLogPrefix(ansi, 100);
 
         StringBuilder sb = new StringBuilder(512);
         if (ansi) sb.append(CYAN);
-        sb.append("[Ellithium] ").append(bar).append("\n");
+        sb.append(prefix).append(bar).append("\n");
         if (ansi) sb.append(RESET);
 
         if (s.failed() == 0) {
             if (ansi) sb.append(GREEN).append(BOLD);
-            sb.append("[Ellithium] [PASS] SUITE COMPLETED SUCCESSFULLY: ");
+            sb.append(prefix).append("[PASS] SUITE COMPLETED SUCCESSFULLY: ");
         } else {
             if (ansi) sb.append(RED).append(BOLD);
-            sb.append("[Ellithium] [FAIL] SUITE COMPLETED WITH FAILURES: ");
+            sb.append(prefix).append("[FAIL] SUITE COMPLETED WITH FAILURES: ");
         }
         sb.append(s.completed()).append("/").append(s.totalExpected() > 0 ? s.totalExpected() : s.completed())
                 .append(String.format(Locale.US, " tests executed (%.1f%%) in %s (%.1f tests/sec)\n",
                         s.getPercentage(), formatDuration(s.elapsedMs()), s.getRate()));
         if (ansi) sb.append(RESET);
 
-        sb.append("[Ellithium] Results: ");
+        sb.append(prefix).append("Results: ");
         if (ansi) sb.append(GREEN).append(BOLD);
         sb.append(s.passed()).append(" Passed").append(ansi ? RESET : "").append(" | ");
         if (s.failed() > 0) {
@@ -306,7 +335,7 @@ public final class ProgressBarRenderer {
         sb.append("\n");
 
         if (ansi) sb.append(CYAN);
-        sb.append("[Ellithium] ").append(bar);
+        sb.append(prefix).append(bar);
         if (ansi) sb.append(RESET);
 
         return sb.toString();
