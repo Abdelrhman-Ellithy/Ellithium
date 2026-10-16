@@ -103,14 +103,15 @@ public class SmartTestProgressBarTest {
         String summarySuccess = ProgressBarRenderer.renderFinalSummary(sSuccess, true, false);
         Assert.assertTrue(summarySuccess.contains("SUITE COMPLETED SUCCESSFULLY"));
         Assert.assertTrue(summarySuccess.contains("20/20"));
-        Assert.assertTrue(summarySuccess.contains("20 Passed"));
+        Assert.assertFalse(summarySuccess.contains("Results:"));
 
         ProgressBarRenderer.Snapshot sFailure = new ProgressBarRenderer.Snapshot(
-                20, 20, 18, 2, 0, 4_500L, ""
+                20, 18, 16, 2, 0, 4_500L, ""
         );
         String summaryFailure = ProgressBarRenderer.renderFinalSummary(sFailure, false, false);
         Assert.assertTrue(summaryFailure.contains("SUITE COMPLETED WITH FAILURES"));
-        Assert.assertTrue(summaryFailure.contains("2 Failed"));
+        Assert.assertTrue(summaryFailure.contains("18/20"));
+        Assert.assertFalse(summaryFailure.contains("Results:"));
     }
 
     @Test
@@ -140,11 +141,10 @@ public class SmartTestProgressBarTest {
 
         bar.onExecutionFinished(new TestLifecycleEvent.ExecutionFinished());
 
-        String captured = outputCaptor.toString(StandardCharsets.UTF_8);
-        Assert.assertTrue(captured.contains("SUITE COMPLETED WITH FAILURES") || captured.contains("Results:"));
-        Assert.assertTrue(captured.contains("1 Passed"));
-        Assert.assertTrue(captured.contains("1 Failed"));
-        Assert.assertTrue(captured.contains("1 Skipped"));
+        String raw = outputCaptor.toString(StandardCharsets.UTF_8);
+        String captured = raw.replaceAll("\\u001B\\[[;\\d]*m", "");
+        Assert.assertTrue(captured.contains("SUITE COMPLETED WITH FAILURES"));
+        Assert.assertFalse(captured.contains("Results:"));
     }
 
     @Test

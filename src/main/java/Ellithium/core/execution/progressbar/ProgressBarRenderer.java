@@ -319,21 +319,6 @@ public final class ProgressBarRenderer {
                         s.getPercentage(), formatDuration(s.elapsedMs()), s.getRate()));
         if (ansi) sb.append(RESET);
 
-        sb.append(prefix).append("Results: ");
-        if (ansi) sb.append(GREEN).append(BOLD);
-        sb.append(s.passed()).append(" Passed").append(ansi ? RESET : "").append(" | ");
-        if (s.failed() > 0) {
-            if (ansi) sb.append(RED).append(BOLD);
-            sb.append(s.failed()).append(" Failed").append(ansi ? RESET : "").append(" | ");
-        }
-        if (s.skipped() > 0) {
-            if (ansi) sb.append(YELLOW);
-            sb.append(s.skipped()).append(" Skipped").append(ansi ? RESET : "");
-        } else {
-            sb.append("0 Skipped");
-        }
-        sb.append("\n");
-
         if (ansi) sb.append(CYAN);
         sb.append(prefix).append(bar);
         if (ansi) sb.append(RESET);
