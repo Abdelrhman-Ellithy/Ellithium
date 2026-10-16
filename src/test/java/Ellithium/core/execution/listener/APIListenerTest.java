@@ -165,8 +165,8 @@ public class APIListenerTest {
 
     @Test
     public void testMapToJson_nullOrEmpty() {
-        Assert.assertEquals(listener.mapToJson(null).length(), 0);
-        Assert.assertEquals(listener.mapToJson(java.util.Collections.emptyMap()).length(), 0);
+        Assert.assertEquals(listener.mapToJson(null).size(), 0);
+        Assert.assertEquals(listener.mapToJson(java.util.Collections.emptyMap()).size(), 0);
     }
 
     @Test
@@ -174,9 +174,9 @@ public class APIListenerTest {
         io.restassured.http.Header h1 = new io.restassured.http.Header("Authorization", "Bearer token123");
         io.restassured.http.Header h2 = new io.restassured.http.Header("Content-Type", "application/json");
         io.restassured.http.Headers headers = new io.restassured.http.Headers(h1, h2);
-        org.json.JSONObject json = listener.headersToJson(headers);
-        Assert.assertEquals(json.getString("Authorization"), "********");
-        Assert.assertEquals(json.getString("Content-Type"), "application/json");
+        com.google.gson.JsonObject json = listener.headersToJson(headers);
+        Assert.assertEquals(json.get("Authorization").getAsString(), "********");
+        Assert.assertEquals(json.get("Content-Type").getAsString(), "application/json");
     }
 
     @Test

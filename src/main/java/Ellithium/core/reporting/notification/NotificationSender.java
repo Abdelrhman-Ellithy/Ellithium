@@ -2,12 +2,14 @@ package Ellithium.core.reporting.notification;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import com.slack.api.Slack;
-import com.slack.api.webhook.WebhookResponse;
-
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Properties;
 
 /**
@@ -267,16 +269,23 @@ class NotificationSender {
 
             String payload = buildSlackPayload(message, channel, username);
 
-            WebhookResponse response;
-            try (Slack slack = Slack.getInstance()) {
-                response = slack.send(webhookUrl, payload);
-            }
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(webhookUrl))
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .timeout(Duration.ofSeconds(15))
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, java.nio.charset.StandardCharsets.UTF_8))
+                    .build();
 
-            if (response.getCode() == 200) {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
                 Reporter.log("Slack notification sent successfully to channel " + channel, LogLevel.INFO_GREEN);
                 return true;
             } else {
-                Reporter.log("Failed to send Slack notification. Response code: " + response.getCode(), LogLevel.ERROR);
+                Reporter.log("Failed to send Slack notification. Response code: " + response.statusCode(), LogLevel.ERROR);
                 return false;
             }
 

@@ -2,8 +2,10 @@ package Ellithium.Utilities.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,15 +36,18 @@ public class AnthropicProvider implements LLMProvider {
     @Override
     public String ask(String systemPrompt, String userPrompt) {
         try {
-            JSONObject payload = new JSONObject();
-            payload.put("model", model);
-            payload.put("max_tokens", 8192);
-            payload.put("temperature", 0.0);
-            payload.put("system", systemPrompt);
+            JsonObject payload = new JsonObject();
+            payload.addProperty("model", model);
+            payload.addProperty("max_tokens", 8192);
+            payload.addProperty("temperature", 0.0);
+            payload.addProperty("system", systemPrompt);
 
-            JSONArray messages = new JSONArray();
-            messages.put(new JSONObject().put("role", "user").put("content", userPrompt));
-            payload.put("messages", messages);
+            JsonArray messages = new JsonArray();
+            JsonObject userMessage = new JsonObject();
+            userMessage.addProperty("role", "user");
+            userMessage.addProperty("content", userPrompt);
+            messages.add(userMessage);
+            payload.add("messages", messages);
 
             String url = baseUrl;
             if (!url.endsWith("/messages")) {
@@ -61,18 +66,25 @@ public class AnthropicProvider implements LLMProvider {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                JSONObject jsonResponse = new JSONObject(response.body());
-                JSONArray contentArr = jsonResponse.optJSONArray("content");
-                if (contentArr != null && contentArr.length() > 0) {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < contentArr.length(); i++) {
-                        JSONObject block = contentArr.optJSONObject(i);
-                        if (block != null && "text".equals(block.optString("type")) && block.has("text")) {
-                            sb.append(block.optString("text"));
+                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (jsonResponse.has("content") && jsonResponse.get("content").isJsonArray()) {
+                    JsonArray contentArr = jsonResponse.getAsJsonArray("content");
+                    if (!contentArr.isEmpty()) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < contentArr.size(); i++) {
+                            JsonElement elem = contentArr.get(i);
+                            if (elem != null && elem.isJsonObject()) {
+                                JsonObject block = elem.getAsJsonObject();
+                                if (block.has("type") && !block.get("type").isJsonNull()
+                                        && "text".equals(block.get("type").getAsString())
+                                        && block.has("text") && !block.get("text").isJsonNull()) {
+                                    sb.append(block.get("text").getAsString());
+                                }
+                            }
                         }
-                    }
-                    if (!sb.isEmpty()) {
-                        return stripMarkdownFences(sb.toString());
+                        if (!sb.isEmpty()) {
+                            return stripMarkdownFences(sb.toString());
+                        }
                     }
                 }
                 Reporter.log("Anthropic API returned no text block (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);

@@ -2,8 +2,10 @@ package Ellithium.Utilities.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -35,23 +37,31 @@ public class GeminiProvider implements LLMProvider {
     @Override
     public String ask(String systemPrompt, String userPrompt) {
         try {
-            JSONObject payload = new JSONObject();
+            JsonObject payload = new JsonObject();
 
             // Gemini system instruction format
-            JSONObject systemInstruction = new JSONObject();
-            systemInstruction.put("parts", new JSONArray().put(new JSONObject().put("text", systemPrompt)));
-            payload.put("systemInstruction", systemInstruction);
+            JsonObject systemInstruction = new JsonObject();
+            JsonArray sysParts = new JsonArray();
+            JsonObject sysPart = new JsonObject();
+            sysPart.addProperty("text", systemPrompt);
+            sysParts.add(sysPart);
+            systemInstruction.add("parts", sysParts);
+            payload.add("systemInstruction", systemInstruction);
 
-            JSONArray contents = new JSONArray();
-            JSONObject userContent = new JSONObject();
-            userContent.put("role", "user");
-            userContent.put("parts", new JSONArray().put(new JSONObject().put("text", userPrompt)));
-            contents.put(userContent);
-            payload.put("contents", contents);
+            JsonArray contents = new JsonArray();
+            JsonObject userContent = new JsonObject();
+            userContent.addProperty("role", "user");
+            JsonArray userParts = new JsonArray();
+            JsonObject userPart = new JsonObject();
+            userPart.addProperty("text", userPrompt);
+            userParts.add(userPart);
+            userContent.add("parts", userParts);
+            contents.add(userContent);
+            payload.add("contents", contents);
 
-            JSONObject generationConfig = new JSONObject();
-            generationConfig.put("temperature", 0.0);
-            payload.put("generationConfig", generationConfig);
+            JsonObject generationConfig = new JsonObject();
+            generationConfig.addProperty("temperature", 0.0);
+            payload.add("generationConfig", generationConfig);
 
             String url = baseUrl;
             if (!url.endsWith("/")) url += "/";
@@ -70,25 +80,35 @@ public class GeminiProvider implements LLMProvider {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                JSONObject jsonResponse = new JSONObject(response.body());
-                JSONArray candidates = jsonResponse.optJSONArray("candidates");
-                if (candidates != null && candidates.length() > 0) {
-                    JSONObject candidate = candidates.optJSONObject(0);
-                    JSONObject content = candidate != null ? candidate.optJSONObject("content") : null;
-                    JSONArray parts = content != null ? content.optJSONArray("parts") : null;
-                    if (parts != null) {
-                        StringBuilder sb = new StringBuilder();
-                        for (int i = 0; i < parts.length(); i++) {
-                            JSONObject part = parts.optJSONObject(i);
-                            if (part != null && part.has("text")) sb.append(part.optString("text"));
+                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (jsonResponse.has("candidates") && jsonResponse.get("candidates").isJsonArray()) {
+                    JsonArray candidates = jsonResponse.getAsJsonArray("candidates");
+                    if (!candidates.isEmpty()) {
+                        JsonObject candidate = candidates.get(0).isJsonObject() ? candidates.get(0).getAsJsonObject() : null;
+                        JsonObject content = candidate != null && candidate.has("content") && candidate.get("content").isJsonObject()
+                                ? candidate.getAsJsonObject("content") : null;
+                        JsonArray parts = content != null && content.has("parts") && content.get("parts").isJsonArray()
+                                ? content.getAsJsonArray("parts") : null;
+                        if (parts != null) {
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < parts.size(); i++) {
+                                JsonElement partElem = parts.get(i);
+                                if (partElem != null && partElem.isJsonObject()) {
+                                    JsonObject part = partElem.getAsJsonObject();
+                                    if (part.has("text") && !part.get("text").isJsonNull()) {
+                                        sb.append(part.get("text").getAsString());
+                                    }
+                                }
+                            }
+                            if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
                         }
-                        if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
-                    }
-                    String finishReason = candidate != null ? candidate.optString("finishReason", "") : "";
-                    if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
-                        Reporter.log("Gemini API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
-                        Reporter.log("Gemini API body: " + response.body(), LogLevel.DEBUG);
-                        return null;
+                        String finishReason = candidate != null && candidate.has("finishReason") && !candidate.get("finishReason").isJsonNull()
+                                ? candidate.get("finishReason").getAsString() : "";
+                        if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
+                            Reporter.log("Gemini API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
+                            Reporter.log("Gemini API body: " + response.body(), LogLevel.DEBUG);
+                            return null;
+                        }
                     }
                 }
                 Reporter.log("Gemini API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
@@ -111,27 +131,31 @@ public class GeminiProvider implements LLMProvider {
     @Override
     public String askWithVision(String prompt, byte[] screenshot) {
         try {
-            JSONObject payload = new JSONObject();
-            JSONArray contents = new JSONArray();
-            JSONObject userContent = new JSONObject();
-            userContent.put("role", "user");
+            JsonObject payload = new JsonObject();
+            JsonArray contents = new JsonArray();
+            JsonObject userContent = new JsonObject();
+            userContent.addProperty("role", "user");
 
-            JSONArray parts = new JSONArray();
-            parts.put(new JSONObject().put("text", prompt));
+            JsonArray parts = new JsonArray();
+            JsonObject textPart = new JsonObject();
+            textPart.addProperty("text", prompt);
+            parts.add(textPart);
 
             String base64Image = Base64.getEncoder().encodeToString(screenshot);
-            JSONObject inlineData = new JSONObject();
-            inlineData.put("mimeType", "image/png");
-            inlineData.put("data", base64Image);
-            parts.put(new JSONObject().put("inlineData", inlineData));
+            JsonObject inlineData = new JsonObject();
+            inlineData.addProperty("mimeType", "image/png");
+            inlineData.addProperty("data", base64Image);
+            JsonObject inlinePart = new JsonObject();
+            inlinePart.add("inlineData", inlineData);
+            parts.add(inlinePart);
 
-            userContent.put("parts", parts);
-            contents.put(userContent);
-            payload.put("contents", contents);
+            userContent.add("parts", parts);
+            contents.add(userContent);
+            payload.add("contents", contents);
 
-            JSONObject generationConfig = new JSONObject();
-            generationConfig.put("temperature", 0.0);
-            payload.put("generationConfig", generationConfig);
+            JsonObject generationConfig = new JsonObject();
+            generationConfig.addProperty("temperature", 0.0);
+            payload.add("generationConfig", generationConfig);
 
             String url = baseUrl;
             if (!url.endsWith("/")) url += "/";
@@ -149,25 +173,35 @@ public class GeminiProvider implements LLMProvider {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                JSONObject jsonResponse = new JSONObject(response.body());
-                JSONArray candidates = jsonResponse.optJSONArray("candidates");
-                if (candidates != null && candidates.length() > 0) {
-                    JSONObject candidate = candidates.optJSONObject(0);
-                    JSONObject content = candidate != null ? candidate.optJSONObject("content") : null;
-                    JSONArray respParts = content != null ? content.optJSONArray("parts") : null;
-                    if (respParts != null) {
-                        StringBuilder sb = new StringBuilder();
-                        for (int i = 0; i < respParts.length(); i++) {
-                            JSONObject part = respParts.optJSONObject(i);
-                            if (part != null && part.has("text")) sb.append(part.optString("text"));
+                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (jsonResponse.has("candidates") && jsonResponse.get("candidates").isJsonArray()) {
+                    JsonArray candidates = jsonResponse.getAsJsonArray("candidates");
+                    if (!candidates.isEmpty()) {
+                        JsonObject candidate = candidates.get(0).isJsonObject() ? candidates.get(0).getAsJsonObject() : null;
+                        JsonObject content = candidate != null && candidate.has("content") && candidate.get("content").isJsonObject()
+                                ? candidate.getAsJsonObject("content") : null;
+                        JsonArray respParts = content != null && content.has("parts") && content.get("parts").isJsonArray()
+                                ? content.getAsJsonArray("parts") : null;
+                        if (respParts != null) {
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < respParts.size(); i++) {
+                                JsonElement partElem = respParts.get(i);
+                                if (partElem != null && partElem.isJsonObject()) {
+                                    JsonObject part = partElem.getAsJsonObject();
+                                    if (part.has("text") && !part.get("text").isJsonNull()) {
+                                        sb.append(part.get("text").getAsString());
+                                    }
+                                }
+                            }
+                            if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
                         }
-                        if (!sb.isEmpty()) return stripMarkdownFences(sb.toString());
-                    }
-                    String finishReason = candidate != null ? candidate.optString("finishReason", "") : "";
-                    if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
-                        Reporter.log("Gemini Vision API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
-                        Reporter.log("Gemini Vision API body: " + response.body(), LogLevel.DEBUG);
-                        return null;
+                        String finishReason = candidate != null && candidate.has("finishReason") && !candidate.get("finishReason").isJsonNull()
+                                ? candidate.get("finishReason").getAsString() : "";
+                        if (!finishReason.isEmpty() && !"STOP".equalsIgnoreCase(finishReason)) {
+                            Reporter.log("Gemini Vision API returned no text (finishReason=" + finishReason + ") — switch to DEBUG for full response", LogLevel.ERROR);
+                            Reporter.log("Gemini Vision API body: " + response.body(), LogLevel.DEBUG);
+                            return null;
+                        }
                     }
                 }
                 Reporter.log("Gemini Vision API returned empty response (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);

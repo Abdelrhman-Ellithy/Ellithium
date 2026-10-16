@@ -4,7 +4,8 @@ import Ellithium.core.driver.CloudProviderType;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.logging.Logger;
 import Ellithium.core.reporting.Reporter;
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,8 +97,8 @@ public class CloudAppUploader {
             String cleanId = appId.replace("lt://", "").replace("bs://", "").replace("storage:filename=", "");
             if (provider == CloudProviderType.LAMBDATEST) {
                 String deleteUrl = "https://manual-api.lambdatest.com/app/delete";
-                JSONObject bodyJson = new JSONObject();
-                bodyJson.put("appIds", cleanId);
+                JsonObject bodyJson = new JsonObject();
+                bodyJson.addProperty("appIds", cleanId);
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(deleteUrl))
                         .header("Authorization", authHeader)
@@ -183,24 +184,24 @@ public class CloudAppUploader {
 
     private static String extractAppId(CloudProviderType provider, String responseBody) {
         try {
-            JSONObject json = new JSONObject(responseBody);
+            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
             return switch (provider) {
                 case BROWSERSTACK -> {
-                    if (json.has("app_url"))   yield json.getString("app_url");
-                    if (json.has("custom_id")) yield "bs://" + json.getString("custom_id");
+                    if (json.has("app_url") && !json.get("app_url").isJsonNull())   yield json.get("app_url").getAsString();
+                    if (json.has("custom_id") && !json.get("custom_id").isJsonNull()) yield "bs://" + json.get("custom_id").getAsString();
                     yield json.toString();
                 }
                 case SAUCE_LABS -> {
-                    if (json.has("item")) {
-                        JSONObject item = json.getJSONObject("item");
-                        if (item.has("id")) yield "storage:filename=" + item.getString("id");
+                    if (json.has("item") && json.get("item").isJsonObject()) {
+                        JsonObject item = json.getAsJsonObject("item");
+                        if (item.has("id") && !item.get("id").isJsonNull()) yield "storage:filename=" + item.get("id").getAsString();
                     }
                     yield json.toString();
                 }
                 case LAMBDATEST -> {
-                    if (json.has("app_url")) yield json.getString("app_url");
-                    if (json.has("app_id")) {
-                        String id = json.getString("app_id");
+                    if (json.has("app_url") && !json.get("app_url").isJsonNull()) yield json.get("app_url").getAsString();
+                    if (json.has("app_id") && !json.get("app_id").isJsonNull()) {
+                        String id = json.get("app_id").getAsString();
                         yield id.startsWith("lt://") ? id : "lt://" + id;
                     }
                     yield json.toString();

@@ -2,8 +2,9 @@ package Ellithium.Utilities.ai;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -35,14 +36,22 @@ public class OpenAICompatibleProvider implements LLMProvider {
     @Override
     public String ask(String systemPrompt, String userPrompt) {
         try {
-            JSONObject payload = new JSONObject();
-            payload.put("model", model);
-            payload.put("temperature", 0.0);
+            JsonObject payload = new JsonObject();
+            payload.addProperty("model", model);
+            payload.addProperty("temperature", 0.0);
 
-            JSONArray messages = new JSONArray();
-            messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
-            messages.put(new JSONObject().put("role", "user").put("content", userPrompt));
-            payload.put("messages", messages);
+            JsonArray messages = new JsonArray();
+            JsonObject sysMsg = new JsonObject();
+            sysMsg.addProperty("role", "system");
+            sysMsg.addProperty("content", systemPrompt);
+            messages.add(sysMsg);
+
+            JsonObject userMsg = new JsonObject();
+            userMsg.addProperty("role", "user");
+            userMsg.addProperty("content", userPrompt);
+            messages.add(userMsg);
+
+            payload.add("messages", messages);
 
             String url = baseUrl;
             if (!url.endsWith("/chat/completions")) {
@@ -60,14 +69,18 @@ public class OpenAICompatibleProvider implements LLMProvider {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                JSONObject jsonResponse = new JSONObject(response.body());
-                JSONArray choices = jsonResponse.optJSONArray("choices");
-                if (choices != null && choices.length() > 0) {
-                    JSONObject first = choices.optJSONObject(0);
-                    JSONObject message = first != null ? first.optJSONObject("message") : null;
-                    String rawText = message != null ? message.optString("content", null) : null;
-                    if (rawText != null && !rawText.isEmpty()) {
-                        return stripMarkdownFences(rawText);
+                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (jsonResponse.has("choices") && jsonResponse.get("choices").isJsonArray()) {
+                    JsonArray choices = jsonResponse.getAsJsonArray("choices");
+                    if (!choices.isEmpty()) {
+                        JsonObject first = choices.get(0).isJsonObject() ? choices.get(0).getAsJsonObject() : null;
+                        JsonObject message = first != null && first.has("message") && first.get("message").isJsonObject()
+                                ? first.getAsJsonObject("message") : null;
+                        String rawText = message != null && message.has("content") && !message.get("content").isJsonNull()
+                                ? message.get("content").getAsString() : null;
+                        if (rawText != null && !rawText.isEmpty()) {
+                            return stripMarkdownFences(rawText);
+                        }
                     }
                 }
                 Reporter.log("OpenAI API returned no message content (HTTP 200) — switch to DEBUG for full response", LogLevel.ERROR);
