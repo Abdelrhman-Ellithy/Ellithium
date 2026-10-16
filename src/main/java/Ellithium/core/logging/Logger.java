@@ -148,7 +148,7 @@ public class Logger {
         if (ConfigContext.isLoggingOn()) {
             ensureTestNameContext();
             getLogger().logIfEnabled(getFqcn(), Level.ERROR, null, (Object) "Exception occurred: ", e);
-            logToCurrentExecution(INFO_RED, e.getMessage());
+            logToCurrentExecution(INFO_RED, e != null ? e.getMessage() : "null exception");
         }
     }
 

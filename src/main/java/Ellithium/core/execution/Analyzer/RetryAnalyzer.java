@@ -15,8 +15,9 @@ public class RetryAnalyzer implements IRetryAnalyzer {
             if (counter.get() < maxCount) {
                 counter.incrementAndGet();
                 iTestResult.setStatus(ITestResult.FAILURE);
+                String methodName = (iTestResult.getMethod() != null) ? iTestResult.getMethod().getMethodName() : (iTestResult.getName() != null ? iTestResult.getName() : "unknownTest");
                 Reporter.log("Retry #" + counter.get() +
-                        " for test: " + iTestResult.getMethod().getMethodName() +
+                        " for test: " + methodName +
                         ", on thread: " + Thread.currentThread().getName(),
                         LogLevel.ERROR);
                 return true;
@@ -29,12 +30,14 @@ public class RetryAnalyzer implements IRetryAnalyzer {
     public static void initRetryCount(){
         String countStr = PropertyHelper.getDataFromProperties(ConfigContext.getConfigFilePath(), "retryCountOnFailure");
         if (countStr == null) {
+            ConfigContext.setRetryCount(0);
             Reporter.log("You Need to Add \"retryCountOnFailure\" Key on you config.properties File", LogLevel.ERROR);
             return;
         }
         try {
             ConfigContext.setRetryCount(Integer.parseInt(countStr));
         } catch (NumberFormatException e) {
+            ConfigContext.setRetryCount(0);
             Reporter.log("Invalid \"retryCountOnFailure\" value in config.properties: \"" + countStr
                     + "\" is not a number. Retries disabled (defaulting to 0).", LogLevel.ERROR);
         }

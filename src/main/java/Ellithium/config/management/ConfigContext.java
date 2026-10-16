@@ -9,7 +9,9 @@ public class ConfigContext {
     private static final String EllithuiumVersion  = "3.3.0";
 
     public static String getAllureVersion()    { return allureVersion; }
+    @Deprecated(forRemoval = true)
     public static String getEllithuiumVersion(){ return EllithuiumVersion; }
+    public static String getEllithiumVersion() { return EllithuiumVersion; }
 
     private static final AtomicInteger retryCount = new AtomicInteger(0);
     public static int  getRetryCount()           { return retryCount.get(); }

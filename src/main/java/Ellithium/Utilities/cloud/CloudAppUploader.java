@@ -199,7 +199,10 @@ public class CloudAppUploader {
                 }
                 case LAMBDATEST -> {
                     if (json.has("app_url")) yield json.getString("app_url");
-                    if (json.has("app_id"))  yield "lt://" + json.getString("app_id");
+                    if (json.has("app_id")) {
+                        String id = json.getString("app_id");
+                        yield id.startsWith("lt://") ? id : "lt://" + id;
+                    }
                     yield json.toString();
                 }
                 default -> responseBody;

@@ -151,7 +151,7 @@ public class NotificationSender {
      * @param emails Comma-separated email addresses
      * @return Array of properly encoded InternetAddresses, or null if creation fails
      */
-    private InternetAddress[] createEncodedInternetAddresses(String emails) {
+    InternetAddress[] createEncodedInternetAddresses(String emails) {
         if (emails == null || emails.trim().isEmpty()) {
             Reporter.log("Recipient emails cannot be null or empty", LogLevel.ERROR);
             return null;
@@ -159,18 +159,21 @@ public class NotificationSender {
 
         try {
             String[] emailArray = emails.split(",");
-            InternetAddress[] addresses = new InternetAddress[emailArray.length];
+            java.util.List<InternetAddress> addresses = new java.util.ArrayList<>();
 
-            for (int i = 0; i < emailArray.length; i++) {
-                InternetAddress address = createEncodedInternetAddress(emailArray[i].trim());
+            for (String raw : emailArray) {
+                String trimmed = raw.trim();
+                if (trimmed.isEmpty()) continue;
+                InternetAddress address = createEncodedInternetAddress(trimmed);
                 if (address == null) {
-                    Reporter.log("Failed to create address for recipient: " + emailArray[i].trim(), LogLevel.ERROR);
+                    Reporter.log("Failed to create address for recipient: " + trimmed, LogLevel.ERROR);
                     return null;
                 }
-                addresses[i] = address;
+                addresses.add(address);
             }
 
-            return addresses;
+            if (addresses.isEmpty()) return null;
+            return addresses.toArray(new InternetAddress[0]);
         } catch (Exception e) {
             Reporter.log("Failed to create recipient addresses: " + e.getMessage(), LogLevel.ERROR);
             return null;
@@ -182,7 +185,7 @@ public class NotificationSender {
      * @param email The email address to validate
      * @return true if valid format, false otherwise
      */
-    private boolean isValidEmailFormat(String email) {
+    static boolean isValidEmailFormat(String email) {
         if (email == null) return false;
 
         String emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
@@ -194,12 +197,13 @@ public class NotificationSender {
      * @param subject The subject to encode
      * @return Properly encoded subject
      */
-    private String encodeEmailSubject(String subject) {
+    static String encodeEmailSubject(String subject) {
         if (subject == null) {
             return "";
         }
 
         return subject
+            .replace("\r\n", " ")
             .replace("\n", " ")
             .replace("\r", " ")
             .replace("\t", " ")
@@ -211,14 +215,15 @@ public class NotificationSender {
      * @param htmlContent The HTML content to encode
      * @return Properly encoded HTML content
      */
-    private String encodeHtmlContent(String htmlContent) {
+    static String encodeHtmlContent(String htmlContent) {
         if (htmlContent == null) {
             return "";
         }
 
         return htmlContent
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
             .replace("\n", "\r\n")
-            .replace("\r\r\n", "\r\n")
             .trim();
     }
 
@@ -227,14 +232,15 @@ public class NotificationSender {
      * @param textContent The text content to encode
      * @return Properly encoded text content
      */
-    private String encodeTextContent(String textContent) {
+    static String encodeTextContent(String textContent) {
         if (textContent == null) {
             return "";
         }
 
         return textContent
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
             .replace("\n", "\r\n")
-            .replace("\r\r\n", "\r\n")
             .trim();
     }
 
@@ -310,14 +316,14 @@ public class NotificationSender {
      * @param username The bot username
      * @return JSON payload string
      */
-    private String buildSlackPayload(String message, String channel, String username) {
+    String buildSlackPayload(String message, String channel, String username) {
         return String.format(
             "{\"channel\":\"%s\",\"username\":\"%s\",\"text\":\"%s\",\"icon_emoji\":\":robot_face:\"}",
             escapeJson(channel), escapeJson(username), escapeJson(message)
         );
     }
 
-    private static String escapeJson(String value) {
+    static String escapeJson(String value) {
         if (value == null) return "";
         return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }

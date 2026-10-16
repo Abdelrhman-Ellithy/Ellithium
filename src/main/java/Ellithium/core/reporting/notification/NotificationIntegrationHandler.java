@@ -84,7 +84,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
 
     @Override
     public void collectTestResults(ITestContext context) {
-        if (!isNotificationSystemEnabled()) {
+        if (context == null || !isNotificationSystemEnabled()) {
             return;
         }
         try {
@@ -99,26 +99,32 @@ public class NotificationIntegrationHandler implements TestResultCollector {
                     ? context.getSuite().getName()
                     : context.getName();
 
-            for (ITestResult result : context.getPassedTests().getAllResults()) {
-                if (!shouldExcludeFromTestNGCounting(result)) {
-                    testngPassed++;
-                    testngTests++;
-                    executedTests.add(formatTestResult(result, suiteName, "PASSED"));
+            if (context.getPassedTests() != null) {
+                for (ITestResult result : context.getPassedTests().getAllResults()) {
+                    if (!shouldExcludeFromTestNGCounting(result)) {
+                        testngPassed++;
+                        testngTests++;
+                        executedTests.add(formatTestResult(result, suiteName, "PASSED"));
+                    }
                 }
             }
-            for (ITestResult result : context.getFailedTests().getAllResults()) {
-                if (!shouldExcludeFromTestNGCounting(result)) {
-                    testngFailed++;
-                    testngTests++;
-                    executedTests.add(formatTestResult(result, suiteName, "FAILED"));
-                    allFailedResults.add(result);
+            if (context.getFailedTests() != null) {
+                for (ITestResult result : context.getFailedTests().getAllResults()) {
+                    if (!shouldExcludeFromTestNGCounting(result)) {
+                        testngFailed++;
+                        testngTests++;
+                        executedTests.add(formatTestResult(result, suiteName, "FAILED"));
+                        allFailedResults.add(result);
+                    }
                 }
             }
-            for (ITestResult result : context.getSkippedTests().getAllResults()) {
-                if (!shouldExcludeFromTestNGCounting(result)) {
-                    testngSkipped++;
-                    testngTests++;
-                    executedTests.add(formatTestResult(result, suiteName, "SKIPPED"));
+            if (context.getSkippedTests() != null) {
+                for (ITestResult result : context.getSkippedTests().getAllResults()) {
+                    if (!shouldExcludeFromTestNGCounting(result)) {
+                        testngSkipped++;
+                        testngTests++;
+                        executedTests.add(formatTestResult(result, suiteName, "SKIPPED"));
+                    }
                 }
             }
 
@@ -143,16 +149,19 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         }
         try {
             ensureNotificationSystemInitialized();
+            String safeScenario = (scenarioName != null && !scenarioName.isBlank()) ? scenarioName : "Unknown Scenario";
+            String safeStatus = (status != null && !status.isBlank()) ? status : "UNKNOWN";
+
             totalTestsExecuted.incrementAndGet();
-            executedTests.add("Cucumber scenario '" + scenarioName + "' [" + status.toUpperCase() + "]");
-            switch (status.toLowerCase()) {
+            executedTests.add("Cucumber scenario '" + safeScenario + "' [" + safeStatus.toUpperCase() + "]");
+            switch (safeStatus.toLowerCase()) {
                 case "passed" -> passedTestsExecuted.incrementAndGet();
                 case "failed" -> failedTestsExecuted.incrementAndGet();
                 case "skipped" -> skippedTestsExecuted.incrementAndGet();
-                default -> Reporter.log("Unknown Cucumber test status: " + status + " for scenario: " + scenarioName,
+                default -> Reporter.log("Unknown Cucumber test status: " + safeStatus + " for scenario: " + safeScenario,
                         LogLevel.WARN);
             }
-            Reporter.log("Collected Cucumber test result: " + scenarioName + " - " + status, LogLevel.DEBUG);
+            Reporter.log("Collected Cucumber test result: " + safeScenario + " - " + safeStatus, LogLevel.DEBUG);
         } catch (Exception e) {
             Reporter.log("Failed to collect Cucumber test result: " + scenarioName + " - " + e.getMessage(),
                     LogLevel.ERROR);
@@ -244,20 +253,20 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     }
 
     private String formatTestResult(ITestResult result, String suiteName, String status) {
+        if (result == null) {
+            return suiteName + " :: UnknownClass :: unknownTest [" + status + "]";
+        }
         String className = result.getTestClass() == null ? "UnknownClass" : result.getTestClass().getName();
-        return suiteName + " :: " + className + " :: " + result.getName() + " [" + status + "]";
+        String testName = result.getName() == null ? "unknownTest" : result.getName();
+        return suiteName + " :: " + className + " :: " + testName + " [" + status + "]";
     }
 
     /**
-     * Builds an unambiguous subject line. A bare "(104/107)" reads as "104 out of
-     * 107" with no
-     * indication of which side is failures vs. the total, so passed/failed/skipped
-     * are spelled out
-     * explicitly against the total instead.
+     * Builds an unambiguous subject line.
      */
-    private String generateEmailSubject(TestResultSummary summary) {
+    String generateEmailSubject(TestResultSummary summary) {
         try {
-            String prefix = config.getEmailSubjectPrefix();
+            String prefix = config != null ? config.getEmailSubjectPrefix() : "[Test-Execution]";
             long failed = summary.getFailedTests();
             long passed = summary.getPassedTests();
             long skipped = summary.getSkippedTests();
@@ -265,9 +274,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
             boolean isFailed = failed > 0;
             String status = isFailed ? "FAILED" : "PASSED";
 
-            // Lead with whichever count matches the status word, so the subject scans
-            // naturally
-            // for both outcomes instead of always putting "failed" first.
+            // Lead with whichever count matches the status word
             StringBuilder counts = new StringBuilder();
             if (isFailed) {
                 counts.append(failed).append(" failed, ").append(passed).append(" passed");
@@ -292,6 +299,9 @@ public class NotificationIntegrationHandler implements TestResultCollector {
      * active.
      */
     public boolean shouldExcludeFromTestNGCounting(ITestResult result) {
+        if (result == null) {
+            return false;
+        }
         try {
             return isCucumberTestByName(result) ||
                     isCucumberTestByClass(result) ||
@@ -308,12 +318,13 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     }
 
     private boolean isCucumberTestByName(ITestResult result) {
+        if (result == null) return false;
         String testName = result.getName();
         return testName != null && testName.equals("runScenario");
     }
 
     private boolean isCucumberTestByClass(ITestResult result) {
-        if (result.getTestClass() == null) {
+        if (result == null || result.getTestClass() == null) {
             return false;
         }
         Class<?> realClass = result.getTestClass().getRealClass();
@@ -326,6 +337,9 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     }
 
     private boolean isCucumberTestByAnnotation(ITestResult result) {
+        if (result == null || result.getMethod() == null || result.getMethod().getConstructorOrMethod() == null) {
+            return false;
+        }
         try {
             Method method = result.getMethod().getConstructorOrMethod().getMethod();
             if (method != null) {
@@ -338,6 +352,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
     }
 
     private boolean hasCucumberAnnotation(Method method) {
+        if (method == null) return false;
         try {
             return method.isAnnotationPresent(io.cucumber.java.en.Given.class) ||
                     method.isAnnotationPresent(io.cucumber.java.en.When.class) ||
@@ -349,7 +364,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         }
     }
 
-    private double getFailureRate() {
+    double getFailureRate() {
         long total = totalTestsExecuted.get();
         if (total == 0) {
             return 0.0;
@@ -357,7 +372,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
         return (double) failedTestsExecuted.get() / total * 100;
     }
 
-    private boolean exceedsFailureThreshold() {
+    boolean exceedsFailureThreshold() {
         if (config == null) {
             return false;
         }

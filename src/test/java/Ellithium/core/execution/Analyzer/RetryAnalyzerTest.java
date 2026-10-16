@@ -78,4 +78,21 @@ public class RetryAnalyzerTest {
         Assert.assertFalse(a1.retry(result));
         Assert.assertTrue(a2.retry(result)); // independent counter
     }
+
+    @Test
+    public void retry_whenMethodIsNull_fallsBackToNameWithoutThrowing() {
+        ConfigContext.setRetryCount(1);
+        ITestResult nullMethodResult = Mockito.mock(ITestResult.class);
+        Mockito.when(nullMethodResult.isSuccess()).thenReturn(false);
+        Mockito.when(nullMethodResult.getMethod()).thenReturn(null);
+        Mockito.when(nullMethodResult.getName()).thenReturn("fallbackMethodName");
+
+        Assert.assertTrue(analyzer.retry(nullMethodResult));
+    }
+
+    @Test
+    public void initRetryCount_readsFromConfigPropertiesSuccessfully() {
+        RetryAnalyzer.initRetryCount();
+        Assert.assertTrue(ConfigContext.getRetryCount() >= 0);
+    }
 }

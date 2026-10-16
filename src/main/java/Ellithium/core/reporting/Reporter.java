@@ -214,12 +214,17 @@ public class Reporter {
      * @param description description for the test attachment
      */
     public static void attachScreenshotToReport(File screenshot, String name, String description ){
+        if (screenshot == null || !screenshot.exists()) {
+            log("Screenshot attachment failed: file does not exist -> " + screenshot, LogLevel.ERROR);
+            return;
+        }
         try (FileInputStream fis = new FileInputStream(screenshot)) {
             // Without this, the attachment lands on whatever step log() last left open/pending
             // (this call has no log() of its own to open a step for it), instead of at the
             // current test/fixture level.
             flushPendingStep();
-            Allure.attachment(name + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, AttachmentOptions.withFileExtension(".png"));
+            String attachmentName = (name != null && !name.isBlank()) ? name : screenshot.getName();
+            Allure.attachment(attachmentName + (description != null && !description.isEmpty() ? " - " + description : ""), "image/png", fis, AttachmentOptions.withFileExtension(".png"));
         }catch (IOException e) {
             Logger.logException(e);
         }
@@ -249,7 +254,8 @@ public class Reporter {
                 extension = fileName.substring(dotIndex); // includes the dot
             }
             flushPendingStep();
-            Allure.attachment(name, mimeType, fis, AttachmentOptions.withFileExtension(extension));
+            String attachmentName = (name != null && !name.isBlank()) ? name : fileName;
+            Allure.attachment(attachmentName, mimeType, fis, AttachmentOptions.withFileExtension(extension));
         } catch (IOException e) {
             Logger.logException(e);
         }
@@ -308,6 +314,7 @@ public class Reporter {
                 extension = fileName.substring(dotIndex);
             }
             flushPendingStep();
+            String attachmentName = (name != null && !name.isBlank()) ? name : fileName;
             java.util.concurrent.CompletableFuture<FileInputStream> streamFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
                     return new FileInputStream(file);
@@ -315,7 +322,7 @@ public class Reporter {
                     throw new java.util.concurrent.CompletionException(e);
                 }
             });
-            return Allure.attachmentAsync(name, mimeType, streamFuture, AttachmentOptions.withFileExtension(extension));
+            return Allure.attachmentAsync(attachmentName, mimeType, streamFuture, AttachmentOptions.withFileExtension(extension));
         } catch (Exception e) {
             Logger.logException(e);
             return java.util.concurrent.CompletableFuture.completedFuture(null);

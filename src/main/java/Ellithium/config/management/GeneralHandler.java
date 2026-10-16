@@ -43,8 +43,11 @@ public class GeneralHandler {
             TakesScreenshot camera = DriverFactory.getCurrentDriver();
             if (camera == null) return null;
             File screenshot = camera.getScreenshotAs(OutputType.FILE);
-            String name = browserName.toUpperCase() + "-" + testName + "-" + TestDataGenerator.getTimeStamp();
+            String name = (browserName != null ? browserName.toUpperCase() : "UNKNOWN") + "-" + (testName != null ? testName : "test") + "-" + TestDataGenerator.getTimeStamp();
             File screenShotFile = new File("Test-Output"+ File.separator +"ScreenShots"+ File.separator +"Failed"+ File.separator + name + ".png");
+            if (screenShotFile.getParentFile() != null && !screenShotFile.getParentFile().exists()) {
+                screenShotFile.getParentFile().mkdirs();
+            }
             Files.move(screenshot, screenShotFile);
             
             // Trigger AI Vision RCA
@@ -148,11 +151,11 @@ public class GeneralHandler {
                     parameters.add(new io.qameta.allure.model.Parameter().setName("Passed initial Capabilities").setValue(caps.asMap().toString()));
                 }
                 if(type instanceof LocalDriverType || type instanceof RemoteDriverType){
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(currentDriverConfiguration.getHeadlessMode().getName()));
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(currentDriverConfiguration.getPageLoadStrategy().getName()));
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(currentDriverConfiguration.getPrivateMode().getName()));
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(currentDriverConfiguration.getSandboxMode().getName()));
-                    parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(currentDriverConfiguration.getWebSecurityMode().getName()));
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("HeadlessMode").setValue(currentDriverConfiguration.getHeadlessMode() != null ? currentDriverConfiguration.getHeadlessMode().getName() : "N/A"));
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("PageLoadStrategyMode").setValue(currentDriverConfiguration.getPageLoadStrategy() != null ? currentDriverConfiguration.getPageLoadStrategy().getName() : "N/A"));
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("PrivateMode").setValue(currentDriverConfiguration.getPrivateMode() != null ? currentDriverConfiguration.getPrivateMode().getName() : "N/A"));
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("SandboxMode").setValue(currentDriverConfiguration.getSandboxMode() != null ? currentDriverConfiguration.getSandboxMode().getName() : "N/A"));
+                    parameters.add(new io.qameta.allure.model.Parameter().setName("WebSecurityMode").setValue(currentDriverConfiguration.getWebSecurityMode() != null ? currentDriverConfiguration.getWebSecurityMode().getName() : "N/A"));
                 }
                 if(type instanceof RemoteDriverType ||type instanceof MobileDriverType){
                     java.net.URL remoteAddress = currentDriverConfiguration.getRemoteAddress();
