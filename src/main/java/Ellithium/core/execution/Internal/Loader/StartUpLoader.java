@@ -134,13 +134,13 @@ public class StartUpLoader {
      * This method returns a negative integer, zero, or a positive integer
      * if the first version is less than, equal to, or greater than the second version, respectively.
      */
-    private static int compareVersions(String version1, String version2) {
+    static int compareVersions(String version1, String version2) {
         String[] parts1 = version1.replaceAll("-.*$", "").split("\\.");
         String[] parts2 = version2.replaceAll("-.*$", "").split("\\.");
         int length = Math.max(parts1.length, parts2.length);
         for (int i = 0; i < length; i++) {
-            int v1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int v2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            int v1 = i < parts1.length ? parseVersionPart(parts1[i]) : 0;
+            int v2 = i < parts2.length ? parseVersionPart(parts2[i]) : 0;
             if (v1 != v2) return Integer.compare(v1, v2);
         }
         String q1 = version1.contains("-") ? version1.substring(version1.indexOf('-') + 1) : "";
@@ -149,6 +149,16 @@ public class StartUpLoader {
         if (q1.isEmpty()) return 1;
         if (q2.isEmpty()) return -1;
         return q1.compareToIgnoreCase(q2);
+    }
+
+    private static int parseVersionPart(String part) {
+        if (part == null || part.isBlank()) return 0;
+        try {
+            String digits = part.replaceAll("\\D.*", "");
+            return digits.isEmpty() ? 0 : Integer.parseInt(digits);
+        } catch (Exception e) {
+            return 0;
+        }
     }
     private static void TestOutputSolver(){
         boolean result;

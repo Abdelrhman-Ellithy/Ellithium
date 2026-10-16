@@ -86,4 +86,59 @@ public class NotificationConfigTest {
                     "Validation must return false when email is disabled");
         }
     }
+
+    @Test
+    public void resolveEnvironmentVariables_nullAndEmpty() {
+        Assert.assertNull(NotificationConfig.resolveEnvironmentVariables(null));
+        Assert.assertEquals(NotificationConfig.resolveEnvironmentVariables(""), "");
+    }
+
+    @Test
+    public void resolveEnvironmentVariables_noPlaceholders() {
+        String input = "simple_smtp_host.com";
+        Assert.assertEquals(NotificationConfig.resolveEnvironmentVariables(input), input);
+    }
+
+    @Test
+    public void resolveEnvironmentVariables_systemProperty() {
+        String key = "test.notification.cfg.host";
+        System.setProperty(key, "smtp.custom-domain.net");
+        try {
+            String input = "Host is ${" + key + "}";
+            String resolved = NotificationConfig.resolveEnvironmentVariables(input);
+            Assert.assertEquals(resolved, "Host is smtp.custom-domain.net");
+        } finally {
+            System.clearProperty(key);
+        }
+    }
+
+    @Test
+    public void resolveEnvironmentVariables_multipleAndRepeated() {
+        String key1 = "test.notif.user";
+        String key2 = "test.notif.domain";
+        System.setProperty(key1, "admin");
+        System.setProperty(key2, "company.org");
+        try {
+            String input = "${" + key1 + "}@${" + key2 + "} (repeat: ${" + key1 + "})";
+            String resolved = NotificationConfig.resolveEnvironmentVariables(input);
+            Assert.assertEquals(resolved, "admin@company.org (repeat: admin)");
+        } finally {
+            System.clearProperty(key1);
+            System.clearProperty(key2);
+        }
+    }
+
+    @Test
+    public void resolveEnvironmentVariables_unknownVariable_retainsPlaceholder() {
+        String input = "smtp://${UNLIKELY_TO_EXIST_ENV_VAR_12345}:587";
+        String resolved = NotificationConfig.resolveEnvironmentVariables(input);
+        Assert.assertEquals(resolved, input);
+    }
+
+    @Test
+    public void resolveEnvironmentVariables_unclosedPlaceholder() {
+        String input = "smtp://${UNCLOSED_PLACEHOLDER";
+        String resolved = NotificationConfig.resolveEnvironmentVariables(input);
+        Assert.assertEquals(resolved, input);
+    }
 }

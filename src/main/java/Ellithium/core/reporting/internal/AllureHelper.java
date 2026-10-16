@@ -222,6 +222,7 @@ public class AllureHelper {
     public static void deleteAllureResultsDir() {
         String allurePropertiesFilePath = ConfigContext.getAllureFilePath();
         String resultsPath = getDataFromProperties(allurePropertiesFilePath, "allure.results.directory");
+        if (resultsPath == null) return;
         File allureResultsFolder = new File(resultsPath);
         if (allureResultsFolder.exists()) {
             try {

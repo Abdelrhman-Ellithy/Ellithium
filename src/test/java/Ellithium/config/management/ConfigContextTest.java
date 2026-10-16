@@ -22,7 +22,7 @@ public class ConfigContextTest {
     public void restore() {
         ConfigContext.setRetryCount(originalRetry);
         ConfigContext.setOnExecution(originalOnExecution);
-        ConfigContext.setIsLoggingOn(originalLoggingOn);
+        ConfigContext.setIsLoggingOn(true);
     }
 
     // ── Version constants ──────────────────────────────────────────────────
@@ -37,6 +37,7 @@ public class ConfigContextTest {
     public void getEllithiumVersion_returnsNonBlank() {
         Assert.assertNotNull(ConfigContext.getEllithuiumVersion());
         Assert.assertFalse(ConfigContext.getEllithuiumVersion().isBlank());
+        Assert.assertEquals(ConfigContext.getEllithiumVersion(), ConfigContext.getEllithuiumVersion());
     }
 
     // ── retryCount ─────────────────────────────────────────────────────────

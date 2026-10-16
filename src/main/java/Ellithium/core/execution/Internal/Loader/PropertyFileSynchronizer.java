@@ -16,7 +16,7 @@ public class PropertyFileSynchronizer {
 
     private PropertyFileSynchronizer() {}
 
-    private record TemplateEntry(String key, List<String> commentLines, String rawLine) {}
+    record TemplateEntry(String key, List<String> commentLines, String rawLine) {}
 
     /**
      * Appends any key present in {@code filePathInJar} (inside {@code jarFile}) but absent from
@@ -25,7 +25,7 @@ public class PropertyFileSynchronizer {
      */
     public static void syncMissingKeys(File jarFile, String filePathInJar, String targetFilePath,
                                        String frameworkVersion) {
-        if (jarFile == null || !jarFile.exists()) return;
+        if (jarFile == null || !jarFile.exists() || targetFilePath == null) return;
         File target = new File(targetFilePath);
         if (!target.exists()) return;
 
@@ -60,8 +60,8 @@ public class PropertyFileSynchronizer {
 
     private static Set<String> readExistingKeys(File target) {
         Properties prop = new Properties();
-        try (FileInputStream fis = new FileInputStream(target)) {
-            prop.load(fis);
+        try (InputStreamReader isr = new InputStreamReader(new FileInputStream(target), StandardCharsets.UTF_8)) {
+            prop.load(isr);
         } catch (IOException ignored) {}
         Set<String> keys = new HashSet<>();
         for (Object k : prop.keySet()) keys.add(k.toString());
@@ -69,14 +69,9 @@ public class PropertyFileSynchronizer {
     }
 
     /**
-     * Splits the template into (key, value-line, leading comment block) entries. Scoped to the
-     * simple {@code key=value} convention every bundled properties file in this project actually
-     * uses (no {@code key: value}/space-separated forms, no line continuations) — not a
-     * general-purpose Properties-spec parser. A key's comment block is the contiguous run of
-     * {@code #}/{@code !} lines immediately above it; a blank line resets the run so unrelated
-     * comments above a preceding key aren't misattributed.
+     * Splits the template into (key, value-line, leading comment block) entries.
      */
-    private static List<TemplateEntry> parseEntries(List<String> lines) {
+    static List<TemplateEntry> parseEntries(List<String> lines) {
         List<TemplateEntry> entries = new ArrayList<>();
         List<String> pendingComments = new ArrayList<>();
         for (String line : lines) {

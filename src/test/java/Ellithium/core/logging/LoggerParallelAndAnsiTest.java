@@ -10,6 +10,11 @@ import java.util.concurrent.*;
 
 public class LoggerParallelAndAnsiTest {
 
+    @org.testng.annotations.BeforeMethod
+    public void setup() {
+        Ellithium.config.management.ConfigContext.setIsLoggingOn(true);
+    }
+
     @AfterMethod
     public void cleanup() {
         ThreadContext.clearAll();
@@ -114,6 +119,42 @@ public class LoggerParallelAndAnsiTest {
             Assert.assertEquals(Logger.getCurrentTestName(), configName);
         } finally {
             Logger.clearLogsForTest(configName);
+            ThreadContext.remove("testName");
+        }
+    }
+
+    @Test
+    public void testLogExceptionHandlesNullAndValidExceptions() {
+        String testId = "exceptionTest";
+        ThreadContext.put("testName", testId);
+        try {
+            Logger.logException(new RuntimeException("Sample error"));
+            Logger.logException(null); // Must not throw NullPointerException
+            String logs = Logger.getLogsForTest(testId);
+            Assert.assertTrue(logs.contains("Sample error"));
+            Assert.assertTrue(logs.contains("null exception"));
+        } finally {
+            Logger.clearLogsForTest(testId);
+            ThreadContext.remove("testName");
+        }
+    }
+
+    @Test
+    public void testAllLogLevels() {
+        String testId = "logLevelsTest";
+        ThreadContext.put("testName", testId);
+        try {
+            Logger.trace("Trace message");
+            Logger.debug("Debug message");
+            Logger.warn("Warn message");
+            Logger.error("Error message");
+            String logs = Logger.getLogsForTest(testId);
+            Assert.assertTrue(logs.contains("Trace message"));
+            Assert.assertTrue(logs.contains("Debug message"));
+            Assert.assertTrue(logs.contains("Warn message"));
+            Assert.assertTrue(logs.contains("Error message"));
+        } finally {
+            Logger.clearLogsForTest(testId);
             ThreadContext.remove("testName");
         }
     }

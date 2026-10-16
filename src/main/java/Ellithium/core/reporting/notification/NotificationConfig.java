@@ -99,7 +99,7 @@ public class NotificationConfig {
      * @param value The property value that may contain environment variable placeholders
      * @return The resolved value with environment variables substituted
      */
-    private String resolveEnvironmentVariables(String value) {
+    static String resolveEnvironmentVariables(String value) {
         if (value == null || value.isEmpty()) {
             return value;
         }
@@ -116,6 +116,9 @@ public class NotificationConfig {
                 String envVarName = resolvedValue.substring(startIndex + 2, endIndex);
                 
                 String envVarValue = System.getenv(envVarName);
+                if (envVarValue == null) {
+                    envVarValue = System.getProperty(envVarName);
+                }
                 if (envVarValue == null) {
                     Reporter.log("Environment variable '" + envVarName + "' not found. Using placeholder as-is.", LogLevel.WARN);
                     envVarValue = placeholder;
