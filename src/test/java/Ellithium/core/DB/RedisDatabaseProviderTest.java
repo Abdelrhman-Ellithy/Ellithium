@@ -1,7 +1,5 @@
 package Ellithium.core.DB;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -14,7 +12,6 @@ import redis.clients.jedis.params.SetParams;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -25,7 +22,6 @@ public class RedisDatabaseProviderTest {
 
     private JedisPool mockPool;
     private Jedis mockJedis;
-    private Cache<String, Object> cache;
     private RedisDatabaseProvider redisProvider;
 
     @BeforeMethod
@@ -34,38 +30,29 @@ public class RedisDatabaseProviderTest {
         mockJedis = mock(Jedis.class);
         when(mockPool.getResource()).thenReturn(mockJedis);
 
-        cache = Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .maximumSize(100)
-                .build();
-
-        redisProvider = new RedisDatabaseProvider(mockPool, cache);
+        redisProvider = new RedisDatabaseProvider(mockPool);
     }
 
     @Test
     public void testConstructorValidation() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new RedisDatabaseProvider(null, cache);
-        });
-
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new RedisDatabaseProvider(mockPool, null);
+            new RedisDatabaseProvider((JedisPool) null);
         });
     }
 
     @Test
-    public void testExecuteQueryCacheMissAndHit() {
+    public void testExecuteQueryAlwaysLive() {
         when(mockJedis.get("user:101")).thenReturn("{\"name\":\"Alice\"}");
 
-        // First call - cache miss
+        // First call
         Object result = redisProvider.executeQuery("user:101");
         Assert.assertEquals(result, "{\"name\":\"Alice\"}");
         verify(mockJedis, times(1)).get("user:101");
 
-        // Second call - cache hit
-        Object cachedResult = redisProvider.executeQuery("user:101");
-        Assert.assertEquals(cachedResult, "{\"name\":\"Alice\"}");
-        verify(mockJedis, times(1)).get("user:101"); // Not called again
+        // Second call - must execute live against Redis, never cached
+        Object secondResult = redisProvider.executeQuery("user:101");
+        Assert.assertEquals(secondResult, "{\"name\":\"Alice\"}");
+        verify(mockJedis, times(2)).get("user:101");
     }
 
     @Test
@@ -76,14 +63,11 @@ public class RedisDatabaseProviderTest {
     }
 
     @Test
-    public void testCacheOperations() {
+    public void testCacheOperationsNoOp() {
         redisProvider.addToCache("key1", "val1");
-        Assert.assertEquals(redisProvider.getFromCache("key1"), "val1");
-
-        redisProvider.clearCache("key1");
         Assert.assertNull(redisProvider.getFromCache("key1"));
 
-        redisProvider.addToCache("key2", "val2");
+        redisProvider.clearCache("key1");
         redisProvider.clearAllCaches();
         Assert.assertNull(redisProvider.getFromCache("key2"));
     }

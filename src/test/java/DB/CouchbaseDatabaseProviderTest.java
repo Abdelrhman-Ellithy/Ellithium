@@ -8,7 +8,6 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.*;
 import com.couchbase.client.java.query.QueryResult;
-import com.github.benmanes.caffeine.cache.Cache;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -38,9 +37,6 @@ public class CouchbaseDatabaseProviderTest {
     @Mock
     private MutationResult mockMutationResult;
 
-    @Mock
-    private Cache<String, Object> mockCache;
-
     private CouchbaseDatabaseProvider databaseProvider;
 
     @BeforeMethod
@@ -49,7 +45,7 @@ public class CouchbaseDatabaseProviderTest {
         when(mockCluster.bucket(anyString())).thenReturn(mockBucket);
         when(mockBucket.defaultCollection()).thenReturn(mockCollection);
         when(mockBucket.collection(anyString())).thenReturn(mockCollection);
-        databaseProvider = new CouchbaseDatabaseProvider(mockCluster, mockBucket, mockCache);
+        databaseProvider = new CouchbaseDatabaseProvider(mockCluster, mockBucket);
     }
 
     @Test
@@ -139,26 +135,10 @@ public class CouchbaseDatabaseProviderTest {
     }
 
     @Test
-    public void testExecuteQuery_WhenCached() {
-        String query = "SELECT * FROM `bucket`";
-        JsonObject expectedResult = JsonObject.create().put("data", "cached");
-
-        when(mockCache.getIfPresent(query)).thenReturn(expectedResult);
-
-        Object result = databaseProvider.executeQuery(query);
-
-        assertNotNull(result);
-        assertEquals(result, expectedResult);
-        verify(mockCache).getIfPresent(eq(query));
-        verifyNoMoreInteractions(mockCluster, mockBucket, mockCollection);
-    }
-
-    @Test
-    public void testExecuteQuery_WhenNotCached() {
+    public void testExecuteQuery() {
         String query = "SELECT * FROM `bucket`";
         List<JsonObject> expectedResult = List.of(JsonObject.create().put("data", "result"));
 
-        when(mockCache.getIfPresent(query)).thenReturn(null);
         QueryResult mockQueryResult = mock(QueryResult.class);
         when(mockCluster.query(query)).thenReturn(mockQueryResult);
         when(mockQueryResult.rowsAsObject()).thenReturn(expectedResult);
@@ -167,35 +147,22 @@ public class CouchbaseDatabaseProviderTest {
 
         assertNotNull(result);
         assertEquals(result, expectedResult);
-        verify(mockCache).getIfPresent(eq(query));
         verify(mockCluster).query(eq(query));
-        verify(mockCache).put(eq(query), eq(expectedResult));
     }
 
     @Test
     public void testAddToCache() {
-        String key = "testKey";
-        Object value = new Object();
-
-        databaseProvider.addToCache(key, value);
-
-        verify(mockCache).put(eq(key), eq(value));
+        databaseProvider.addToCache("testKey", new Object());
     }
 
     @Test
     public void testClearAllCaches() {
         databaseProvider.clearAllCaches();
-
-        verify(mockCache).invalidateAll();
     }
 
     @Test
     public void testClearCache() {
-        String key = "testKey";
-
-        databaseProvider.clearCache(key);
-
-        verify(mockCache).invalidate(eq(key));
+        databaseProvider.clearCache("testKey");
     }
 
     @Test
@@ -207,15 +174,7 @@ public class CouchbaseDatabaseProviderTest {
 
     @Test
     public void testGetFromCache() {
-        String key = "testKey";
-        Object expected = new Object();
-
-        when(mockCache.getIfPresent(key)).thenReturn(expected);
-
-        Object result = databaseProvider.getFromCache(key);
-
-        assertEquals(result, expected);
-        verify(mockCache).getIfPresent(eq(key));
+        assertNull(databaseProvider.getFromCache("testKey"));
     }
 
     @Test

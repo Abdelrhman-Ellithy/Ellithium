@@ -2,62 +2,87 @@ package Ellithium.core.DB;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.params.SetParams;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Provides robust operations for Redis database access with caching capabilities.
+ * Provides robust operations for Redis database access.
  * Supports key-value operations, hash operations, list operations, set operations,
  * and health checks.
+ * Queries are always executed live against the database to guarantee test integrity.
  */
 public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
 
     private final JedisPool jedisPool;
-    private final Cache<String, Object> queryResultCache;
 
     /**
-     * Primary constructor for production use.
-     * Constructs a RedisDatabaseProvider with the specified connection details and cache configuration.
+     * Primary constructor for production use with connection string.
+     * Supports URI format (e.g. "redis://localhost:6379"), "host:port", or plain "host".
      *
-     * @param host            the Redis host
-     * @param port            the Redis port
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @param connectionString the Redis connection string
      */
-    public RedisDatabaseProvider(String host, int port, long cacheTtlMinutes, long cacheMaxSize) {
+    public RedisDatabaseProvider(String connectionString) {
+        if (connectionString == null || connectionString.isBlank()) {
+            throw new IllegalArgumentException("Redis connection string cannot be null or empty.");
+        }
+        try {
+            if (connectionString.startsWith("redis://") || connectionString.startsWith("rediss://")) {
+                this.jedisPool = new JedisPool(new URI(connectionString));
+            } else if (connectionString.contains(":")) {
+                String[] parts = connectionString.split(":");
+                this.jedisPool = createJedisPool(parts[0], Integer.parseInt(parts[1]));
+            } else {
+                this.jedisPool = createJedisPool(connectionString, 6379);
+            }
+            Reporter.log("Redis connection initialized successfully", LogLevel.INFO_YELLOW);
+        } catch (Exception e) {
+            throw new NoSQLRuntimeException("Failed to initialize Redis connection for: " + connectionString, e);
+        }
+    }
+
+    /**
+     * Primary constructor for production use with host and port.
+     *
+     * @param host the Redis host
+     * @param port the Redis port
+     */
+    public RedisDatabaseProvider(String host, int port) {
         Reporter.log("Initializing Redis connection to " + host + ":" + port, LogLevel.INFO_YELLOW);
         this.jedisPool = createJedisPool(host, port);
-        this.queryResultCache = createCache(cacheTtlMinutes, cacheMaxSize);
         Reporter.log("Redis connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
-     * Secondary constructor for dependency injection (primarily for testing).
-     * Accepts pre-configured JedisPool and Cache instances.
-     * This constructor allows complete control over dependencies for testing
-     * while keeping the public signature clean for production usage.
-     *
-     * @param jedisPool        a pre-configured JedisPool instance
-     * @param queryResultCache a pre-configured Caffeine Cache instance
+     * @deprecated Caching has been removed from database providers. Use {@link #RedisDatabaseProvider(String, int)} instead.
      */
-    public RedisDatabaseProvider(JedisPool jedisPool, Cache<String, Object> queryResultCache) {
-        if (jedisPool == null || queryResultCache == null) {
-            throw new IllegalArgumentException("JedisPool and Cache cannot be null when using this constructor for dependency injection.");
+    @Deprecated
+    public RedisDatabaseProvider(String host, int port, long cacheTtlMinutes, long cacheMaxSize) {
+        this(host, port);
+    }
+
+    /**
+     * Constructor for dependency injection (primarily for testing).
+     * Accepts a pre-configured JedisPool instance.
+     *
+     * @param jedisPool a pre-configured JedisPool instance
+     */
+    public RedisDatabaseProvider(JedisPool jedisPool) {
+        if (jedisPool == null) {
+            throw new IllegalArgumentException("JedisPool cannot be null when using this constructor for dependency injection.");
         }
         this.jedisPool = jedisPool;
-        this.queryResultCache = queryResultCache;
+        Reporter.log("Redis connection initialized successfully", LogLevel.INFO_YELLOW);
     }
+
     /**
      * Helper method to encapsulate JedisPool creation logic.
      *
@@ -77,21 +102,7 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
     }
 
     /**
-     * Helper method to encapsulate Caffeine Cache creation.
-     *
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
-     * @return a new Cache instance
-     */
-    private static Cache<String, Object> createCache(long cacheTtlMinutes, long cacheMaxSize) {
-        return Caffeine.newBuilder()
-                .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
-                .maximumSize(cacheMaxSize)
-                .build();
-    }
-
-    /**
-     * Executes a query by retrieving the value associated with the given key.
+     * Executes a query by retrieving the value associated with the given key live from Redis.
      * This method implements the NoSQLDatabaseProvider interface.
      *
      * @param key the key to query
@@ -99,20 +110,9 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
      */
     @Override
     public Object executeQuery(String key) {
-        Object cachedResult = getFromCache(key);
-        if (cachedResult != null) {
-            Reporter.log("Retrieved from cache for key: " + key, LogLevel.INFO_YELLOW);
-            return cachedResult;
-        }
-
-        Reporter.log("Cache miss for key: " + key + ". Querying Redis.", LogLevel.INFO_YELLOW);
+        Reporter.log("Executing Redis query for key: " + key, LogLevel.INFO_YELLOW);
         try (Jedis jedis = jedisPool.getResource()) {
-            String value = jedis.get(key);
-            if (value != null) {
-                addToCache(key, value);
-                Reporter.log("Value retrieved and cached successfully", LogLevel.INFO_YELLOW);
-            }
-            return value;
+            return jedis.get(key);
         } catch (Exception e) {
             Reporter.log("Failed to execute query for key: " + key + ". Error: " + e.getMessage(), LogLevel.ERROR);
             return null;
@@ -132,50 +132,39 @@ public class RedisDatabaseProvider implements NoSQLDatabaseProvider {
     }
 
     /**
-     * Clears the cache for a specific key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key to clear
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearCache(String key) {
-        queryResultCache.invalidate(key);
-        Reporter.log("Cleared cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Clears all cached query results.
-     * This method implements the NoSQLDatabaseProvider interface.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearAllCaches() {
-        queryResultCache.invalidateAll();
-        Reporter.log("All caches cleared.", LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Adds a query result to the cache.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key   the cache key
-     * @param value the value to cache
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void addToCache(String key, Object value) {
-        queryResultCache.put(key, value);
-        Reporter.log("Added result to cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Retrieves a cached query result by key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key
-     * @return the cached value, or null if not present
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public Object getFromCache(String key) {
-        return queryResultCache.getIfPresent(key);
+        return null;
     }
 
     /**

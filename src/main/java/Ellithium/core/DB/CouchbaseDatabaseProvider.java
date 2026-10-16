@@ -7,60 +7,58 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.*;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Provides robust operations for Couchbase database access with caching capabilities.
+ * Provides robust operations for Couchbase database access.
  * Supports document operations, N1QL queries, and health checks.
+ * Queries are always executed live against the database to guarantee test integrity.
  */
 public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
 
     private final Cluster cluster;
     private final Bucket bucket;
-    private final Cache<String, Object> queryResultCache;
 
     /**
      * Primary constructor for production use.
-     * Connects to Couchbase using the provided details and sets up caching.
+     * Connects to Couchbase using the provided details.
      *
-     * @param host            the Couchbase host
-     * @param username        the username
-     * @param password        the password
-     * @param bucketName      the bucket name
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @param host       the Couchbase host
+     * @param username   the username
+     * @param password   the password
+     * @param bucketName the bucket name
      */
-    public CouchbaseDatabaseProvider(String host, String username, String password, String bucketName,
-                                     long cacheTtlMinutes, long cacheMaxSize) {
+    public CouchbaseDatabaseProvider(String host, String username, String password, String bucketName) {
         Reporter.log("Initializing Couchbase connection to " + host, LogLevel.INFO_YELLOW);
         this.cluster = createCouchbaseCluster(host, username, password);
         this.bucket = createCouchbaseBucket(this.cluster, bucketName);
-        this.queryResultCache = createCache(cacheTtlMinutes, cacheMaxSize);
         Reporter.log("Couchbase connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
-     * Secondary constructor for dependency injection (primarily for testing).
-     * Accepts pre-configured Cluster, Bucket, and Cache instances.
-     * This constructor keeps the public signature clean for production usage
-     * while allowing complete control over dependencies for testing.
-     *
-     * @param cluster         a pre-configured Couchbase Cluster instance
-     * @param bucket          a pre-configured Couchbase Bucket instance
-     * @param queryResultCache a pre-configured Caffeine Cache instance
+     * @deprecated Caching has been removed from database providers. Use {@link #CouchbaseDatabaseProvider(String, String, String, String)} instead.
      */
-    public CouchbaseDatabaseProvider(Cluster cluster, Bucket bucket, Cache<String, Object> queryResultCache) {
-        if (cluster == null || bucket == null || queryResultCache == null) {
-            throw new IllegalArgumentException("Cluster, Bucket, and Cache cannot be null when using this constructor for dependency injection.");
+    @Deprecated
+    public CouchbaseDatabaseProvider(String host, String username, String password, String bucketName,
+                                     long cacheTtlMinutes, long cacheMaxSize) {
+        this(host, username, password, bucketName);
+    }
+
+    /**
+     * Constructor for dependency injection (primarily for testing).
+     * Accepts pre-configured Cluster and Bucket instances.
+     *
+     * @param cluster a pre-configured Couchbase Cluster instance
+     * @param bucket  a pre-configured Couchbase Bucket instance
+     */
+    public CouchbaseDatabaseProvider(Cluster cluster, Bucket bucket) {
+        if (cluster == null || bucket == null) {
+            throw new IllegalArgumentException("Cluster and Bucket cannot be null when using this constructor for dependency injection.");
         }
         this.cluster = cluster;
         this.bucket = bucket;
-        this.queryResultCache = queryResultCache;
-        Reporter.log("Dummy Couchbase initialized successfully", LogLevel.INFO_YELLOW);
+        Reporter.log("Couchbase initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
@@ -78,7 +76,7 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
     /**
      * Helper method to encapsulate Couchbase Bucket retrieval.
      *
-     * @param cluster   the Couchbase Cluster instance
+     * @param cluster    the Couchbase Cluster instance
      * @param bucketName the name of the bucket to connect to
      * @return a new Bucket instance
      */
@@ -87,21 +85,7 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
     }
 
     /**
-     * Helper method to encapsulate Caffeine Cache creation.
-     *
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
-     * @return a new Cache instance
-     */
-    private static Cache<String, Object> createCache(long cacheTtlMinutes, long cacheMaxSize) {
-        return Caffeine.newBuilder()
-                .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
-                .maximumSize(cacheMaxSize)
-                .build();
-    }
-
-    /**
-     * Executes a N1QL query against the database.
+     * Executes a N1QL query live against the database.
      * This method implements the NoSQLDatabaseProvider interface.
      *
      * @param query the N1QL query to execute
@@ -109,20 +93,9 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
      */
     @Override
     public Object executeQuery(String query) {
-        Object cachedResult = getFromCache(query);
-        if (cachedResult != null) {
-            Reporter.log("Retrieved from cache for query: " + query, LogLevel.INFO_YELLOW);
-            return cachedResult;
-        }
-
-        Reporter.log("Cache miss for query: " + query + ". Executing N1QL query.", LogLevel.INFO_YELLOW);
+        Reporter.log("Executing Couchbase N1QL query: " + query, LogLevel.INFO_YELLOW);
         try {
-            Object result = cluster.query(query).rowsAsObject();
-            if (result != null) {
-                addToCache(query, result);
-                Reporter.log("Query executed and result cached successfully", LogLevel.INFO_YELLOW);
-            }
-            return result;
+            return cluster.query(query).rowsAsObject();
         } catch (Exception e) {
             Reporter.log("Failed to execute query: " + query + ". Error: " + e.getMessage(), LogLevel.ERROR);
             return null;
@@ -142,50 +115,39 @@ public class CouchbaseDatabaseProvider implements NoSQLDatabaseProvider {
     }
 
     /**
-     * Clears the cache for a specific key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key to clear
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearCache(String key) {
-        queryResultCache.invalidate(key);
-        Reporter.log("Cleared cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Clears all cached query results.
-     * This method implements the NoSQLDatabaseProvider interface.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearAllCaches() {
-        queryResultCache.invalidateAll();
-        Reporter.log("All caches cleared.", LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Adds a query result to the cache.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key   the cache key
-     * @param value the value to cache
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void addToCache(String key, Object value) {
-        queryResultCache.put(key, value);
-        Reporter.log("Added result to cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Retrieves a cached query result by key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key
-     * @return the cached value, or null if not present
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public Object getFromCache(String key) {
-        return queryResultCache.getIfPresent(key);
+        return null;
     }
 
     /**

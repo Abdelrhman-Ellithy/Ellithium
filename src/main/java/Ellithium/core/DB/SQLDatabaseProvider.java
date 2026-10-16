@@ -1,8 +1,6 @@
 package Ellithium.core.DB;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.rowset.CachedRowSet;
@@ -13,10 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Provides database operations with connection pooling and caching capabilities.
+ * Provides database operations with HikariCP connection pooling.
  * Supports multiple SQL database types including MySQL, PostgreSQL, SQLite, and Oracle.
  */
 public class SQLDatabaseProvider implements SQLProvider {
@@ -27,11 +24,6 @@ public class SQLDatabaseProvider implements SQLProvider {
     private final String dataBaseName;
     private final String serverIP;
     private final SQLDBType dbType;
-    private final Cache<String, List<String>> columnNamesCache;
-    private final Cache<String, Integer> rowCountCache;
-    private final Cache<String, Map<String, String>> columnDataTypesCache;
-    private final Cache<String, List<String>> primaryKeysCache;
-    private final Cache<String, Map<String, String>> foreignKeysCache;
     private static final Map<SQLDBType, String> dbTypeConnectionMap = new HashMap<>();
     private static final Map<SQLDBType, Properties> dbTypeProperties = new HashMap<>();
     private final ThreadLocal<Connection> transactionConnection = new ThreadLocal<>();
@@ -86,13 +78,6 @@ public class SQLDatabaseProvider implements SQLProvider {
         this.serverIP = serverIP;
         this.dbType = dbType;
 
-        // Initialize caches first
-        columnNamesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        rowCountCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        columnDataTypesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        primaryKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        foreignKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-
         // Initialize the connection pool
         HikariConfig config = createHikariConfig(dbType, dbTypeConnectionMap.get(this.dbType) + this.serverIP + ":" + this.port + "/" + this.dataBaseName);
         this.dataSource = new HikariDataSource(config);
@@ -120,13 +105,6 @@ public class SQLDatabaseProvider implements SQLProvider {
         this.dataBaseName = pathToSQLiteDataBase;
         this.serverIP = null;
         this.dbType = dbType;
-
-        // Initialize caches first
-        columnNamesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        rowCountCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        columnDataTypesCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        primaryKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
-        foreignKeysCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(100).build();
 
         // Register SQLite JDBC driver
         try {
@@ -442,29 +420,26 @@ public class SQLDatabaseProvider implements SQLProvider {
 
     /**
      * Gets the names of columns in a specific table.
-     * Results are cached for improved performance.
      * @param tableName The name of the table
      * @return List of column names
      */
     public List<String> getColumnNames(String tableName) {
         validateTableName(tableName);
-        return columnNamesCache.get(tableName, key -> {
-            List<String> columnNames = new ArrayList<>();
-            try (Connection connection = dataSource.getConnection();
-                 ResultSet columns = connection.getMetaData().getColumns(null, null, tableName, null)) {
+        List<String> columnNames = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             ResultSet columns = connection.getMetaData().getColumns(null, null, tableName, null)) {
 
-                while (columns.next()) {
-                    columnNames.add(columns.getString("COLUMN_NAME"));
-                }
-                Reporter.log("Retrieved column names for table: " + tableName, LogLevel.INFO_BLUE);
-
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve column names for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+            while (columns.next()) {
+                columnNames.add(columns.getString("COLUMN_NAME"));
             }
-            return columnNames;
-        });
+            Reporter.log("Retrieved column names for table: " + tableName, LogLevel.INFO_BLUE);
+
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve column names for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return columnNames;
     }
 
     /**
@@ -475,130 +450,114 @@ public class SQLDatabaseProvider implements SQLProvider {
      * @return List of column names
      */
     public List<String> getColumnNames(String catalog, String schema, String tableName) {
-        String cacheKey = String.format("%s.%s.%s", catalog, schema, tableName);
-        return columnNamesCache.get(cacheKey, key -> {
-            List<String> columnNames = new ArrayList<>();
-            try (Connection connection = dataSource.getConnection();
-                 ResultSet columns = connection.getMetaData().getColumns(catalog, schema, tableName, null)) {
-                while (columns.next()) {
-                    columnNames.add(columns.getString("COLUMN_NAME"));
-                }
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve column names for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        List<String> columnNames = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             ResultSet columns = connection.getMetaData().getColumns(catalog, schema, tableName, null)) {
+            while (columns.next()) {
+                columnNames.add(columns.getString("COLUMN_NAME"));
             }
-            return columnNames;
-        });
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve column names for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return columnNames;
     }
 
     /**
      * Gets the total number of rows in a table.
-     * Results are cached for improved performance.
      * @param tableName The name of the table
      * @return Number of rows in the table
      */
     public int getRowCount(String tableName) {
         validateTableName(tableName);
-        return rowCountCache.get(tableName, key -> {
-            int rowCount = 0;
-            // Table name is already validated by validateTableName
-            String query = "SELECT COUNT(*) FROM " + tableName;
-            try (Connection connection = dataSource.getConnection();
-                 Statement stmt = connection.createStatement();
-                 ResultSet resultSet = stmt.executeQuery(query)) {
-                if (resultSet.next()) {
-                    rowCount = resultSet.getInt(1);
-                }
-                Reporter.log("Row count for table " + tableName + ": " + rowCount, LogLevel.INFO_BLUE);
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve row count for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        int rowCount = 0;
+        String query = "SELECT COUNT(*) FROM " + tableName;
+        try (Connection connection = dataSource.getConnection();
+             Statement stmt = connection.createStatement();
+             ResultSet resultSet = stmt.executeQuery(query)) {
+            if (resultSet.next()) {
+                rowCount = resultSet.getInt(1);
             }
-            return rowCount;
-        });
+            Reporter.log("Row count for table " + tableName + ": " + rowCount, LogLevel.INFO_BLUE);
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve row count for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return rowCount;
     }
 
     /**
      * Gets the data types of columns in a table.
-     * Results are cached for improved performance.
      * @param tableName The name of the table
      * @return Map of column names to their SQL data types
      */
     public Map<String, String> getColumnDataTypes(String tableName) {
         validateTableName(tableName);
-        return columnDataTypesCache.get(tableName, key -> {
-            Map<String, String> columnDataTypes = new HashMap<>();
-            try (Connection connection = dataSource.getConnection();
-                 ResultSet columns = connection.getMetaData().getColumns(null, null, tableName, null)) {
+        Map<String, String> columnDataTypes = new HashMap<>();
+        try (Connection connection = dataSource.getConnection();
+             ResultSet columns = connection.getMetaData().getColumns(null, null, tableName, null)) {
 
-                while (columns.next()) {
-                    columnDataTypes.put(columns.getString("COLUMN_NAME"), columns.getString("TYPE_NAME"));
-                }
-                Reporter.log("Retrieved column data types for table: " + tableName, LogLevel.INFO_BLUE);
-
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve column data types for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+            while (columns.next()) {
+                columnDataTypes.put(columns.getString("COLUMN_NAME"), columns.getString("TYPE_NAME"));
             }
-            return columnDataTypes;
-        });
+            Reporter.log("Retrieved column data types for table: " + tableName, LogLevel.INFO_BLUE);
+
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve column data types for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return columnDataTypes;
     }
 
     /**
      * Gets the primary key columns of a table.
-     * Results are cached for improved performance.
      * @param tableName The name of the table
      * @return List of primary key column names
      */
     public List<String> getPrimaryKeys(String tableName) {
         validateTableName(tableName);
-        return primaryKeysCache.get(tableName, key -> {
-            List<String> primaryKeys = new ArrayList<>();
-            try (Connection connection = dataSource.getConnection();
-                 ResultSet pkResultSet = connection.getMetaData().getPrimaryKeys(null, null, tableName)) {
+        List<String> primaryKeys = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             ResultSet pkResultSet = connection.getMetaData().getPrimaryKeys(null, null, tableName)) {
 
-                while (pkResultSet.next()) {
-                    primaryKeys.add(pkResultSet.getString("COLUMN_NAME"));
-                }
-                Reporter.log("Retrieved primary keys for table: " + tableName, LogLevel.INFO_BLUE);
-
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve primary keys for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+            while (pkResultSet.next()) {
+                primaryKeys.add(pkResultSet.getString("COLUMN_NAME"));
             }
-            return primaryKeys;
-        });
+            Reporter.log("Retrieved primary keys for table: " + tableName, LogLevel.INFO_BLUE);
+
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve primary keys for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return primaryKeys;
     }
 
     /**
      * Gets the foreign key relationships of a table.
-     * Results are cached for improved performance.
      * @param tableName The name of the table
      * @return Map of foreign key columns to their referenced tables
      */
     public Map<String, String> getForeignKeys(String tableName) {
         validateTableName(tableName);
-        return foreignKeysCache.get(tableName, key -> {
-            Map<String, String> foreignKeys = new HashMap<>();
-            try (Connection connection = dataSource.getConnection();
-                 ResultSet fkResultSet = connection.getMetaData().getImportedKeys(null, null, tableName)) {
+        Map<String, String> foreignKeys = new HashMap<>();
+        try (Connection connection = dataSource.getConnection();
+             ResultSet fkResultSet = connection.getMetaData().getImportedKeys(null, null, tableName)) {
 
-                while (fkResultSet.next()) {
-                    foreignKeys.put(fkResultSet.getString("FKCOLUMN_NAME"), fkResultSet.getString("PKTABLE_NAME"));
-                }
-                Reporter.log("Retrieved foreign keys for table: " + tableName, LogLevel.INFO_BLUE);
-
-            } catch (SQLException e) {
-                Reporter.log("Failed to retrieve foreign keys for table: " + tableName, LogLevel.ERROR);
-                Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
-                Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+            while (fkResultSet.next()) {
+                foreignKeys.put(fkResultSet.getString("FKCOLUMN_NAME"), fkResultSet.getString("PKTABLE_NAME"));
             }
-            return foreignKeys;
-        });
+            Reporter.log("Retrieved foreign keys for table: " + tableName, LogLevel.INFO_BLUE);
+
+        } catch (SQLException e) {
+            Reporter.log("Failed to retrieve foreign keys for table: " + tableName, LogLevel.ERROR);
+            Reporter.log("SQL State: " + e.getSQLState(), LogLevel.ERROR);
+            Reporter.log("Error Message: " + e.getMessage(), LogLevel.ERROR);
+        }
+        return foreignKeys;
     }
 
     /**
@@ -650,27 +609,21 @@ public class SQLDatabaseProvider implements SQLProvider {
 
     /**
      * Clears all cached data for a specific table.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      * @param tableName The name of the table
      */
+    @Deprecated
     public void clearCacheForTable(String tableName) {
-        columnNamesCache.invalidate(tableName);
-        rowCountCache.invalidate(tableName);
-        columnDataTypesCache.invalidate(tableName);
-        primaryKeysCache.invalidate(tableName);
-        foreignKeysCache.invalidate(tableName);
-        Reporter.log("Cache cleared for table: " + tableName, LogLevel.INFO_BLUE);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
      * Clears all cached data for all tables.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     public void clearAllCaches() {
-        columnNamesCache.invalidateAll();
-        rowCountCache.invalidateAll();
-        columnDataTypesCache.invalidateAll();
-        primaryKeysCache.invalidateAll();
-        foreignKeysCache.invalidateAll();
-        Reporter.log("All caches cleared.", LogLevel.INFO_BLUE);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**

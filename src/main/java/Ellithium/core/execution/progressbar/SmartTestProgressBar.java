@@ -94,8 +94,11 @@ public final class SmartTestProgressBar implements TestLifecycleSubscriber {
         }
 
         String active = "";
-        if (!activeTests.isEmpty()) {
-            active = activeTests.values().iterator().next();
+        var it = activeTests.values().iterator();
+        if (it.hasNext()) {
+            try {
+                active = it.next();
+            } catch (Exception ignored) {}
         }
 
         long elapsed = Math.max(0, System.currentTimeMillis() - startTimeMs);

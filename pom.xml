@@ -90,7 +90,6 @@
         <mavenPublishPluginVersion>3.3.0</mavenPublishPluginVersion>
         <AllureJVMVersion>3.0.0</AllureJVMVersion>
         <HikariCPVersion>7.1.0</HikariCPVersion>
-        <caffineVersion>3.3.0</caffineVersion>
         <mysqlVersion>26.7.0</mysqlVersion>
         <postgresqlVersion>42.7.14</postgresqlVersion>
         <mssqlVersion>13.6.0.jre11</mssqlVersion>
@@ -345,11 +344,6 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>${caffineVersion}</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
