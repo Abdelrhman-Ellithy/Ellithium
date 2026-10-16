@@ -16,12 +16,20 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
         super(driver);
     }
 
+    private static By requireLocator(By locator, String paramName) {
+        if (locator == null) {
+            throw new IllegalArgumentException(paramName + " must not be null");
+        }
+        return locator;
+    }
+
     /**
      * Hovers over an element with specified timeout.
      * @param locator Element locator
      * @param timeout Maximum wait time in seconds
      */
     public void hoverOverElement(By locator, int timeout) {
+        requireLocator(locator, "locator");
         Reporter.log("Hovered over element: " + locator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locator, timeout, WaitManager.getDefaultPollingTime(),
                 el -> new Actions(driver).moveToElement(el).perform());
@@ -35,6 +43,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void hoverAndClick(By locatorToHover, By locatorToClick, int timeout, int pollingEvery) {
+        requireLocator(locatorToHover, "locatorToHover");
+        requireLocator(locatorToClick, "locatorToClick");
         Reporter.log("Waiting for element to hover: " + locatorToHover.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locatorToHover, timeout, pollingEvery, elementToHover -> {
             WebElement elementToClick = waitForVisibilityAndFindElement(locatorToClick, timeout, pollingEvery);
@@ -49,6 +59,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param targetLocator Target element locator
      */
     public void dragAndDrop(By sourceLocator, By targetLocator) {
+        requireLocator(sourceLocator, "sourceLocator");
+        requireLocator(targetLocator, "targetLocator");
         performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
                 source -> {
                     WebElement target = waitForVisibilityAndFindElement(targetLocator,
@@ -56,11 +68,15 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
                     // clickAndHold(source) only auto-scrolls to source; if target isn't also in view,
                     // the mid-drag scroll to reach it is unreliable, so fit both in view up front here
                     // (behavior:'instant' so a page's scroll-behavior:smooth can't leave this mid-animation).
-                    ((JavascriptExecutor) driver).executeScript(
-                            "var a=arguments[0].getBoundingClientRect(),b=arguments[1].getBoundingClientRect();" +
-                            "var top=Math.min(a.top,b.top),bottom=Math.max(a.bottom,b.bottom);" +
-                            "window.scrollBy({top:(top+bottom)/2 - window.innerHeight/2, left:0, behavior:'instant'});",
-                            source, target);
+                    if (driver instanceof JavascriptExecutor js) {
+                        try {
+                            js.executeScript(
+                                    "var a=arguments[0].getBoundingClientRect(),b=arguments[1].getBoundingClientRect();" +
+                                    "var top=Math.min(a.top,b.top),bottom=Math.max(a.bottom,b.bottom);" +
+                                    "window.scrollBy({top:(top+bottom)/2 - window.innerHeight/2, left:0, behavior:'instant'});",
+                                    source, target);
+                        } catch (WebDriverException ignored) {}
+                    }
                     new Actions(driver).clickAndHold(source).moveToElement(target).release().perform();
                 });
         Reporter.log("Drag and drop performed from " + sourceLocator + " to " + targetLocator, LogLevel.INFO_BLUE);
@@ -73,6 +89,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param yOffset Y offset to move
      */
     public void dragAndDropByOffset(By sourceLocator, int xOffset, int yOffset) {
+        requireLocator(sourceLocator, "sourceLocator");
         performWithStaleRetry(sourceLocator, WaitManager.getDefaultTimeout(), WaitManager.getDefaultPollingTime(),
                 source -> new Actions(driver).clickAndHold(source).moveByOffset(xOffset, yOffset).release().perform());
         Reporter.log("Drag and drop performed with offset: X=" + xOffset + ", Y=" + yOffset, LogLevel.INFO_BLUE);
@@ -85,6 +102,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void rightClick(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator, "locator");
         Reporter.log("Waiting for element to right-click: " + locator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(locator, timeout, pollingEvery,
                 el -> new Actions(driver).contextClick(el).perform());
@@ -98,6 +116,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void doubleClick(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator, "locator");
         Reporter.log("Waiting for element to double-click: " + locator.toString(), LogLevel.INFO_BLUE);
         // Explicit click-pause-click instead of the composite Actions.doubleClick(): under heavy CPU
         // contention its zero-gap press/release pairs can land too close together for the browser to
@@ -115,6 +134,8 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @return The final value of the slider
      */
     public float moveSliderTo(By sliderLocator, By rangeLocator, float targetValue) {
+        requireLocator(sliderLocator, "sliderLocator");
+        requireLocator(rangeLocator, "rangeLocator");
         final float EPSILON = 0.01f;
         // Cache element references; only re-locate on StaleElementReferenceException.
         // Previous implementation re-called findWebElement (= driver.findElement + capture JS)
@@ -160,13 +181,23 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
             return finalValue;
         } catch (WebDriverException e) {
             if (SeleniumFailurePolicy.isTerminal(e)) throw e;
-            float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
-            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
-            return finalValue;
+            try {
+                float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
+                Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+                return finalValue;
+            } catch (Exception ex) {
+                Reporter.log("moveSliderTo: unable to parse slider final value after recovery: " + ex.getMessage(), LogLevel.WARN);
+                return targetValue;
+            }
         } catch (NumberFormatException e) {
-            float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
-            Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
-            return finalValue;
+            try {
+                float finalValue = Float.parseFloat(findWebElement(rangeLocator).getText());
+                Reporter.log("Slider moved to: " + finalValue, LogLevel.INFO_BLUE);
+                return finalValue;
+            } catch (Exception ex) {
+                Reporter.log("moveSliderTo: unable to parse slider final value: " + ex.getMessage(), LogLevel.WARN);
+                return targetValue;
+            }
         }
     }
 
@@ -179,6 +210,7 @@ public class MouseActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void moveSliderByOffset(By sliderLocator, int xOffset, int yOffset, int timeout, int pollingEvery) {
+        requireLocator(sliderLocator, "sliderLocator");
         Reporter.log("Waiting for slider to be visible: " + sliderLocator.toString(), LogLevel.INFO_BLUE);
         performWithStaleRetry(sliderLocator, timeout, pollingEvery,
                 slider -> new Actions(driver).clickAndHold(slider).moveByOffset(xOffset, yOffset).release().perform());

@@ -12,6 +12,13 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
         super(driver);
     }
 
+    private static By requireLocator(By locator) {
+        if (locator == null) {
+            throw new IllegalArgumentException("locator must not be null");
+        }
+        return locator;
+    }
+
     /**
      * Sends text data to an element after waiting for it to be visible.
      * @param locator Element locator
@@ -20,6 +27,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, String data, int timeout, int pollingEvery) {
+        requireLocator(locator);
         performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
@@ -31,6 +39,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(By locator, Keys data, int timeout, int pollingEvery) {
+        requireLocator(locator);
         performWithStaleRetry(locator, timeout, pollingEvery, el -> { el.clear(); el.sendKeys(data); });
     }
 
@@ -41,6 +50,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnElement(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         performWithStaleRetry(locator, timeout, pollingEvery, WebElement::click);
     }
 
@@ -52,6 +62,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return Text content of the element
      */
     public String getText(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         return performAndGet(locator, timeout, pollingEvery, WebElement::getText);
     }
 
@@ -63,6 +74,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of text from the elements
      */
     public List<String> getTextFromMultipleElements(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Getting text from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, WebElement::getText);
@@ -77,6 +89,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of attribute values from the elements
      */
     public List<String> getAttributeFromMultipleElements(By locator, String attribute, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Getting Attribute from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, el -> el.getDomAttribute(attribute));
@@ -90,6 +103,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return List of attribute values from the elements
      */
     public List<String> getPropertyFromMultipleElements(By locator, String property, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Getting Property from multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         return mapElementsSafely(locator, el -> el.getDomProperty(property));
@@ -102,6 +116,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clickOnMultipleElements(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         waitForVisibilityAndFindElements(locator, timeout, pollingEvery);
         Reporter.log("Clicking on multiple elements located: ", LogLevel.INFO_BLUE, locator.toString());
         forEachElementSafely(locator, WebElement::click);
@@ -116,6 +131,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return The attribute value
      */
     public String getAttributeValue(By locator, String attribute, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Getting Attribute: '" + attribute + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         return performAndGet(locator, timeout, pollingEvery, el -> el.getDomAttribute(attribute), false);
     }
@@ -129,6 +145,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return The attribute value
      */
     public String getPropertyValue(By locator, String property, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Getting Property: '" + property + "' from Element: " + locator.toString(), LogLevel.INFO_BLUE);
         return performAndGet(locator, timeout, pollingEvery, el -> el.getDomProperty(property), false);
     }
@@ -340,6 +357,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if file does not exist
      */
     public void uploadFile(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
+        requireLocator(fileUploadLocator);
+        if (filePath == null || filePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("filePath must not be null or blank");
+        }
         File file = new File(filePath);
         if (!file.exists()) {
             throw new IllegalArgumentException("File does not exist: " + filePath);
@@ -359,6 +380,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if any file does not exist
      */
     public void uploadMultipleFiles(By fileUploadLocator, String[] filePaths, int timeout, int pollingEvery) {
+        requireLocator(fileUploadLocator);
         if (filePaths == null || filePaths.length == 0) {
             Reporter.log("uploadMultipleFiles: filePaths must not be null or empty", LogLevel.ERROR);
             throw new IllegalArgumentException("filePaths must not be null or empty");
@@ -372,6 +394,9 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
     private String buildFilePathsString(String[] filePaths) {
         StringBuilder paths = new StringBuilder();
         for (String filePath : filePaths) {
+            if (filePath == null || filePath.trim().isEmpty()) {
+                throw new IllegalArgumentException("filePath in array must not be null or blank");
+            }
             File file = new File(filePath);
             if (!file.exists()) {
                 throw new IllegalArgumentException("File does not exist: " + filePath);
@@ -411,6 +436,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is present, false otherwise
      */
     public boolean isElementPresent(By locator, int timeout, int pollingEvery, boolean heal) {
+        requireLocator(locator);
         Reporter.log("Element present check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, el -> Boolean.TRUE, Boolean.FALSE, heal);
     }
@@ -454,6 +480,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is displayed, false otherwise
      */
     public boolean isElementDisplayed(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Element is displayed check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isDisplayed, false);
     }
@@ -485,6 +512,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is enabled, false otherwise
      */
     public boolean isElementEnabled(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Element is enabled check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isEnabled, false);
     }
@@ -516,6 +544,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is selected, false otherwise
      */
     public boolean isElementSelected(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Element is selected check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, WebElement::isSelected, false);
     }
@@ -547,6 +576,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the element is clickable, false otherwise
      */
     public boolean isElementClickable(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Element is clickable check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,
                 el -> el.isDisplayed() && el.isEnabled(), false);
@@ -577,6 +607,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void clearElement(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         try {
             performWithStaleRetry(locator, timeout, pollingEvery, WebElement::clear);
         } catch (TimeoutException e) {
@@ -612,6 +643,7 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void scrollIntoView(By locator, int timeout, int pollingEvery) {
+        requireLocator(locator);
         requireJavascriptContext("scrollIntoView");
         performWithStaleRetry(locator, timeout, pollingEvery,
                 el -> ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el));
@@ -643,9 +675,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if text contains substring, false otherwise
      */
     public boolean isTextContains(By locator, String substring, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Text contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,
-                el -> el.getText().contains(substring), false);
+                el -> el.getText() != null && substring != null && el.getText().contains(substring), false);
     }
 
     /**
@@ -678,10 +711,11 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if attribute contains substring, false otherwise
      */
     public boolean isAttributeContains(By locator, String attribute, String substring, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Attribute '" + attribute + "' contains '" + substring + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery, el -> {
             String v = el.getDomAttribute(attribute);
-            return v != null && v.contains(substring);
+            return v != null && substring != null && v.contains(substring);
         }, false);
     }
 
@@ -716,9 +750,10 @@ public class ElementActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if text matches exactly, false otherwise
      */
     public boolean isTextEqual(By locator, String expected, int timeout, int pollingEvery) {
+        requireLocator(locator);
         Reporter.log("Text equal '" + expected + "' check: " + locator, LogLevel.INFO_BLUE);
         return performAndGetOrDefault(locator, timeout, pollingEvery,
-                el -> expected.equals(el.getText()), false);
+                el -> java.util.Objects.equals(expected, el.getText()), false);
     }
 
     /**

@@ -762,6 +762,9 @@ class BaseActions<T extends WebDriver> {
      * {@link #findWebElement(By)} and the switch is retried on the healed element.
      */
     protected WebDriver performFrameSwitch(By locator, int timeout, int pollingEvery) {
+        if (locator == null) {
+            throw new IllegalArgumentException("locator must not be null");
+        }
         try {
             return getFluentWait(timeout, pollingEvery)
                     .until(org.openqa.selenium.support.ui.ExpectedConditions
@@ -989,6 +992,9 @@ class BaseActions<T extends WebDriver> {
             }
             lastResolved = el;
             try {
+                if (!el.isEnabled()) {
+                    recovery.awaitClickable(el, remainingMillis(deadline), polling);
+                }
                 action.accept(el);
                 return;
             } catch (StaleElementReferenceException | NoSuchElementException e) {
