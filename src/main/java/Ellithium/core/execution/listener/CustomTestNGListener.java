@@ -108,6 +108,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
                 testResultToRecordingId.put(getResultKey(result), recordingId);
             }
         }
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestStart(testIdentifier, testName);
     }
 
     @Override
@@ -134,6 +135,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestFailure(
+                testIdentifier, result.getName(), result.getThrowable(),
+                Math.max(0, result.getEndMillis() - result.getStartMillis()));
     }
 
     @Override
@@ -145,6 +149,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestSuccess(
+                getTestIdentifier(result), result.getName(),
+                Math.max(0, result.getEndMillis() - result.getStartMillis()));
     }
 
     @Override
@@ -156,6 +163,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestSkipped(
+                getTestIdentifier(result), result.getName(), result.getThrowable());
     }
 
     @Override
@@ -207,6 +216,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
         testResultCollector.initializeTestResultCollection();
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchSuiteStart("EllithiumExecution");
     }
 
     @Override
@@ -239,6 +249,8 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             Ellithium.core.reporting.internal.AllureEnvironmentManager.writeEnvironmentMetadata();
             AllureHelper.allureOpen();
             TestResultCollectorManager.getInstance().sendExecutionCompletionNotifications();
+            Ellithium.core.spi.PluginRegistry.getInstance().dispatchSuiteFinish("EllithiumExecution");
+            Ellithium.core.spi.PluginRegistry.getInstance().shutdown();
         }
     }
 

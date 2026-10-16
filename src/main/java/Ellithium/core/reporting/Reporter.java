@@ -78,6 +78,7 @@ public class Reporter {
             closePendingStep(now);
             openPendingStep(message + additionalParameter, logLevel, now);
         }
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchLogStep(message, logLevel, additionalParameter);
     }
 
     /**
@@ -142,6 +143,7 @@ public class Reporter {
      */
     public static void flushPendingStep() {
         closePendingStep(System.currentTimeMillis());
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchFlush();
     }
 
     /**
