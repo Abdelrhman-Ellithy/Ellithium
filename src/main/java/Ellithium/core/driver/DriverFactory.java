@@ -696,6 +696,10 @@ public class DriverFactory {
                         }
                     }
                 }
+                WebDriver active = WebDriverThread.get();
+                if (active != null) {
+                    Ellithium.core.spi.PluginRegistry.getInstance().dispatchDriverQuit(active);
+                }
             } finally {
                 removeDriver();
             }
@@ -759,6 +763,7 @@ public class DriverFactory {
             }
         }
         VideoRecordingManager.onDriverCreated();
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchDriverCreated(decoratedDriver, config);
     }
 
     /**
@@ -851,6 +856,7 @@ public class DriverFactory {
         }
         WebDriverThread.set(getDecoratedWebDriver(localDriver));
         VideoRecordingManager.onDriverCreated();
+        Ellithium.core.spi.PluginRegistry.getInstance().dispatchDriverCreated(WebDriverThread.get(), driverConfigurationThread.get());
         Reporter.log("Driver Created", LogLevel.INFO_GREEN);
     }
 
@@ -877,6 +883,7 @@ public class DriverFactory {
                 if (localDriver != null) {
                     IOSDriverThread.set(localDriver);
                     VideoRecordingManager.onDriverCreated();
+                    Ellithium.core.spi.PluginRegistry.getInstance().dispatchDriverCreated(localDriver, getCurrentDriverConfiguration());
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
                     return (T) localDriver;
                 }
@@ -886,6 +893,7 @@ public class DriverFactory {
                 if (localDriver != null) {
                     AndroidDriverThread.set(localDriver);
                     VideoRecordingManager.onDriverCreated();
+                    Ellithium.core.spi.PluginRegistry.getInstance().dispatchDriverCreated(localDriver, getCurrentDriverConfiguration());
                     Reporter.log("Driver Created", LogLevel.INFO_GREEN);
                     return (T) localDriver;
                 }
