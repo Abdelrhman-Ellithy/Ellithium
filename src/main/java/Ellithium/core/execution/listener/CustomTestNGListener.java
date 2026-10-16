@@ -4,6 +4,10 @@ import Ellithium.core.ai.healing.EnsembleHealer;
 import Ellithium.core.ai.healing.AISelfHealer;
 import Ellithium.core.driver.DriverConfiguration;
 import Ellithium.core.driver.DriverFactory;
+import Ellithium.core.driver.HeadlessMode;
+import Ellithium.core.driver.PrivateMode;
+import Ellithium.core.execution.fixtures.WithDriver;
+import Ellithium.core.execution.fixtures.DriverFixtureProvider;
 import org.openqa.selenium.WebDriver;
 import Ellithium.core.execution.Analyzer.RetryAnalyzer;
 import Ellithium.core.logging.LogLevel;
@@ -308,6 +312,35 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             }
         }
         if (method.isTestMethod()) {
+            Method javaMethod = method.getTestMethod() != null && method.getTestMethod().getConstructorOrMethod() != null
+                    ? method.getTestMethod().getConstructorOrMethod().getMethod()
+                    : null;
+            if (javaMethod != null) {
+                WithDriver withDriver = DriverFixtureProvider.resolveAnnotation(javaMethod);
+                if (withDriver != null) {
+                    if (DriverFactory.getCurrentDriver() == null && testResult != null && testResult.getParameters() != null) {
+                        for (Object param : testResult.getParameters()) {
+                            if (param instanceof WebDriver wd) {
+                                DriverConfiguration cfg = new DriverConfiguration(
+                                        withDriver.type(),
+                                        withDriver.headless() ? HeadlessMode.True : HeadlessMode.False,
+                                        withDriver.pageLoadStrategy(),
+                                        withDriver.incognito() ? PrivateMode.True : PrivateMode.False,
+                                        withDriver.sandbox(),
+                                        withDriver.webSecurity(),
+                                        null,
+                                        false
+                                );
+                                DriverFactory.adoptCurrentThread(wd, cfg);
+                                break;
+                            }
+                        }
+                    }
+                    if (DriverFactory.getCurrentDriver() == null) {
+                        DriverFactory.getNewDriver(DriverFixtureProvider.createConfig(withDriver));
+                    }
+                }
+            }
             String testName = testResult != null ? testResult.getName() : "";
             if (HealingTelemetryStore.hasHealsForTest(testName)) {
                 io.qameta.allure.Allure.label("flaky", "true");
@@ -385,6 +418,19 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             stopRecordingForTest(testResult, getStatus(testResult.getStatus()));
             Reporter.flushPendingStep();
             GeneralHandler.addAttachments();
+            Method javaMethod = method.getTestMethod() != null && method.getTestMethod().getConstructorOrMethod() != null
+                    ? method.getTestMethod().getConstructorOrMethod().getMethod()
+                    : null;
+            if (javaMethod != null) {
+                WithDriver withDriver = DriverFixtureProvider.resolveAnnotation(javaMethod);
+                if (withDriver != null && withDriver.autoQuit() && DriverFactory.getCurrentDriver() != null) {
+                    try {
+                        DriverFactory.quitDriver();
+                    } catch (Throwable t) {
+                        Logger.warn("Auto-quit driver fixture failed: " + t.getMessage());
+                    }
+                }
+            }
         }
         if (method.isConfigurationMethod()) {
             ThreadContext.put("testName", "Ellithium");
@@ -396,6 +442,15 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     @Override
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
         annotation.setRetryAnalyzer(RetryAnalyzer.class);
+        if (testMethod != null) {
+            WithDriver withDriver = DriverFixtureProvider.resolveAnnotation(testMethod);
+            if (withDriver != null && testMethod.getParameterCount() > 0) {
+                if (annotation.getDataProvider() == null || annotation.getDataProvider().isEmpty()) {
+                    annotation.setDataProvider(DriverFixtureProvider.FIXTURE_DATA_PROVIDER);
+                    annotation.setDataProviderClass(DriverFixtureProvider.class);
+                }
+            }
+        }
     }
 
     /**
