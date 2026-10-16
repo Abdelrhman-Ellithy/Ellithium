@@ -413,6 +413,11 @@ public class AssertionExecutor {
                     " - Double arrays are not equal within tolerance: " + delta + " (Expected: " + Arrays.toString(expected) + ", Actual: " + Arrays.toString(actual) + ")");
         }
 
+        public static void assertEqualsNoOrder(Object[] actual, Object[] expected) {
+            execute(() -> Assert.assertEqualsNoOrder(actual, expected),
+                    " - Arrays are equal (ignoring order)", " - Arrays are not equal (ignoring order)");
+        }
+
         public static void assertEqualsNoOrder(Object[] actual, Object[] expected, String message) {
             execute(() -> Assert.assertEqualsNoOrder(actual, expected, message),
                     " - Arrays are equal (ignoring order)", " - Arrays are not equal (ignoring order)");
@@ -676,6 +681,10 @@ public class AssertionExecutor {
             Reporter.log("Soft Assert: " + message + " - Actual: " + actual, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " < Expected: " + expected);
         }
 
+        public void assertEmpty(Object container) {
+            assertEmpty(container, "Container should be empty");
+        }
+
         public void assertEmpty(Object container, String message) {
             boolean pass;
             if (container instanceof String) {
@@ -690,6 +699,10 @@ public class AssertionExecutor {
                         (container == null ? "null" : container.getClass().getSimpleName()));
             }
             Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Container is empty: " + container);
+        }
+
+        public void assertNotEmpty(Object container) {
+            assertNotEmpty(container, "Container should not be empty");
         }
 
         public void assertNotEmpty(Object container, String message) {
@@ -708,10 +721,16 @@ public class AssertionExecutor {
             Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Container is not empty: " + container);
         }
 
+        public void assertInstanceOf(Object object, Class<?> clazz) {
+            boolean pass = clazz != null && clazz.isInstance(object);
+            softAssert.assertTrue(pass, "Object should be instance of " + (clazz == null ? "null" : clazz.getSimpleName()));
+            Reporter.log("Soft Assert: Object is instance of " + (clazz == null ? "null" : clazz.getSimpleName()), pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
+        }
+
         public void assertInstanceOf(Object object, Class<?> clazz, String message) {
-            boolean pass = clazz.isInstance(object);
+            boolean pass = clazz != null && clazz.isInstance(object);
             softAssert.assertTrue(pass, message);
-            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Object: " + object + " is an instance of: " + clazz.getName());
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Object: " + object + " is an instance of: " + (clazz == null ? "null" : clazz.getName()));
         }
 
         public void assertContainsIgnoreCase(String actual, String expected) {
@@ -738,11 +757,19 @@ public class AssertionExecutor {
             Reporter.log("Soft Assert Contains Ignore Case - Actual: " + actual + " contains Expected: " + expected, pass ? LogLevel.INFO_BLUE : LogLevel.WARN);
         }
 
+        public void assertBetween(int value, int lowerBound, int upperBound) {
+            assertBetween(value, lowerBound, upperBound, "Value " + value + " is within range [" + lowerBound + ", " + upperBound + "]");
+        }
+
         public void assertBetween(int value, int lowerBound, int upperBound, String message) {
             boolean pass = value >= lowerBound && value <= upperBound;
             softAssert.assertTrue(pass, message);
             Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN,
                 " - Value " + value + " is within range [" + lowerBound + ", " + upperBound + "]");
+        }
+
+        public void assertMatches(String actual, String regex) {
+            assertMatches(actual, regex, "String should match regex: " + regex);
         }
 
         public void assertMatches(String actual, String regex, String message) {
@@ -757,6 +784,10 @@ public class AssertionExecutor {
             Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - String matches the regex pattern");
         }
 
+        public void assertSameSize(List<?> actual, List<?> expected) {
+            assertSameSize(actual, expected, "Lists should have the same size");
+        }
+
         public void assertSameSize(List<?> actual, List<?> expected, String message) {
             if (actual == null || expected == null) {
                 softAssert.fail(message + " - actual and expected must not be null");
@@ -766,6 +797,58 @@ public class AssertionExecutor {
             boolean pass = actual.size() == expected.size();
             softAssert.assertEquals(actual.size(), expected.size(), message);
             Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Lists have the same size");
+        }
+
+        public void assertStartsWith(String actual, String prefix) {
+            assertStartsWith(actual, prefix, "String should start with prefix: " + prefix);
+        }
+
+        public void assertStartsWith(String actual, String prefix, String message) {
+            boolean pass;
+            if (actual == null || prefix == null) {
+                pass = false;
+                softAssert.fail(message + " - actual and prefix must not be null");
+            } else {
+                pass = actual.startsWith(prefix);
+                softAssert.assertTrue(pass, message);
+            }
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - String starts with prefix: " + prefix);
+        }
+
+        public void assertEndsWith(String actual, String suffix) {
+            assertEndsWith(actual, suffix, "String should end with suffix: " + suffix);
+        }
+
+        public void assertEndsWith(String actual, String suffix, String message) {
+            boolean pass;
+            if (actual == null || suffix == null) {
+                pass = false;
+                softAssert.fail(message + " - actual and suffix must not be null");
+            } else {
+                pass = actual.endsWith(suffix);
+                softAssert.assertTrue(pass, message);
+            }
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - String ends with suffix: " + suffix);
+        }
+
+        public void assertMapEmpty(Map<?, ?> map) {
+            assertMapEmpty(map, "Map should be empty");
+        }
+
+        public void assertMapEmpty(Map<?, ?> map, String message) {
+            boolean pass = map != null && map.isEmpty();
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Map is empty");
+        }
+
+        public void assertMapNotEmpty(Map<?, ?> map) {
+            assertMapNotEmpty(map, "Map should not be empty");
+        }
+
+        public void assertMapNotEmpty(Map<?, ?> map, String message) {
+            boolean pass = map != null && !map.isEmpty();
+            softAssert.assertTrue(pass, message);
+            Reporter.log("Soft Assert: " + message, pass ? LogLevel.INFO_GREEN : LogLevel.WARN, " - Map is not empty");
         }
 
         public void assertArrayEquals(int[] actual, int[] expected) {
@@ -818,6 +901,10 @@ public class AssertionExecutor {
                         ". Expected: " + expected[i] + ", Actual: " + actual[i]);
                 Reporter.log("Soft Assert: " + message + " Array element at index " + i + " within tolerance: " + delta, pass ? LogLevel.INFO_GREEN : LogLevel.WARN);
             }
+        }
+
+        public void assertEqualsNoOrder(Object[] actual, Object[] expected) {
+            assertEqualsNoOrder(actual, expected, "Arrays should be equal (ignoring order)");
         }
 
         public void assertEqualsNoOrder(Object[] actual, Object[] expected, String message) {

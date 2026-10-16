@@ -5,6 +5,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AssertionExecutorTests {
@@ -397,4 +398,101 @@ public class AssertionExecutorTests {
             // expected at assertAll, not during assertNull call
         }
     }
+
+    @Test
+    public void hard_assertEqualsNoOrder_2args_passes_sameElements() {
+        AssertionExecutor.hard.assertEqualsNoOrder(new Object[]{"x", "y", "z"}, new Object[]{"z", "x", "y"});
+    }
+
+    @Test
+    public void hard_assertEqualsNoOrder_withNullElements_passes() {
+        AssertionExecutor.hard.assertEqualsNoOrder(new Object[]{"x", null, "y"}, new Object[]{null, "y", "x"});
+    }
+
+    @Test(expectedExceptions = AssertionError.class)
+    public void hard_assertEqualsNoOrder_throws_whenDifferentElements() {
+        AssertionExecutor.hard.assertEqualsNoOrder(new Object[]{"a", "b"}, new Object[]{"a", "c"});
+    }
+
+    @Test
+    public void soft_assertEqualsNoOrder_2args_and_3args_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertEqualsNoOrder(new Object[]{1, 2, 3}, new Object[]{3, 1, 2});
+        s.assertEqualsNoOrder(new Object[]{"a", "b"}, new Object[]{"b", "a"}, "order ignored");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertEmpty_and_assertNotEmpty_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertEmpty("");
+        s.assertEmpty(Collections.emptyList());
+        s.assertNotEmpty("not empty");
+        s.assertNotEmpty(List.of("element"));
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertInstanceOf_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertInstanceOf("string", String.class);
+        s.assertInstanceOf(123, Integer.class, "should be integer");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertBetween_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertBetween(5, 1, 10);
+        s.assertBetween(10, 10, 20, "at lower bound");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertMatches_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertMatches("test1234", "test\\d+");
+        s.assertMatches("abc", "[a-z]+", "regex match");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertSameSize_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertSameSize(List.of(1, 2), List.of("a", "b"));
+        s.assertSameSize(Collections.emptyList(), Collections.emptyList(), "both empty");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertStartsWith_and_assertEndsWith_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertStartsWith("hello world", "hello");
+        s.assertStartsWith("prefix_test", "prefix", "prefix message");
+        s.assertEndsWith("hello world", "world");
+        s.assertEndsWith("suffix_test", "test", "suffix message");
+        s.assertAll();
+    }
+
+    @Test
+    public void soft_assertMapEmpty_and_assertMapNotEmpty_pass() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertMapEmpty(Collections.emptyMap());
+        s.assertMapEmpty(new HashMap<>(), "empty map");
+        Map<String, String> map = new HashMap<>();
+        map.put("k", "v");
+        s.assertMapNotEmpty(map);
+        s.assertMapNotEmpty(map, "non-empty map");
+        s.assertAll();
+    }
+
+    @Test(expectedExceptions = AssertionError.class)
+    public void soft_failsOnMismatch_whenAssertAllCalled() {
+        AssertionExecutor.soft s = new AssertionExecutor.soft();
+        s.assertStartsWith("hello", "world");
+        s.assertEndsWith("hello", "world");
+        s.assertMapEmpty(Map.of("a", "b"));
+        s.assertAll();
+    }
 }
+

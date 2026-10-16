@@ -653,7 +653,7 @@ public class DriverFactory {
                 }
             }
         }
-        return null;
+        return (T) WebDriverThread.get();
     }
 
     /**
@@ -751,6 +751,13 @@ public class DriverFactory {
     public static void adoptCurrentThread(WebDriver decoratedDriver, DriverConfiguration config) {
         WebDriverThread.set(decoratedDriver);
         driverConfigurationThread.set(config);
+        if (config != null && config.getDriverType() != null) {
+            if (config.getDriverType().equals(MobileDriverType.Android) && decoratedDriver instanceof AndroidDriver ad) {
+                AndroidDriverThread.set(ad);
+            } else if (config.getDriverType().equals(IOS) && decoratedDriver instanceof IOSDriver id) {
+                IOSDriverThread.set(id);
+            }
+        }
         VideoRecordingManager.onDriverCreated();
     }
 

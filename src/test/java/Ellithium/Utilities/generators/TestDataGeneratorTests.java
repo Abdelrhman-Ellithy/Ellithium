@@ -58,6 +58,7 @@ public class TestDataGeneratorTests {
     @Test public void testGetRandomDepartment()        { assertNonBlank(TestDataGenerator.getRandomDepartment(), "department"); }
     @Test public void testGetRandomCurrencyCode()      { assertNonBlank(TestDataGenerator.getRandomCurrencyCode(), "currencyCode"); }
     @Test public void testGetRandomCurrencyName()      { assertNonBlank(TestDataGenerator.getRandomCurrencyName(), "currencyName"); }
+    @Test public void testGetRandomCountryFlagEmoji()  { assertNonBlank(TestDataGenerator.getRandomCountryFlagEmoji(), "countryFlagEmoji"); }
     @Test public void testGetRandomFunnyName()         { assertNonBlank(TestDataGenerator.getRandomFunnyName(), "funnyName"); }
 
     @Test
