@@ -62,6 +62,7 @@ public class SmartTestProgressBarTest {
         Assert.assertTrue(unicodeLine.contains("40"));
         Assert.assertTrue(unicodeLine.contains("80"));
         Assert.assertTrue(unicodeLine.contains("38"));
+        Assert.assertTrue(unicodeLine.contains("█") || unicodeLine.contains("░"));
 
         // ASCII plain text (wide terminal >= 120 cols gets verbose badges)
         String asciiLineWide = ProgressBarRenderer.renderLine(s, 140, false, false);

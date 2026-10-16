@@ -150,21 +150,19 @@ public final class TerminalCapabilities {
     }
 
     /**
-     * Checks if the console supports UTF-8 / Unicode characters for smooth blocks without degrading to '?'.
+     * Checks if the console supports Unicode characters for smooth blocks ('█' and '░').
+     * Defaults to true on modern terminals unless explicitly disabled.
      */
     public static boolean supportsUnicode() {
-        try {
-            Charset cs = Charset.defaultCharset();
-            String stdoutEncoding = System.getProperty("stdout.encoding");
-            if (stdoutEncoding != null && !stdoutEncoding.isBlank()) {
-                try {
-                    cs = Charset.forName(stdoutEncoding);
-                } catch (Exception ignored) {}
-            }
-            return cs.newEncoder().canEncode('█') && cs.newEncoder().canEncode('░');
-        } catch (Throwable t) {
+        String sys = System.getProperty(ProgressBarConfig.KEY_UNICODE);
+        if (sys != null && !sys.isBlank()) {
+            return Boolean.parseBoolean(sys.trim());
+        }
+        String term = System.getenv("TERM");
+        if ("dumb".equalsIgnoreCase(term)) {
             return false;
         }
+        return true;
     }
 
     /**
