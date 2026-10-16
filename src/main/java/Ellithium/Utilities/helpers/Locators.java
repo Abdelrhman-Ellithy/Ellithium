@@ -95,4 +95,24 @@ public final class Locators {
         }
         return By.cssSelector(trimmed);
     }
+
+    /**
+     * Converts a Selenium {@link By} to a structured {@link Ellithium.core.locator.TypedLocator}.
+     *
+     * @param by source By locator
+     * @return structured TypedLocator
+     */
+    public static Ellithium.core.locator.TypedLocator typed(By by) {
+        return Ellithium.core.locator.TypedLocator.fromBy(by);
+    }
+
+    /**
+     * Parses a string representation into a structured {@link Ellithium.core.locator.TypedLocator}.
+     *
+     * @param locatorStr string locator representation
+     * @return structured TypedLocator
+     */
+    public static Ellithium.core.locator.TypedLocator typed(String locatorStr) {
+        return Ellithium.core.locator.TypedLocator.fromString(locatorStr);
+    }
 }
