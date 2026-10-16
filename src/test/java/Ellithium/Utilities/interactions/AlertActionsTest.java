@@ -72,4 +72,19 @@ public class AlertActionsTest {
         alertActions.sendData("input", 5);
         verify(mockAlert).sendKeys("input");
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*data must not be null.*")
+    public void sendData_nullData_throwsIllegalArgumentException() {
+        alertActions.sendData(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*data must not be null.*")
+    public void sendData_nullDataWithTimeout_throwsIllegalArgumentException() {
+        alertActions.sendData(null, 5);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*data must not be null.*")
+    public void sendData_nullDataWithTimeoutAndPolling_throwsIllegalArgumentException() {
+        alertActions.sendData(null, 5, 100);
+    }
 }

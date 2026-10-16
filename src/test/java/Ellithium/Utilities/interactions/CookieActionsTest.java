@@ -70,4 +70,34 @@ public class CookieActionsTest {
         when(mockOptions.getCookieNamed("missing")).thenReturn(null);
         Assert.assertNull(cookieActions.getCookieNamed("missing"));
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookie must not be null.*")
+    public void addCookie_nullCookie_throwsIllegalArgumentException() {
+        cookieActions.addCookie(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookie must not be null.*")
+    public void deleteCookie_nullCookie_throwsIllegalArgumentException() {
+        cookieActions.deleteCookie(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookieName must not be null or blank.*")
+    public void deleteCookieNamed_nullName_throwsIllegalArgumentException() {
+        cookieActions.deleteCookieNamed(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookieName must not be null or blank.*")
+    public void deleteCookieNamed_blankName_throwsIllegalArgumentException() {
+        cookieActions.deleteCookieNamed("   ");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookieName must not be null or blank.*")
+    public void getCookieNamed_nullName_throwsIllegalArgumentException() {
+        cookieActions.getCookieNamed(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cookieName must not be null or blank.*")
+    public void getCookieNamed_blankName_throwsIllegalArgumentException() {
+        cookieActions.getCookieNamed("   ");
+    }
 }

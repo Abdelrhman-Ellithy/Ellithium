@@ -81,4 +81,52 @@ public class JavaScriptActionsTest {
         jsActions.javascriptClick(locator);
         verify(mockJs).executeScript("arguments[0].click();", mockElement);
     }
+
+    @Test
+    public void javascriptClick_withTimeout_executesClickScript() {
+        By locator = By.id("btn2");
+        WebElement mockElement = mock(WebElement.class);
+        when(mockDriver.findElement(locator)).thenReturn(mockElement);
+        when(mockElement.isDisplayed()).thenReturn(true);
+        jsActions.javascriptClick(locator, 5);
+        verify(mockJs).executeScript("arguments[0].click();", mockElement);
+    }
+
+    @Test
+    public void javascriptClick_withTimeoutAndPolling_executesClickScript() {
+        By locator = By.id("btn3");
+        WebElement mockElement = mock(WebElement.class);
+        when(mockDriver.findElement(locator)).thenReturn(mockElement);
+        when(mockElement.isDisplayed()).thenReturn(true);
+        jsActions.javascriptClick(locator, 5, 200);
+        verify(mockJs).executeScript("arguments[0].click();", mockElement);
+    }
+
+    @Test
+    public void scrollToElement_executesScrollIntoView() {
+        By locator = By.id("scrollTarget");
+        WebElement mockElement = mock(WebElement.class);
+        when(mockDriver.findElement(locator)).thenReturn(mockElement);
+        when(mockElement.isDisplayed()).thenReturn(true);
+        jsActions.scrollToElement(locator);
+        verify(mockJs).executeScript("arguments[0].scrollIntoView(true);", mockElement);
+    }
+
+    @Test
+    public void uploadFileUsingJS_withExistingFile_executesScriptAndSendKeys() throws Exception {
+        java.io.File tempFile = java.io.File.createTempFile("test-upload", ".txt");
+        try {
+            By locator = By.id("fileInput");
+            WebElement mockElement = mock(WebElement.class);
+            when(mockDriver.findElement(locator)).thenReturn(mockElement);
+            when(mockElement.isDisplayed()).thenReturn(true);
+
+            jsActions.uploadFileUsingJS(locator, tempFile.getAbsolutePath());
+
+            verify(mockJs).executeScript("arguments[0].style.display='block';", mockElement);
+            verify(mockElement).sendKeys(tempFile.getAbsolutePath());
+        } finally {
+            tempFile.delete();
+        }
+    }
 }

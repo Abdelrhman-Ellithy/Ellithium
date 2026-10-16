@@ -32,7 +32,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
         String originalWindow = driver.getWindowHandle();
         for (String windowHandle : driver.getWindowHandles()) {
             driver.switchTo().window(windowHandle);
-            if (driver.getTitle().equals(windowTitle)) {
+            if (java.util.Objects.equals(driver.getTitle(), windowTitle)) {
                 return;
             }
         }
@@ -53,6 +53,9 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @param originalWindowHandle The handle of the original window
      */
     public void switchToOriginalWindow(String originalWindowHandle) {
+        if (originalWindowHandle == null || originalWindowHandle.trim().isEmpty()) {
+            throw new IllegalArgumentException("originalWindowHandle must not be null or blank");
+        }
         driver.switchTo().window(originalWindowHandle);
     }
 
@@ -73,7 +76,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
             for (String windowHandle : driver.getWindowHandles()) {
                 if (!windowHandle.equals(mainWindow)) {
                     driver.switchTo().window(windowHandle);
-                    if (driver.getTitle().equals(expectedPopupTitle)) {
+                    if (java.util.Objects.equals(driver.getTitle(), expectedPopupTitle)) {
                         Reporter.log("Switched to popup window with title: " + expectedPopupTitle, LogLevel.INFO_BLUE);
                         return;
                     }
@@ -304,7 +307,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
         
         for (String handle : getAllWindowHandles()) {
             driver.switchTo().window(handle);
-            if (driver.getTitle().equals(title)) {
+            if (java.util.Objects.equals(driver.getTitle(), title)) {
                 exists = true;
                 break;
             }
@@ -318,6 +321,9 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @throws org.openqa.selenium.NoSuchWindowException if the handle is invalid
      */
     public void switchToWindowByHandle(String handle) {
+        if (handle == null || handle.trim().isEmpty()) {
+            throw new IllegalArgumentException("handle must not be null or blank");
+        }
         try {
             driver.switchTo().window(handle);
             Reporter.log("Switched to window handle: " + handle, LogLevel.INFO_BLUE);
@@ -335,6 +341,7 @@ public class WindowActions<T extends WebDriver> extends BaseActions<T> {
      * @return true if the window is open, false otherwise
      */
     public boolean isWindowOpen(String handle) {
+        if (handle == null) return false;
         boolean open = driver.getWindowHandles().contains(handle);
         Reporter.log(open ? "Window is open: " + handle : "Window is closed: " + handle,
                 open ? LogLevel.INFO_BLUE : LogLevel.WARN);

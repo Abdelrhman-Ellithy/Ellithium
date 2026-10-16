@@ -1,5 +1,7 @@
 package Ellithium.Utilities.interactions;
 
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -50,6 +52,9 @@ public class AlertActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingEvery Polling interval in milliseconds
      */
     public void sendData(String data, int timeout, int pollingEvery) {
+        if (data == null) {
+            throw new IllegalArgumentException("data must not be null");
+        }
         org.openqa.selenium.Alert alert = getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.alertIsPresent());
         alert.sendKeys(data);

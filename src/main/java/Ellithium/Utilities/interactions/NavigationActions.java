@@ -1,6 +1,8 @@
 package Ellithium.Utilities.interactions;
 
 import Ellithium.core.ai.scoring.ElementVectorCache;
+import Ellithium.core.logging.LogLevel;
+import Ellithium.core.reporting.Reporter;
 import org.openqa.selenium.WebDriver;
 
 public class NavigationActions<T extends WebDriver> extends BaseActions<T> {
@@ -10,6 +12,9 @@ public class NavigationActions<T extends WebDriver> extends BaseActions<T> {
     }
 
     public void navigateToUrl(String url) {
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("url must not be null or blank");
+        }
         driver.get(url);
         ElementVectorCache.getInstance().invalidate();
     }
