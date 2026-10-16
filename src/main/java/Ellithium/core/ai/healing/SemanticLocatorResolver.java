@@ -349,7 +349,7 @@ public class SemanticLocatorResolver {
     }
 
     /** Result of cross-validating a candidate pool: the winning element, its score, and its source description. */
-    private record Scored(WebElement element, double score, String desc) {}
+    public record Scored(WebElement element, double score, String desc) {}
 
     /** Collects candidates from every strategy in the current browsing context (deduped, DOM order preserved). */
     private static java.util.LinkedHashMap<WebElement, String> collectFromStrategies(
@@ -397,10 +397,10 @@ public class SemanticLocatorResolver {
      * near-perfect 0.90 (same bar as Tier 1). When no baseline is available, cross-validates against
      * the broken locator's tokens and tag compatibility.
      */
-    private static Scored pickBest(WebDriver driver,
-                                   java.util.LinkedHashMap<WebElement, String> candidateDesc,
-                                   ElementFingerprint baseline, double cvThreshold,
-                                   String locatorValue, ElementCategory category) {
+    static Scored pickBest(WebDriver driver,
+                           java.util.LinkedHashMap<WebElement, String> candidateDesc,
+                           ElementFingerprint baseline, double cvThreshold,
+                           String locatorValue, ElementCategory category) {
         List<WebElement> candidateList = new ArrayList<>(candidateDesc.keySet());
         java.util.List<java.util.Map<String, Object>> batch =
                 Ellithium.core.ai.dom.CandidateAttributeBatcher.fetch(driver, candidateList);
@@ -413,7 +413,16 @@ public class SemanticLocatorResolver {
 
         WebElement bestEl = null;
         String bestDesc = null;
+        java.util.Map<String, Object> bestAttrs = null;
         double bestScore = -1.0;
+
+        WebElement secondEl = null;
+        String secondDesc = null;
+        java.util.Map<String, Object> secondAttrs = null;
+        double secondScore = -1.0;
+
+        Set<String> distinctiveTokens = SemanticNameExtractor.extractDistinctiveTokens(locatorValue);
+
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
         try {
             for (int i = 0; i < candidateList.size(); i++) {
@@ -436,18 +445,66 @@ public class SemanticLocatorResolver {
                         score = scoreColdStart(attrs, el, locatorValue, category, candidateDesc.getOrDefault(el, "strategy"));
                     }
                     if (Double.isNaN(score) || score < cvThreshold) continue;
-                    if (score > bestScore) {
+
+                    boolean matchesDistinctive = SemanticNameExtractor.candidateMatchesDistinctiveTokens(attrs, el, distinctiveTokens);
+                    if (matchesDistinctive) {
+                        score = Math.min(1.0, score + 0.10);
+                    }
+
+                    if (bestEl == null || score > bestScore) {
+                        if (bestEl != null) {
+                            secondScore = bestScore;
+                            secondEl = bestEl;
+                            secondDesc = bestDesc;
+                            secondAttrs = bestAttrs;
+                        }
                         bestScore = score;
                         bestEl = el;
                         bestDesc = candidateDesc.getOrDefault(el, "strategy");
-                        if (score >= 0.90) break;   // near-perfect: stop scanning (pure-Java early exit)
+                        bestAttrs = attrs;
+                    } else if (score > secondScore) {
+                        secondScore = score;
+                        secondEl = el;
+                        secondDesc = candidateDesc.getOrDefault(el, "strategy");
+                        secondAttrs = attrs;
                     }
                 } catch (Exception ignored) {}
             }
         } finally {
             Ellithium.core.execution.listener.seleniumListener.resumeLogging();
         }
-        return bestEl == null ? null : new Scored(bestEl, bestScore, bestDesc);
+
+        if (bestEl == null) return null;
+
+        double ambiguityMargin = AIConfigLoader.getAmbiguityMargin();
+        if (secondEl != null && (bestScore - secondScore) < ambiguityMargin) {
+            boolean bestMatches = SemanticNameExtractor.candidateMatchesDistinctiveTokens(bestAttrs, bestEl, distinctiveTokens);
+            boolean secondMatches = SemanticNameExtractor.candidateMatchesDistinctiveTokens(secondAttrs, secondEl, distinctiveTokens);
+
+            if (!bestMatches && secondMatches) {
+                Reporter.log(String.format(
+                        "[SEMANTIC RESOLVER - TieBreak] Ambiguity margin (%.3f < %.3f) resolved in favor of distinctive keyword match: %s",
+                        (bestScore - secondScore), ambiguityMargin, secondDesc), LogLevel.INFO_YELLOW);
+                bestEl = secondEl;
+                bestScore = Math.max(bestScore, secondScore);
+                bestDesc = secondDesc;
+            } else if (bestMatches && !secondMatches) {
+                Reporter.log(String.format(
+                        "[SEMANTIC RESOLVER - TieBreak] Ambiguity margin (%.3f < %.3f) confirmed Top 1 via distinctive keyword match",
+                        (bestScore - secondScore), ambiguityMargin), LogLevel.DEBUG);
+            } else if (bestMatches && secondMatches) {
+                Reporter.log(String.format(
+                        "[SEMANTIC RESOLVER - TieBreak] Ambiguity margin (%.3f < %.3f) confirmed Top 1 as both match distinctive keyword",
+                        (bestScore - secondScore), ambiguityMargin), LogLevel.DEBUG);
+            } else {
+                Reporter.log(String.format(
+                        "[SEMANTIC RESOLVER] Ambiguous candidates within margin %.3f (top=%.3f, second=%.3f) with no distinctive keyword tie-breaker — abstaining",
+                        ambiguityMargin, bestScore, secondScore), LogLevel.WARN);
+                return null;
+            }
+        }
+
+        return new Scored(bestEl, bestScore, bestDesc);
     }
 
     /**

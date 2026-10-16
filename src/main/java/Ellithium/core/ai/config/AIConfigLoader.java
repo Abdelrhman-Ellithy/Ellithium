@@ -43,12 +43,14 @@ public class AIConfigLoader {
     private static boolean healOnWaitsEnabled         = true;
     private static boolean failOnSuspectHeal          = true;
     private static int     onnxInitMaxWaitMs          = 30_000;
+    private static double  ambiguityMargin            = 0.04;
 
     private static volatile boolean initialized = false;
 
     public enum ExecutionMode {
         LOCAL,
-        CI
+        CI,
+        PROPOSAL_ONLY
     }
 
     public static synchronized void initialize() {
@@ -101,6 +103,8 @@ public class AIConfigLoader {
             healOnWaitsEnabled          = parseBool(p, "ai.healing.waits.enabled", healOnWaitsEnabled);
             failOnSuspectHeal           = parseBool(p, "ai.healing.failOnSuspectHeal", failOnSuspectHeal);
             onnxInitMaxWaitMs           = parseInt(p, "ai.onnx.initMaxWaitMs", onnxInitMaxWaitMs);
+            ambiguityMargin             = clamp("ai.healing.ambiguityMargin",
+                    parseDouble(p, "ai.healing.ambiguityMargin", ambiguityMargin), 0.0, 0.5);
 
             initialized = true;
             Reporter.log("AI Config loaded | Strategy: " + healingStrategy
@@ -150,6 +154,14 @@ public class AIConfigLoader {
         return v;
     }
 
+    private static double clamp(String key, double v, double min, double max) {
+        if (v < min || v > max) {
+            Logger.warn(key + "=" + v + " is outside [" + min + ", " + max + "] — clamped.");
+            return Math.max(min, Math.min(max, v));
+        }
+        return v;
+    }
+
     private static <E extends Enum<E>> E parseEnum(String configPath, String key, Class<E> type, E def) {
         String v = raw(configPath, key);
         if (v == null || v.isEmpty()) return def;
@@ -190,6 +202,8 @@ public class AIConfigLoader {
     public static String getLlmProviderClass()                  { return llmProviderClass; }
     public static ExecutionMode getExecutionMode()              { return executionMode; }
     public static boolean isCI()                                { return executionMode == ExecutionMode.CI; }
+    public static boolean isProposalMode()                      { return executionMode == ExecutionMode.PROPOSAL_ONLY; }
+    public static double getAmbiguityMargin()                   { return ambiguityMargin; }
     public static boolean isVisionRcaEnabled()                  { return visionRcaEnabled; }
     public static int    getMaxCandidates()                     { return maxCandidates; }
     public static double getOnnxSimilarityThreshold()           { return onnxSimilarityThreshold; }
@@ -234,6 +248,7 @@ public class AIConfigLoader {
             double onnxSimilarity,
             double tier3BaselineFloor,
             double semanticFallback,
+            double ambiguityMargin,
             int    ciAlertThreshold,
             boolean visionRca,
             boolean visionMobile,
@@ -258,7 +273,7 @@ public class AIConfigLoader {
     public static ThresholdConfig thresholds() {
         return new ThresholdConfig(confidenceThreshold, healingStoreThreshold,
                 onnxSimilarityThreshold, tier3BaselineMatchFloor, semanticFallbackScore,
-                ciHealAlertThreshold, visionRcaEnabled, visionAllowMobile, visionAllowWeb);
+                ambiguityMargin, ciHealAlertThreshold, visionRcaEnabled, visionAllowMobile, visionAllowWeb);
     }
 
     public static ModelConfig model() {

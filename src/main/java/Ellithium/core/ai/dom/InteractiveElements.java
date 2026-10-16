@@ -22,7 +22,7 @@ public final class InteractiveElements {
     /** ARIA roles that mark an element interactive. */
     public static final Set<String> ROLES =
             Set.of("button", "link", "menuitem", "menuitemcheckbox", "menuitemradio",
-                    "tab", "option", "checkbox", "radio");
+                    "tab", "option", "checkbox", "radio", "switch", "treeitem");
 
     /** CSS matching any interactive descendant — used to drill into a matched container. */
     public static final String DESCENDANT_CSS =
@@ -76,6 +76,7 @@ public final class InteractiveElements {
             "input:not([type='hidden']):not([type='submit']):not([type='button'])",
             "textarea",
             "[contenteditable='true']",
+            "[contenteditable]:not([contenteditable='false'])",
             "[role='textbox']",
             "[role='searchbox']"
     };

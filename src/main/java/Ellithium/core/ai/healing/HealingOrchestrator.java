@@ -104,7 +104,10 @@ public final class HealingOrchestrator implements ElementHealingPort {
 
         double rawScore = raw.score();
         if (Double.isNaN(rawScore) || rawScore <= 0.0) return null;
-        if (tier.order() > 1 && rawScore < AIConfigLoader.getConfidenceThreshold()) return null;
+        double minThreshold = tier.order() == 2
+                ? AIConfigLoader.getOnnxSimilarityThreshold()
+                : AIConfigLoader.getConfidenceThreshold();
+        if (tier.order() > 1 && rawScore < minThreshold) return null;
 
         WebElement resolved = resolveInteractiveElement(
                 raw.element(), request.actionType(), "TIER " + tier.order(), request.driver());
@@ -187,13 +190,85 @@ public final class HealingOrchestrator implements ElementHealingPort {
         }
     }
 
+    private static WebElement bridgeLabelControl(WebElement element, String actionType, WebDriver driver) {
+        if (element == null) return null;
+        try {
+            String tag = element.getTagName().toLowerCase(java.util.Locale.ROOT);
+            boolean isRead = actionType != null && (actionType.startsWith("get") || actionType.contains("Text") || actionType.contains("Read"));
+            boolean isCheck = actionType != null && (actionType.equals("isElementSelected") || actionType.contains("Selected"));
+            boolean isClick = InteractiveElements.isClickLikeAction(actionType);
+            boolean isType = InteractiveElements.isTextInputAction(actionType);
+
+            // Label -> Control bridge (for CLICK, CHECK, TYPE)
+            if ("label".equals(tag) && (isCheck || isClick || isType)) {
+                List<WebElement> inputs = element.findElements(By.cssSelector("input, select, textarea"));
+                WebElement target = !inputs.isEmpty() ? inputs.get(0) : null;
+                if (target == null) {
+                    String forId = element.getAttribute("for");
+                    if (forId != null && !forId.isBlank()) {
+                        try { target = driver.findElement(By.id(forId)); } catch (Exception ignored) {}
+                    }
+                }
+                if (target != null) {
+                    if (isCheck || isType) {
+                        return target;
+                    }
+                    if (isClick) {
+                        try {
+                            String inType = target.getAttribute("type");
+                            boolean isRadioOrCheckbox = inType != null &&
+                                    ("radio".equalsIgnoreCase(inType) || "checkbox".equalsIgnoreCase(inType));
+                            if (isRadioOrCheckbox) {
+                                if (target.isDisplayed() || !element.isDisplayed()) {
+                                    return target;
+                                }
+                                return element;
+                            }
+                            if (target.isDisplayed() && target.isEnabled()) {
+                                return target;
+                            }
+                        } catch (Exception ignored) {}
+                        return element;
+                    }
+                }
+                return element;
+            }
+
+            // Control -> Label bridge (for READ / getText when matched element is <input>)
+            if (isRead && "input".equals(tag)) {
+                try {
+                    List<WebElement> ancestors = element.findElements(By.xpath("./ancestor::label[1]"));
+                    if (!ancestors.isEmpty() && ancestors.get(0).isDisplayed()) {
+                        return ancestors.get(0);
+                    }
+                } catch (Exception ignored) {}
+                try {
+                    String id = element.getAttribute("id");
+                    if (id != null && !id.isBlank()) {
+                        List<WebElement> forLabels = driver.findElements(By.cssSelector("label[for='" + id + "']"));
+                        if (!forLabels.isEmpty() && forLabels.get(0).isDisplayed()) {
+                            return forLabels.get(0);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return element;
+    }
+
     private static WebElement resolveInteractiveElement(WebElement healed, String actionType,
                                                         String tierLabel, WebDriver driver) {
         if (healed == null) return null;
+        healed = bridgeLabelControl(healed, actionType, driver);
         if (InteractiveElements.isTextInputAction(actionType)) {
             return resolveTextInputElement(healed, actionType, tierLabel, driver);
         }
-        if (!InteractiveElements.isClickLikeAction(actionType)) return healed;
+        if (!InteractiveElements.isClickLikeAction(actionType)) {
+            if (actionType != null && (actionType.startsWith("get") || actionType.contains("Text") || actionType.contains("Read"))) {
+                return resolveTextContainer(healed, tierLabel, driver);
+            }
+            return healed;
+        }
         try {
             // Batch getTagName + getAttribute("role") into one JS round-trip instead of two.
             String tag, role;
@@ -201,19 +276,34 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 Object[] res = (Object[]) ((org.openqa.selenium.JavascriptExecutor) driver)
                         .executeScript("var e=arguments[0]; return [e.tagName.toLowerCase(), e.getAttribute('role')];", healed);
                 if (res != null && res.length >= 2) {
-                    tag  = res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase();
+                    tag  = res[0] != null ? res[0].toString() : healed.getTagName().toLowerCase(java.util.Locale.ROOT);
                     role = res[1] != null ? res[1].toString() : null;
                 } else {
-                    tag  = healed.getTagName().toLowerCase();
+                    tag  = healed.getTagName().toLowerCase(java.util.Locale.ROOT);
                     role = healed.getAttribute("role");
                 }
             } catch (Exception jse) {
-                tag  = healed.getTagName().toLowerCase();
+                tag  = healed.getTagName().toLowerCase(java.util.Locale.ROOT);
                 role = healed.getAttribute("role");
             }
             if (InteractiveElements.TAGS.contains(tag)) return healed;
 
-            if (role != null && InteractiveElements.ROLES.contains(role)) return healed;
+            if (role != null) {
+                for (String r : role.toLowerCase(java.util.Locale.ROOT).trim().split("\\s+")) {
+                    if (InteractiveElements.ROLES.contains(r)) return healed;
+                }
+            }
+
+            // Custom elements (web components with hyphens) or elements with onclick / tabindex are valid click targets
+            if (tag.contains("-")) {
+                return healed;
+            }
+            try {
+                String onclick = healed.getAttribute("onclick");
+                if (onclick != null && !onclick.isBlank()) return healed;
+                String tabindex = healed.getAttribute("tabindex");
+                if (tabindex != null && !"-1".equals(tabindex.trim())) return healed;
+            } catch (Exception ignored) {}
 
             for (String selector : InteractiveElements.INNER_SELECTORS) {
                 try {
@@ -232,6 +322,31 @@ public final class HealingOrchestrator implements ElementHealingPort {
         } catch (Exception ex) {
             return healed;
         }
+    }
+
+    private static WebElement resolveTextContainer(WebElement healed, String tierLabel, WebDriver driver) {
+        try {
+            String tag = healed.getTagName().toLowerCase(java.util.Locale.ROOT);
+            if ("input".equals(tag) || "img".equals(tag) || "svg".equals(tag) || "hr".equals(tag)) {
+                try {
+                    List<WebElement> parents = healed.findElements(By.xpath("./ancestor::*[self::label or self::p or self::span or self::div][1]"));
+                    if (!parents.isEmpty() && !parents.get(0).getText().isBlank()) {
+                        return parents.get(0);
+                    }
+                } catch (Exception ignored) {}
+            }
+            String text = healed.getText();
+            if (text != null && !text.isBlank()) {
+                return healed;
+            }
+            try {
+                List<WebElement> parents = healed.findElements(By.xpath("./ancestor::*[self::label or self::p or self::span or self::div or self::h1 or self::h2 or self::h3][1]"));
+                if (!parents.isEmpty() && !parents.get(0).getText().isBlank()) {
+                    return parents.get(0);
+                }
+            } catch (Exception ignored) {}
+        } catch (Exception ignored) {}
+        return healed;
     }
 
     private static final java.util.Set<String> NON_TEXT_INPUT_TYPES = java.util.Set.of(
@@ -263,8 +378,16 @@ public final class HealingOrchestrator implements ElementHealingPort {
     private static boolean isTextInputTarget(TextAttributes attrs) {
         boolean isInputTag = InteractiveElements.TEXT_INPUT_TAGS.contains(attrs.tag());
         boolean isNonTextType = attrs.type() != null && NON_TEXT_INPUT_TYPES.contains(attrs.type().toLowerCase(java.util.Locale.ROOT));
-        boolean isEditable = "true".equalsIgnoreCase(attrs.contentEditable());
-        boolean isRoleText = attrs.role() != null && InteractiveElements.TEXT_INPUT_ROLES.contains(attrs.role().toLowerCase(java.util.Locale.ROOT));
+        boolean isEditable = "true".equalsIgnoreCase(attrs.contentEditable()) || "".equals(attrs.contentEditable());
+        boolean isRoleText = false;
+        if (attrs.role() != null) {
+            for (String r : attrs.role().toLowerCase(java.util.Locale.ROOT).trim().split("\\s+")) {
+                if (InteractiveElements.TEXT_INPUT_ROLES.contains(r)) {
+                    isRoleText = true;
+                    break;
+                }
+            }
+        }
         return (isInputTag && !isNonTextType) || isEditable || isRoleText;
     }
 
@@ -293,7 +416,17 @@ public final class HealingOrchestrator implements ElementHealingPort {
             }
             return findInnerEditable(healed, attrs.tag(), tierLabel);
         } catch (Exception ex) {
-            return healed;
+            try {
+                String tag = healed.getTagName().toLowerCase(java.util.Locale.ROOT);
+                String role = healed.getAttribute("role");
+                if (InteractiveElements.TEXT_INPUT_TAGS.contains(tag)) return healed;
+                if (role != null) {
+                    for (String r : role.toLowerCase(java.util.Locale.ROOT).trim().split("\\s+")) {
+                        if (InteractiveElements.TEXT_INPUT_ROLES.contains(r)) return healed;
+                    }
+                }
+            } catch (Exception ignored) {}
+            return null;
         }
     }
 

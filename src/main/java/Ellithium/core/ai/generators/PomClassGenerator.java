@@ -81,7 +81,9 @@ public class PomClassGenerator {
             }
 
             Path path = Paths.get(outputPath);
-            Files.createDirectories(path.getParent());
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
             Files.writeString(path, source);
 
             Reporter.log("POM class created: " + outputPath, LogLevel.INFO_GREEN);

@@ -212,4 +212,82 @@ public class SemanticLocatorResolverTest {
                 SemanticLocatorResolver.ElementCategory.TYPE, "input[id~='user_name']");
         Assert.assertTrue(score >= 0.70, "Legitimate cold-start candidate with token and tag overlap must clear threshold, got: " + score);
     }
+
+    @Test
+    public void testPickBest_AmbiguityMargin_KeywordTieBreak() {
+        org.openqa.selenium.WebDriver driver = Mockito.mock(org.openqa.selenium.WebDriver.class);
+        WebElement elChrome = Mockito.mock(WebElement.class);
+        WebElement elFirefox = Mockito.mock(WebElement.class);
+
+        Mockito.when(elChrome.isDisplayed()).thenReturn(true);
+        Mockito.when(elFirefox.isDisplayed()).thenReturn(true);
+        Mockito.when(elChrome.getTagName()).thenReturn("input");
+        Mockito.when(elFirefox.getTagName()).thenReturn("input");
+        Mockito.when(elChrome.getDomAttribute("id")).thenReturn("radio-chrome");
+        Mockito.when(elFirefox.getDomAttribute("id")).thenReturn("radio-firefox");
+
+        java.util.LinkedHashMap<WebElement, String> candidates = new java.util.LinkedHashMap<>();
+        candidates.put(elChrome, "chrome-radio");
+        candidates.put(elFirefox, "firefox-radio");
+
+        SemanticLocatorResolver.Scored result = SemanticLocatorResolver.pickBest(
+                driver, candidates, null, 0.30,
+                "input[id='radio-option-firefox']",
+                SemanticLocatorResolver.ElementCategory.CLICK);
+
+        Assert.assertNotNull(result, "Should heal to distinctive keyword match");
+        Assert.assertEquals(result.element(), elFirefox, "Tie-break must pick firefox candidate over chrome");
+    }
+
+    @Test
+    public void testPickBest_GenuinelyAmbiguous_Abstains() {
+        org.openqa.selenium.WebDriver driver = Mockito.mock(org.openqa.selenium.WebDriver.class);
+        WebElement el1 = Mockito.mock(WebElement.class);
+        WebElement el2 = Mockito.mock(WebElement.class);
+
+        Mockito.when(el1.isDisplayed()).thenReturn(true);
+        Mockito.when(el2.isDisplayed()).thenReturn(true);
+        Mockito.when(el1.getTagName()).thenReturn("button");
+        Mockito.when(el2.getTagName()).thenReturn("button");
+        Mockito.when(el1.getDomAttribute("id")).thenReturn("btn-1");
+        Mockito.when(el2.getDomAttribute("id")).thenReturn("btn-2");
+
+        java.util.LinkedHashMap<WebElement, String> candidates = new java.util.LinkedHashMap<>();
+        candidates.put(el1, "btn-one");
+        candidates.put(el2, "btn-two");
+
+        SemanticLocatorResolver.Scored result = SemanticLocatorResolver.pickBest(
+                driver, candidates, null, 0.30,
+                "button.btn-unknown",
+                SemanticLocatorResolver.ElementCategory.CLICK);
+
+        // When candidates have identical cold-start scores within ambiguity margin and no distinctive tokens match, abstain!
+        Assert.assertNull(result, "Genuinely ambiguous candidates within margin must abstain to prevent false heals");
+    }
+
+    @Test
+    public void testPickBest_BothMatchDistinctive_ConfirmsTop1() {
+        org.openqa.selenium.WebDriver driver = Mockito.mock(org.openqa.selenium.WebDriver.class);
+        WebElement el1 = Mockito.mock(WebElement.class);
+        WebElement el2 = Mockito.mock(WebElement.class);
+
+        Mockito.when(el1.isDisplayed()).thenReturn(true);
+        Mockito.when(el2.isDisplayed()).thenReturn(true);
+        Mockito.when(el1.getTagName()).thenReturn("label");
+        Mockito.when(el2.getTagName()).thenReturn("input");
+        Mockito.when(el1.getDomAttribute("id")).thenReturn("label-firefox");
+        Mockito.when(el2.getDomAttribute("id")).thenReturn("radio-firefox");
+
+        java.util.LinkedHashMap<WebElement, String> candidates = new java.util.LinkedHashMap<>();
+        candidates.put(el1, "label-firefox");
+        candidates.put(el2, "input-firefox");
+
+        SemanticLocatorResolver.Scored result = SemanticLocatorResolver.pickBest(
+                driver, candidates, null, 0.30,
+                "input[id='radio-option-firefox']",
+                SemanticLocatorResolver.ElementCategory.CLICK);
+
+        Assert.assertNotNull(result, "When both candidates match distinctive keyword, top candidate must be confirmed");
+        Assert.assertEquals(result.element(), el2);
+    }
 }

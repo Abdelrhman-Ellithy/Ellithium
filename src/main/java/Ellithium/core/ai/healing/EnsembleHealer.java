@@ -569,10 +569,10 @@ public class EnsembleHealer {
         "p, li, td, th, dt, dd, article, section, aside, span, div",
     };
 
-    private static HealOutcome scoreAndSelectCandidate(WebDriver driver,
-                                                       java.util.concurrent.CompletableFuture<float[]> queryFuture,
-                                                       ElementFingerprint baseline,
-                                                       By brokenLocator, String actionType,
+    static HealOutcome scoreAndSelectCandidate(WebDriver driver,
+                                               java.util.concurrent.CompletableFuture<float[]> queryFuture,
+                                               ElementFingerprint baseline,
+                                               By brokenLocator, String actionType,
                                                        String query,
                                                        String callerMethod, String fieldName,
                                                        String locatorValue) {
@@ -586,6 +586,11 @@ public class EnsembleHealer {
         String semanticMethodName = isReadable ? null : callerMethod;
         List<String> semanticNames =
                 SemanticNameExtractor.extract(semanticMethodName, fieldName, locatorValue);
+
+        Set<String> distinctiveTokens = SemanticNameExtractor.extractDistinctiveTokens(brokenLocator);
+        if (distinctiveTokens.isEmpty() && locatorValue != null) {
+            distinctiveTokens = SemanticNameExtractor.extractDistinctiveTokens(locatorValue);
+        }
 
         java.util.HashMap<WebElement, Double> resolverWeights = new java.util.HashMap<>();
         Ellithium.core.execution.listener.seleniumListener.suppressLogging();
@@ -615,7 +620,7 @@ public class EnsembleHealer {
         }
         if (queryVector == null) return null;
 
-        record CandidateSlot(WebElement el, Map<String, Object> attrs, boolean isResolver, double f2pre) {}
+        record CandidateSlot(WebElement el, Map<String, Object> attrs, boolean isResolver, double f2pre, boolean matchesDistinctive) {}
 
         final int maxResolverCandidates = Math.min(resolverWeights.size(), 8);
 
@@ -636,6 +641,7 @@ public class EnsembleHealer {
                     }
                 }
             }
+            boolean matchesDistinctive = SemanticNameExtractor.candidateMatchesDistinctiveTokens(attrs, candidate, distinctiveTokens);
             boolean isResolver = resolverWeights.containsKey(candidate);
             double rawAttrW = (attrs != null)
                     ? SemanticLocatorResolver.strategyWeightForAttrs(attrs, semanticNames)
@@ -643,9 +649,13 @@ public class EnsembleHealer {
             double attrW = (rawAttrW <= 0.0) ? Double.NaN : rawAttrW;
             Double hitW  = resolverWeights.get(candidate);
             double f2pre = maxScore(attrW, hitW == null ? Double.NaN : hitW);
-            slots.add(new CandidateSlot(candidate, attrs, isResolver, f2pre));
+            if (matchesDistinctive) {
+                f2pre = maxScore(f2pre, 1.00);
+            }
+            slots.add(new CandidateSlot(candidate, attrs, isResolver, f2pre, matchesDistinctive));
         }
         slots.sort((a, b) -> {
+            if (a.matchesDistinctive != b.matchesDistinctive) return a.matchesDistinctive ? -1 : 1;
             if (a.isResolver != b.isResolver) return a.isResolver ? -1 : 1;
             boolean aNaN = Double.isNaN(a.f2pre), bNaN = Double.isNaN(b.f2pre);
             if (aNaN && bNaN) return 0;
@@ -658,7 +668,14 @@ public class EnsembleHealer {
         String     bestDoc     = null;
         Map<String, Object> bestAttrs = null;
         double bestCombined = -1.0, bestCosine = 0.0, bestF1 = Double.NaN, bestF2 = Double.NaN;
-        double secondBestCombined = -1.0;
+        boolean bestMatchesDistinctive = false;
+
+        WebElement secondElement = null;
+        String     secondDoc     = null;
+        Map<String, Object> secondAttrs = null;
+        double secondBestCombined = -1.0, secondCosine = 0.0, secondF1 = Double.NaN, secondF2 = Double.NaN;
+        boolean secondMatchesDistinctive = false;
+
         int poolScored = 0;
         int resolverScored = 0;
 
@@ -695,13 +712,31 @@ public class EnsembleHealer {
                         combined = Math.min(1.0, combined + (f1 - 0.5) * 0.08);
                     }
 
+                    boolean matches = slot.matchesDistinctive;
                     if (bestElement == null || combined > bestCombined
                             || (Math.abs(combined - bestCombined) < 1e-6 && f1 > bestF1)) {
-                        if (bestElement != null && bestCombined > secondBestCombined) secondBestCombined = bestCombined;
+                        if (bestElement != null) {
+                            secondElement = bestElement;
+                            secondBestCombined = bestCombined;
+                            secondCosine = bestCosine;
+                            secondF1 = bestF1;
+                            secondF2 = bestF2;
+                            secondDoc = bestDoc;
+                            secondAttrs = bestAttrs;
+                            secondMatchesDistinctive = bestMatchesDistinctive;
+                        }
                         bestElement = candidate; bestCombined = combined; bestCosine = cosine;
                         bestF1 = f1; bestF2 = f2; bestDoc = doc; bestAttrs = attrs;
+                        bestMatchesDistinctive = matches;
                     } else if (combined > secondBestCombined) {
+                        secondElement = candidate;
                         secondBestCombined = combined;
+                        secondCosine = cosine;
+                        secondF1 = f1;
+                        secondF2 = f2;
+                        secondDoc = doc;
+                        secondAttrs = attrs;
+                        secondMatchesDistinctive = matches;
                     }
 
                     if (combined >= EARLY_EXIT_COMBINED && cosine >= COSINE_CORROBORATION_FLOOR) break;
@@ -728,7 +763,94 @@ public class EnsembleHealer {
             return null;
         }
 
-        double margin = (secondBestCombined >= 0.0) ? bestCombined - secondBestCombined : bestCombined;
+        double ambiguityMargin = AIConfigLoader.getAmbiguityMargin();
+        if (secondElement != null && (bestCombined - secondBestCombined) < ambiguityMargin) {
+            if (!bestMatchesDistinctive && secondMatchesDistinctive) {
+                Reporter.log(String.format(
+                        "[TIER 2 - TieBreak] Ambiguity margin (%.3f < %.3f) resolved in favor of distinctive keyword match: %s",
+                        (bestCombined - secondBestCombined), ambiguityMargin, secondDoc), LogLevel.INFO_YELLOW);
+                WebElement prevBestEl = bestElement;
+                double prevBestCombined = bestCombined;
+                double prevBestCosine = bestCosine;
+                double prevBestF1 = bestF1;
+                double prevBestF2 = bestF2;
+                String prevBestDoc = bestDoc;
+                Map<String, Object> prevBestAttrs = bestAttrs;
+
+                bestElement = secondElement;
+                bestCosine = secondCosine;
+                bestF1 = secondF1;
+                bestF2 = 1.0; // Award f2 bonus for distinctive keyword match
+                bestCombined = fuseConfidence(bestF2, bestCosine);
+                if (!Double.isNaN(bestF1) && bestF1 > 0.5) {
+                    bestCombined = Math.min(1.0, bestCombined + (bestF1 - 0.5) * 0.08);
+                }
+                bestDoc = secondDoc;
+                bestAttrs = secondAttrs;
+                bestMatchesDistinctive = true;
+
+                secondElement = prevBestEl;
+                secondBestCombined = prevBestCombined;
+                secondCosine = prevBestCosine;
+                secondF1 = prevBestF1;
+                secondF2 = prevBestF2;
+                secondDoc = prevBestDoc;
+                secondAttrs = prevBestAttrs;
+                secondMatchesDistinctive = false;
+            } else if (bestMatchesDistinctive && !secondMatchesDistinctive) {
+                Reporter.log(String.format(
+                        "[TIER 2 - TieBreak] Ambiguity margin (%.3f < %.3f) confirmed Top 1 via distinctive keyword match",
+                        (bestCombined - secondBestCombined), ambiguityMargin), LogLevel.DEBUG);
+                if (Double.isNaN(bestF2) || bestF2 < 1.0) {
+                    bestF2 = 1.0;
+                    bestCombined = fuseConfidence(bestF2, bestCosine);
+                    if (!Double.isNaN(bestF1) && bestF1 > 0.5) {
+                        bestCombined = Math.min(1.0, bestCombined + (bestF1 - 0.5) * 0.08);
+                    }
+                }
+            } else if (bestMatchesDistinctive && secondMatchesDistinctive) {
+                Reporter.log(String.format(
+                        "[TIER 2 - TieBreak] Ambiguity margin (%.3f < %.3f) confirmed Top 1 as both match distinctive keyword",
+                        (bestCombined - secondBestCombined), ambiguityMargin), LogLevel.DEBUG);
+            } else {
+                double f1Diff = (Double.isNaN(bestF1) ? 0.0 : bestF1) - (Double.isNaN(secondF1) ? 0.0 : secondF1);
+                if (f1Diff < -0.05) {
+                    WebElement prevBestEl = bestElement;
+                    double prevBestCombined = bestCombined;
+                    double prevBestCosine = bestCosine;
+                    double prevBestF1 = bestF1;
+                    double prevBestF2 = bestF2;
+                    String prevBestDoc = bestDoc;
+                    Map<String, Object> prevBestAttrs = bestAttrs;
+
+                    bestElement = secondElement;
+                    bestCombined = secondBestCombined;
+                    bestCosine = secondCosine;
+                    bestF1 = secondF1;
+                    bestF2 = secondF2;
+                    bestDoc = secondDoc;
+                    bestAttrs = secondAttrs;
+
+                    secondElement = prevBestEl;
+                    secondBestCombined = prevBestCombined;
+                    secondCosine = prevBestCosine;
+                    secondF1 = prevBestF1;
+                    secondF2 = prevBestF2;
+                    secondDoc = prevBestDoc;
+                    secondAttrs = prevBestAttrs;
+                } else if (f1Diff > 0.05) {
+                    // Top 1 confirmed by baseline proximity
+                } else {
+                    Reporter.log(String.format(
+                            "[TIER 2] Ambiguous candidates within margin %.3f with no distinctive keyword or baseline tie-breaker — abstaining",
+                            ambiguityMargin), LogLevel.WARN);
+                    HealingTelemetryStore.record(2, brokenLocator.toString(), bestDoc, bestCombined, false, query, category, "full-scan-ambiguous");
+                    return null;
+                }
+            }
+        }
+
+        double margin = (secondBestCombined >= 0.0) ? Math.max(0.0, bestCombined - secondBestCombined) : bestCombined;
         double relief = Math.min(Math.max(0.0, margin), MAX_MARGIN_RELIEF);
         GateResult gate = decideGate(bestCombined, threshold - relief, bestF2,
                 true, bestCosine);
@@ -755,11 +877,27 @@ public class EnsembleHealer {
     static WebElement resolveInteractiveTarget(WebDriver driver, WebElement element,
                                                SemanticLocatorResolver.ElementCategory cat) {
         if (element == null) return null;
-        if (cat == SemanticLocatorResolver.ElementCategory.READ) {
-            return element;
-        }
         try {
             String tag = element.getTagName();
+            // Control -> Label bridge for READ actions
+            if (cat == SemanticLocatorResolver.ElementCategory.READ && "input".equalsIgnoreCase(tag)) {
+                try {
+                    List<WebElement> ancestors = element.findElements(By.xpath("./ancestor::label[1]"));
+                    if (!ancestors.isEmpty() && ancestors.get(0).isDisplayed()) return ancestors.get(0);
+                } catch (Exception ignored) {}
+                try {
+                    String id = element.getAttribute("id");
+                    if (id != null && !id.isBlank()) {
+                        List<WebElement> forLabels = driver.findElements(By.cssSelector("label[for='" + id + "']"));
+                        if (!forLabels.isEmpty() && forLabels.get(0).isDisplayed()) return forLabels.get(0);
+                    }
+                } catch (Exception ignored) {}
+                return element;
+            }
+            if (cat == SemanticLocatorResolver.ElementCategory.READ) {
+                return element;
+            }
+            // Label -> Control bridge
             if ("label".equalsIgnoreCase(tag)) {
                 List<WebElement> nested = element.findElements(By.cssSelector("input, select, textarea"));
                 WebElement target = !nested.isEmpty() ? nested.get(0) : null;
@@ -773,8 +911,20 @@ public class EnsembleHealer {
                     if (cat == SemanticLocatorResolver.ElementCategory.CHECK) {
                         return target;
                     }
-                    if (cat == SemanticLocatorResolver.ElementCategory.CLICK && target.isDisplayed() && target.isEnabled()) {
-                        return target;
+                    if (cat == SemanticLocatorResolver.ElementCategory.CLICK) {
+                        try {
+                            String inType = target.getAttribute("type");
+                            boolean isRadioOrCheckbox = inType != null &&
+                                    ("radio".equalsIgnoreCase(inType) || "checkbox".equalsIgnoreCase(inType));
+                            if (isRadioOrCheckbox) {
+                                if (target.isDisplayed() || !element.isDisplayed()) {
+                                    return target;
+                                }
+                                return element;
+                            }
+                            if (target.isDisplayed() && target.isEnabled()) return target;
+                        } catch (Exception ignored) {}
+                        return element;
                     }
                     if (cat == SemanticLocatorResolver.ElementCategory.TYPE) {
                         return target;
@@ -902,9 +1052,14 @@ public class EnsembleHealer {
      */
     static GateResult decideGate(double combined, double threshold, double f2,
                                  boolean rescueEnabled, double f3) {
-        if (combined >= threshold) return new GateResult(true, combined, "ensemble");
-        if (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f3 >= GATE_RESCUE_COSINE_FLOOR) {
-            return new GateResult(true, (f2 + f3) / 2.0, "strategy-rescue");
+        double rescueScore = (rescueEnabled && f2 >= GATE_STRATEGY_MIN && f3 >= GATE_RESCUE_COSINE_FLOOR)
+                ? (f2 + f3) / 2.0 : -1.0;
+        if (combined >= threshold || rescueScore >= 0.0) {
+            if (rescueScore > combined) {
+                return new GateResult(true, rescueScore, "strategy-rescue");
+            } else {
+                return new GateResult(true, combined, "ensemble");
+            }
         }
         return new GateResult(false, combined, "none");
     }

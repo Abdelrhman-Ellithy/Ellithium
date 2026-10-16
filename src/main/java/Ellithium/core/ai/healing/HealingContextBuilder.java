@@ -164,7 +164,8 @@ class HealingContextBuilder {
     }
 
     static void parseByLocator(String locatorStr, HealingContext ctx) {
-        Matcher m = Pattern.compile("By\\.([a-zA-Z]+):\\s*(.*)").matcher(locatorStr);
+        if (locatorStr == null) return;
+        Matcher m = Pattern.compile("(?:By|AppiumBy)\\.([a-zA-Z]+):\\s*(.*)").matcher(locatorStr);
         if (m.find()) {
             ctx.byMethod = m.group(1);
             ctx.byValue = m.group(2).trim();
@@ -177,6 +178,7 @@ class HealingContextBuilder {
 
     static String readCallSiteSource(String filePath, int lineNumber) {
         try {
+            if (filePath == null || lineNumber < 1) return null;
             List<String> lines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(filePath));
             int start = Math.max(0, lineNumber - 3);
             int end = Math.min(lines.size(), lineNumber + 2);
@@ -212,7 +214,8 @@ class HealingContextBuilder {
 
     private static SourceLocation resolveLocationForFrame(StackTraceElement frame) {
         String className = frame.getClassName();
-        String classFilePart = className.replace('.', '/') + ".java";
+        String sourceClassName = className.contains("$") ? className.substring(0, className.indexOf('$')) : className;
+        String classFilePart = sourceClassName.replace('.', '/') + ".java";
         String resolvedPath = null;
         for (String root : new String[]{"src/test/java/", "src/main/java/"}) {
             String candidate = root + classFilePart;
@@ -236,29 +239,15 @@ class HealingContextBuilder {
 
     static String resolveFieldNameFromSource(String filePath, int callSiteLine) {
         try {
+            if (filePath == null) return null;
             List<String> lines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(filePath));
             if (callSiteLine < 1 || callSiteLine > lines.size()) return null;
 
             String callLine = lines.get(callSiteLine - 1).trim();
 
-            if (callLine.matches(".*By\\.[a-zA-Z]+\\(.*") || callLine.matches(".*AppiumBy\\.[a-zA-Z]+\\(.*")) {
-                java.util.regex.Matcher m = Pattern.compile("(?:this\\.)?([a-zA-Z_][a-zA-Z0-9_]*)")
-                        .matcher(callLine);
-                java.util.List<String> candidates = new java.util.ArrayList<>();
-                while (m.find()) candidates.add(m.group(1));
-
-                for (int i = callSiteLine - 2; i >= 0; i--) {
-                    String srcLine = lines.get(i).trim();
-                    java.util.regex.Matcher fieldMatcher = Pattern
-                            .compile("(?:private|protected|public)?\\s*(?:final\\s+)?By\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?:=|;)")
-                            .matcher(srcLine);
-                    if (fieldMatcher.find()) {
-                        String foundField = fieldMatcher.group(1);
-                        if (candidates.contains(foundField)) {
-                            return foundField;
-                        }
-                    }
-                }
+            // If the call-site specifies an inline locator directly (e.g. By.id("...") or AppiumBy.xpath("...")),
+            // there is no field to patch — inline call-site patching should be used instead.
+            if (callLine.matches(".*(?:By|AppiumBy)\\.[a-zA-Z]+\\(.*")) {
                 return null;
             }
 
@@ -267,14 +256,29 @@ class HealingContextBuilder {
             java.util.List<String> candidates = new java.util.ArrayList<>();
             while (m.find()) candidates.add(m.group(1));
 
+            Pattern fieldPattern = Pattern.compile("(?:private|protected|public)?\\s*(?:static\\s+)?(?:final\\s+)?By\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?:=|;)");
+
+            // First search upwards from call site (most common place for fields in Page Objects)
             for (int i = callSiteLine - 2; i >= 0; i--) {
                 String srcLine = lines.get(i).trim();
-                java.util.regex.Matcher fieldMatcher = Pattern
-                        .compile("(?:private|protected|public)?\\s*(?:final\\s+)?By\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?:=|;)")
-                        .matcher(srcLine);
+                java.util.regex.Matcher fieldMatcher = fieldPattern.matcher(srcLine);
                 if (fieldMatcher.find()) {
                     String foundField = fieldMatcher.group(1);
-                    if (candidates.contains(foundField)) return foundField;
+                    if (candidates.contains(foundField)) {
+                        return foundField;
+                    }
+                }
+            }
+
+            // Also search downwards in case fields are declared below methods
+            for (int i = callSiteLine; i < lines.size(); i++) {
+                String srcLine = lines.get(i).trim();
+                java.util.regex.Matcher fieldMatcher = fieldPattern.matcher(srcLine);
+                if (fieldMatcher.find()) {
+                    String foundField = fieldMatcher.group(1);
+                    if (candidates.contains(foundField)) {
+                        return foundField;
+                    }
                 }
             }
         } catch (Exception e) {
