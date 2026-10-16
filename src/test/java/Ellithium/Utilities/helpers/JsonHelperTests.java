@@ -452,6 +452,39 @@ public class JsonHelperTests {
         }
     }
 
+    @Test
+    public void testSetJsonData_nestedDirectoryDoesNotExist_createsDirectoryAndFile() throws IOException {
+        String nestedPath = TEST_DIR + "nested/sub/data.json";
+        try {
+            List<Map<String, String>> data = List.of(Map.of("user", "alice"));
+            JsonHelper.setJsonData(nestedPath, data);
+
+            assertTrue(new File(nestedPath).exists(), "Nested JSON file should be created");
+            List<Map<String, String>> readData = JsonHelper.getJsonData(nestedPath);
+            assertEquals(readData.size(), 1);
+            assertEquals(readData.get(0).get("user"), "alice");
+        } finally {
+            Files.deleteIfExists(Path.of(nestedPath));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested/sub"));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nested"));
+        }
+    }
+
+    @Test
+    public void testSetJsonKeyValue_nestedDirectoryDoesNotExist_createsDirectoryAndFile() throws IOException {
+        String nestedPath = TEST_DIR + "nestedKey/dir/config.json";
+        try {
+            JsonHelper.setJsonKeyValue(nestedPath, "theme", "dark");
+
+            assertTrue(new File(nestedPath).exists(), "Nested JSON file should be created");
+            assertEquals(JsonHelper.getJsonKeyValue(nestedPath, "theme"), "dark");
+        } finally {
+            Files.deleteIfExists(Path.of(nestedPath));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nestedKey/dir"));
+            Files.deleteIfExists(Path.of(TEST_DIR + "nestedKey"));
+        }
+    }
+
     private TestObject createTestObject(String name, int age, String email) {
         TestObject obj = new TestObject();
         obj.name = name;

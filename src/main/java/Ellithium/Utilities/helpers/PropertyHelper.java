@@ -26,13 +26,15 @@ public class PropertyHelper {
     private static final ConcurrentHashMap<String, CachedProps> READ_CACHE = new ConcurrentHashMap<>();
 
     private static Properties loadPropertiesCached(String filePath) throws IOException {
-        ensureFileExists(filePath);
         File f = new File(filePath);
+        if (!f.exists()) {
+            return new LinkedProperties();
+        }
         long mtime = f.lastModified();
         long size = f.length();
         CachedProps c = READ_CACHE.get(filePath);
         if (c != null && c.mtime() == mtime && c.size() == size) {
-            Properties copy = new Properties();
+            Properties copy = new LinkedProperties();
             copy.putAll(c.props());
             return copy;
         }
@@ -108,7 +110,10 @@ public class PropertyHelper {
      */
     private static Properties loadProperties(String filePath) throws IOException {
         Properties prop = new LinkedProperties();
-        ensureFileExists(filePath);
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return prop;
+        }
         synchronized (getFileLock(filePath)) {
             try (FileInputStream fis = new FileInputStream(filePath)) {
                 prop.load(fis);
@@ -355,7 +360,14 @@ public class PropertyHelper {
     public static void backupProperties(String filePath) {
         try {
             Path source = Path.of(filePath);
+            if (!Files.exists(source)) {
+                log("Source properties file not found for backup: ", LogLevel.WARN, filePath);
+                return;
+            }
             Path backup = Path.of(filePath + ".backup");
+            if (backup.getParent() != null && !Files.exists(backup.getParent())) {
+                Files.createDirectories(backup.getParent());
+            }
             Files.copy(source, backup, StandardCopyOption.REPLACE_EXISTING);
             log("Created backup of properties file: ", LogLevel.INFO_GREEN, backup.toString());
         } catch (IOException e) {
@@ -410,13 +422,19 @@ public class PropertyHelper {
      * @param encoding the encoding to use.
      */
     public static void saveWithEncoding(String filePath, Properties prop, String encoding) {
-        try (OutputStreamWriter writer = new OutputStreamWriter(
-                new FileOutputStream(filePath), encoding)) {
-            prop.store(writer, null);
-            log("Successfully saved properties with encoding " + encoding + ": ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to save properties with encoding: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                ensureFileExists(filePath);
+                try (OutputStreamWriter writer = new OutputStreamWriter(
+                        new FileOutputStream(filePath), encoding)) {
+                    prop.store(writer, null);
+                }
+                READ_CACHE.remove(filePath);
+                log("Successfully saved properties with encoding " + encoding + ": ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to save properties with encoding: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -472,13 +490,19 @@ public class PropertyHelper {
      * @param filePath the properties file path.
      */
     public static void clearProperties(String filePath) {
-        try (FileOutputStream output = new FileOutputStream(filePath)) {
-            Properties prop = new Properties();
-            prop.store(output, null);
-            log("Successfully cleared all properties: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            log("Failed to clear properties: ", LogLevel.ERROR, filePath);
-            log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            try {
+                ensureFileExists(filePath);
+                try (FileOutputStream output = new FileOutputStream(filePath)) {
+                    Properties prop = new Properties();
+                    prop.store(output, null);
+                }
+                READ_CACHE.remove(filePath);
+                log("Successfully cleared all properties: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                log("Failed to clear properties: ", LogLevel.ERROR, filePath);
+                log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -530,6 +554,11 @@ public class PropertyHelper {
     public static void sortPropertiesByKey(String filePath) {
         synchronized (getFileLock(filePath)) {
             try {
+                File f = new File(filePath);
+                if (!f.exists()) {
+                    log("Properties file does not exist to sort: ", LogLevel.WARN, filePath);
+                    return;
+                }
                 Properties original = loadProperties(filePath);
                 
                 List<String> sortedKeys = new ArrayList<>(original.stringPropertyNames());
@@ -545,7 +574,7 @@ public class PropertyHelper {
                         new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
                     sortedProps.store(writer, null);
                 }
-                
+                READ_CACHE.remove(filePath);
                 log("Successfully sorted properties by key: ", LogLevel.INFO_GREEN, filePath);
             } catch (IOException e) {
                 log("Failed to sort properties: ", LogLevel.ERROR, filePath);

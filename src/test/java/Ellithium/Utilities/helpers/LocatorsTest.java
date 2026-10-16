@@ -63,12 +63,27 @@ public class LocatorsTest {
         Assert.assertEquals(Locators.fromString("class=btn primary"), By.cssSelector(".btn.primary"));
         Assert.assertEquals(Locators.fromString("link=Home"), By.linkText("Home"));
         Assert.assertEquals(Locators.fromString("partiallink=Hom"), By.partialLinkText("Hom"));
+        Assert.assertEquals(Locators.fromString("tag=input"), By.tagName("input"));
+        Assert.assertEquals(Locators.fromString("tagname=button"), By.tagName("button"));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void fromString_nullThrowsIllegalArgumentException() {
+        Locators.fromString(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void fromString_emptyThrowsIllegalArgumentException() {
+        Locators.fromString("   ");
     }
 
     @Test
     public void fromString_resolvesRawSelectors() {
         Assert.assertEquals(Locators.fromString("//div[@id='main']"), By.xpath("//div[@id='main']"));
+        Assert.assertEquals(Locators.fromString("/html/body/div[1]"), By.xpath("/html/body/div[1]"));
+        Assert.assertEquals(Locators.fromString("/html/body//button[@id='submit']"), By.xpath("/html/body//button[@id='submit']"));
         Assert.assertEquals(Locators.fromString("./span"), By.xpath("./span"));
+        Assert.assertEquals(Locators.fromString("../div/span"), By.xpath("../div/span"));
         Assert.assertEquals(Locators.fromString("(//a)[1]"), By.xpath("(//a)[1]"));
         Assert.assertEquals(Locators.fromString(".container > div"), By.cssSelector(".container > div"));
     }

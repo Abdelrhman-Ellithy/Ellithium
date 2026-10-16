@@ -105,17 +105,19 @@ public class TextHelper {
 
         Reporter.log("Searching for keyword in text file: ", LogLevel.INFO_BLUE, filePath);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains(keyword)) {
-                    Reporter.log("Found line with keyword: " + keyword, LogLevel.INFO_GREEN, filePath);
-                    return line;
+        synchronized (getFileLock(filePath)) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains(keyword)) {
+                        Reporter.log("Found line with keyword: " + keyword, LogLevel.INFO_GREEN, filePath);
+                        return line;
+                    }
                 }
-            }
-        } catch (IOException e) {
-            Reporter.log("Failed to search text file: ", LogLevel.ERROR, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to search text file: ", LogLevel.ERROR, filePath);
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+            }
         }
         Reporter.log("No line with keyword found in text file: ", LogLevel.INFO_YELLOW, filePath);
         return null;
@@ -125,19 +127,21 @@ public class TextHelper {
         File textFile = new File(filePath );
         List<String> updatedLines = new ArrayList<>();
         Reporter.log("Attempting to delete line from text file: ", LogLevel.INFO_BLUE, filePath);
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.equals(lineToDelete)) {
-                    updatedLines.add(line);
+        synchronized (getFileLock(filePath)) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.equals(lineToDelete)) {
+                        updatedLines.add(line);
+                    }
                 }
-            }
-            writeTextFile(filePath, updatedLines);
-            Reporter.log("Successfully deleted line from text file: ", LogLevel.INFO_GREEN, filePath);
+                writeTextFile(filePath, updatedLines);
+                Reporter.log("Successfully deleted line from text file: ", LogLevel.INFO_GREEN, filePath);
 
-        } catch (IOException e) {
-            Reporter.log("Failed to delete line from text file: ", LogLevel.ERROR, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to delete line from text file: ", LogLevel.ERROR, filePath);
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
+            }
         }
     }
 
@@ -151,12 +155,14 @@ public class TextHelper {
 
         Reporter.log("Attempting to read entire text file as a String: ", LogLevel.INFO_BLUE, filePath);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
-            return readFileContentWithProperLineSeparators(reader);
-        } catch (IOException e) {
-            Reporter.log("Failed to read text file as a String: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
-            return null;
+        synchronized (getFileLock(filePath)) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
+                return readFileContentWithProperLineSeparators(reader);
+            } catch (IOException e) {
+                Reporter.log("Failed to read text file as a String: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+                return null;
+            }
         }
     }
     
@@ -179,13 +185,18 @@ public class TextHelper {
         Reporter.log("Attempting to write String to text file: ", LogLevel.INFO_BLUE, filePath);
         File textFile = new File(filePath );
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile))) {
-            writer.write(content);
-            // Don't add an extra newline at the end
-            Reporter.log("Successfully wrote String to text file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            Reporter.log("Failed to write String to text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+        synchronized (getFileLock(filePath)) {
+            if (textFile.getParentFile() != null && !textFile.getParentFile().exists()) {
+                textFile.getParentFile().mkdirs();
+            }
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(textFile, StandardCharsets.UTF_8))) {
+                writer.write(content != null ? content : "");
+                // Don't add an extra newline at the end
+                Reporter.log("Successfully wrote String to text file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to write String to text file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage());
+            }
         }
     }
 
@@ -196,18 +207,20 @@ public class TextHelper {
 
         Reporter.log("Attempting to delete lines containing keyword: ", LogLevel.INFO_BLUE, filePath);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(textFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.contains(keyword)) {
-                    updatedLines.add(line);
+        synchronized (getFileLock(filePath)) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(textFile, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.contains(keyword)) {
+                        updatedLines.add(line);
+                    }
                 }
+                writeTextFile(filePath, updatedLines);
+                Reporter.log("Successfully deleted lines containing keyword in text file: ", LogLevel.INFO_GREEN, filePath);
+            } catch (IOException e) {
+                Reporter.log("Failed to delete lines containing keyword in text file: ", LogLevel.ERROR, filePath);
+                Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
             }
-            writeTextFile(filePath, updatedLines);
-            Reporter.log("Successfully deleted lines containing keyword in text file: ", LogLevel.INFO_GREEN, filePath);
-        } catch (IOException e) {
-            Reporter.log("Failed to delete lines containing keyword in text file: ", LogLevel.ERROR, filePath);
-            Reporter.log("Root Cause: ", LogLevel.ERROR, e.getCause() != null ? e.getCause().toString() : e.getMessage());
         }
     }
 

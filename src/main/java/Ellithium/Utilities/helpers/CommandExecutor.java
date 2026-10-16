@@ -21,6 +21,10 @@ public class CommandExecutor {
      * @param command the command to execute.
      */
     public static void executeCommand(String command) {
+        if (command == null || command.isBlank()) {
+            Reporter.log("Cannot execute null or blank command", LogLevel.WARN);
+            return;
+        }
         Reporter.log("Attempting to execute command: " + command, LogLevel.INFO_GREEN);
         try {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
@@ -43,6 +47,21 @@ public class CommandExecutor {
      * @return exit code of the process.
      */
     public static int executeCommand(List<String> commandList) {
+        return executeCommand(commandList, 0, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Executes a command synchronously with explicit arguments and a maximum timeout.
+     * @param commandList list of command arguments.
+     * @param timeout maximum duration to wait.
+     * @param unit time unit for timeout.
+     * @return exit code of the process, or -1 on failure/timeout.
+     */
+    public static int executeCommand(List<String> commandList, long timeout, java.util.concurrent.TimeUnit unit) {
+        if (commandList == null || commandList.isEmpty()) {
+            Reporter.log("Cannot execute null or empty command list", LogLevel.WARN);
+            return -1;
+        }
         String cmdStr = String.join(" ", commandList);
         Reporter.log("Attempting to execute command: " + cmdStr, LogLevel.INFO_GREEN);
         try {
@@ -50,7 +69,18 @@ public class CommandExecutor {
             builder.redirectErrorStream(true);
             Process process = builder.start();
             String output = captureProcessOutput(process);
-            int exitCode = process.waitFor();
+            int exitCode;
+            if (timeout > 0 && unit != null) {
+                boolean finished = process.waitFor(timeout, unit);
+                if (!finished) {
+                    process.destroyForcibly();
+                    Reporter.log("Command timed out after " + timeout + " " + unit + ": " + cmdStr, LogLevel.ERROR);
+                    return -1;
+                }
+                exitCode = process.exitValue();
+            } else {
+                exitCode = process.waitFor();
+            }
             logCommandResult(cmdStr, exitCode, output);
             return exitCode;
         } catch (InterruptedException e) {
@@ -88,6 +118,10 @@ public class CommandExecutor {
      * @return the Process object, or null if execution fails.
      */
     public static Process executeCommandNonBlocking(String command) {
+        if (command == null || command.isBlank()) {
+            Reporter.log("Cannot execute null or blank command in non-blocking mode", LogLevel.WARN);
+            return null;
+        }
         Reporter.log("Attempting to execute command in non-blocking mode: ", LogLevel.INFO_GREEN, command);
         try {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
@@ -106,6 +140,10 @@ public class CommandExecutor {
      * @param filePath the file path.
      */
     public static void openFile(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            Reporter.log("Cannot open null or blank file path", LogLevel.WARN);
+            return;
+        }
         try {
             File file = new File(filePath);
             if (!GraphicsEnvironment.isHeadless() && Desktop.isDesktopSupported()
@@ -190,12 +228,16 @@ public class CommandExecutor {
      * @param processId the process identifier.
      */
     public static void killProcess(String processId) {
+        if (processId == null || processId.isBlank()) {
+            Reporter.log("Cannot kill process with null or blank process ID", LogLevel.WARN);
+            return;
+        }
         try {
             String[] command;
             if (SystemUtils.IS_OS_WINDOWS) {
-                command = new String[]{"taskkill", "/F", "/PID", processId};
+                command = new String[]{"taskkill", "/F", "/PID", processId.trim()};
             } else {
-                command = new String[]{"kill", "-9", processId};
+                command = new String[]{"kill", "-9", processId.trim()};
             }
             Process process = new ProcessBuilder(command).start();
             process.waitFor();
@@ -213,6 +255,7 @@ public class CommandExecutor {
      * @param path the directory path.
      */
     public static void createDirectory(String path) {
+        if (path == null || path.isBlank()) return;
         try {
             Files.createDirectories(Paths.get(path));
             Reporter.log("Successfully created directory: ", LogLevel.INFO_GREEN, path);
@@ -226,8 +269,11 @@ public class CommandExecutor {
      * @param path the directory path.
      */
     public static void deleteDirectory(String path) {
+        if (path == null || path.isBlank()) return;
+        Path dirPath = Paths.get(path);
+        if (!Files.exists(dirPath)) return;
         try {
-            Files.walk(Paths.get(path))
+            Files.walk(dirPath)
                     .sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
                     .forEach(File::delete);
@@ -243,8 +289,16 @@ public class CommandExecutor {
      * @param targetPath the target file path.
      */
     public static void copyFile(String sourcePath, String targetPath) {
+        if (sourcePath == null || targetPath == null) {
+            Reporter.log("Source or target path is null", LogLevel.ERROR);
+            return;
+        }
         try {
-            Files.copy(Paths.get(sourcePath), Paths.get(targetPath), StandardCopyOption.REPLACE_EXISTING);
+            Path target = Paths.get(targetPath);
+            if (target.getParent() != null) {
+                Files.createDirectories(target.getParent());
+            }
+            Files.copy(Paths.get(sourcePath), target, StandardCopyOption.REPLACE_EXISTING);
             Reporter.log("Successfully copied file: ", LogLevel.INFO_GREEN, sourcePath + " to " + targetPath);
         } catch (IOException e) {
             Reporter.log("Failed to copy file: ", LogLevel.ERROR, sourcePath);
@@ -257,12 +311,36 @@ public class CommandExecutor {
      * @return output from the command execution.
      */
     public static String executeCommandWithOutput(String command) {
+        return executeCommandWithOutput(command, 0, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Executes a command with timeout and returns its output.
+     * @param command the command to execute.
+     * @param timeout maximum duration to wait.
+     * @param unit time unit for timeout.
+     * @return output from the command execution, or null on error.
+     */
+    public static String executeCommandWithOutput(String command, long timeout, java.util.concurrent.TimeUnit unit) {
+        if (command == null || command.isBlank()) {
+            Reporter.log("Cannot execute null or blank command with output", LogLevel.WARN);
+            return null;
+        }
         try {
             ProcessBuilder builder = getProcessBuilder(sanitizeCommand(command));
             builder.redirectErrorStream(true);
             Process process = builder.start();
             String output = captureProcessOutput(process);
-            process.waitFor();
+            if (timeout > 0 && unit != null) {
+                boolean finished = process.waitFor(timeout, unit);
+                if (!finished) {
+                    process.destroyForcibly();
+                    Reporter.log("Command timed out after " + timeout + " " + unit + ": " + command, LogLevel.ERROR);
+                    return null;
+                }
+            } else {
+                process.waitFor();
+            }
             return output;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -275,6 +353,10 @@ public class CommandExecutor {
     }
     
     public static void executeScript(String scriptPath) {
+        if (scriptPath == null || scriptPath.isBlank()) {
+            Reporter.log("Cannot execute null or blank script path", LogLevel.WARN);
+            return;
+        }
         try {
             String[] command = buildScriptCommand(scriptPath);
             Process process = new ProcessBuilder(command).start();
@@ -334,15 +416,18 @@ public class CommandExecutor {
      * @return true if running; otherwise false.
      */
     public static boolean isProcessRunning(String processName) {
+        if (processName == null || processName.isBlank()) {
+            return false;
+        }
         try {
             String command;
             if (SystemUtils.IS_OS_WINDOWS) {
-                command = "tasklist /FI \"IMAGENAME eq " + processName + "\"";
+                command = "tasklist /FI \"IMAGENAME eq " + processName.trim() + "\"";
             } else {
-                command = "pgrep " + processName;
+                command = "pgrep " + processName.trim();
             }
             String output = executeCommandWithOutput(command);
-            return output != null && output.contains(processName);
+            return output != null && output.contains(processName.trim());
         } catch (Exception e) {
             Reporter.log("Failed to check process status: ", LogLevel.ERROR, processName);
             return false;
@@ -371,7 +456,10 @@ public class CommandExecutor {
      * @param command the input command string.
      * @return an array of command components.
      */
-    private static String[] sanitizeCommand(String command) {
+    static String[] sanitizeCommand(String command) {
+        if (command == null || command.isBlank()) {
+            return new String[0];
+        }
         List<String> tokens = new ArrayList<>();
         Pattern pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)");
         Matcher matcher = pattern.matcher(command);
