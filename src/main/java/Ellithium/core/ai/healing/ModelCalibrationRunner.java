@@ -130,7 +130,7 @@ public class ModelCalibrationRunner {
 
     // ──────────────────────── PR-curve threshold selection ────────────────────────
 
-    private static CalibrationResult computeResult(List<Double> positives, List<Double> negatives) {
+    static CalibrationResult computeResult(List<Double> positives, List<Double> negatives) {
         double posP10 = percentile(positives, 10);
         double posP50 = percentile(positives, 50);
         double negP95 = percentile(negatives, 95);
@@ -166,14 +166,14 @@ public class ModelCalibrationRunner {
                 round4(negMean), round4(negP95), round4(negP99));
     }
 
-    private static double percentile(List<Double> sorted, int p) {
+    static double percentile(List<Double> sorted, int p) {
         if (sorted.isEmpty()) return 0.0;
         int idx = (int) Math.ceil(p / 100.0 * sorted.size()) - 1;
         return sorted.get(Math.max(0, Math.min(idx, sorted.size() - 1)));
     }
 
-    private static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
-    private static double round4(double v) { return Math.round(v * 10000.0) / 10000.0; }
+    static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
+    static double round4(double v) { return Math.round(v * 10000.0) / 10000.0; }
 
     // ──────────────────────── I/O ────────────────────────
 

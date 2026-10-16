@@ -189,4 +189,97 @@ public class SemanticNameExtractorTest {
         Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("checkout"));
         Assert.assertFalse(SemanticNameExtractor.isStateOrUtilityModifier("nav-link"));
     }
+
+    @Test
+    public void extractDistinctiveTokens_filtersGenericTerms() {
+        java.util.Set<String> tokens = SemanticNameExtractor.extractDistinctiveTokens(org.openqa.selenium.By.id("radio-option-firefox"));
+        Assert.assertTrue(tokens.contains("firefox"), "Must extract 'firefox'");
+        Assert.assertFalse(tokens.contains("radio"), "Must filter generic 'radio'");
+        Assert.assertFalse(tokens.contains("option"), "Must filter generic 'option'");
+    }
+
+    @Test
+    public void candidateMatchesDistinctiveTokens_matchesCorrectCandidate() {
+        java.util.Set<String> tokens = java.util.Set.of("firefox");
+        java.util.Map<String, Object> firefoxAttrs = java.util.Map.of("id", "radio-firefox", "text", "Firefox");
+        java.util.Map<String, Object> chromeAttrs = java.util.Map.of("id", "radio-chrome", "text", "Chrome");
+
+        Assert.assertTrue(SemanticNameExtractor.candidateMatchesDistinctiveTokens(firefoxAttrs, null, tokens));
+        Assert.assertFalse(SemanticNameExtractor.candidateMatchesDistinctiveTokens(chromeAttrs, null, tokens));
+    }
+
+    @Test
+    public void extractDistinctiveTokens_fromXPath_filtersAttributesAndExtractsKeyword() {
+        java.util.Set<String> tokens = SemanticNameExtractor.extractDistinctiveTokens(
+                org.openqa.selenium.By.xpath("//input[@id='radio-option-firefox']"));
+        Assert.assertTrue(tokens.contains("firefox"), "Must extract 'firefox'");
+        Assert.assertFalse(tokens.contains("input"), "Must filter generic 'input'");
+        Assert.assertFalse(tokens.contains("id"), "Must filter generic 'id'");
+        Assert.assertFalse(tokens.contains("radio"), "Must filter generic 'radio'");
+        Assert.assertFalse(tokens.contains("option"), "Must filter generic 'option'");
+    }
+
+    @Test
+    public void extractDistinctiveTokens_fromCss_extractsKeyword() {
+        java.util.Set<String> tokens = SemanticNameExtractor.extractDistinctiveTokens(
+                org.openqa.selenium.By.cssSelector("input[name='browser-safari']"));
+        Assert.assertTrue(tokens.contains("safari"), "Must extract 'safari'");
+        Assert.assertFalse(tokens.contains("name"), "Must filter generic 'name'");
+        Assert.assertFalse(tokens.contains("input"), "Must filter generic 'input'");
+    }
+
+    @Test
+    public void candidateMatchesDistinctiveTokens_matchesClassAttribute() {
+        java.util.Set<String> tokens = java.util.Set.of("firefox");
+        java.util.Map<String, Object> attrs = java.util.Map.of("class", "custom-control radio-firefox active");
+        Assert.assertTrue(SemanticNameExtractor.candidateMatchesDistinctiveTokens(attrs, null, tokens));
+    }
+
+    @Test
+    public void extractDistinctiveTokens_fromSubmitButton_extractsSubmit() {
+        java.util.Set<String> tokens = SemanticNameExtractor.extractDistinctiveTokens(
+                org.openqa.selenium.By.id("submit-form-button"));
+        Assert.assertTrue(tokens.contains("submit"), "Must extract 'submit' as distinctive action keyword");
+        Assert.assertFalse(tokens.contains("form"), "Must filter generic 'form'");
+        Assert.assertFalse(tokens.contains("button"), "Must filter generic 'button'");
+    }
+
+    @Test
+    public void extractDistinctiveTokens_fromComplexXPathWithMixedQuotes_filtersSyntaxAndExtractsDistinctive() {
+        org.openqa.selenium.By complexXpath = org.openqa.selenium.By.xpath(
+                "//div[@data-test='user-profile']//button[@type='submit' and contains(normalize-space(), \"Save Profile\")]");
+        java.util.Set<String> tokens = SemanticNameExtractor.extractDistinctiveTokens(complexXpath);
+        Assert.assertTrue(tokens.contains("profile"), "Must extract 'profile'");
+        Assert.assertTrue(tokens.contains("save"), "Must extract 'save'");
+        Assert.assertTrue(tokens.contains("user"), "Must extract 'user'");
+        Assert.assertTrue(tokens.contains("submit"), "Must preserve distinctive action keyword 'submit'");
+        Assert.assertFalse(tokens.contains("div"), "Must filter generic tag 'div'");
+        Assert.assertFalse(tokens.contains("button"), "Must filter generic tag 'button'");
+        Assert.assertFalse(tokens.contains("normalize"), "Must filter XPath function 'normalize'");
+        Assert.assertFalse(tokens.contains("space"), "Must filter XPath function 'space'");
+    }
+
+    @Test
+    public void candidateMatchesDistinctiveTokens_shortTokensRequireWordBoundary() {
+        java.util.Set<String> tokens = java.util.Set.of("cat");
+        // "location" contains "cat" as substring, but is NOT the word "cat"
+        java.util.Map<String, Object> falseAttrs = java.util.Map.of("name", "location");
+        Assert.assertFalse(SemanticNameExtractor.candidateMatchesDistinctiveTokens(falseAttrs, null, tokens),
+                "Short token 'cat' should not match inside 'location'");
+
+        // "cat-selector" or "cat" has word boundary
+        java.util.Map<String, Object> trueAttrs = java.util.Map.of("name", "user-cat-option");
+        Assert.assertTrue(SemanticNameExtractor.candidateMatchesDistinctiveTokens(trueAttrs, null, tokens),
+                "Short token 'cat' should match with delimiter boundary in 'user-cat-option'");
+    }
+
+    @Test
+    public void candidateMatchesDistinctiveTokens_onWebElementDirectly_checksAllAttributes() {
+        org.openqa.selenium.WebElement mockEl = org.mockito.Mockito.mock(org.openqa.selenium.WebElement.class);
+        org.mockito.Mockito.when(mockEl.getAttribute("data-test")).thenReturn("browser-edge-choice");
+
+        java.util.Set<String> tokens = java.util.Set.of("edge");
+        Assert.assertTrue(SemanticNameExtractor.candidateMatchesDistinctiveTokens(null, mockEl, tokens),
+                "candidateMatchesDistinctiveTokens must check data-test attribute on WebElement directly");
+    }
 }

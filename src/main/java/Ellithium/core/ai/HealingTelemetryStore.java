@@ -90,6 +90,12 @@ public class HealingTelemetryStore {
         CURRENT_TEST.set(CLEARED);
     }
 
+    /** Returns the current-thread test identifier, or null if cleared/unset. */
+    public static String getCurrentTest() {
+        String test = CURRENT_TEST.get();
+        return (test == null || test.equals(CLEARED)) ? null : test;
+    }
+
     /**
      * Records a single heal attempt (legacy 5-arg form — no query/category context).
      *
