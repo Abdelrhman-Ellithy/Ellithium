@@ -21,6 +21,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import Ellithium.core.ai.context.HealingContext;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
@@ -82,8 +83,22 @@ public final class HealingOrchestrator implements ElementHealingPort {
             return null;
         }
 
+        if (HealingContext.isBound()) {
+            return doHeal(request, strategy);
+        } else {
+            long timeoutMillis = 15_000L;
+            HealingContext context = HealingContext.of(request, timeoutMillis);
+            return HealingContext.getWith(context, () -> doHeal(request, strategy));
+        }
+    }
+
+    private HealOutcome doHeal(HealingRequest request, HealingStrategy strategy) {
         for (HealingTier tier : tiers) {
             if (!tier.isAvailable()) continue;
+            if (HealingContext.isCurrentExpired()) {
+                Reporter.log("[AI] Healing deadline expired before tier " + tier.order(), LogLevel.WARN);
+                break;
+            }
 
             HealOutcome outcome = processTier(tier, request, strategy);
             if (outcome != null) {

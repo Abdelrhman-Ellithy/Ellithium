@@ -29,6 +29,9 @@ public final class Tier3LLMHealer implements HealingTier {
 
     @Override
     public HealOutcome heal(HealingRequest request) {
+        if (Ellithium.core.ai.context.HealingContext.isCurrentExpired()) {
+            return null;
+        }
         WebElement element = AISelfHealer.attemptHeal(
                 request.driver(), request.brokenLocator(), request.stackTrace(), request.hints());
         if (element == null) return null;

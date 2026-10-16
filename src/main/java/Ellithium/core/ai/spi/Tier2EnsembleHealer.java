@@ -25,6 +25,9 @@ public final class Tier2EnsembleHealer implements HealingTier {
 
     @Override
     public HealOutcome heal(HealingRequest request) {
+        if (Ellithium.core.ai.context.HealingContext.isCurrentExpired()) {
+            return null;
+        }
         if (EnsembleHealer.isAvailable()) {
             HealOutcome outcome = EnsembleHealer.tryEnsembleHeal(request.driver(), request.brokenLocator(),
                     request.actionType(), request.callerMethod(), request.fieldName(),
