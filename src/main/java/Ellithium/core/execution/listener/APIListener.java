@@ -11,7 +11,10 @@ import io.restassured.http.Headers;
 import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,11 +51,11 @@ public class APIListener implements Filter {
         if (input.trim().startsWith("{") || input.trim().startsWith("[")) {
             try {
                 if (input.trim().startsWith("{")) {
-                    JSONObject json = new JSONObject(input);
+                    JsonObject json = JsonParser.parseString(input).getAsJsonObject();
                     return obfuscateJson(json).toString();
                 } else {
                     // Handle JSON arrays
-                    org.json.JSONArray jsonArray = new org.json.JSONArray(input);
+                    JsonArray jsonArray = JsonParser.parseString(input).getAsJsonArray();
                     return obfuscateJsonArray(jsonArray).toString();
                 }
             } catch (Exception e) {
@@ -102,35 +105,37 @@ public class APIListener implements Filter {
         return obfuscateData(base) + "?" + masked;
     }
 
-    JSONObject obfuscateJson(JSONObject json) {
-        JSONObject result = new JSONObject(json.toString());
-        for (String key : result.keySet()) {
-            Object value = result.get(key);
+    JsonObject obfuscateJson(JsonObject json) {
+        JsonObject result = new JsonObject();
+        for (String key : json.keySet()) {
+            JsonElement value = json.get(key);
             if (SENSITIVE_FIELDS.contains(key.toLowerCase())) {
-                result.put(key, "********");
-            } else if (value instanceof JSONObject) {
-                result.put(key, obfuscateJson((JSONObject) value));
-            } else if (value instanceof org.json.JSONArray) {
-                result.put(key, obfuscateJsonArray((org.json.JSONArray) value));
-            } else if (value instanceof String) {
-                result.put(key, obfuscateData((String) value));
+                result.addProperty(key, "********");
+            } else if (value != null && value.isJsonObject()) {
+                result.add(key, obfuscateJson(value.getAsJsonObject()));
+            } else if (value != null && value.isJsonArray()) {
+                result.add(key, obfuscateJsonArray(value.getAsJsonArray()));
+            } else if (value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+                result.addProperty(key, obfuscateData(value.getAsString()));
+            } else {
+                result.add(key, value);
             }
         }
         return result;
     }
 
-    org.json.JSONArray obfuscateJsonArray(org.json.JSONArray jsonArray) {
-        org.json.JSONArray result = new org.json.JSONArray();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            Object value = jsonArray.get(i);
-            if (value instanceof JSONObject) {
-                result.put(obfuscateJson((JSONObject) value));
-            } else if (value instanceof org.json.JSONArray) {
-                result.put(obfuscateJsonArray((org.json.JSONArray) value));
-            } else if (value instanceof String) {
-                result.put(obfuscateData((String) value));
+    JsonArray obfuscateJsonArray(JsonArray jsonArray) {
+        JsonArray result = new JsonArray();
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JsonElement value = jsonArray.get(i);
+            if (value != null && value.isJsonObject()) {
+                result.add(obfuscateJson(value.getAsJsonObject()));
+            } else if (value != null && value.isJsonArray()) {
+                result.add(obfuscateJsonArray(value.getAsJsonArray()));
+            } else if (value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+                result.add(obfuscateData(value.getAsString()));
             } else {
-                result.put(value);
+                result.add(value);
             }
         }
         return result;
@@ -139,35 +144,35 @@ public class APIListener implements Filter {
     String handleCookies(Object cookies) {
         if (cookies == null) return "No Cookies";
         
-        JSONObject json = new JSONObject();
+        JsonObject json = new JsonObject();
         if (cookies instanceof Map) {
             Map<String, String> cookieMap = (Map<String, String>) cookies;
             if (cookieMap.isEmpty()) return "No Cookies";
             for (Map.Entry<String, String> entry : cookieMap.entrySet()) {
-                json.put(entry.getKey(), entry.getValue());
+                json.addProperty(entry.getKey(), entry.getValue());
             }
         } else if (cookies instanceof Cookies cookieObj) {
             if (cookieObj.asList().isEmpty()) return "No Cookies";
             for (Cookie cookie : cookieObj.asList()) {
-                json.put(cookie.getName(), cookie.getValue());
+                json.addProperty(cookie.getName(), cookie.getValue());
             }
         }
         return obfuscateJson(json).toString();
     }
 
-    JSONObject headersToJson(Headers headers) {
-        JSONObject json = new JSONObject();
+    JsonObject headersToJson(Headers headers) {
+        JsonObject json = new JsonObject();
         for (Header header : headers.asList()) {
-            json.put(header.getName(), header.getValue());
+            json.addProperty(header.getName(), header.getValue());
         }
         return obfuscateJson(json);
     }
 
-    JSONObject mapToJson(Map<String, ?> map) {
-        if (map == null || map.isEmpty()) return new JSONObject();
-        JSONObject json = new JSONObject();
+    JsonObject mapToJson(Map<String, ?> map) {
+        if (map == null || map.isEmpty()) return new JsonObject();
+        JsonObject json = new JsonObject();
         for (Map.Entry<String, ?> entry : map.entrySet()) {
-            json.put(entry.getKey(), entry.getValue());
+            json.addProperty(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
         }
         return obfuscateJson(json);
     }
