@@ -826,7 +826,8 @@ public class SQLDatabaseProvider implements SQLProvider {
                 sanitized.endsWith("OR")) {
             throw new IllegalArgumentException("Invalid SQL syntax: Incomplete or invalid statement");
         }
-        if (sanitized.contains(";") && !sanitized.endsWith(";")) {
+        int lastIndex = sanitized.endsWith(";") ? sanitized.length() - 1 : sanitized.length();
+        if (sanitized.substring(0, lastIndex).contains(";")) {
             throw new IllegalArgumentException("Multiple SQL statements are not allowed");
         }
         return sanitized;
