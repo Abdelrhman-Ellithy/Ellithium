@@ -17,7 +17,7 @@ public class DataScrubber {
 
     // Email addresses
     private static final Pattern EMAIL = Pattern.compile(
-            "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+            "[a-zA-Z0-9._%+-]++@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
 
     // Password input values: value="..." inside type="password" inputs (type before value)
     private static final Pattern PASSWORD_VALUE = Pattern.compile(
@@ -100,23 +100,25 @@ public class DataScrubber {
         int maskedCount = 0;
 
         // Mask emails
-        if (EMAIL.matcher(result).find()) {
+        if (result.indexOf('@') >= 0 && EMAIL.matcher(result).find()) {
             result = EMAIL.matcher(result).replaceAll("***@***.***");
             maskedCount++;
         }
 
         // Mask password input values (type before value, and value before type)
-        if (PASSWORD_VALUE.matcher(result).find()) {
-            result = PASSWORD_VALUE.matcher(result).replaceAll("$1[MASKED]$3");
-            maskedCount++;
-        }
-        if (PASSWORD_VALUE_REV.matcher(result).find()) {
-            result = PASSWORD_VALUE_REV.matcher(result).replaceAll("$1[MASKED]$3");
-            maskedCount++;
+        if (result.contains("password") || result.contains("PASSWORD")) {
+            if (PASSWORD_VALUE.matcher(result).find()) {
+                result = PASSWORD_VALUE.matcher(result).replaceAll("$1[MASKED]$3");
+                maskedCount++;
+            }
+            if (PASSWORD_VALUE_REV.matcher(result).find()) {
+                result = PASSWORD_VALUE_REV.matcher(result).replaceAll("$1[MASKED]$3");
+                maskedCount++;
+            }
         }
 
         // Mask bearer tokens
-        if (BEARER_TOKEN.matcher(result).find()) {
+        if ((result.contains("Bearer") || result.contains("bearer")) && BEARER_TOKEN.matcher(result).find()) {
             result = BEARER_TOKEN.matcher(result).replaceAll("$1[MASKED_TOKEN]");
             maskedCount++;
         }

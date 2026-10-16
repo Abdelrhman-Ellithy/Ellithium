@@ -12,7 +12,7 @@ import java.util.jar.JarFile;
  * the missing entries — default value and original explanatory comment — to the end of the
  * target file. Existing content in the target file is never modified or reordered.
  */
-public class PropertyFileSynchronizer {
+class PropertyFileSynchronizer {
 
     private PropertyFileSynchronizer() {}
 
@@ -23,7 +23,7 @@ public class PropertyFileSynchronizer {
      * {@code targetFilePath} to the end of the target file. No-ops if the JAR, the target file,
      * or the JAR entry cannot be read, or if nothing is missing.
      */
-    public static void syncMissingKeys(File jarFile, String filePathInJar, String targetFilePath,
+    static void syncMissingKeys(File jarFile, String filePathInJar, String targetFilePath,
                                        String frameworkVersion) {
         if (jarFile == null || !jarFile.exists() || targetFilePath == null) return;
         File target = new File(targetFilePath);

@@ -1098,7 +1098,7 @@ public class MobileActions<T extends AppiumDriver> extends BaseActions<T> {
      * </ul>
      *
      * @param locator Locator to the element to pinch
-     * @param scale The scale factor (> 1 zooms in, < 1 zooms out)
+     * @param scale The scale factor (&gt; 1 zooms in, &lt; 1 zooms out)
      * @param velocity The velocity of the pinch
      */
     public void pinch(By locator, double scale, double velocity) {

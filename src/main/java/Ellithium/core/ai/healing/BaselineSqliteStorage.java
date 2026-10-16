@@ -29,9 +29,9 @@ import java.util.Map;
  * <p>Provides ACID guarantees, page-level atomic writes with WAL (Write-Ahead Logging),
  * and indexed lookups, avoiding full-file JSON rewriting during test executions.</p>
  */
-public class BaselineSqliteStorage {
+class BaselineSqliteStorage {
 
-    public static final String DEFAULT_DB_FILE = "Test-Output" + File.separator + "healing-baselines.db";
+    static final String DEFAULT_DB_FILE = "Test-Output" + File.separator + "healing-baselines.db";
     private static final Gson GSON = new GsonBuilder().create();
     private static final Type LIST_TYPE = new TypeToken<List<ElementFingerprint>>() {}.getType();
 
@@ -42,20 +42,20 @@ public class BaselineSqliteStorage {
     private static final BaselineSqliteStorage DEFAULT_INSTANCE =
             new BaselineSqliteStorage(Paths.get(DEFAULT_DB_FILE));
 
-    public static BaselineSqliteStorage getDefault() {
+    static BaselineSqliteStorage getDefault() {
         return DEFAULT_INSTANCE;
     }
 
-    public BaselineSqliteStorage(Path dbPath) {
+    BaselineSqliteStorage(Path dbPath) {
         this.dbPath = dbPath;
         this.jdbcUrl = "jdbc:sqlite:" + dbPath.toAbsolutePath();
     }
 
-    public Path getDbPath() {
+    Path getDbPath() {
         return dbPath;
     }
 
-    public synchronized void ensureInitialized() {
+    synchronized void ensureInitialized() {
         if (initialized) return;
         try {
             if (dbPath.getParent() != null) {
@@ -85,7 +85,7 @@ public class BaselineSqliteStorage {
         return conn;
     }
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         if (!Files.exists(dbPath)) return true;
         ensureInitialized();
         try (Connection conn = openConnection();
@@ -100,7 +100,7 @@ public class BaselineSqliteStorage {
         return true;
     }
 
-    public int count() {
+    int count() {
         if (!Files.exists(dbPath)) return 0;
         ensureInitialized();
         try (Connection conn = openConnection();
@@ -115,7 +115,7 @@ public class BaselineSqliteStorage {
         return 0;
     }
 
-    public Map<String, List<ElementFingerprint>> loadAll() {
+    Map<String, List<ElementFingerprint>> loadAll() {
         if (!Files.exists(dbPath)) return Collections.emptyMap();
         ensureInitialized();
         Map<String, List<ElementFingerprint>> result = new LinkedHashMap<>();
@@ -141,7 +141,7 @@ public class BaselineSqliteStorage {
         return result;
     }
 
-    public List<ElementFingerprint> get(String locatorKey) {
+    List<ElementFingerprint> get(String locatorKey) {
         if (locatorKey == null || !Files.exists(dbPath)) return null;
         ensureInitialized();
         String sql = "SELECT fingerprints_json FROM baselines WHERE locator_key = ?";
@@ -160,7 +160,7 @@ public class BaselineSqliteStorage {
         return null;
     }
 
-    public void upsert(String locatorKey, List<ElementFingerprint> fingerprints) {
+    void upsert(String locatorKey, List<ElementFingerprint> fingerprints) {
         if (locatorKey == null || fingerprints == null || fingerprints.isEmpty()) return;
         ensureInitialized();
         long maxEpoch = fingerprints.stream()
@@ -183,7 +183,7 @@ public class BaselineSqliteStorage {
         }
     }
 
-    public void upsertBatch(Map<String, List<ElementFingerprint>> entries) {
+    void upsertBatch(Map<String, List<ElementFingerprint>> entries) {
         if (entries == null || entries.isEmpty()) return;
         ensureInitialized();
         String sql = "INSERT INTO baselines (locator_key, fingerprints_json, last_seen_epoch) "
@@ -218,7 +218,7 @@ public class BaselineSqliteStorage {
         }
     }
 
-    public boolean delete(String locatorKey) {
+    boolean delete(String locatorKey) {
         if (locatorKey == null || !Files.exists(dbPath)) return false;
         ensureInitialized();
         String sql = "DELETE FROM baselines WHERE locator_key = ?";
@@ -232,7 +232,7 @@ public class BaselineSqliteStorage {
         }
     }
 
-    public void deleteAll() {
+    void deleteAll() {
         if (!Files.exists(dbPath)) return;
         ensureInitialized();
         try (Connection conn = openConnection();
@@ -243,7 +243,7 @@ public class BaselineSqliteStorage {
         }
     }
 
-    public int pruneStale(long cutoffEpoch) {
+    int pruneStale(long cutoffEpoch) {
         if (cutoffEpoch <= 0 || !Files.exists(dbPath)) return 0;
         ensureInitialized();
         String sql = "DELETE FROM baselines WHERE last_seen_epoch < ?";
@@ -257,7 +257,7 @@ public class BaselineSqliteStorage {
         }
     }
 
-    public int pruneByCount(int maxLocators) {
+    int pruneByCount(int maxLocators) {
         if (maxLocators <= 0 || !Files.exists(dbPath)) return 0;
         ensureInitialized();
         try (Connection conn = openConnection()) {

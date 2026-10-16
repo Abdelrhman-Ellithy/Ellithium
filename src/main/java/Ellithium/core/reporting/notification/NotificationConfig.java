@@ -10,7 +10,7 @@ import java.util.Properties;
  * Loads notification properties from config.properties file.
  * Implements graceful error handling to prevent test execution blocking.
  */
-public class NotificationConfig {
+class NotificationConfig {
     
     private static final String NOTIFICATION_FILE = "src/main/resources/properties/notifications.properties";
     private Properties properties;

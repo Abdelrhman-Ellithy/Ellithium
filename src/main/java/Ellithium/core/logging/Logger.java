@@ -144,7 +144,7 @@ public class Logger {
     }
 
     // Log an exception with ERROR level message
-    public static void logException(Exception e) {
+    public static void logException(Throwable e) {
         if (ConfigContext.isLoggingOn()) {
             ensureTestNameContext();
             getLogger().logIfEnabled(getFqcn(), Level.ERROR, null, (Object) "Exception occurred: ", e);

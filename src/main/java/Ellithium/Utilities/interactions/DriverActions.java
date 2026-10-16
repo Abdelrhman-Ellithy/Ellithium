@@ -18,12 +18,7 @@ import org.openqa.selenium.WebDriver;
  *
  * <p><b>Thread Safety:</b> This class is not thread-safe. Each test thread should have its own instance.</p>
  *
- * <p><b>Mobile Support:</b>
- * <ul>
- *   <li>Android: Full access via {@link #androidActions()}</li>
- *   <li>iOS: Full access via {@link #iosActions()}</li>
- * </ul>
- * </p>
+ * <p><b>Mobile Support:</b> Unified access to Android and iOS gestures via {@link #mobileActions()}.</p>
  *
  * @param <T> The specific WebDriver type (e.g., ChromeDriver, AndroidDriver, IOSDriver, RemoteWebDriver)
  * @author Ellithium Framework Team
@@ -150,15 +145,14 @@ public class DriverActions<T extends WebDriver> extends BaseActions<T> {
      * <p>Automatically detects the underlying platform (Android or iOS) and executes the
      * appropriate Appium mobile command under the hood.</p>
      *
-     * <p><b>Platform Support:</b>
+     * <p><b>Platform Support:</b></p>
      * <ul>
-     *   <li>Android: Full support via UIA upholsterer2 driver</li>
+     *   <li>Android: Full support via UIAutomator2 driver</li>
      *   <li>iOS: Full support via XCUITest driver</li>
      *   <li>Desktop browsers: Throws {@link ClassCastException}</li>
      * </ul>
-     * </p>
      *
-     * <p>Replaces the older platform-specific {@link #androidActions()} and {@link #iosActions()}
+     * <p>Replaces the older platform-specific {@code androidActions()} and {@code iosActions()}
      * methods. Use this method for all new test development to ensure maximum script portability.</p>
      *
      * <p><b>Example usage:</b></p>

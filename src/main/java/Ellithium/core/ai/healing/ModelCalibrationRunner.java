@@ -15,7 +15,7 @@ import java.util.*;
  * CLI tool that calibrates the Tier 3 ONNX similarity thresholds for the currently
  * configured model and baseline dataset — on a PRECISION basis.
  *
- * <h3>Why this is precision-first (and what the old version got wrong)</h3>
+ * <h2>Why this is precision-first (and what the old version got wrong)</h2>
  * The previous calibrator recommended the 10th percentile of true-positive scores and never looked
  * at where WRONG elements score — so it could not bound false heals and tended to recommend a
  * dangerously low threshold. It also paired each fingerprint's query against its OWN document
@@ -31,7 +31,7 @@ import java.util.*;
  *       <b>storeThreshold</b> = the negative-P99 floor (almost no wrong element clears it).</li>
  * </ol>
  *
- * <h3>How to run</h3>
+ * <h2>How to run</h2>
  * <pre>java -cp ellithium-*.jar Ellithium.core.ai.healing.ModelCalibrationRunner</pre>
  * Pre-requisite: {@code EnsembleHealer.isAvailable()} must be true (model embedded).
  */

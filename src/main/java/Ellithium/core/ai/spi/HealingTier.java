@@ -4,7 +4,7 @@ import Ellithium.core.ai.models.HealingRequest;
 import Ellithium.core.ai.models.HealOutcome;
 
 /**
- * A tier in the healing cascade. {@link HealingOrchestrator} tries each registered tier, ordered by
+ * A tier in the healing cascade. {@link Ellithium.core.ai.healing.HealingOrchestrator} tries each registered tier, ordered by
  * {@link #order()}; returning {@code null} (or a {@link HealOutcome} with a null element) means
  * "fall through to the next tier."
  *

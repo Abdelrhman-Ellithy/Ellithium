@@ -14,7 +14,7 @@ import java.util.Properties;
  * Handles sending email and Slack notifications for test results.
  * Implements graceful error handling to prevent test execution blocking.
  */
-public class NotificationSender {
+class NotificationSender {
 
     private final NotificationConfig config;
 
@@ -22,14 +22,14 @@ public class NotificationSender {
      * Constructor that accepts NotificationConfig dependency.
      * @param config The notification configuration
      */
-    public NotificationSender(NotificationConfig config) {
+    NotificationSender(NotificationConfig config) {
         this.config = config;
     }
 
     /**
      * Default constructor that uses the singleton NotificationConfig instance.
      */
-    public NotificationSender() {
+    NotificationSender() {
         this(NotificationConfig.getInstance());
     }
 

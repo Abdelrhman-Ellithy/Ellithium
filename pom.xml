@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.abdelrhman-ellithy</groupId>
     <artifactId>ellithium</artifactId>
-    <version>${EllithiumVersion}</version>
+    <version>3.3.0</version>
     <packaging>jar</packaging>
     <description>
         Ellithium is a Unified powerful, flexible, and scalable test automation framework for
@@ -58,6 +58,24 @@
                     <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
                 </snapshotRepository>
             </distributionManagement>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
     <properties>
@@ -644,7 +662,7 @@
                 <version>${mavenSurefirePluginVersion}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <argLine>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 --enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+ZGenerational</argLine>
+                    <argLine>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 --enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -XX:+UseZGC</argLine>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <!-- Exposes -Dsurefire.parallel / -Dsurefire.threadCount to the CLI. Defaults keep
                          normal runs single-threaded (threadCount=1); the Arena command overrides them. -->

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>Stores {@code elementKey → float[]} vectors so the same element's embedding is
  * computed once per page and reused across heal attempts on that page.</p>
  *
- * <h3>Invalidation policy</h3>
+ * <h2>Invalidation policy</h2>
  * <ul>
  *   <li>Full invalidation on every navigation event (URL change, refresh, back/forward).
  *       Wired via {@link #invalidate()} in {@code NavigationActions}.</li>
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *       navigating; until that hook is wired, the flag simply stays clear (navigation-only policy).</li>
  * </ul>
  *
- * <p>Thread-safe: {@link ConcurrentHashMap} for the vector store; {@link AtomicBoolean}
+ * <p>Thread-safe: {@link java.util.concurrent.ConcurrentHashMap} for the vector store; {@link AtomicBoolean}
  * for the mutation flag.</p>
  */
 public class ElementVectorCache {

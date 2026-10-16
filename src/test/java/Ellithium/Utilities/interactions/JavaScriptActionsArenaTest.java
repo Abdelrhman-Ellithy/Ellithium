@@ -129,10 +129,10 @@ public class JavaScriptActionsArenaTest extends ArenaBaseTest {
 
     @Test(groups = "arena")
     public void setElementValueUsingJS_setsRangeSliderValue() {
-        waitActions.waitForElementPresence(By.id("timeout-slider"), SHORT, POLL, true);
-        jsActions.setElementValueUsingJS(By.id("timeout-slider"), "75");
+        waitActions.waitForElementPresence(By.id("range-slider"), SHORT, POLL, true);
+        jsActions.setElementValueUsingJS(By.id("range-slider"), "75");
         String value = elementActions.getPropertyValue(
-                By.id("timeout-slider"), "value", SHORT, POLL);
+                By.id("range-slider"), "value", SHORT, POLL);
         Assert.assertEquals(value, "75",
                 "Range slider value must be 75 after JS setter");
     }
