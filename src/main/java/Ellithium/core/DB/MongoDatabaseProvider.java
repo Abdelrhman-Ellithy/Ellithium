@@ -2,8 +2,6 @@ package Ellithium.core.DB;
 
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -13,86 +11,90 @@ import com.mongodb.client.model.Indexes;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Provides robust operations for MongoDB database access with caching capabilities.
+ * Provides robust operations for MongoDB database access.
  * Supports document operations, queries, and health checks.
+ * Queries are always executed live against the database to guarantee test integrity.
  */
 public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
 
     private final MongoClient mongoClient;
     private final MongoDatabase database;
-    private final Cache<String, Object> queryResultCache;
     private final String defaultCollectionName;
 
     /**
      * Primary constructor for production use.
-     * Constructs a MongoDatabaseProvider with the specified connection details and cache configuration.
+     * Constructs a MongoDatabaseProvider with the specified connection details.
      *
      * @param connectionString the MongoDB connection string
      * @param databaseName     the database name
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
      */
-    public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize) {
-        this(connectionString, databaseName, cacheTtlMinutes, cacheMaxSize, "documents");
+    public MongoDatabaseProvider(String connectionString, String databaseName) {
+        this(connectionString, databaseName, "documents");
     }
 
     /**
      * Primary constructor for production use with custom default collection.
-     * Constructs a MongoDatabaseProvider with the specified connection details, cache configuration, and default collection.
+     * Constructs a MongoDatabaseProvider with the specified connection details and default collection.
      *
-     * @param connectionString the MongoDB connection string
-     * @param databaseName     the database name
-     * @param cacheTtlMinutes the time-to-live for cache entries in minutes
-     * @param cacheMaxSize    the maximum number of entries to store in the cache
+     * @param connectionString     the MongoDB connection string
+     * @param databaseName         the database name
      * @param defaultCollectionName the default collection name for NoSQL operations
      */
-    public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize, String defaultCollectionName) {
+    public MongoDatabaseProvider(String connectionString, String databaseName, String defaultCollectionName) {
         Reporter.log("Initializing MongoDB connection to " + redactConnectionString(connectionString), LogLevel.INFO_YELLOW);
         this.mongoClient = MongoClients.create(connectionString);
         this.database = mongoClient.getDatabase(databaseName);
-        this.queryResultCache = Caffeine.newBuilder()
-                .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
-                .maximumSize(cacheMaxSize)
-                .build();
         this.defaultCollectionName = defaultCollectionName;
         Reporter.log("MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
     }
+
     /**
-     * Secondary constructor for **dependency injection, primarily for testing purposes**.
-     * This constructor allows for the injection of pre-configured or mocked
-     * {@link com.mongodb.client.MongoClient}, {@link com.mongodb.client.MongoDatabase},
-     * and {@link com.github.benmanes.caffeine.cache.Cache} instances.
-     * This is particularly useful for unit testing where external dependencies need to be controlled.
-     *
-     * @param mongoClient      the {@link MongoClient} instance to be used by this provider.
-     * @param database         the {@link MongoDatabase} instance to be used for database operations.
-     * @param queryResultCache the {@link Cache} instance for storing and retrieving query results.
+     * @deprecated Caching has been removed from database providers. Use {@link #MongoDatabaseProvider(String, String)} instead.
      */
-    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, Cache<String, Object> queryResultCache) {
-        this(mongoClient, database, queryResultCache, "documents");
+    @Deprecated
+    public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize) {
+        this(connectionString, databaseName, "documents");
     }
 
     /**
-     * Secondary constructor for dependency injection with custom default collection.
+     * @deprecated Caching has been removed from database providers. Use {@link #MongoDatabaseProvider(String, String, String)} instead.
+     */
+    @Deprecated
+    public MongoDatabaseProvider(String connectionString, String databaseName, long cacheTtlMinutes, long cacheMaxSize, String defaultCollectionName) {
+        this(connectionString, databaseName, defaultCollectionName);
+    }
+
+    /**
+     * Constructor for dependency injection, primarily for testing purposes.
      *
-     * @param mongoClient      the {@link MongoClient} instance to be used by this provider.
-     * @param database         the {@link MongoDatabase} instance to be used for database operations.
-     * @param queryResultCache the {@link Cache} instance for storing and retrieving query results.
+     * @param mongoClient the {@link MongoClient} instance to be used by this provider.
+     * @param database    the {@link MongoDatabase} instance to be used for database operations.
+     */
+    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database) {
+        this(mongoClient, database, "documents");
+    }
+
+    /**
+     * Constructor for dependency injection with custom default collection.
+     *
+     * @param mongoClient           the {@link MongoClient} instance to be used by this provider.
+     * @param database              the {@link MongoDatabase} instance to be used for database operations.
      * @param defaultCollectionName the default collection name for NoSQL operations.
      */
-    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, Cache<String, Object> queryResultCache, String defaultCollectionName) {
+    public MongoDatabaseProvider(MongoClient mongoClient, MongoDatabase database, String defaultCollectionName) {
+        if (mongoClient == null || database == null) {
+            throw new IllegalArgumentException("MongoClient and MongoDatabase cannot be null when using this constructor for dependency injection.");
+        }
         this.mongoClient = mongoClient;
         this.database = database;
-        this.queryResultCache = queryResultCache;
         this.defaultCollectionName = defaultCollectionName;
-        Reporter.log("Dummy MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
+        Reporter.log("MongoDB connection initialized successfully", LogLevel.INFO_YELLOW);
     }
 
     /**
-     * Executes a MongoDB query.
+     * Executes a MongoDB query live against the database.
      * This method implements the NoSQLDatabaseProvider interface.
      *
      * @param query the query to execute
@@ -100,21 +102,10 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
      */
     @Override
     public Object executeQuery(String query) {
-        Object cachedResult = getFromCache(query);
-        if (cachedResult != null) {
-            Reporter.log("Retrieved from cache for query: " + query, LogLevel.INFO_YELLOW);
-            return cachedResult;
-        }
-
-        Reporter.log("Cache miss for query: " + query + ". Executing MongoDB query.", LogLevel.INFO_YELLOW);
+        Reporter.log("Executing MongoDB query: " + query, LogLevel.INFO_YELLOW);
         try {
             Document command = Document.parse(query);
-            Object result = database.runCommand(command);
-            if (result != null) {
-                addToCache(query, result);
-                Reporter.log("Query executed and result cached successfully", LogLevel.INFO_YELLOW);
-            }
-            return result;
+            return database.runCommand(command);
         } catch (Exception e) {
             Reporter.log("Failed to execute query: " + query + ". Error: " + e.getMessage(), LogLevel.ERROR);
             return null;
@@ -134,50 +125,39 @@ public class MongoDatabaseProvider implements NoSQLDatabaseProvider {
     }
 
     /**
-     * Clears the cache for a specific key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key to clear
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearCache(String key) {
-        queryResultCache.invalidate(key);
-        Reporter.log("Cleared cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Clears all cached query results.
-     * This method implements the NoSQLDatabaseProvider interface.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void clearAllCaches() {
-        queryResultCache.invalidateAll();
-        Reporter.log("All caches cleared.", LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Adds a query result to the cache.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key   the cache key
-     * @param value the value to cache
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public void addToCache(String key, Object value) {
-        queryResultCache.put(key, value);
-        Reporter.log("Added result to cache for key: " + key, LogLevel.INFO_YELLOW);
+        // No-op: caching is disabled; all queries execute live against the database.
     }
 
     /**
-     * Retrieves a cached query result by key.
-     * This method implements the NoSQLDatabaseProvider interface.
-     *
-     * @param key the cache key
-     * @return the cached value, or null if not present
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
+    @Deprecated
     @Override
     public Object getFromCache(String key) {
-        return queryResultCache.getIfPresent(key);
+        return null;
     }
 
     /**

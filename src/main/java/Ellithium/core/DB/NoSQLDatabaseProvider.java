@@ -22,29 +22,45 @@ public interface NoSQLDatabaseProvider {
      * Clears the cache for a specific key.
      *
      * @param key the cache key to clear
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
-    void clearCache(String key);
+    @Deprecated
+    default void clearCache(String key) {
+        // No-op: caching is disabled; all queries execute live against the database.
+    }
 
     /**
      * Clears all cached query results.
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
-    void clearAllCaches();
+    @Deprecated
+    default void clearAllCaches() {
+        // No-op: caching is disabled; all queries execute live against the database.
+    }
 
     /**
      * Adds a query result to the cache.
      *
      * @param key   the cache key
      * @param value the value to cache
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
-    void addToCache(String key, Object value);
+    @Deprecated
+    default void addToCache(String key, Object value) {
+        // No-op: caching is disabled; all queries execute live against the database.
+    }
 
     /**
      * Retrieves a cached query result by key.
      *
      * @param key the cache key
-     * @return the cached value, or null if not present
+     * @return null as caching is disabled
+     * @deprecated Caching has been removed from database providers; queries are always executed live against the database.
      */
-    Object getFromCache(String key);
+    @Deprecated
+    default Object getFromCache(String key) {
+        return null;
+    }
 
     /**
      * Performs a health check against the database server.

@@ -1,7 +1,6 @@
 package DB;
 
 import Ellithium.core.DB.RedisDatabaseProvider;
-import com.github.benmanes.caffeine.cache.Cache;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -26,9 +25,6 @@ public class RedisDatabaseProviderTest {
     private Jedis mockJedis;
 
     @Mock
-    private Cache<String, Object> mockCache;
-
-    @Mock
     private Pipeline mockPipeline;
 
     private RedisDatabaseProvider redisProvider;
@@ -41,7 +37,7 @@ public class RedisDatabaseProviderTest {
         
         when(mockJedisPool.getResource()).thenReturn(mockJedis);
         when(mockJedis.pipelined()).thenReturn(mockPipeline);
-        redisProvider = new RedisDatabaseProvider(mockJedisPool, mockCache);
+        redisProvider = new RedisDatabaseProvider(mockJedisPool);
     }
 
     @Test

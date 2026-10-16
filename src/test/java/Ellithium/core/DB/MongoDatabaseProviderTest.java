@@ -1,7 +1,5 @@
 package Ellithium.core.DB;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -16,7 +14,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,7 +25,6 @@ public class MongoDatabaseProviderTest {
     private MongoDatabase mockDatabase;
     @SuppressWarnings("unchecked")
     private MongoCollection<Document> mockCollection;
-    private Cache<String, Object> cache;
     private MongoDatabaseProvider mongoProvider;
 
     @BeforeMethod
@@ -40,35 +36,30 @@ public class MongoDatabaseProviderTest {
         when(mockDatabase.getCollection("documents")).thenReturn(mockCollection);
         when(mockDatabase.getCollection("custom_collection")).thenReturn(mockCollection);
 
-        cache = Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .maximumSize(100)
-                .build();
-
-        mongoProvider = new MongoDatabaseProvider(mockClient, mockDatabase, cache, "documents");
+        mongoProvider = new MongoDatabaseProvider(mockClient, mockDatabase, "documents");
     }
 
     @Test
     public void testConstructors() {
-        MongoDatabaseProvider defaultCollProvider = new MongoDatabaseProvider(mockClient, mockDatabase, cache);
+        MongoDatabaseProvider defaultCollProvider = new MongoDatabaseProvider(mockClient, mockDatabase);
         Assert.assertNotNull(defaultCollProvider);
     }
 
     @Test
-    public void testExecuteQueryCacheMissAndHit() {
+    public void testExecuteQueryAlwaysLive() {
         String jsonQuery = "{\"ping\": 1}";
         Document commandResult = new Document("ok", 1.0);
         when(mockDatabase.runCommand(any(Document.class))).thenReturn(commandResult);
 
-        // Cache miss
+        // First call
         Object result = mongoProvider.executeQuery(jsonQuery);
         Assert.assertEquals(result, commandResult);
         verify(mockDatabase, times(1)).runCommand(any(Document.class));
 
-        // Cache hit
-        Object cached = mongoProvider.executeQuery(jsonQuery);
-        Assert.assertEquals(cached, commandResult);
-        verify(mockDatabase, times(1)).runCommand(any(Document.class));
+        // Second call - must execute live against DB, never cached
+        Object secondResult = mongoProvider.executeQuery(jsonQuery);
+        Assert.assertEquals(secondResult, commandResult);
+        verify(mockDatabase, times(2)).runCommand(any(Document.class));
     }
 
     @Test
@@ -79,14 +70,11 @@ public class MongoDatabaseProviderTest {
     }
 
     @Test
-    public void testCacheOperations() {
+    public void testCacheOperationsNoOp() {
         mongoProvider.addToCache("q1", "res1");
-        Assert.assertEquals(mongoProvider.getFromCache("q1"), "res1");
-
-        mongoProvider.clearCache("q1");
         Assert.assertNull(mongoProvider.getFromCache("q1"));
 
-        mongoProvider.addToCache("q2", "res2");
+        mongoProvider.clearCache("q1");
         mongoProvider.clearAllCaches();
         Assert.assertNull(mongoProvider.getFromCache("q2"));
     }

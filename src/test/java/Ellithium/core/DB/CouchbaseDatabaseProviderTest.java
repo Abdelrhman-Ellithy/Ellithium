@@ -7,8 +7,6 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsResult;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.query.QueryResult;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -17,7 +15,6 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,7 +25,6 @@ public class CouchbaseDatabaseProviderTest {
     private Cluster mockCluster;
     private Bucket mockBucket;
     private Collection mockCollection;
-    private Cache<String, Object> cache;
     private CouchbaseDatabaseProvider couchbaseProvider;
 
     @BeforeMethod
@@ -40,45 +36,36 @@ public class CouchbaseDatabaseProviderTest {
         when(mockBucket.defaultCollection()).thenReturn(mockCollection);
         when(mockBucket.collection("custom_col")).thenReturn(mockCollection);
 
-        cache = Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .maximumSize(100)
-                .build();
-
-        couchbaseProvider = new CouchbaseDatabaseProvider(mockCluster, mockBucket, cache);
+        couchbaseProvider = new CouchbaseDatabaseProvider(mockCluster, mockBucket);
     }
 
     @Test
     public void testConstructorValidation() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new CouchbaseDatabaseProvider(null, mockBucket, cache);
+            new CouchbaseDatabaseProvider(null, mockBucket);
         });
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new CouchbaseDatabaseProvider(mockCluster, null, cache);
-        });
-
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new CouchbaseDatabaseProvider(mockCluster, mockBucket, null);
+            new CouchbaseDatabaseProvider(mockCluster, null);
         });
     }
 
     @Test
-    public void testExecuteQueryCacheMissAndHit() {
+    public void testExecuteQueryAlwaysLive() {
         QueryResult mockQueryResult = mock(QueryResult.class);
         JsonObject rowObj = JsonObject.create().put("key", "val");
         when(mockCluster.query(anyString())).thenReturn(mockQueryResult);
         when(mockQueryResult.rowsAsObject()).thenReturn(List.of(rowObj));
 
-        // Cache miss
+        // First call
         Object result = couchbaseProvider.executeQuery("SELECT * FROM `travel-sample` LIMIT 1;");
         Assert.assertNotNull(result);
         verify(mockCluster, times(1)).query(anyString());
 
-        // Cache hit
-        Object cachedResult = couchbaseProvider.executeQuery("SELECT * FROM `travel-sample` LIMIT 1;");
-        Assert.assertNotNull(cachedResult);
-        verify(mockCluster, times(1)).query(anyString());
+        // Second call - must execute live against Couchbase, never cached
+        Object secondResult = couchbaseProvider.executeQuery("SELECT * FROM `travel-sample` LIMIT 1;");
+        Assert.assertNotNull(secondResult);
+        verify(mockCluster, times(2)).query(anyString());
     }
 
     @Test
@@ -89,14 +76,11 @@ public class CouchbaseDatabaseProviderTest {
     }
 
     @Test
-    public void testCacheOperations() {
+    public void testCacheOperationsNoOp() {
         couchbaseProvider.addToCache("ckey1", "cval1");
-        Assert.assertEquals(couchbaseProvider.getFromCache("ckey1"), "cval1");
-
-        couchbaseProvider.clearCache("ckey1");
         Assert.assertNull(couchbaseProvider.getFromCache("ckey1"));
 
-        couchbaseProvider.addToCache("ckey2", "cval2");
+        couchbaseProvider.clearCache("ckey1");
         couchbaseProvider.clearAllCaches();
         Assert.assertNull(couchbaseProvider.getFromCache("ckey2"));
     }

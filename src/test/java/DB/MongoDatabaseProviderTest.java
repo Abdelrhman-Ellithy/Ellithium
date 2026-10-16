@@ -1,7 +1,6 @@
 package DB;
 
 import Ellithium.core.DB.MongoDatabaseProvider;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -34,9 +33,6 @@ public class MongoDatabaseProviderTest {
     private MongoCollection<Document> mockCollection;
 
     @Mock
-    private Cache<String, Object> mockCache;
-
-    @Mock
     private DeleteResult mockDeleteResult;
 
     @Mock
@@ -63,7 +59,7 @@ public class MongoDatabaseProviderTest {
         com.mongodb.client.FindIterable<Document> mockFindIterable = mock(com.mongodb.client.FindIterable.class);
         when(mockCollection.find(any(Document.class))).thenReturn(mockFindIterable);
         when(mockFindIterable.first()).thenReturn(new Document("_id", TEST_DOC_ID));
-        databaseProvider = new MongoDatabaseProvider(mockMongoClient,mockDatabase,mockCache);
+        databaseProvider = new MongoDatabaseProvider(mockMongoClient, mockDatabase);
     }
 
     @Test
@@ -76,7 +72,6 @@ public class MongoDatabaseProviderTest {
 
         assertNotNull(queryResult);
         verify(mockDatabase).runCommand(any(Document.class));
-        verify(mockCache).put(eq(query), eq(result));
     }
 
     @Test
@@ -87,35 +82,22 @@ public class MongoDatabaseProviderTest {
 
     @Test
     void testClearCache() {
-        String key = "testKey";
-        databaseProvider.clearCache(key);
-        verify(mockCache).invalidate(key);
+        databaseProvider.clearCache("testKey");
     }
 
     @Test
     void testClearAllCaches() {
         databaseProvider.clearAllCaches();
-        verify(mockCache).invalidateAll();
     }
 
     @Test
     void testAddToCache() {
-        String key = "testKey";
-        Object value = new Object();
-        databaseProvider.addToCache(key, value);
-        verify(mockCache).put(key, value);
+        databaseProvider.addToCache("testKey", new Object());
     }
 
     @Test
     void testGetFromCache() {
-        String key = "testKey";
-        Object expected = new Object();
-        when(mockCache.getIfPresent(key)).thenReturn(expected);
-
-        Object result = databaseProvider.getFromCache(key);
-
-        assertEquals(result, expected);
-        verify(mockCache).getIfPresent(key);
+        assertNull(databaseProvider.getFromCache("testKey"));
     }
 
     @Test
