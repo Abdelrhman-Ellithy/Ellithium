@@ -44,10 +44,14 @@ public class WaitManager <T extends WebDriver>{
             }
         }
     }
-    private static int parseProperty(String value, int defaultValue, String propertyName) {
-        if (value != null && !value.isEmpty()) {
+    static int parseProperty(String value, int defaultValue, String propertyName) {
+        if (value != null && !value.trim().isEmpty()) {
             try {
-                return Integer.parseInt(value);
+                int parsed = Integer.parseInt(value.trim());
+                if (parsed > 0) {
+                    return parsed;
+                }
+                Logger.warn("Non-positive value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
             } catch (NumberFormatException e) {
                 Logger.warn("Invalid value for " + propertyName + ": " + value + ". Using default: " + defaultValue);
             }
@@ -99,9 +103,14 @@ public class WaitManager <T extends WebDriver>{
      * Automatically suppresses repetitive listener logging during the condition polling loop.
      */
     public static <T> FluentWait<T> getFluentWaitMillis(T driver, long timeoutMillis, int pollingEveryInMillis) {
+        long effectiveTimeout = timeoutMillis > 0 ? timeoutMillis : 1000L;
+        int effectivePolling = pollingEveryInMillis > 0 ? pollingEveryInMillis : DEFAULT_POLLING_MS;
+        if (effectivePolling > effectiveTimeout) {
+            effectivePolling = (int) Math.max(1, effectiveTimeout);
+        }
         return new PollingFluentWait<>(driver)
-                .withTimeout(Duration.ofMillis(timeoutMillis))
-                .pollingEvery(Duration.ofMillis(pollingEveryInMillis))
+                .withTimeout(Duration.ofMillis(effectiveTimeout))
+                .pollingEvery(Duration.ofMillis(effectivePolling))
                 .ignoreAll(expectedExceptions);
     }
 

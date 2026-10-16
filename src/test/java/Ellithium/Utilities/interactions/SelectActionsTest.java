@@ -142,6 +142,89 @@ public class SelectActionsTest {
         verify(opt0).click();
     }
 
+    @Test
+    public void deselectDropdownByText_clicksSelectedOptionWithMatchingText() {
+        WebElement opt0 = option("ItemToDeselect", true);
+        when(mockSelect.findElements(By.xpath(".//option[normalize-space(.) = \"ItemToDeselect\"]"))).thenReturn(List.of(opt0));
+        when(mockSelect.getDomAttribute("multiple")).thenReturn("multiple");
+
+        selectActions.deselectDropdownByText(LOCATOR, "ItemToDeselect");
+        verify(opt0).click();
+    }
+
+    @Test
+    public void deselectDropdownByValue_clicksSelectedOptionWithMatchingValue() {
+        WebElement opt0 = option("valOption", true);
+        when(mockSelect.findElements(By.xpath(".//option[@value = \"val123\"]"))).thenReturn(List.of(opt0));
+        when(mockSelect.getDomAttribute("multiple")).thenReturn("multiple");
+
+        selectActions.deselectDropdownByValue(LOCATOR, "val123");
+        verify(opt0).click();
+    }
+
+    @Test
+    public void selectDropdownByTextForMultipleElements_iteratesOverFoundElements() {
+        WebElement sel1 = mock(WebElement.class);
+        WebElement opt1 = option("Target", false);
+        when(sel1.getTagName()).thenReturn("select");
+        when(sel1.isEnabled()).thenReturn(true);
+        when(sel1.isDisplayed()).thenReturn(true);
+        when(sel1.getCssValue(anyString())).thenReturn("visible");
+        when(sel1.findElements(By.xpath(".//option[normalize-space(.) = \"Target\"]"))).thenReturn(List.of(opt1));
+
+        when(mockDriver.findElements(LOCATOR)).thenReturn(List.of(sel1));
+
+        selectActions.selectDropdownByTextForMultipleElements(LOCATOR, "Target");
+        verify(opt1).click();
+    }
+
+    // ── Null Locator Guards ──────────────────────────────────────────────
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void selectDropdownByText_nullLocator_throwsIllegalArgumentException() {
+        selectActions.selectDropdownByText(null, "Target", TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void selectDropdownByValue_nullLocator_throwsIllegalArgumentException() {
+        selectActions.selectDropdownByValue(null, "target", TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void selectDropdownByIndex_nullLocator_throwsIllegalArgumentException() {
+        selectActions.selectDropdownByIndex(null, 0, TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void deselectAll_nullLocator_throwsIllegalArgumentException() {
+        selectActions.deselectAll(null, TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void deselectDropdownByText_nullLocator_throwsIllegalArgumentException() {
+        selectActions.deselectDropdownByText(null, "Target", TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void deselectDropdownByValue_nullLocator_throwsIllegalArgumentException() {
+        selectActions.deselectDropdownByValue(null, "target", TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void deselectDropdownByIndex_nullLocator_throwsIllegalArgumentException() {
+        selectActions.deselectDropdownByIndex(null, 0, TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void getDropdownSelectedOptions_nullLocator_throwsIllegalArgumentException() {
+        selectActions.getDropdownSelectedOptions(null, TIMEOUT, POLLING);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void selectDropdownByTextForMultipleElements_nullLocator_throwsIllegalArgumentException() {
+        selectActions.selectDropdownByTextForMultipleElements(null, "Target", TIMEOUT, POLLING);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private static WebElement option(String text, boolean selected) {
@@ -150,6 +233,7 @@ public class SelectActionsTest {
         when(opt.isSelected()).thenReturn(selected);
         when(opt.isEnabled()).thenReturn(true);
         when(opt.getAttribute("value")).thenReturn(text.toLowerCase());
+        when(opt.getCssValue(anyString())).thenReturn("visible");
         return opt;
     }
 }

@@ -288,4 +288,12 @@ public class WaitActionsTest {
         when(mockElement.isEnabled()).thenReturn(false);
         waitActions.waitForElementToBeClickable(LOCATOR, 0, 100, false);
     }
+
+    @Test
+    public void nullLocator_throwsIllegalArgumentException() {
+        Assert.assertThrows(IllegalArgumentException.class, () -> waitActions.waitForElementToBeVisible(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> waitActions.waitForElementToBeClickable(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> waitActions.waitForElementPresence(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> waitActions.waitForElementToDisappear(null));
+    }
 }

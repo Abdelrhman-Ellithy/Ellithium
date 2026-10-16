@@ -71,6 +71,61 @@ public class MouseActionsTest {
         Mockito.verify(driver, Mockito.atLeastOnce()).findElement(LOCATOR);
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void hoverOverElement_nullLocator_throwsIllegalArgumentException() {
+        mouse.hoverOverElement(null, 5);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void hoverAndClick_nullHoverLocator_throwsIllegalArgumentException() {
+        mouse.hoverAndClick(null, LOCATOR, 5, 500);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void hoverAndClick_nullClickLocator_throwsIllegalArgumentException() {
+        mouse.hoverAndClick(LOCATOR, null, 5, 500);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void dragAndDrop_nullSource_throwsIllegalArgumentException() {
+        mouse.dragAndDrop(null, LOCATOR);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void dragAndDrop_nullTarget_throwsIllegalArgumentException() {
+        mouse.dragAndDrop(LOCATOR, null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void dragAndDropByOffset_nullSource_throwsIllegalArgumentException() {
+        mouse.dragAndDropByOffset(null, 10, 20);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void rightClick_nullLocator_throwsIllegalArgumentException() {
+        mouse.rightClick(null, 5, 500);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void doubleClick_nullLocator_throwsIllegalArgumentException() {
+        mouse.doubleClick(null, 5, 500);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void moveSliderTo_nullSliderLocator_throwsIllegalArgumentException() {
+        mouse.moveSliderTo(null, LOCATOR, 50.0f);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void moveSliderTo_nullRangeLocator_throwsIllegalArgumentException() {
+        mouse.moveSliderTo(LOCATOR, null, 50.0f);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void moveSliderByOffset_nullSliderLocator_throwsIllegalArgumentException() {
+        mouse.moveSliderByOffset(null, 10, 20, 5, 500);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void stubCapture() {

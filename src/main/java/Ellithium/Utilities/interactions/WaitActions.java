@@ -19,6 +19,13 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
         super(driver);
     }
 
+    static By requireLocator(By locator) {
+        if (locator == null) {
+            throw new IllegalArgumentException("locator must not be null");
+        }
+        return locator;
+    }
+
     /**
      * Waits for an element to disappear from the DOM.
      * @param locator Element locator
@@ -30,6 +37,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     }
 
     public  void waitForElementToDisappear( By locator, int timeout, int pollingEvery, boolean heal) {
+        requireLocator(locator);
         Reporter.log("Waiting for Element To Disappear: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
         By normalized = BaseActions.normalizeLocator(locator);
@@ -56,6 +64,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     }
 
     public  WebElement waitForElementToBeClickable( By locator, int timeout, int pollingEvery, boolean heal) {
+        requireLocator(locator);
         Reporter.log("Wait For Element To Be Clickable: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
         By normalized = BaseActions.normalizeLocator(locator);
@@ -86,6 +95,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
     }
 
     public  WebElement waitForElementToBeVisible( By locator, int timeout, int pollingEvery, boolean heal) {
+        requireLocator(locator);
         Reporter.log("Wait For Element To Be Visible: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
         return waitForVisibilityAndFindElement(locator, timeout, pollingEvery, heal);
@@ -109,6 +119,7 @@ public class WaitActions <T extends WebDriver> extends BaseActions<T>{
      *             the timeout and throw, so a genuinely-absent element surfaces as a real failure.
      */
     public  WebElement waitForElementPresence( By locator, int timeout, int pollingEvery, boolean heal) {
+        requireLocator(locator);
         Reporter.log("Waiting for Element Presence: " + locator.toString()
                 + (heal ? " [heal on timeout]" : ""), LogLevel.INFO_BLUE);
         By normalized = BaseActions.normalizeLocator(locator);
