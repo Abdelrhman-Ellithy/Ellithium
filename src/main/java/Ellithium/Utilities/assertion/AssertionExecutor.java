@@ -6,11 +6,36 @@ import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
 
 import java.util.*;
+import Ellithium.Utilities.assertion.fluent.*;
 
 /**
- * Provides utility methods for performing hard and soft assertions.
+ * Provides utility methods for performing hard, soft, and fluent assertions.
  */
 public class AssertionExecutor {
+
+    public static StringAssert assertThat(String actual) {
+        return FluentAssert.assertThat(actual);
+    }
+
+    public static BooleanAssert assertThat(Boolean actual) {
+        return FluentAssert.assertThat(actual);
+    }
+
+    public static <T extends Comparable<T>> ComparableAssert<T> assertThat(T actual) {
+        return FluentAssert.assertThat(actual);
+    }
+
+    public static <E, C extends Collection<E>> CollectionAssert<E, C> assertThat(C actual) {
+        return FluentAssert.assertThat(actual);
+    }
+
+    public static <K, V> MapAssert<K, V> assertThat(Map<K, V> actual) {
+        return FluentAssert.assertThat(actual);
+    }
+
+    public static <T> ObjectAssert<T> assertThat(T actual) {
+        return FluentAssert.assertThat(actual);
+    }
 
     /**
      * Provides static methods for performing hard assertions.
