@@ -64,6 +64,8 @@ public class BaselineStore {
      */
     private static final ConcurrentHashMap<String, List<ElementFingerprint>> baselines =
             new ConcurrentHashMap<>();
+    private static final BaselineSqliteStorage SQLITE = BaselineSqliteStorage.getDefault();
+    private static final java.util.Set<String> dirtyKeys = ConcurrentHashMap.newKeySet();
     private static volatile boolean loaded = false;
 
     // ──────────────────────── Capture ────────────────────────
@@ -103,7 +105,8 @@ public class BaselineStore {
                         tier), LogLevel.DEBUG);
                 return;
             }
-            baselines.compute(pageKey(driver, locator.toString()), (k, existing) -> {
+            String key = pageKey(driver, locator.toString());
+            baselines.compute(key, (k, existing) -> {
                 List<ElementFingerprint> updated = new ArrayList<>();
                 if (existing != null && !existing.isEmpty()) {
                     int start = Math.max(0, existing.size() - (MAX_HISTORY - 1));
@@ -112,6 +115,7 @@ public class BaselineStore {
                 updated.add(fp);
                 return List.copyOf(updated);
             });
+            dirtyKeys.add(key);
             saveToDiskAsync();
         } catch (Exception e) {
             Reporter.log("BaselineStore: capture failed (non-fatal): " + e.getMessage(), LogLevel.WARN);
@@ -161,7 +165,11 @@ public class BaselineStore {
     static boolean removeKey(String locatorKey) {
         ensureLoaded();
         boolean removed = baselines.remove(locatorKey) != null;
-        if (removed) saveToDiskAsync();
+        if (removed) {
+            dirtyKeys.remove(locatorKey);
+            SQLITE.delete(locatorKey);
+            saveToDiskAsync();
+        }
         return removed;
     }
 
@@ -634,42 +642,65 @@ public class BaselineStore {
     }
 
     private static void loadFromDisk() {
-        Path path = Paths.get(BASELINE_FILE);
-        if (!Files.exists(path)) return;
-        try (Reader reader = new FileReader(path.toFile())) {
-            JsonElement root = JsonParser.parseReader(reader);
+        boolean loadedFromSqlite = false;
+        if (!SQLITE.isEmpty()) {
+            Map<String, List<ElementFingerprint>> fromDb = SQLITE.loadAll();
+            if (!fromDb.isEmpty()) {
+                int evicted = 0;
+                for (Map.Entry<String, List<ElementFingerprint>> entry : fromDb.entrySet()) {
+                    if (entry.getKey() == null || entry.getValue() == null) continue;
+                    List<ElementFingerprint> fresh = pruneStale(entry.getValue());
+                    evicted += entry.getValue().size() - fresh.size();
+                    if (fresh.isEmpty()) continue;
+                    baselines.put(entry.getKey(), List.copyOf(fresh));
+                }
+                loadedFromSqlite = true;
+                Reporter.log("BaselineStore: " + baselines.size() + " locators loaded from SQLite"
+                        + (evicted > 0 ? " (" + evicted + " expired pruned)" : ""), LogLevel.INFO_BLUE);
+            }
+        }
 
-            if (root.isJsonArray()) {
-                // ── Backward compat: old flat List<ElementFingerprint> format ──
-                Type listType = new TypeToken<List<ElementFingerprint>>() {}.getType();
-                List<ElementFingerprint> list = GSON.fromJson(root, listType);
-                if (list != null) {
-                    for (ElementFingerprint fp : list) {
-                        if (fp.getLocatorKey() != null) {
-                            baselines.put(fp.getLocatorKey(), List.of(fp));
+        if (!loadedFromSqlite) {
+            Path path = Paths.get(BASELINE_FILE);
+            if (Files.exists(path)) {
+                try (Reader reader = new FileReader(path.toFile())) {
+                    JsonElement root = JsonParser.parseReader(reader);
+
+                    if (root.isJsonArray()) {
+                        // ── Backward compat: old flat List<ElementFingerprint> format ──
+                        Type listType = new TypeToken<List<ElementFingerprint>>() {}.getType();
+                        List<ElementFingerprint> list = GSON.fromJson(root, listType);
+                        if (list != null) {
+                            for (ElementFingerprint fp : list) {
+                                if (fp.getLocatorKey() != null) {
+                                    baselines.put(fp.getLocatorKey(), List.of(fp));
+                                }
+                            }
+                        }
+                    } else if (root.isJsonObject()) {
+                        // ── Current format: Map<String, List<ElementFingerprint>> ──
+                        Type mapType = new TypeToken<Map<String, List<ElementFingerprint>>>() {}.getType();
+                        Map<String, List<ElementFingerprint>> map = GSON.fromJson(root, mapType);
+                        if (map != null) {
+                            int evicted = 0;
+                            for (Map.Entry<String, List<ElementFingerprint>> entry : map.entrySet()) {
+                                if (entry.getKey() == null || entry.getValue() == null) continue;
+                                List<ElementFingerprint> fresh = pruneStale(entry.getValue());
+                                evicted += entry.getValue().size() - fresh.size();
+                                if (fresh.isEmpty()) continue;
+                                baselines.put(entry.getKey(), List.copyOf(fresh));
+                            }
                         }
                     }
-                    Reporter.log("BaselineStore: Loaded " + list.size() + " baselines", LogLevel.DEBUG);
-                }
-            } else if (root.isJsonObject()) {
-                // ── Current format: Map<String, List<ElementFingerprint>> ──
-                Type mapType = new TypeToken<Map<String, List<ElementFingerprint>>>() {}.getType();
-                Map<String, List<ElementFingerprint>> map = GSON.fromJson(root, mapType);
-                if (map != null) {
-                    int evicted = 0;
-                    for (Map.Entry<String, List<ElementFingerprint>> entry : map.entrySet()) {
-                        if (entry.getKey() == null || entry.getValue() == null) continue;
-                        List<ElementFingerprint> fresh = pruneStale(entry.getValue());
-                        evicted += entry.getValue().size() - fresh.size();
-                        if (fresh.isEmpty()) continue;
-                        baselines.put(entry.getKey(), List.copyOf(fresh));
+                    if (!baselines.isEmpty()) {
+                        Reporter.log("BaselineStore: Migrated " + baselines.size()
+                                + " locators from JSON to SQLite database", LogLevel.INFO_BLUE);
+                        SQLITE.upsertBatch(baselines);
                     }
-                    Reporter.log("BaselineStore: " + baselines.size() + " locators loaded"
-                            + (evicted > 0 ? " (" + evicted + " expired pruned)" : ""), LogLevel.INFO_BLUE);
+                } catch (Exception e) {
+                    Reporter.log("BaselineStore: Failed to load baselines from JSON (non-fatal): " + e.getMessage(), LogLevel.WARN);
                 }
             }
-        } catch (Exception e) {
-            Reporter.log("BaselineStore: Failed to load baselines (non-fatal): " + e.getMessage(), LogLevel.WARN);
         }
         pruneByCount();
     }
@@ -678,15 +709,20 @@ public class BaselineStore {
         int max = AIConfigLoader.getBaselineMaxLocators();
         if (max <= 0 || baselines.size() <= max) return;
         int toEvict = baselines.size() - max;
-        baselines.entrySet().stream()
+        List<String> evictedKeys = baselines.entrySet().stream()
                 .sorted(java.util.Comparator.comparingLong(e ->
                         e.getValue().stream()
                                 .mapToLong(ElementFingerprint::getLastSeenEpoch)
                                 .max().orElse(0L)))
                 .limit(toEvict)
                 .map(Map.Entry::getKey)
-                .toList()
-                .forEach(baselines::remove);
+                .toList();
+        for (String k : evictedKeys) {
+            baselines.remove(k);
+            dirtyKeys.remove(k);
+            SQLITE.delete(k);
+        }
+        SQLITE.pruneByCount(max);
         Reporter.log("BaselineStore: count-pruned " + toEvict + " oldest locators (max=" + max + ")", LogLevel.DEBUG);
     }
 
@@ -734,11 +770,28 @@ public class BaselineStore {
         }
     }
 
+    private static void syncDirtyToSqlite() {
+        if (dirtyKeys.isEmpty()) return;
+        java.util.Set<String> keysToWrite = new java.util.HashSet<>(dirtyKeys);
+        dirtyKeys.removeAll(keysToWrite);
+        Map<String, List<ElementFingerprint>> batch = new LinkedHashMap<>();
+        for (String key : keysToWrite) {
+            List<ElementFingerprint> fps = baselines.get(key);
+            if (fps != null) {
+                batch.put(key, fps);
+            }
+        }
+        if (!batch.isEmpty()) {
+            SQLITE.upsertBatch(batch);
+        }
+    }
+
     /** Serializes the baseline map to disk under LOCK. Shared by the debounced saver and flush(). */
     private static void writeToDisk() {
         synchronized (LOCK) {
             try {
                 pruneByCount();
+                syncDirtyToSqlite();
                 persist(new LinkedHashMap<>(baselines));
             } catch (Exception ignored) {}
         }
@@ -771,8 +824,12 @@ public class BaselineStore {
     public static void flush() {
         synchronized (LOCK) {
             try {
+                syncDirtyToSqlite();
+                if (!baselines.isEmpty() && SQLITE.isEmpty()) {
+                    SQLITE.upsertBatch(baselines);
+                }
                 persist(new LinkedHashMap<>(baselines));
-                Reporter.log("BaselineStore: flushed " + baselines.size() + " locators", LogLevel.DEBUG);
+                Reporter.log("BaselineStore: flushed " + baselines.size() + " locators to SQLite and JSON", LogLevel.DEBUG);
             } catch (Exception e) {
                 Reporter.log("BaselineStore: Failed to flush: " + e.getMessage(), LogLevel.ERROR);
             }
@@ -786,7 +843,13 @@ public class BaselineStore {
 
     public static void clear() {
         baselines.clear();
+        dirtyKeys.clear();
         loaded = false;
+    }
+
+    public static void clearStorage() {
+        clear();
+        SQLITE.deleteAll();
     }
 
     // ──────────────────────── Helpers ────────────────────────

@@ -290,7 +290,7 @@ public class HealingTelemetryStore {
         List<TelemetryRecord> snap = new ArrayList<>(records);
         long used = snap.stream().filter(r -> r.success).count();
         long suspect = snap.stream().filter(r -> r.suspectWrongHeal).count();
-        StringBuilder sb = new StringBuilder("\n──────── Ellithium AI Healing Summary ────────\n");
+        StringBuilder sb = new StringBuilder("\n======== Ellithium AI Healing Summary ========\n");
         sb.append(String.format("  attempts=%d  used=%d  fell-through=%d%n",
                 snap.size(), used, snap.size() - used));
         for (int tier : new int[]{1, 2, 3, 4}) {
@@ -300,10 +300,10 @@ public class HealingTelemetryStore {
                     tier, t.used, t.fellThrough, t.fallthroughRate, t.avgScore));
         }
         if (suspect > 0) {
-            sb.append(String.format("  ⚠ %d SUSPECT wrong-heal(s) — a used heal's test later FAILED. "
+            sb.append(String.format("  [!] %d SUSPECT wrong-heal(s) — a used heal's test later FAILED. "
                     + "Review healing-telemetry.json.%n", suspect));
         }
-        sb.append("──────────────────────────────────────────────");
+        sb.append("==============================================");
         Reporter.log(sb.toString(), suspect > 0 ? LogLevel.WARN : LogLevel.INFO_GREEN);
     }
 
