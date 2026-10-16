@@ -9,6 +9,7 @@ import Ellithium.core.logging.Logger;
 import Ellithium.core.recording.internal.VideoRecordingManager;
 import Ellithium.core.reporting.Reporter;
 import Ellithium.core.reporting.notification.TestResultCollectorManager;
+import Ellithium.Utilities.interactions.ScreenRecorderActions;
 import io.cucumber.plugin.event.*;
 import io.qameta.allure.Allure;
 import io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm;
