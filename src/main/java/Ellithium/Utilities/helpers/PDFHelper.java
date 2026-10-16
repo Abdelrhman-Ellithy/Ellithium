@@ -12,7 +12,9 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.text.PDFTextStripper;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,6 +51,15 @@ public class PDFHelper {
                 return "";
             }
         }
+    }
+
+    /**
+     * Reads text content from a PDF file via {@link Path}.
+     * @param filePath the PDF file path.
+     * @return extracted text as a String.
+     */
+    public static String readPdf(Path filePath) {
+        return readPdf(Objects.requireNonNull(filePath, "filePath must not be null").toString());
     }
 
     /**
@@ -101,6 +112,15 @@ public class PDFHelper {
                 Reporter.log("Root Cause: ", LogLevel.ERROR, e.getMessage() != null ? e.getMessage() : "Unknown error");
             }
         }
+    }
+
+    /**
+     * Writes a list of strings as content into a PDF file via {@link Path}.
+     * @param filePath the target PDF file path.
+     * @param content list of text lines to be written.
+     */
+    public static void writePdf(Path filePath, List<String> content) {
+        writePdf(Objects.requireNonNull(filePath, "filePath must not be null").toString(), content);
     }
 
     /**

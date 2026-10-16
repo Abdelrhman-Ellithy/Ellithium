@@ -41,7 +41,7 @@ public class JsonHelper {
         log("Attempting to read JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement jsonElement = JsonParser.parseReader(reader);
 
                 if (jsonElement.isJsonArray()) {
@@ -66,6 +66,22 @@ public class JsonHelper {
             }
         }
         return data;
+    }
+
+    public static List<Map<String, String>> getJsonData(java.nio.file.Path path) {
+        return getJsonData(path != null ? path.toString() : null);
+    }
+
+    public static void setJsonData(java.nio.file.Path path, List<Map<String, String>> data) {
+        setJsonData(path != null ? path.toString() : null, data);
+    }
+
+    public static String getJsonKeyValue(java.nio.file.Path path, String key) {
+        return getJsonKeyValue(path != null ? path.toString() : null, key);
+    }
+
+    public static void setJsonKeyValue(java.nio.file.Path path, String key, String value) {
+        setJsonKeyValue(path != null ? path.toString() : null, key, value);
     }
 
     /**
@@ -113,7 +129,7 @@ public class JsonHelper {
 
             // Read existing content, ensuring it's a JSON array; otherwise, initialize a new array.
             JsonArray jsonArray = new JsonArray();
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement existingElement = JsonParser.parseReader(reader);
                 if (existingElement != null && existingElement.isJsonArray()) {
                     jsonArray = existingElement.getAsJsonArray();
@@ -131,7 +147,7 @@ public class JsonHelper {
                 jsonArray.add(jsonObject);
             }
 
-            try (FileWriter writer = new FileWriter(jsonFile)) {
+            try (FileWriter writer = new FileWriter(jsonFile, StandardCharsets.UTF_8)) {
                 writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonArray));
                 log("Successfully wrote data to JSON file: ", LogLevel.INFO_GREEN, filePath);
             } catch (IOException e) {
@@ -155,7 +171,7 @@ public class JsonHelper {
         }
         log("Reading value for key: " + key + " from JSON file: ", LogLevel.INFO_BLUE, filePath);
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement parsed = JsonParser.parseReader(reader);
                 if (!parsed.isJsonObject()) {
                     log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
@@ -205,7 +221,7 @@ public class JsonHelper {
                 }
             }
             log("Setting value for key: " + key + " in JSON file: ", LogLevel.INFO_BLUE, filePath);
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement jsonElement;
                 try {
                     jsonElement = JsonParser.parseReader(reader);
@@ -222,7 +238,7 @@ public class JsonHelper {
 
                 jsonObj.addProperty(key, value);
 
-                try (FileWriter writer = new FileWriter(jsonFile)) {
+                try (FileWriter writer = new FileWriter(jsonFile, StandardCharsets.UTF_8)) {
                     writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObj));
                     log("Successfully updated JSON file: ", LogLevel.INFO_GREEN, filePath);
                 }
@@ -250,7 +266,7 @@ public class JsonHelper {
         }
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement parsed = JsonParser.parseReader(reader);
                 if (!parsed.isJsonObject()) {
                     log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
@@ -275,6 +291,10 @@ public class JsonHelper {
         }
     }
 
+    public static boolean validateJsonKeys(java.nio.file.Path path, List<String> requiredKeys) {
+        return validateJsonKeys(path != null ? path.toString() : null, requiredKeys);
+    }
+
     /**
      * Reads nested JSON data and returns it as a map.
      * @param filePath Path to the JSON file.
@@ -290,7 +310,7 @@ public class JsonHelper {
         log("Attempting to read nested JSON data from file: ", LogLevel.INFO_BLUE, filePath);
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement parsed = JsonParser.parseReader(reader);
                 if (!parsed.isJsonObject()) {
                     log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
@@ -368,7 +388,7 @@ public class JsonHelper {
         log("Comparing JSON files: ", LogLevel.INFO_BLUE, filePath1 + " and " + filePath2);
 
         return withFileLocks(() -> {
-            try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
+            try (FileReader reader1 = new FileReader(file1, StandardCharsets.UTF_8); FileReader reader2 = new FileReader(file2, StandardCharsets.UTF_8)) {
                 JsonElement json1 = JsonParser.parseReader(reader1);
                 JsonElement json2 = JsonParser.parseReader(reader2);
                 boolean isEqual = json1.equals(json2);
@@ -381,6 +401,10 @@ public class JsonHelper {
                 return false;
             }
         }, filePath1, filePath2);
+    }
+
+    public static boolean compareJsonFiles(java.nio.file.Path path1, java.nio.file.Path path2) {
+        return compareJsonFiles(path1 != null ? path1.toString() : null, path2 != null ? path2.toString() : null);
     }
 
     /**
@@ -420,7 +444,7 @@ public class JsonHelper {
         log("Merging JSON files: ", LogLevel.INFO_BLUE, sourceFilePath1 + " and " + sourceFilePath2);
 
         withFileLocks(() -> {
-            try (FileReader reader1 = new FileReader(file1); FileReader reader2 = new FileReader(file2)) {
+            try (FileReader reader1 = new FileReader(file1, StandardCharsets.UTF_8); FileReader reader2 = new FileReader(file2, StandardCharsets.UTF_8)) {
                 JsonElement parsed1 = JsonParser.parseReader(reader1);
                 JsonElement parsed2 = JsonParser.parseReader(reader2);
                 if (!parsed1.isJsonObject() || !parsed2.isJsonObject()) {
@@ -437,7 +461,7 @@ public class JsonHelper {
                 if (targetFile.getParentFile() != null && !targetFile.getParentFile().exists()) {
                     targetFile.getParentFile().mkdirs();
                 }
-                try (FileWriter writer = new FileWriter(targetFile)) {
+                try (FileWriter writer = new FileWriter(targetFile, StandardCharsets.UTF_8)) {
                     writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(json1));
                     log("Successfully merged JSON files to: ", LogLevel.INFO_GREEN, targetFilePath);
                 }
@@ -465,7 +489,7 @@ public class JsonHelper {
 
         log("Updating nested JSON key in file: ", LogLevel.INFO_BLUE, filePath);
 
-        try (FileReader reader = new FileReader(jsonFile)) {
+        try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
             JsonObject current = jsonObject;
 
@@ -482,7 +506,7 @@ public class JsonHelper {
             String finalKey = keys.getLast();
             current.addProperty(finalKey, newValue);
 
-            try (FileWriter writer = new FileWriter(jsonFile)) {
+            try (FileWriter writer = new FileWriter(jsonFile, StandardCharsets.UTF_8)) {
                 writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
                 log("Successfully updated nested key in JSON file: ", LogLevel.INFO_GREEN, filePath);
             }
@@ -578,7 +602,7 @@ public class JsonHelper {
         }
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement currentElement = JsonParser.parseReader(reader);
 
                 for(String key : pathKeys) {
@@ -654,7 +678,7 @@ public class JsonHelper {
         }
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonElement parsed = JsonParser.parseReader(reader);
                 if (!parsed.isJsonObject()) {
                     log("JSON file is not a top-level object: ", LogLevel.ERROR, filePath);
@@ -663,7 +687,7 @@ public class JsonHelper {
                 JsonObject jsonObject = parsed.getAsJsonObject();
 
                 if (modifier.apply(jsonObject)) {
-                    try (FileWriter writer = new FileWriter(jsonFile)) {
+                    try (FileWriter writer = new FileWriter(jsonFile, StandardCharsets.UTF_8)) {
                         writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(jsonObject));
                         log("Successfully modified JSON structure", LogLevel.INFO_GREEN, filePath);
                     }
@@ -734,7 +758,7 @@ public class JsonHelper {
         File jsonFile = new File(filePath);
 
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(jsonFile)) {
+            try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
                 JsonArray targetArray = navigateToArray(JsonParser.parseReader(reader).getAsJsonObject(), arrayPath);
                 if(targetArray != null) {
                     for(JsonElement element : targetArray) {
@@ -751,6 +775,10 @@ public class JsonHelper {
                 return false;
             }
         }
+    }
+
+    public static <T> T parseJsonToObject(java.nio.file.Path path, Class<T> classOfT) {
+        return parseJsonToObject(path != null ? path.toString() : null, classOfT);
     }
 
     /**
@@ -771,6 +799,10 @@ public class JsonHelper {
                 return null;
             }
         }
+    }
+
+    public static <T> List<T> parseJsonToList(java.nio.file.Path path, Class<T> classOfT) {
+        return parseJsonToList(path != null ? path.toString() : null, classOfT);
     }
 
     /**
@@ -794,6 +826,10 @@ public class JsonHelper {
         }
     }
 
+    public static boolean isValidJson(java.nio.file.Path path) {
+        return isValidJson(path != null ? path.toString() : null);
+    }
+
     /**
      * Validates whether the JSON file contains valid JSON.
      * @param filePath Path to the JSON file.
@@ -801,7 +837,7 @@ public class JsonHelper {
      */
     public static boolean isValidJson(String filePath) {
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(filePath)) {
+            try (FileReader reader = new FileReader(filePath, StandardCharsets.UTF_8)) {
                 JsonParser.parseReader(reader);
                 return true;
             } catch (JsonSyntaxException | IOException e) {
@@ -811,13 +847,17 @@ public class JsonHelper {
         }
     }
 
+    public static void prettyPrintJson(java.nio.file.Path path) {
+        prettyPrintJson(path != null ? path.toString() : null);
+    }
+
     /**
      * Pretty prints the JSON file.
      * @param filePath Path to the JSON file.
      */
     public static void prettyPrintJson(String filePath) {
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(filePath)) {
+            try (FileReader reader = new FileReader(filePath, StandardCharsets.UTF_8)) {
                 JsonElement jsonElement = JsonParser.parseReader(reader);
                 String prettyJson = new GsonBuilder().setPrettyPrinting().create().toJson(jsonElement);
                 Files.write(Paths.get(filePath), prettyJson.getBytes(StandardCharsets.UTF_8));
@@ -829,6 +869,10 @@ public class JsonHelper {
         }
     }
 
+    public static Map<String, Integer> getJsonKeyOccurrences(java.nio.file.Path path) {
+        return getJsonKeyOccurrences(path != null ? path.toString() : null);
+    }
+
     /**
      * Counts occurrences of keys in the JSON file.
      * @param filePath Path to the JSON file.
@@ -837,7 +881,7 @@ public class JsonHelper {
     public static Map<String, Integer> getJsonKeyOccurrences(String filePath) {
         Map<String, Integer> keyOccurrences = new HashMap<>();
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(filePath)) {
+            try (FileReader reader = new FileReader(filePath, StandardCharsets.UTF_8)) {
                 countKeysRecursively(JsonParser.parseReader(reader), keyOccurrences);
                 log("Successfully counted key occurrences", LogLevel.INFO_GREEN, filePath);
                 return keyOccurrences;
@@ -869,16 +913,20 @@ public class JsonHelper {
         }
     }
 
+    public static void removeNullValues(java.nio.file.Path path) {
+        removeNullValues(path != null ? path.toString() : null);
+    }
+
     /**
      * Removes null values from the JSON file.
      * @param filePath Path to the JSON file.
      */
     public static void removeNullValues(String filePath) {
         synchronized (getFileLock(filePath)) {
-            try (FileReader reader = new FileReader(filePath)) {
+            try (FileReader reader = new FileReader(filePath, StandardCharsets.UTF_8)) {
                 JsonElement element = JsonParser.parseReader(reader);
                 JsonElement cleaned = removeNullValuesRecursively(element);
-                try (FileWriter writer = new FileWriter(filePath)) {
+                try (FileWriter writer = new FileWriter(filePath, StandardCharsets.UTF_8)) {
                     new GsonBuilder().setPrettyPrinting().create().toJson(cleaned, writer);
                     log("Successfully removed null values", LogLevel.INFO_GREEN, filePath);
                 }
