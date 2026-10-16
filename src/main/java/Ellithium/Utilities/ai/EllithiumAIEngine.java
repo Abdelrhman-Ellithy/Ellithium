@@ -67,7 +67,7 @@ public class EllithiumAIEngine {
      * <p>No new browser is opened. No credentials are shared. The AI sees only
      * the current page's Accessibility Tree and generates locators from real elements.</p>
      *
-     * <h3>Example</h3>
+     * <p><b>Example:</b></p>
      * <pre>
      * // In a running test — driver is already logged in, on the checkout page:
      * EllithiumAIEngine.continueFrom(driver, llmProvider,
@@ -86,7 +86,7 @@ public class EllithiumAIEngine {
      * Reads natural-language steps from a file and generates/executes code using
      * the tester's current browser state.
      *
-     * <h3>Example file (checkout-steps.txt)</h3>
+     * <p><b>Example file (checkout-steps.txt):</b></p>
      * <pre>
      * Fill in shipping name with "John Doe"
      * Select country "Egypt" from dropdown

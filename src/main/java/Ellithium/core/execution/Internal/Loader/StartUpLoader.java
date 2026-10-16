@@ -66,7 +66,7 @@ public class StartUpLoader {
             extractFileFromJar(jarFile, jarEntryPath, new File(targetPath));
         } else {
             PropertyFileSynchronizer.syncMissingKeys(jarFile, jarEntryPath, targetPath,
-                    ConfigContext.getEllithuiumVersion());
+                    ConfigContext.getEllithiumVersion());
         }
     }
     private static boolean checkFileExists(String filePath) {

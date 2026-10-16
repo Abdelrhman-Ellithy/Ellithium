@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
  *       the locator (e.g. XPath queries, text predicates, link text, or deeply nested shadow trees).
  *       A recursive DOM script traverses {@code document} and all open {@code shadowRoot} instances.</li>
  * </ol>
- * </p>
  *
  * <p><b>Zero Overhead:</b> This engine is only invoked as a fallback when standard document-level
  * resolution fails (e.g. on {@code NoSuchElementException} or wait timeouts). Successful standard DOM

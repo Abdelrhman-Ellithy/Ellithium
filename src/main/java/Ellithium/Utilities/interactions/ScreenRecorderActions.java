@@ -1058,8 +1058,8 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
 
                 if (entryBatch.isEmpty()) continue;
 
-                // Parallelize frame decode, bicubic scaling, and YUV Picture conversion across all CPU cores
-                List<Picture> processedBatch = entryBatch.parallelStream()
+                // Decode, bicubic scale, and convert frames to YUV Picture sequentially to prevent CPU starvation
+                List<Picture> processedBatch = entryBatch.stream()
                         .map(entry -> {
                             try {
                                 BufferedImage original = ImageIO.read(new ByteArrayInputStream(entry.data));
@@ -1318,10 +1318,11 @@ public class ScreenRecorderActions<T extends WebDriver> extends BaseActions<T> {
      * <p>A JVM shutdown hook waits up to 45 seconds for any in-flight compilations to finish before
      * the process exits, so a test run doesn't drop its final videos on exit.
      */
+    private static final int COMPILATION_THREADS = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
     private static final ExecutorService videoCompilationExecutor =
             new java.util.concurrent.ThreadPoolExecutor(
-                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
-                    Math.max(2, Runtime.getRuntime().availableProcessors() - 1),
+                    COMPILATION_THREADS,
+                    COMPILATION_THREADS,
                     0L, TimeUnit.MILLISECONDS,
                     new java.util.concurrent.LinkedBlockingQueue<>(),
                     Thread.ofPlatform().daemon(true).name("VideoCompiler-", 0).priority(Thread.NORM_PRIORITY).factory());

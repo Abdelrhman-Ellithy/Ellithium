@@ -75,7 +75,20 @@ public abstract class ArenaBaseTest {
 
     @BeforeMethod(alwaysRun = true)
     public void ensureArenaInitialized() {
-        if (driver == null || elementActions == null || waitActions == null || windowActions == null) {
+        boolean alive = false;
+        if (driver != null && elementActions != null && waitActions != null && windowActions != null) {
+            try {
+                driver.getTitle();
+                alive = true;
+            } catch (Exception ignored) {
+                try {
+                    DriverFactory.quitDriver();
+                } catch (Exception ignoredQuit) {
+                }
+                alive = false;
+            }
+        }
+        if (!alive) {
             initializeArenaState();
         }
     }

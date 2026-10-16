@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
  *   <li><b>Phase 4 – Structural context:</b> Fills remaining token budget with
  *       page-level structural context (headings, titles, etc.).</li>
  * </ol>
- * </p>
  */
 public class DOMMinimizer {
 

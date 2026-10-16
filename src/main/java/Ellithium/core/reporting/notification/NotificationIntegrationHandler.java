@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * completion.
  * Implements graceful error handling to prevent test execution blocking.
  */
-public class NotificationIntegrationHandler implements TestResultCollector {
+class NotificationIntegrationHandler implements TestResultCollector {
 
     private NotificationConfig config;
     private NotificationSender sender;
@@ -35,7 +35,7 @@ public class NotificationIntegrationHandler implements TestResultCollector {
      * Default constructor that uses lazy initialization.
      * No heavy operations are performed until notifications are actually needed.
      */
-    public NotificationIntegrationHandler() {
+    NotificationIntegrationHandler() {
         this.config = null;
         this.sender = null;
     }

@@ -24,7 +24,7 @@ import java.util.Map;
  * <p>Healing-owned and independent of {@code core.ai.codegen}; shares only the neutral
  * {@link LocatorTechniques} primitives.</p>
  *
- * <h3>Round-trip budget (NFR)</h3>
+ * <h2>Round-trip budget (NFR)</h2>
  * <ul>
  *   <li>Web/webview common case: <b>1</b> round-trip (batched attribute read) — a strong, stable
  *       identity (data-testid / id / name) is emitted immediately, no validation needed.</li>

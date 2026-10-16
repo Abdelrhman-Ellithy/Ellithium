@@ -199,11 +199,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
     }
 
     private static boolean isShouldCapture() {
-        DriverConfiguration driverConfiguration = DriverFactory.getCurrentDriverConfiguration();
-        boolean driverExecution = hasActiveDriver();
-        boolean notHeadless = (driverConfiguration != (null))
-                && (driverConfiguration.getHeadlessMode() == HeadlessMode.False);
-        return driverExecution && notHeadless;
+        return hasActiveDriver();
     }
 
     /**

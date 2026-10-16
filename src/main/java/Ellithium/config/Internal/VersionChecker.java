@@ -17,7 +17,7 @@ public class VersionChecker {
                 .when().get("latest");
         return response.jsonPath().getString("name");
     }
-    public static boolean isOlderVersion(String currentVersion, String latestVersion) {
+    static boolean isOlderVersion(String currentVersion, String latestVersion) {
         if (currentVersion == null || latestVersion == null) return false;
         String cleanCurrent = currentVersion.replaceAll("[^0-9.]", "").replaceAll("^\\.+|\\.+$", "");
         String cleanLatest = latestVersion.replaceAll("[^0-9.]", "").replaceAll("^\\.+|\\.+$", "");

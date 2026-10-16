@@ -223,7 +223,7 @@ public class HealingTelemetryStore {
 
     /**
      * Returns all records for a specific tier (snapshot — safe to call from any thread).
-     * Used by {@link ModelCalibrationRunner} for per-model threshold calibration.
+     * Used by {@link Ellithium.core.ai.healing.ModelCalibrationRunner} for per-model threshold calibration.
      */
     public static List<TelemetryRecord> getRecordsForTier(int tier) {
         java.util.concurrent.CopyOnWriteArrayList<TelemetryRecord> tierRecs = byTier.get(tier);

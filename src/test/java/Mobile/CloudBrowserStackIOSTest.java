@@ -7,7 +7,7 @@ import Ellithium.core.driver.CloudMobileDriverConfig;
 import Ellithium.core.driver.CloudProviderType;
 import Ellithium.core.driver.DriverFactory;
 import Ellithium.core.driver.MobileDriverType;
-import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -18,7 +18,7 @@ import java.io.File;
 public class CloudBrowserStackIOSTest {
     private String username, accessKey;
     private ThreadLocal<String>appUrl=new ThreadLocal<>();
-    private AndroidDriver driver;
+    private IOSDriver driver;
     @BeforeClass
     public void setup() {
         String testDataFile="src/test/resources/TestData/MobileApps/browserstack.json";

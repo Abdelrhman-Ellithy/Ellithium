@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * In-context code generator that uses the <b>tester's currently running browser</b>
  * to generate POM and test code — no new browser, no shared credentials.
- * <h3>Why this exists</h3>
+ * <h2>Why this exists</h2>
  * <p>The standard {@code EllithiumAIEngine.generateFrom()} opens a fresh headless browser
  * and navigates to a URL. This fails for:</p>
  * <ul>
@@ -29,7 +29,7 @@ import java.util.List;
  *   <li><b>Dynamic SPAs</b> — the page state depends on prior interactions</li>
  * </ul>
  *
- * <h3>Usage</h3>
+ * <h2>Usage</h2>
  * <pre>
  * // In a running test — driver is already logged in, on the right page:
  * LiveContextGenerator.continueFrom(driver, llmProvider,

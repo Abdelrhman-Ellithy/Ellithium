@@ -15,19 +15,32 @@ import java.util.ArrayList;
 public class Environment {
     private final String name;
     private final String envFilePath;
-    private static final String ENV_DIR = "src" + File.separator + "test" + File.separator + "resources"
+    private static final String DEFAULT_SOURCE_DIR = "src" + File.separator + "test" + File.separator + "resources"
             + File.separator + "TestData" + File.separator + "Environments";
+    private static final String DEFAULT_RUN_DIR = "target" + File.separator + "test-output" + File.separator + "environments";
 
     /**
      * @param name The name of the environment to create or load
      */
     public Environment(String name) {
         this.name = name;
-        File envDir = new File(ENV_DIR);
-        if (!envDir.exists()) {
-            envDir.mkdirs();
+        String envDirProp = System.getProperty("ellithium.env.dir");
+        String baseDir = (envDirProp != null && !envDirProp.isBlank()) ? envDirProp : DEFAULT_RUN_DIR;
+        File runDir = new File(baseDir);
+        if (!runDir.exists()) {
+            runDir.mkdirs();
         }
-        this.envFilePath = ENV_DIR + File.separator + name + ".json";
+        this.envFilePath = baseDir + File.separator + name + ".json";
+
+        // Seed from src/test/resources if present and run file doesn't exist yet
+        File runFile = new File(this.envFilePath);
+        File sourceFile = new File(DEFAULT_SOURCE_DIR + File.separator + name + ".json");
+        if (!runFile.exists() && sourceFile.exists()) {
+            try {
+                java.nio.file.Files.copy(sourceFile.toPath(), runFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     /**

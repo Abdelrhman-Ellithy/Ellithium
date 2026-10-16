@@ -31,12 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Tier 1 — Algorithmic locator healing via stored element fingerprints.
  *
- * <h3>Multi-fingerprint history</h3>
+ * <h2>Multi-fingerprint history</h2>
  * Each locator key retains the last {@value #MAX_HISTORY} fingerprints (ring buffer).
  * On heal, the candidate is scored against ALL stored fingerprints; the maximum is used.
  * This handles elements that have oscillated through multiple states across test runs.
  *
- * <h3>Healing cascade within Tier 1</h3>
+ * <h2>Healing cascade within Tier 1</h2>
  * <ol>
  *   <li><b>Mutation pre-pass</b> — O(1) broken-locator mutations via
  *       {@link LocatorMutationEngine} (covers convention renames, attribute swaps)</li>

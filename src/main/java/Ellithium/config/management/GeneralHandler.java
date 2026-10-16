@@ -57,8 +57,8 @@ public class GeneralHandler {
             attachBrowserConsoleLogs();
             
             return screenShotFile;
-        } catch (IOException e) {
-            Logger.logException(e);
+        } catch (Throwable t) {
+            Logger.logException(t);
             return null;
         }
     }

@@ -16,7 +16,7 @@ import java.util.Objects;
  * Enforces uniform {@link StandardCharsets#UTF_8} and {@link Path}-based
  * access across all operating systems and file utilities.
  */
-public final class FilePolicy {
+final class FilePolicy {
 
     /**
      * Default canonical charset used for all framework text I/O operations.

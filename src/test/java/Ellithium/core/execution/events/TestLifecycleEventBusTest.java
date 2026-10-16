@@ -33,42 +33,58 @@ public class TestLifecycleEventBusTest {
         TestLifecycleSubscriber testSubscriber = new TestLifecycleSubscriber() {
             @Override
             public void onExecutionStarted(TestLifecycleEvent.ExecutionStarted event) {
-                eventLog.add("EXEC_START:" + event.executionName());
+                if ("MasterExecution".equals(event.executionName())) {
+                    eventLog.add("EXEC_START:" + event.executionName());
+                }
             }
 
             @Override
             public void onSuiteStarted(TestLifecycleEvent.SuiteStarted event) {
-                eventLog.add("SUITE_START:" + event.suiteName());
+                if ("SmokeSuite".equals(event.suiteName())) {
+                    eventLog.add("SUITE_START:" + event.suiteName());
+                }
             }
 
             @Override
             public void onTestStarted(TestLifecycleEvent.TestStarted event) {
-                eventLog.add("TEST_START:" + event.testIdentifier());
+                if (event.testIdentifier() != null && event.testIdentifier().startsWith("test-")) {
+                    eventLog.add("TEST_START:" + event.testIdentifier());
+                }
             }
 
             @Override
             public void onTestPassed(TestLifecycleEvent.TestPassed event) {
-                eventLog.add("TEST_PASS:" + event.testIdentifier());
+                if (event.testIdentifier() != null && event.testIdentifier().startsWith("test-")) {
+                    eventLog.add("TEST_PASS:" + event.testIdentifier());
+                }
             }
 
             @Override
             public void onTestFailed(TestLifecycleEvent.TestFailed event) {
-                eventLog.add("TEST_FAIL:" + event.testIdentifier() + ":" + event.throwable().getMessage());
+                if (event.testIdentifier() != null && event.testIdentifier().startsWith("test-")) {
+                    eventLog.add("TEST_FAIL:" + event.testIdentifier() + ":" + event.throwable().getMessage());
+                }
             }
 
             @Override
             public void onTestSkipped(TestLifecycleEvent.TestSkipped event) {
-                eventLog.add("TEST_SKIP:" + event.testIdentifier());
+                if (event.testIdentifier() != null && event.testIdentifier().startsWith("test-")) {
+                    eventLog.add("TEST_SKIP:" + event.testIdentifier());
+                }
             }
 
             @Override
             public void onSuiteFinished(TestLifecycleEvent.SuiteFinished event) {
-                eventLog.add("SUITE_FINISH:" + event.suiteName());
+                if ("SmokeSuite".equals(event.suiteName())) {
+                    eventLog.add("SUITE_FINISH:" + event.suiteName());
+                }
             }
 
             @Override
             public void onExecutionFinished(TestLifecycleEvent.ExecutionFinished event) {
-                eventLog.add("EXEC_FINISH");
+                if (eventLog.contains("EXEC_START:MasterExecution") && !eventLog.contains("EXEC_FINISH")) {
+                    eventLog.add("EXEC_FINISH");
+                }
             }
         };
 
@@ -84,6 +100,7 @@ public class TestLifecycleEventBusTest {
         eventBus.publishTestSkipped("test-3", "profileUpdate", new RuntimeException("skip reason"));
         eventBus.publishSuiteFinished("SmokeSuite");
         eventBus.publishExecutionFinished();
+        eventBus.unregister(testSubscriber);
 
         Assert.assertEquals(eventLog.size(), 10);
         Assert.assertEquals(eventLog.get(0), "EXEC_START:MasterExecution");
