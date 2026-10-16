@@ -107,6 +107,7 @@ public class JavaScriptActions<T extends WebDriver> extends BaseActions<T> {
      * @throws IllegalArgumentException if file does not exist
      */
     public void uploadFileUsingJS(By fileUploadLocator, String filePath, int timeout, int pollingEvery) {
+        requireJavascriptContext("uploadFileUsingJS");
         File file = new File(filePath);
         if (!file.exists()) {
             throw new IllegalArgumentException("File does not exist: " + filePath);

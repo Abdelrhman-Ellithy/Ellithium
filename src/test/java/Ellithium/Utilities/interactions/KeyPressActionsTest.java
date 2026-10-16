@@ -40,4 +40,25 @@ public class KeyPressActionsTest {
         KeyPressActions<AppiumDriver> actions = new KeyPressActions<>(mockAppiumDriver);
         actions.longPressKey(new KeyEvent(AndroidKey.ENTER), 300L);
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void pressKey_throwsIllegalArgument_onNullEvent() {
+        AndroidDriver mockAndroid = mock(AndroidDriver.class);
+        KeyPressActions<AndroidDriver> actions = new KeyPressActions<>(mockAndroid);
+        actions.pressKey(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void longPressKey_throwsIllegalArgument_onNullEvent() {
+        AndroidDriver mockAndroid = mock(AndroidDriver.class);
+        KeyPressActions<AndroidDriver> actions = new KeyPressActions<>(mockAndroid);
+        actions.longPressKey(null, 100L);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void longPressAndroidKey_throwsIllegalArgument_onNullKey() {
+        AndroidDriver mockAndroid = mock(AndroidDriver.class);
+        KeyPressActions<AndroidDriver> actions = new KeyPressActions<>(mockAndroid);
+        actions.longPressAndroidKey(null, 100L);
+    }
 }

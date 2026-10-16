@@ -17,6 +17,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingTime Polling interval in milliseconds
      */
     public void switchToFrameByIndex(int index, int timeout, int pollingTime) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Frame index must not be negative: " + index);
+        }
         getFluentWait(timeout, pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
     }
@@ -28,6 +31,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingTime Polling interval in milliseconds
      */
     public void switchToFrameByNameOrID(String nameOrID, int timeout, int pollingTime) {
+        if (nameOrID == null || nameOrID.trim().isEmpty()) {
+            throw new IllegalArgumentException("Frame nameOrID must not be null or blank");
+        }
         getFluentWait(timeout, pollingTime)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrID));
     }
@@ -39,6 +45,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @param pollingTime Polling interval in milliseconds
      */
     public void switchToFrameByElement(By locator, int timeout, int pollingTime) {
+        if (locator == null) {
+            throw new IllegalArgumentException("Frame locator must not be null");
+        }
         performFrameSwitch(locator, timeout, pollingTime);
     }
 
@@ -57,6 +66,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @return The WebDriver instance switched to the frame
      */
     public WebDriver waitForFrameToBeAvailableAndSwitchToIt(By locator, int timeout, int pollingEvery) {
+        if (locator == null) {
+            throw new IllegalArgumentException("Frame locator must not be null");
+        }
         return performFrameSwitch(locator, timeout, pollingEvery);
     }
 
@@ -68,6 +80,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @return The WebDriver instance switched to the frame
      */
     public WebDriver waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(String nameOrId, int timeout, int pollingEvery) {
+        if (nameOrId == null || nameOrId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Frame nameOrId must not be null or blank");
+        }
         return getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
     }
@@ -80,6 +95,9 @@ public class FrameActions<T extends WebDriver> extends BaseActions<T> {
      * @return The WebDriver instance switched to the frame
      */
     public WebDriver waitForFrameByIndexToBeAvailableAndSwitchToIt(int index, int timeout, int pollingEvery) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Frame index must not be negative: " + index);
+        }
         return getFluentWait(timeout, pollingEvery)
                 .until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
     }

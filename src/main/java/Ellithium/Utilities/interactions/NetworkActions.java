@@ -37,6 +37,9 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @return this instance for fluent chaining
      */
     public NetworkActions<T> mockResponse(String urlPattern, int statusCode, String contentType, String responseBody) {
+        if (urlPattern == null || urlPattern.isBlank()) {
+            throw new IllegalArgumentException("urlPattern must not be null or blank");
+        }
         Route route = Route.matching(req -> req.getUri() != null && req.getUri().contains(urlPattern))
                 .to(() -> req -> new HttpResponse()
                         .setStatus(statusCode)
@@ -79,6 +82,9 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @return this instance for fluent chaining
      */
     public NetworkActions<T> intercept(Filter filter) {
+        if (filter == null) {
+            throw new IllegalArgumentException("filter must not be null");
+        }
         NetworkInterceptor interceptor = new NetworkInterceptor(driver, filter);
         activeInterceptors.add(interceptor);
         Reporter.log("Applied custom network interceptor filter", LogLevel.INFO_BLUE);
@@ -109,6 +115,12 @@ public class NetworkActions<T extends WebDriver> extends BaseActions<T> implemen
      * @return this instance for fluent chaining
      */
     public NetworkActions<T> authenticate(java.util.function.Predicate<java.net.URI> urlFilter, String username, String password) {
+        if (username == null) {
+            throw new IllegalArgumentException("username must not be null");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("password must not be null");
+        }
         if (driver instanceof org.openqa.selenium.bidi.HasBiDi hasBiDi) {
             try {
                 if (hasBiDi.getBiDi() != null) {

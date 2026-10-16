@@ -23,6 +23,9 @@ public class CookieActions<T extends WebDriver> extends BaseActions<T> {
      * @param cookie The cookie to add
      */
     public void addCookie(Cookie cookie) {
+        if (cookie == null) {
+            throw new IllegalArgumentException("cookie must not be null");
+        }
         Reporter.log("Adding Cookie: " + cookie.getName(), LogLevel.INFO_BLUE);
         driver.manage().addCookie(cookie);
     }
@@ -32,6 +35,9 @@ public class CookieActions<T extends WebDriver> extends BaseActions<T> {
      * @param cookieName The name of the cookie to delete
      */
     public void deleteCookieNamed(String cookieName) {
+        if (cookieName == null || cookieName.isBlank()) {
+            throw new IllegalArgumentException("cookieName must not be null or blank");
+        }
         Reporter.log("Deleting Cookie Named: " + cookieName, LogLevel.INFO_BLUE);
         driver.manage().deleteCookieNamed(cookieName);
     }
@@ -41,6 +47,9 @@ public class CookieActions<T extends WebDriver> extends BaseActions<T> {
      * @param cookie The cookie to delete
      */
     public void deleteCookie(Cookie cookie) {
+        if (cookie == null) {
+            throw new IllegalArgumentException("cookie must not be null");
+        }
         Reporter.log("Deleting Cookie: " + cookie.getName(), LogLevel.INFO_BLUE);
         driver.manage().deleteCookie(cookie);
     }
@@ -68,6 +77,9 @@ public class CookieActions<T extends WebDriver> extends BaseActions<T> {
      * @return The cookie, or null if not found
      */
     public Cookie getCookieNamed(String cookieName) {
+        if (cookieName == null || cookieName.isBlank()) {
+            throw new IllegalArgumentException("cookieName must not be null or blank");
+        }
         Reporter.log("Retrieving Cookie Named: " + cookieName, LogLevel.INFO_BLUE);
         return driver.manage().getCookieNamed(cookieName);
     }

@@ -31,4 +31,44 @@ public class FrameActionsTest {
         frameActions.switchToDefaultContent();
         verify(mockDriver, times(1)).switchTo();
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void switchToFrameByIndex_negativeIndex_throwsIllegalArgumentException() {
+        frameActions.switchToFrameByIndex(-1);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void switchToFrameByNameOrID_nullName_throwsIllegalArgumentException() {
+        frameActions.switchToFrameByNameOrID(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void switchToFrameByNameOrID_blankName_throwsIllegalArgumentException() {
+        frameActions.switchToFrameByNameOrID("   ");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void switchToFrameByElement_nullLocator_throwsIllegalArgumentException() {
+        frameActions.switchToFrameByElement(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void waitForFrameToBeAvailableAndSwitchToIt_nullLocator_throwsIllegalArgumentException() {
+        frameActions.waitForFrameToBeAvailableAndSwitchToIt(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void waitForFrameByNameOrIdToBeAvailableAndSwitchToIt_nullName_throwsIllegalArgumentException() {
+        frameActions.waitForFrameByNameOrIdToBeAvailableAndSwitchToIt(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void waitForFrameByNameOrIdToBeAvailableAndSwitchToIt_blankName_throwsIllegalArgumentException() {
+        frameActions.waitForFrameByNameOrIdToBeAvailableAndSwitchToIt("   ");
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void waitForFrameByIndexToBeAvailableAndSwitchToIt_negativeIndex_throwsIllegalArgumentException() {
+        frameActions.waitForFrameByIndexToBeAvailableAndSwitchToIt(-1);
+    }
 }

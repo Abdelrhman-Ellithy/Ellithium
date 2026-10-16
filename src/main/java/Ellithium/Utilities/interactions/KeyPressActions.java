@@ -26,6 +26,9 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
             Reporter.log("pressKey requires AndroidDriver", LogLevel.ERROR);
             throw new UnsupportedOperationException("pressKey is only supported on AndroidDriver");
         }
+        if (keyEvent == null) {
+            throw new IllegalArgumentException("keyEvent must not be null");
+        }
         try {
             ((AndroidDriver) driver).pressKey(keyEvent);
         } catch (Exception e) {
@@ -41,19 +44,21 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
      *                       driver call, which uses its own fixed press duration
      */
     public void longPressKey(KeyEvent keyEvent, long durationMillis) {
-        if (driver instanceof AndroidDriver) {
-            try {
-                AndroidDriver androidDriver = (AndroidDriver) driver;
-                androidDriver.longPressKey(keyEvent);
-                Reporter.log("Long pressed key (requested " + durationMillis
-                        + "ms; actual on-device hold duration is not controllable via this API)", LogLevel.INFO_BLUE);
-            } catch (Exception e) {
-                Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
-                throw e;
-            }
-        } else {
+        if (!(driver instanceof AndroidDriver)) {
             Reporter.log("longPressKey requires AndroidDriver" , LogLevel.ERROR);
             throw new UnsupportedOperationException("longPressKey is only supported on AndroidDriver");
+        }
+        if (keyEvent == null) {
+            throw new IllegalArgumentException("keyEvent must not be null");
+        }
+        try {
+            AndroidDriver androidDriver = (AndroidDriver) driver;
+            androidDriver.longPressKey(keyEvent);
+            Reporter.log("Long pressed key (requested " + durationMillis
+                    + "ms; actual on-device hold duration is not controllable via this API)", LogLevel.INFO_BLUE);
+        } catch (Exception e) {
+            Reporter.log("Failed to long press key: " + e.getMessage(), LogLevel.ERROR);
+            throw e;
         }
     }
 
@@ -63,6 +68,9 @@ public class KeyPressActions<T extends AppiumDriver> extends BaseActions<T> {
      * @param durationMillis Duration to hold the key in milliseconds
      */
     public void longPressAndroidKey(AndroidKey key, long durationMillis) {
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
         longPressKey(new KeyEvent(key), durationMillis);
     }
 }

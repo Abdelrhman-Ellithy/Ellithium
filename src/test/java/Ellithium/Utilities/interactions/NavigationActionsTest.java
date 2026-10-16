@@ -43,4 +43,14 @@ public class NavigationActionsTest {
         nav.navigateForward();
         verify(mockNav).forward();
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*url must not be null or blank.*")
+    public void navigateToUrl_nullUrl_throwsIllegalArgumentException() {
+        nav.navigateToUrl(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*url must not be null or blank.*")
+    public void navigateToUrl_blankUrl_throwsIllegalArgumentException() {
+        nav.navigateToUrl("   ");
+    }
 }
