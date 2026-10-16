@@ -41,7 +41,7 @@ public class APIListener implements Filter {
     private static final Pattern AUTH_PATTERN = Pattern.compile("(?i)(Bearer|Basic|Digest|OAuth)\\s+[a-zA-Z0-9+/=._-]+");
     private static final Pattern IP_PATTERN = Pattern.compile("\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b");
 
-    private String obfuscateData(String input) {
+    String obfuscateData(String input) {
         if (input == null) return null;
         
         // Obfuscate JSON content
@@ -79,7 +79,7 @@ public class APIListener implements Filter {
      * recognizes a JSON key, so an API key or token passed as a query parameter (common with
      * key-based REST auth) would otherwise reach the report unredacted.
      */
-    private String obfuscateUri(String uri) {
+    String obfuscateUri(String uri) {
         if (uri == null) return null;
         int q = uri.indexOf('?');
         if (q < 0) return obfuscateData(uri);
@@ -102,7 +102,7 @@ public class APIListener implements Filter {
         return obfuscateData(base) + "?" + masked;
     }
 
-    private JSONObject obfuscateJson(JSONObject json) {
+    JSONObject obfuscateJson(JSONObject json) {
         JSONObject result = new JSONObject(json.toString());
         for (String key : result.keySet()) {
             Object value = result.get(key);
@@ -119,7 +119,7 @@ public class APIListener implements Filter {
         return result;
     }
 
-    private org.json.JSONArray obfuscateJsonArray(org.json.JSONArray jsonArray) {
+    org.json.JSONArray obfuscateJsonArray(org.json.JSONArray jsonArray) {
         org.json.JSONArray result = new org.json.JSONArray();
         for (int i = 0; i < jsonArray.length(); i++) {
             Object value = jsonArray.get(i);
@@ -136,7 +136,7 @@ public class APIListener implements Filter {
         return result;
     }
 
-    private String handleCookies(Object cookies) {
+    String handleCookies(Object cookies) {
         if (cookies == null) return "No Cookies";
         
         JSONObject json = new JSONObject();
@@ -155,7 +155,7 @@ public class APIListener implements Filter {
         return obfuscateJson(json).toString();
     }
 
-    private JSONObject headersToJson(Headers headers) {
+    JSONObject headersToJson(Headers headers) {
         JSONObject json = new JSONObject();
         for (Header header : headers.asList()) {
             json.put(header.getName(), header.getValue());
@@ -163,7 +163,7 @@ public class APIListener implements Filter {
         return obfuscateJson(json);
     }
 
-    private JSONObject mapToJson(Map<String, ?> map) {
+    JSONObject mapToJson(Map<String, ?> map) {
         if (map == null || map.isEmpty()) return new JSONObject();
         JSONObject json = new JSONObject();
         for (Map.Entry<String, ?> entry : map.entrySet()) {
