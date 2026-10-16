@@ -113,52 +113,49 @@ public class VideoRecordingManager {
             return Boolean.parseBoolean(sysProp);
         }
         String configPath = ConfigContext.getConfigFilePath();
-        if (configPath == null || !PropertyHelper.keyExists(configPath, RECORD_GUI_EXECUTION_KEY)) {
-            Logger.warn("Recording configuration key not found, defaulting to false");
-            return false;
+        if (configPath != null && PropertyHelper.keyExists(configPath, RECORD_GUI_EXECUTION_KEY)) {
+            String value = PropertyHelper.getDataFromProperties(configPath, RECORD_GUI_EXECUTION_KEY);
+            return Boolean.parseBoolean(value);
         }
-        String value = PropertyHelper.getDataFromProperties(configPath, RECORD_GUI_EXECUTION_KEY);
-        return Boolean.parseBoolean(value);
+        return true;
     }
 
     /**
      * Checks if recorded videos should be attached to the report.
+     * Defaults to true unless explicitly disabled.
      * 
      * @return true if attachment is enabled, false otherwise
      */
     public static boolean isAttachmentEnabled() {
         String sysAttachment = System.getProperty(ATTACH_RECORDED_EXECUTION_KEY);
-        String isAttachmentEnabled = sysAttachment;
+        if (sysAttachment != null && !sysAttachment.isBlank()) {
+            return Boolean.parseBoolean(sysAttachment);
+        }
         String configPath = ConfigContext.getConfigFilePath();
-        if (isAttachmentEnabled == null || isAttachmentEnabled.isBlank()) {
-            if (configPath != null && PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
-                isAttachmentEnabled = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
-            } else {
-                Logger.warn("Attachment configuration key not found, defaulting to false");
-                return false;
-            }
+        if (configPath != null && PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_KEY)) {
+            String value = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_KEY);
+            return Boolean.parseBoolean(value);
         }
-        String isReportGenerated = System.getProperty(GENERATE_REPORT_KEY);
-        if (isReportGenerated == null || isReportGenerated.isBlank()) {
-            isReportGenerated = PropertyHelper.getDataFromProperties(ConfigContext.getAllureFilePath(),
-                    GENERATE_REPORT_KEY);
-        }
-        return Boolean.parseBoolean(isAttachmentEnabled) && Boolean.parseBoolean(isReportGenerated);
+        return true;
     }
 
     /**
      * Checks if recorded videos should be attached to the report on failure only.
+     * Defaults to false (attaches for all tests) unless failure-only is explicitly enabled.
      * 
-     * @return true if attachment is enabled, false otherwise
+     * @return true if attachment is enabled for failure only, false otherwise
      */
     public static boolean isAttachmentOnFailureOnlyEnabled() {
-        String configPath = ConfigContext.getConfigFilePath();
-        if (configPath == null || !PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY)) {
-            Logger.warn("Attachment on Failure configuration key not found, defaulting to true");
-            return true;
+        String sysProp = System.getProperty(ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY);
+        if (sysProp != null && !sysProp.isBlank()) {
+            return Boolean.parseBoolean(sysProp);
         }
-        String value = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY);
-        return Boolean.parseBoolean(value);
+        String configPath = ConfigContext.getConfigFilePath();
+        if (configPath != null && PropertyHelper.keyExists(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY)) {
+            String value = PropertyHelper.getDataFromProperties(configPath, ATTACH_RECORDED_EXECUTION_ON_FAILURE_KEY);
+            return Boolean.parseBoolean(value);
+        }
+        return false;
     }
 
     /**
