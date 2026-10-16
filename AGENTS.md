@@ -211,7 +211,7 @@ baselines, run
 mvn -q exec:java -Dexec.mainClass=Ellithium.core.ai.healing.ModelCalibrationRunner
 ```
 
-It reads your project's `Test-Output/healing-baselines.json`, sweeps thresholds
+It reads your project's `Test-Output/healing-baselines.db` (or exported `healing-baselines.json`), sweeps thresholds
 against real positive/negative pairs, and writes recommended
 `ai.onnx.similarityThreshold` / `ai.healing.storeThreshold` values to
 `Test-Output/calibration-results.json` (also printed to console).

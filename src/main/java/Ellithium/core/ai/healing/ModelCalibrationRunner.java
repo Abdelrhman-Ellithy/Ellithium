@@ -189,6 +189,14 @@ public class ModelCalibrationRunner {
     // ──────────────────────── I/O ────────────────────────
 
     private static Map<String, List<ElementFingerprint>> loadBaselines() {
+        BaselineSqliteStorage sqlite = BaselineSqliteStorage.getDefault();
+        if (!sqlite.isEmpty()) {
+            Map<String, List<ElementFingerprint>> dbBaselines = sqlite.loadAll();
+            if (!dbBaselines.isEmpty()) {
+                System.out.println("[CALIBRATION] Loaded " + dbBaselines.size() + " baselines from SQLite DB");
+                return dbBaselines;
+            }
+        }
         Path path = Paths.get(BASELINE_FILE);
         if (!Files.exists(path)) return Map.of();
         try (Reader reader = new FileReader(path.toFile())) {

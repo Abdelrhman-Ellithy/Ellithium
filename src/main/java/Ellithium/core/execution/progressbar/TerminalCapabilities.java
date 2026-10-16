@@ -151,7 +151,8 @@ public final class TerminalCapabilities {
 
     /**
      * Checks if the console supports Unicode characters for smooth blocks ('█' and '░').
-     * Defaults to true on modern terminals unless explicitly disabled.
+     * Automatically verifies console charset encodability and Windows Terminal capability,
+     * falling back to clean ASCII on terminals or platforms where Unicode blocks would degrade to '?'.
      */
     public static boolean supportsUnicode() {
         String sys = System.getProperty(ProgressBarConfig.KEY_UNICODE);
@@ -162,6 +163,37 @@ public final class TerminalCapabilities {
         if ("dumb".equalsIgnoreCase(term)) {
             return false;
         }
+
+        // On Windows, unless native OS console encoding is explicitly UTF-8,
+        // child/parent process pipes and console host degrade block characters to '?'
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("win")) {
+            String nativeEnc = System.getProperty("native.encoding", "");
+            if (!nativeEnc.isEmpty() && !"UTF-8".equalsIgnoreCase(nativeEnc) && !"UTF8".equalsIgnoreCase(nativeEnc)) {
+                return false;
+            }
+            boolean isWindowsTerminal = System.getenv("WT_SESSION") != null;
+            if (!isWindowsTerminal) {
+                return false;
+            }
+        }
+
+        // Verify active stdout stream can encode Unicode block characters
+        try {
+            Charset cs = System.out.charset();
+            if (cs != null && (!cs.newEncoder().canEncode('█') || !cs.newEncoder().canEncode('░'))) {
+                return false;
+            }
+        } catch (Throwable ignored) {
+            try {
+                if (!Charset.defaultCharset().newEncoder().canEncode('█')) {
+                    return false;
+                }
+            } catch (Throwable ignored2) {
+                return false;
+            }
+        }
+
         return true;
     }
 
