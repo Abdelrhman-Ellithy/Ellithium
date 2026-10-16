@@ -1,7 +1,7 @@
 package Ellithium.core.ai.healing;
 
 import Ellithium.core.ai.config.AIConfigLoader;
-import Ellithium.core.ai.sanitizers.DataScrubber;
+import Ellithium.core.ai.security.PIIBoundary;
 
 class HealingPromptBuilder {
 
@@ -50,11 +50,11 @@ class HealingPromptBuilder {
 
     static String buildUserPrompt(HealingContextBuilder.HealingContext ctx) {
         StringBuilder sb = new StringBuilder();
-        sb.append("FAILED LOCATOR: ").append(ctx.brokenLocatorStr).append("\n\n");
+        sb.append("FAILED LOCATOR: ").append(PIIBoundary.sanitizeGeneral(ctx.brokenLocatorStr)).append("\n\n");
 
         sb.append("CONTEXT:\n");
-        if (ctx.pageClassName != null) sb.append("- Page Object Class: ").append(ctx.pageClassName).append("\n");
-        if (ctx.methodName != null) sb.append("- Method: ").append(ctx.methodName).append("\n");
+        if (ctx.pageClassName != null) sb.append("- Page Object Class: ").append(PIIBoundary.sanitizeGeneral(ctx.pageClassName)).append("\n");
+        if (ctx.methodName != null) sb.append("- Method: ").append(PIIBoundary.sanitizeGeneral(ctx.methodName)).append("\n");
         if (ctx.actionType != null && !ctx.actionType.equals("unknown")) {
             sb.append("- Action: ").append(ctx.actionType);
             if (ctx.actionType.equals("sendData")) sb.append(" (text input into a field)");
@@ -64,32 +64,32 @@ class HealingPromptBuilder {
         }
 
         if (ctx.semanticQuery != null && !ctx.semanticQuery.isBlank()) {
-            sb.append("- Semantic intent: ").append(ctx.semanticQuery).append("\n");
+            sb.append("- Semantic intent: ").append(PIIBoundary.sanitizeGeneral(ctx.semanticQuery)).append("\n");
         }
 
         if (ctx.callSiteSource != null) {
-            sb.append("- Source code at call site:\n").append(DataScrubber.scrub(ctx.callSiteSource)).append("\n");
+            sb.append("- Source code at call site:\n").append(PIIBoundary.sanitizeSource(ctx.callSiteSource)).append("\n");
         }
 
         if (ctx.baseline != null) {
             sb.append("\nLAST KNOWN ELEMENT STATE:\n");
-            if (ctx.baseline.getTagName() != null)     sb.append("- Tag: ").append(ctx.baseline.getTagName()).append("\n");
-            if (ctx.baseline.getId() != null)           sb.append("- id: ").append(DataScrubber.scrub(ctx.baseline.getId())).append("\n");
-            if (ctx.baseline.getName() != null)         sb.append("- name: ").append(DataScrubber.scrub(ctx.baseline.getName())).append("\n");
-            if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(DataScrubber.scrub(ctx.baseline.getAriaLabel())).append("\n");
-            if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(DataScrubber.scrub(ctx.baseline.getPlaceholder())).append("\n");
-            if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(DataScrubber.scrub(ctx.baseline.getDataTestId())).append("\n");
-            if (ctx.baseline.getDataTest() != null)     sb.append("- data-test: ").append(DataScrubber.scrub(ctx.baseline.getDataTest())).append("\n");
-            if (ctx.baseline.getDataCy() != null)       sb.append("- data-cy: ").append(DataScrubber.scrub(ctx.baseline.getDataCy())).append("\n");
-            if (ctx.baseline.getDataQa() != null)       sb.append("- data-qa: ").append(DataScrubber.scrub(ctx.baseline.getDataQa())).append("\n");
+            if (ctx.baseline.getTagName() != null)     sb.append("- Tag: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getTagName())).append("\n");
+            if (ctx.baseline.getId() != null)           sb.append("- id: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getId())).append("\n");
+            if (ctx.baseline.getName() != null)         sb.append("- name: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getName())).append("\n");
+            if (ctx.baseline.getAriaLabel() != null)    sb.append("- aria-label: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getAriaLabel())).append("\n");
+            if (ctx.baseline.getPlaceholder() != null)  sb.append("- placeholder: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getPlaceholder())).append("\n");
+            if (ctx.baseline.getDataTestId() != null)   sb.append("- data-testid: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getDataTestId())).append("\n");
+            if (ctx.baseline.getDataTest() != null)     sb.append("- data-test: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getDataTest())).append("\n");
+            if (ctx.baseline.getDataCy() != null)       sb.append("- data-cy: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getDataCy())).append("\n");
+            if (ctx.baseline.getDataQa() != null)       sb.append("- data-qa: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getDataQa())).append("\n");
             if (ctx.baseline.getText() != null && !ctx.baseline.getText().isBlank())
-                sb.append("- text: ").append(DataScrubber.scrub(ctx.baseline.getText())).append("\n");
-            if (ctx.baseline.getRole() != null)         sb.append("- role: ").append(ctx.baseline.getRole()).append("\n");
-            if (ctx.baseline.getType() != null)         sb.append("- type: ").append(ctx.baseline.getType()).append("\n");
+                sb.append("- text: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getText())).append("\n");
+            if (ctx.baseline.getRole() != null)         sb.append("- role: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getRole())).append("\n");
+            if (ctx.baseline.getType() != null)         sb.append("- type: ").append(PIIBoundary.sanitizeGeneral(ctx.baseline.getType())).append("\n");
         }
 
         if (ctx.minimizedDom != null && !ctx.minimizedDom.isEmpty()) {
-            String dom = ctx.minimizedDom;
+            String dom = PIIBoundary.sanitizeDom(ctx.minimizedDom);
             if (dom.length() > MAX_DOM_CHARS) {
                 dom = dom.substring(0, MAX_DOM_CHARS)
                         + "\n<!-- DOM truncated at " + MAX_DOM_CHARS + " chars to fit context window -->";

@@ -6,6 +6,7 @@ import Ellithium.core.ai.config.AIConfigLoader;
 import Ellithium.Utilities.ai.HealingStrategy;
 import Ellithium.core.ai.models.ElementFingerprint;
 import Ellithium.core.ai.models.HealingResult;
+import Ellithium.core.ai.security.PIIBoundary;
 import Ellithium.core.logging.LogLevel;
 import Ellithium.core.reporting.Reporter;
 import io.appium.java_client.AppiumBy;
@@ -130,6 +131,7 @@ public class AISelfHealer {
         globalHealedCache.clear();
         inFlight.clear();
         pendingPatches.clear();
+        sourcePatchQueue.clearProposals();
         knownUnhealable.clear();
         // Clear per-locator mutation and strategy caches so a second suite (or a different
         // AUT loaded in the same JVM) does not receive stale strategy lists built for the
@@ -387,7 +389,7 @@ public class AISelfHealer {
                     + "\n\nPRIOR-TIER CANDIDATE SHORTLIST — earlier healing tiers narrowed the target"
                     + " to these finalists but could not differentiate them; strongly prefer one of"
                     + " these unless the DOM clearly contradicts all of them:\n"
-                    + hints.describe();
+                    + PIIBoundary.sanitizeGeneral(hints.describe());
         }
 
         int maxRetries = AIConfigLoader.isCI() ? 1 : AIConfigLoader.getLlmMaxRetries();
@@ -618,6 +620,7 @@ public class AISelfHealer {
         llmProviderThread.remove();
         strategyThread.remove();
         LAST_HEAL_CONFIDENCE.remove();
+        sourcePatchQueue.clearProposals();
         HealingContextBuilder.shutdownTier3Pool();
     }
 
