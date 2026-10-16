@@ -20,6 +20,7 @@ import Ellithium.config.management.GeneralHandler;
 import Ellithium.core.reporting.notification.TestResultCollector;
 import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import Ellithium.core.logging.Logger;
+import Ellithium.core.execution.events.TestLifecycleEventBus;
 import io.qameta.allure.testng.AllureTestNg;
 import org.apache.logging.log4j.ThreadContext;
 import org.testng.*;
@@ -135,9 +136,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        long durationFailed = Math.max(0, result.getEndMillis() - result.getStartMillis());
+        TestLifecycleEventBus.getInstance().publishTestFailed(testIdentifier, result.getName(), result.getThrowable(), durationFailed);
         Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestFailure(
                 testIdentifier, result.getName(), result.getThrowable(),
-                Math.max(0, result.getEndMillis() - result.getStartMillis()));
+                durationFailed);
     }
 
     @Override
@@ -149,9 +152,11 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        long durationPassed = Math.max(0, result.getEndMillis() - result.getStartMillis());
+        TestLifecycleEventBus.getInstance().publishTestPassed(getTestIdentifier(result), result.getName(), durationPassed);
         Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestSuccess(
                 getTestIdentifier(result), result.getName(),
-                Math.max(0, result.getEndMillis() - result.getStartMillis()));
+                durationPassed);
     }
 
     @Override
@@ -163,6 +168,7 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         }
         ThreadContext.put("testName", "Ellithium");
         ThreadContext.remove("testIdentifier");
+        TestLifecycleEventBus.getInstance().publishTestSkipped(getTestIdentifier(result), result.getName(), result.getThrowable());
         Ellithium.core.spi.PluginRegistry.getInstance().dispatchTestSkipped(
                 getTestIdentifier(result), result.getName(), result.getThrowable());
     }
@@ -192,11 +198,13 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
             System.setProperty("ellithium.suite.name", suite.getName());
         }
         Logger.info(PINK + "[SUITE STARTED]: " + suite.getName().toUpperCase() + " [SUITE STARTED]" + RESET);
+        TestLifecycleEventBus.getInstance().publishSuiteStarted(suite.getName());
     }
 
     @Override
     public void onFinish(ISuite suite) {
         Logger.info(PINK + "[SUITE FINISHED]: " + suite.getName().toUpperCase() + " [SUITE FINISHED]" + RESET);
+        TestLifecycleEventBus.getInstance().publishSuiteFinished(suite.getName());
         VideoRecordingManager.forceCleanupAll();
     }
 
@@ -216,12 +224,14 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
         timeStartMills = System.currentTimeMillis();
         ConfigContext.setOnExecution(true);
         testResultCollector.initializeTestResultCollection();
+        TestLifecycleEventBus.getInstance().publishExecutionStarted("EllithiumExecution");
         Ellithium.core.spi.PluginRegistry.getInstance().dispatchSuiteStart("EllithiumExecution");
     }
 
     @Override
     public void onExecutionFinish() {
         ConfigContext.setOnExecution(false);
+        TestLifecycleEventBus.getInstance().publishExecutionFinished();
         long timeFinishMills = System.currentTimeMillis();
         long totalExecutionTime = (timeFinishMills - timeStartMills);
         long totalMills = totalExecutionTime % 1000;
@@ -310,7 +320,9 @@ public class CustomTestNGListener extends TestListenerAdapter implements IAlterS
     private void ensureRecordingStarted(ITestResult testResult) {
         if (testResult == null || testResultCollector.isCucumberTest(testResult)) return;
         String testIdentifier = getTestIdentifier(testResult);
-        String recordingId = VideoRecordingManager.prepareRecording(getTestName(testResult), testIdentifier);
+        String testName = getTestName(testResult);
+        TestLifecycleEventBus.getInstance().publishTestStarted(testIdentifier, testName);
+        String recordingId = VideoRecordingManager.getRecordingIdForTest(testIdentifier);
         if (recordingId != null) {
             testResultToRecordingId.put(getResultKey(testResult), recordingId);
         }
