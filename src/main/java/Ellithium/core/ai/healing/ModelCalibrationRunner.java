@@ -94,6 +94,17 @@ public class ModelCalibrationRunner {
                 collected++;
             }
         }
+        List<Ellithium.core.ai.HardNegativeStore.HardNegativeRecord> hardNegatives =
+                Ellithium.core.ai.HardNegativeStore.getAllRecords();
+        if (!hardNegatives.isEmpty()) {
+            System.out.println("[CALIBRATION] Incorporating " + hardNegatives.size()
+                    + " contrastive hard negative(s) into negative distribution.");
+            for (Ellithium.core.ai.HardNegativeStore.HardNegativeRecord hn : hardNegatives) {
+                if (!Double.isNaN(hn.score()) && hn.score() > 0.0) {
+                    negatives.add(hn.score());
+                }
+            }
+        }
         Collections.sort(positives);
         Collections.sort(negatives);
 

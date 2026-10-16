@@ -191,6 +191,7 @@ public class HealingTelemetryStore {
             if (r.success && !r.suspectWrongHeal) {
                 r.suspectWrongHeal = true;
                 flagged++;
+                HardNegativeStore.record(testId, r.tier, r.brokenLocator, r.healedLocator, r.score, r.category);
             }
         }
         if (flagged > 0) {
@@ -273,6 +274,7 @@ public class HealingTelemetryStore {
                 java.nio.file.Files.deleteIfExists(tmp);
             }
             Reporter.log("HealingTelemetryStore: flushed " + snapshot.size() + " records", LogLevel.DEBUG);
+            HardNegativeStore.flush();
         } catch (IOException e) {
             Reporter.log("HealingTelemetryStore: Failed to flush telemetry (non-fatal): "
                     + e.getMessage(), LogLevel.WARN);

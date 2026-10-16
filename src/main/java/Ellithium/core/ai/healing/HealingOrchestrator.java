@@ -133,6 +133,11 @@ public final class HealingOrchestrator implements ElementHealingPort {
                 : reconstructBest(request.driver(), resolved, request.baseline());
 
         if (locator != null && locator.equals(request.brokenLocator())) return null;
+        if (locator != null && Ellithium.core.ai.HardNegativeStore.isHardNegative(request.brokenLocator().toString(), locator.toString())) {
+            Reporter.log("[AI] Candidate " + locator + " is a known hard-negative for "
+                    + request.brokenLocator() + " — rejecting heal", LogLevel.WARN);
+            return null;
+        }
 
         WebElement guarded = guardStaleHeal(request.driver(), resolved, request.baseline(), locator);
         if (guarded == null) return null;
