@@ -215,4 +215,99 @@ public class DriverConfigTest {
             public DriverType getDriverType() { return null; }
         });
     }
+
+    // ────────────────────── CloudMobileDriverConfig ──────────────────────
+
+    @Test
+    public void cloudConfig_defaults_areInitializedCorrectly() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig();
+        Assert.assertEquals(config.getCloudProvider(), CloudProviderType.LOCAL);
+        Assert.assertNotNull(config.getProviderOptions());
+        Assert.assertTrue(config.getProviderOptions().isEmpty());
+    }
+
+    @Test
+    public void cloudConfig_fluentBuilder_populatesAllFields() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.BROWSERSTACK, "user1", "key1", MobileDriverType.Android)
+                .setProjectName("MobileAppTests")
+                .setBuildName("Build-101")
+                .setTestName("LoginFlow")
+                .setGeoLocation("US")
+                .setNetworkProfile("4G-LTE")
+                .setAppiumVersion("2.0.0")
+                .setVideoRecording(true)
+                .setScreenshots(true)
+                .setRealDevice(true)
+                .addProviderOption("customKey", "customValue");
+
+        Assert.assertEquals(config.getCloudProvider(), CloudProviderType.BROWSERSTACK);
+        Assert.assertEquals(config.getUsername(), "user1");
+        Assert.assertEquals(config.getAccessKey(), "key1");
+        Assert.assertEquals(config.getDriverType(), MobileDriverType.Android);
+        Assert.assertEquals(config.getProjectName(), "MobileAppTests");
+        Assert.assertEquals(config.getBuildName(), "Build-101");
+        Assert.assertEquals(config.getTestName(), "LoginFlow");
+        Assert.assertTrue(config.getRemoteAddress().toString().contains("browserstack"));
+
+        org.openqa.selenium.Capabilities caps = config.getCapabilities();
+        Assert.assertNotNull(caps);
+        Assert.assertTrue("Android".equalsIgnoreCase(caps.getCapability("platformName").toString()));
+        Object bstackOptions = caps.getCapability("bstack:options");
+        Assert.assertTrue(bstackOptions instanceof java.util.Map);
+    }
+
+    @Test
+    public void cloudConfig_sauceLabs_generatesSauceOptions() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.SAUCE_LABS, "sauceUser", "sauceKey", MobileDriverType.IOS)
+                .setVideoRecording(true)
+                .setAppiumVersion("2.1.0");
+
+        org.openqa.selenium.Capabilities caps = config.getCapabilities();
+        Assert.assertNotNull(caps);
+        Assert.assertTrue("iOS".equalsIgnoreCase(caps.getCapability("platformName").toString()));
+        Object sauceOptions = caps.getCapability("sauce:options");
+        Assert.assertTrue(sauceOptions instanceof java.util.Map);
+    }
+
+    @Test
+    public void cloudConfig_lambdaTest_generatesLtOptions() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.LAMBDATEST, "ltUser", "ltKey", MobileDriverType.Android)
+                .setRealDevice(true);
+
+        org.openqa.selenium.Capabilities caps = config.getCapabilities();
+        Assert.assertNotNull(caps);
+        Object ltOptions = caps.getCapability("lt:options");
+        Assert.assertTrue(ltOptions instanceof java.util.Map);
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void cloudConfig_validate_throwsWhenAuthMissingForCloudProvider() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.BROWSERSTACK);
+        config.setDriverType(MobileDriverType.Android);
+        config.validate();
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void cloudConfig_validate_throwsWhenDriverTypeMissing() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.BROWSERSTACK, "u", "k");
+        config.validate();
+    }
+
+    @Test
+    public void cloudConfig_validate_passesWhenConfigComplete() {
+        CloudMobileDriverConfig config = new CloudMobileDriverConfig(CloudProviderType.BROWSERSTACK, "user", "pass", MobileDriverType.Android);
+        config.validate();
+    }
+
+    @Test
+    public void cloudProviderType_getHubUrl_formatsCorrectly() {
+        String bsUrl = CloudProviderType.BROWSERSTACK.getHubUrl("myUser", "myKey");
+        Assert.assertEquals(bsUrl, "https://myUser:myKey@hub-cloud.browserstack.com/wd/hub");
+
+        String localUrl = CloudProviderType.LOCAL.getHubUrl("ignore", "ignore");
+        Assert.assertEquals(localUrl, "http://127.0.0.1:4723");
+
+        String customUrl = CloudProviderType.SAUCE_LABS.getHubUrl("custom.sauce.host", "u", "p");
+        Assert.assertEquals(customUrl, "https://u:p@custom.sauce.host/wd/hub");
+    }
 }

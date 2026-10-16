@@ -76,4 +76,46 @@ public class DriverFactoryConcurrencyTest {
         // The parent scope ran cleanly
         assertNull(DriverFactory.getCurrentDriver());
     }
+
+    @Test
+    public void adoptCurrentThread_setsAndroidDriverThread_whenAndroidDriver() {
+        io.appium.java_client.android.AndroidDriver mockAndroid = mock(io.appium.java_client.android.AndroidDriver.class);
+        DriverConfiguration mockConfig = mock(DriverConfiguration.class);
+        when(mockConfig.getDriverType()).thenReturn(MobileDriverType.Android);
+
+        try {
+            DriverFactory.adoptCurrentThread(mockAndroid, mockConfig);
+            assertSame(DriverFactory.getCurrentDriver(), mockAndroid);
+        } finally {
+            DriverFactory.removeDriver();
+        }
+    }
+
+    @Test
+    public void adoptCurrentThread_setsIOSDriverThread_whenIOSDriver() {
+        io.appium.java_client.ios.IOSDriver mockIOS = mock(io.appium.java_client.ios.IOSDriver.class);
+        DriverConfiguration mockConfig = mock(DriverConfiguration.class);
+        when(mockConfig.getDriverType()).thenReturn(MobileDriverType.IOS);
+
+        try {
+            DriverFactory.adoptCurrentThread(mockIOS, mockConfig);
+            assertSame(DriverFactory.getCurrentDriver(), mockIOS);
+        } finally {
+            DriverFactory.removeDriver();
+        }
+    }
+
+    @Test
+    public void getCurrentDriver_fallsBackToWebDriverThread_whenDriverTypeIsNull() {
+        WebDriver mockDriver = mock(WebDriver.class);
+        DriverConfiguration mockConfig = mock(DriverConfiguration.class);
+        when(mockConfig.getDriverType()).thenReturn(null);
+
+        try {
+            DriverFactory.adoptCurrentThread(mockDriver, mockConfig);
+            assertSame(DriverFactory.getCurrentDriver(), mockDriver);
+        } finally {
+            DriverFactory.removeDriver();
+        }
+    }
 }
