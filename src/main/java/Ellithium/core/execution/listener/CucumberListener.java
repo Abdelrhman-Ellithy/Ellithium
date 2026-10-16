@@ -12,6 +12,7 @@ import Ellithium.core.reporting.notification.TestResultCollectorManager;
 import io.cucumber.plugin.event.*;
 import io.qameta.allure.Allure;
 import io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm;
+import Ellithium.core.execution.events.TestLifecycleEventBus;
 import org.apache.logging.log4j.ThreadContext;
 
 import java.io.File;
@@ -105,7 +106,8 @@ public class CucumberListener extends AllureCucumber7Jvm {
                 .count();
         ScenarioContext context = new ScenarioContext(name, scenarioId, totalSteps);
         scenarioContext.set(context);
-        String recordingId = VideoRecordingManager.prepareRecording(name, scenarioId);
+        TestLifecycleEventBus.getInstance().publishTestStarted(scenarioId, name);
+        String recordingId = VideoRecordingManager.getRecordingIdForTest(scenarioId);
         if (recordingId != null) {
             context.recordingId = recordingId;
             context.recordingStarted = true;
@@ -218,10 +220,22 @@ public class CucumberListener extends AllureCucumber7Jvm {
         String status = event.getResult().getStatus().name();
         context.scenarioStatus = status;
         switch (event.getResult().getStatus()) {
-            case PASSED -> Logger.info(GREEN + "[PASSED] Scenario " + scenarioName + " [PASSED]" + RESET);
-            case FAILED -> Logger.info(RED + "[FAILED] Scenario " + scenarioName + " [FAILED]" + RESET);
-            case SKIPPED -> Logger.info(YELLOW + "[SKIPPED] Scenario " + scenarioName + " [SKIPPED]" + RESET);
-            default -> Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName + " [" + status + "]" + RESET);
+            case PASSED -> {
+                Logger.info(GREEN + "[PASSED] Scenario " + scenarioName + " [PASSED]" + RESET);
+                TestLifecycleEventBus.getInstance().publishTestPassed(context.scenarioId, scenarioName, scenarioExecutionTime);
+            }
+            case FAILED -> {
+                Logger.info(RED + "[FAILED] Scenario " + scenarioName + " [FAILED]" + RESET);
+                TestLifecycleEventBus.getInstance().publishTestFailed(context.scenarioId, scenarioName, event.getResult().getError(), scenarioExecutionTime);
+            }
+            case SKIPPED -> {
+                Logger.info(YELLOW + "[SKIPPED] Scenario " + scenarioName + " [SKIPPED]" + RESET);
+                TestLifecycleEventBus.getInstance().publishTestSkipped(context.scenarioId, scenarioName, event.getResult().getError());
+            }
+            default -> {
+                Logger.info(YELLOW + "[" + status + "] Scenario " + scenarioName + " [" + status + "]" + RESET);
+                TestLifecycleEventBus.getInstance().publishTestSkipped(context.scenarioId, scenarioName, event.getResult().getError());
+            }
         }
         if (context.recordingStarted || VideoRecordingManager.isRecordingActiveForTest(context.scenarioId)) {
             stopRecording(context);
@@ -244,6 +258,7 @@ public class CucumberListener extends AllureCucumber7Jvm {
      * Handles test run completion - final cleanup
      */
     private void testRunFinishedHandler(TestRunFinished event) {
+        TestLifecycleEventBus.getInstance().publishSuiteFinished("CucumberRun");
         if (!scenarioToRecordingId.isEmpty()) {
             Logger.info(VideoRecordingManager.getDiagnosticInfo());
         }
