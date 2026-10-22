@@ -95,7 +95,7 @@
         <AllureVersion>3.0.0</AllureVersion>
         <aspectj.version>1.9.20.1</aspectj.version>
         <CSV>1.14.1</CSV>
-        <ApachePOI>5.5.1</ApachePOI>
+        <ApachePOI>6.0.0</ApachePOI>
         <restversion>6.1.0</restversion>
         <Cucumber>8.0.4</Cucumber>
         <cucumberTsetNG>8.0.4</cucumberTsetNG>
