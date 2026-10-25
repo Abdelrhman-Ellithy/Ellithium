@@ -98,7 +98,7 @@
         <ApachePOI>5.5.1</ApachePOI>
         <restversion>6.2.0</restversion>
         <ApachePOI>6.0.0</ApachePOI>
-        <restversion>6.1.0</restversion>
+        <restversion>6.2.0</restversion>
         <Cucumber>8.0.4</Cucumber>
         <cucumberTsetNG>8.0.4</cucumberTsetNG>
         <hamcrestversion>3.0</hamcrestversion>
