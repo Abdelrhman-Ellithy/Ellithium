@@ -113,7 +113,7 @@
         <mysqlVersion>26.10.0</mysqlVersion>
         <postgresqlVersion>42.7.14</postgresqlVersion>
         <mssqlVersion>13.6.1.jre11</mssqlVersion>
-        <oracleDBVersion>23.26.3.0.0</oracleDBVersion>
+        <oracleDBVersion>23.26.4.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
         <redisDBVersion>8.0.2</redisDBVersion>
         <couchBaseVersion>3.13.0</couchBaseVersion>
