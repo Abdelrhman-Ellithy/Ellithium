@@ -528,6 +528,6 @@ public class LoginPage {
 ## 📬 Contact
 
 - **For questions, suggestions, or feedback, feel free to reach out to Abdelrahman Ellithy**
-**at [abdelarhmanellithy@gmail.com](mailto:abdelarhmanellithy@gmail.com).**
+**at [abdelrahman.ellithy.eg@gmail.com](mailto:abdelrahman.ellithy.eg@gmail.com).**
 
 ---
