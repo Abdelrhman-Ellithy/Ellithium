@@ -450,6 +450,15 @@ public class BaselineStore {
         for (ElementFingerprint fp : history) {
             try {
                 double s = fp.scoreSimilarity(attrs, sc);
+                if (fp.hasCoordinates() && attrs != null) {
+                    try {
+                        Object xo = attrs.get("x");
+                        Object yo = attrs.get("y");
+                        if (xo instanceof Number nx && yo instanceof Number ny) {
+                            s = Math.min(1.0, s + fp.calculateSpatialBonus(nx.intValue(), ny.intValue()));
+                        }
+                    } catch (Exception ignored) {}
+                }
                 if (s > max) max = s;
             } catch (Exception ignored) {}
         }
@@ -545,6 +554,12 @@ public class BaselineStore {
         for (ElementFingerprint fp : history) {
             try {
                 double s = fp.scoreSimilarity(candidate, sc);
+                if (fp.hasCoordinates() && candidate != null) {
+                    try {
+                        org.openqa.selenium.Rectangle r = candidate.getRect();
+                        s = Math.min(1.0, s + fp.calculateSpatialBonus(r.getX(), r.getY()));
+                    } catch (Exception ignored) {}
+                }
                 if (s > max) max = s;
             } catch (Exception ignored) {}
         }

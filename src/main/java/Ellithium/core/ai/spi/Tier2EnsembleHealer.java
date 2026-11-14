@@ -33,7 +33,7 @@ public final class Tier2EnsembleHealer implements HealingTier {
                     request.actionType(), request.callerMethod(), request.fieldName(),
                     request.locatorValue(), request.baseline(), request.hints());
             if (outcome != null) {
-                if (Double.isNaN(outcome.score()) || outcome.score() < Ellithium.core.ai.config.AIConfigLoader.getConfidenceThreshold()) {
+                if (Double.isNaN(outcome.score()) || outcome.score() < Ellithium.core.ai.config.AIConfigLoader.getOnnxSimilarityThreshold()) {
                     return null;
                 }
                 return outcome;

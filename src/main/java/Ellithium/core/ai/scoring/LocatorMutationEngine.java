@@ -430,22 +430,40 @@ public class LocatorMutationEngine {
         if (am.find()) {
             String attr = am.group(1);
             String attrVal = am.group(2);
+            String matchedSegment = am.group(0);
+
+            // Inline style normalization (whitespace around ':' and ';' variation)
+            if ("style".equalsIgnoreCase(attr)) {
+                String spaced = attrVal.replaceAll(":\\s*", ": ");
+                String unspaced = attrVal.replaceAll(":\\s*", ":");
+                for (String s : List.of(spaced, unspaced)) {
+                    String trimmed = s.replaceAll(";+$", "").trim();
+                    if (!trimmed.isBlank() && !trimmed.equals(attrVal)) {
+                        out.add(By.cssSelector(value.replace(matchedSegment, "[" + attr + "*='" + cssEscape(trimmed) + "']")));
+                        out.add(By.cssSelector(value.replace(matchedSegment, "[" + attr + "='" + cssEscape(trimmed) + "']")));
+                        out.add(By.cssSelector(value.replace(matchedSegment, "[" + attr + "='" + cssEscape(trimmed + ";") + "']")));
+                    }
+                }
+            }
+
             List<String> variants = generateValueMutations(attrVal);
             for (String v : variants) {
-                if (!v.isBlank()) out.add(By.cssSelector("[" + attr + "='" + cssEscape(v) + "']"));
+                if (!v.isBlank()) {
+                    out.add(By.cssSelector(value.replace(matchedSegment, "[" + attr + "='" + cssEscape(v) + "']")));
+                }
             }
             // Contains fallback
             if (attrVal.length() >= 3) {
-                out.add(By.cssSelector("[" + attr + "*='" + cssEscape(attrVal) + "']"));
+                out.add(By.cssSelector(value.replace(matchedSegment, "[" + attr + "*='" + cssEscape(attrVal) + "']")));
             }
             // Attribute swap
             if (attr.equals("data-testid")) {
-                out.add(By.cssSelector("[data-test='" + cssEscape(attrVal) + "']"));
-                out.add(By.cssSelector("[data-cy='" + cssEscape(attrVal) + "']"));
-                out.add(By.id(attrVal));
+                out.add(By.cssSelector(value.replace(matchedSegment, "[data-test='" + cssEscape(attrVal) + "']")));
+                out.add(By.cssSelector(value.replace(matchedSegment, "[data-cy='" + cssEscape(attrVal) + "']")));
+                if (value.equals(matchedSegment)) out.add(By.id(attrVal));
             } else if (attr.equals("id")) {
-                out.add(By.cssSelector("[data-testid='" + cssEscape(attrVal) + "']"));
-                out.add(By.name(attrVal));
+                out.add(By.cssSelector(value.replace(matchedSegment, "[data-testid='" + cssEscape(attrVal) + "']")));
+                if (value.equals(matchedSegment)) out.add(By.name(attrVal));
             }
         }
     }

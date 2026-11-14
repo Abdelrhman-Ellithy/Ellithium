@@ -267,4 +267,41 @@ public class ElementFingerprintTest {
         ElementFingerprint f = fp("{\"locatorKey\":\"By.id: login\",\"id\":\"login\"}");
         Assert.assertTrue(f.toString().contains("By.id: login"));
     }
+
+    // ── Geometric Coordinates & Spatial Proximity ────────────────────────────
+
+    @Test
+    public void spatialCoordinates_backwardCompatibility_defaultsToNegativeOne() {
+        ElementFingerprint legacy = fp("{\"id\":\"btn\",\"tagName\":\"button\"}");
+        Assert.assertFalse(legacy.hasCoordinates());
+        Assert.assertEquals(legacy.getX(), -1);
+        Assert.assertEquals(legacy.getY(), -1);
+        Assert.assertEquals(legacy.getWidth(), -1);
+        Assert.assertEquals(legacy.getHeight(), -1);
+        Assert.assertEquals(legacy.distanceTo(100, 200), -1.0, 0.001);
+        Assert.assertEquals(legacy.calculateSpatialBonus(100, 200), 0.0, 0.001);
+    }
+
+    @Test
+    public void spatialCoordinates_parsedFromJson_calculatesBonus() {
+        ElementFingerprint fp = fp("{\"id\":\"btn\",\"x\":100,\"y\":200,\"width\":80,\"height\":30}");
+        Assert.assertTrue(fp.hasCoordinates());
+        Assert.assertEquals(fp.getX(), 100);
+        Assert.assertEquals(fp.getY(), 200);
+        Assert.assertEquals(fp.getWidth(), 80);
+        Assert.assertEquals(fp.getHeight(), 30);
+
+        // Exact match (0px distance) -> max bonus 0.06
+        Assert.assertEquals(fp.calculateSpatialBonus(100, 200), 0.06, 0.001);
+
+        // 50px distance -> half bonus 0.03
+        Assert.assertEquals(fp.calculateSpatialBonus(100, 250), 0.03, 0.001);
+
+        // 100px distance -> 0.0 bonus
+        Assert.assertEquals(fp.calculateSpatialBonus(100, 300), 0.0, 0.001);
+
+        // >100px distance -> strictly zero penalty (not negative)
+        Assert.assertEquals(fp.calculateSpatialBonus(100, 500), 0.0, 0.001);
+        Assert.assertEquals(fp.calculateSpatialBonus(-1, -1), 0.0, 0.001);
+    }
 }

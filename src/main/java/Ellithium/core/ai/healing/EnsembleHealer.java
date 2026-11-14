@@ -466,7 +466,7 @@ public class EnsembleHealer {
      * @param isQuery True for queries (BGE prefix applied); false for element documents
      * @return L2-normalised float[384], or null on any failure
      */
-    static float[] embed(String text, boolean isQuery) {
+    public static float[] embed(String text, boolean isQuery) {
         if (!available || ortEnvironment == null || tokenizer == null) return null;
         Object session;
         try {
@@ -562,11 +562,12 @@ public class EnsembleHealer {
     private static final String[] CANDIDATE_SELECTORS = {
         "button, a, input, select, textarea, summary, "
             + "[role='button'], [role='link'], [role='tab'], [role='menuitem'], "
-            + "[role='checkbox'], [role='radio'], [role='switch'], [role='option'], [onclick]",
+            + "[role='checkbox'], [role='radio'], [role='switch'], [role='option'], "
+            + "[role='gridcell'], [role='cell'], [role='treeitem'], td, th, [onclick]",
         "[role='alert'], [role='status'], [role='heading'], [role='log'], "
             + "h1, h2, h3, h4, h5, h6, label, legend",
         "[data-testid], [data-test], [data-cy], [aria-label], [placeholder], [title], [name], [id]",
-        "p, li, td, th, dt, dd, article, section, aside, span, div",
+        "p, li, dt, dd, article, section, aside, span, div",
     };
 
     static HealOutcome scoreAndSelectCandidate(WebDriver driver,
@@ -1248,7 +1249,16 @@ public class EnsembleHealer {
     private static double baselineProximity(ElementFingerprint baseline, WebElement candidate) {
         if (baseline == null) return 0.0;
         try {
-            return baseline.scoreSimilarity(candidate);
+            double score = baseline.scoreSimilarity(candidate);
+            if (baseline.hasCoordinates() && candidate != null) {
+                try {
+                    org.openqa.selenium.Rectangle rect = candidate.getRect();
+                    score = Math.min(1.0, score + baseline.calculateSpatialBonus(rect.getX(), rect.getY()));
+                } catch (Exception ignored) {
+                    // Backwards-compatible / headless driver fallback
+                }
+            }
+            return score;
         } catch (Exception e) {
             return 0.0;
         }
@@ -1257,7 +1267,19 @@ public class EnsembleHealer {
     private static double baselineProximity(ElementFingerprint baseline, Map<String, Object> attrs) {
         if (baseline == null) return 0.0;
         try {
-            return baseline.scoreSimilarity(attrs, structuralFrom(attrs));
+            double score = baseline.scoreSimilarity(attrs, structuralFrom(attrs));
+            if (baseline.hasCoordinates() && attrs != null) {
+                try {
+                    Object xo = attrs.get("x");
+                    Object yo = attrs.get("y");
+                    if (xo instanceof Number nx && yo instanceof Number ny) {
+                        score = Math.min(1.0, score + baseline.calculateSpatialBonus(nx.intValue(), ny.intValue()));
+                    }
+                } catch (Exception ignored) {
+                    // Backwards-compatible fallback
+                }
+            }
+            return score;
         } catch (Exception e) {
             return 0.0;
         }

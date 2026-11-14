@@ -221,6 +221,13 @@ public class AIConfigLoader {
     public static boolean isTier1Enabled()                      { return tier1Enabled; }
     public static boolean isTier2Enabled()                      { return tier2Enabled; }
     public static boolean isTier3Enabled()                      { return tier3Enabled; }
+    public static void setTier1Enabled(boolean enabled)         { tier1Enabled = enabled; }
+    public static void setTier2Enabled(boolean enabled)         { tier2Enabled = enabled; }
+    public static void setTier3Enabled(boolean enabled)         { tier3Enabled = enabled; }
+    public static void setOnnxSimilarityThreshold(double threshold) { onnxSimilarityThreshold = clamp01("ai.onnx.similarityThreshold", threshold); }
+    public static void setConfidenceThreshold(double threshold) { confidenceThreshold = clamp01("ai.healing.confidenceThreshold", threshold); }
+    public static void setOnnxHardCandidateLimit(int limit)     { onnxHardCandidateLimit = Math.max(50, limit); }
+    public static void setOnnxMaxCandidates(int limit)          { onnxMaxCandidates = Math.max(10, limit); }
     public static int    getCiHealAlertThreshold()              { return ciHealAlertThreshold; }
     public static int    getBaselineMaxLocators()               { return baselineMaxLocators; }
     /** Default for whether explicit wait methods heal on timeout (per-call boolean overrides this). */

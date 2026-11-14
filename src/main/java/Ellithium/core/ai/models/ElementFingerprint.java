@@ -41,6 +41,9 @@ public class ElementFingerprint {
         + " var sibs=fe.parentElement?Array.prototype.slice.call(fe.parentElement.querySelectorAll('iframe,frame')):[];"
         + " ifc.unshift(fid?fid:(':'+sibs.indexOf(fe)));w=w.parent;"
         + "}}catch(e){}"
+        + "var r=el.getBoundingClientRect?el.getBoundingClientRect():{left:0,top:0,width:0,height:0};"
+        + "var sx=(window.pageXOffset!==undefined?window.pageXOffset:(window.scrollX||0));"
+        + "var sy=(window.pageYOffset!==undefined?window.pageYOffset:(window.scrollY||0));"
         + "return {"
         + " tag:el.tagName?el.tagName.toLowerCase():null,"
         + " id:g('id'),name:g('name'),type:g('type'),cls:g('class'),"
@@ -56,7 +59,9 @@ public class ElementFingerprint {
         + " childIndex:el.parentElement?Array.prototype.indexOf.call(el.parentElement.children,el):-1,"
         + " prevSiblingTag:el.previousElementSibling?el.previousElementSibling.tagName.toLowerCase():null,"
         + " nextSiblingTag:el.nextElementSibling?el.nextElementSibling.tagName.toLowerCase():null,"
-        + " dataAttrs:dm,iframeChain:ifc"
+        + " dataAttrs:dm,iframeChain:ifc,"
+        + " x:Math.round(r.left+sx),y:Math.round(r.top+sy),"
+        + " width:Math.round(r.width||0),height:Math.round(r.height||0)"
         + "};";
 
     // ── Identity ──
@@ -101,6 +106,12 @@ public class ElementFingerprint {
     // ── Metadata ──
     private long lastSeenEpoch;      // System.currentTimeMillis()
     private String pageUrl;          // driver.getCurrentUrl()
+
+    // ── Geometric Coordinates (Document-relative pixel offsets) ──
+    private int x = -1;
+    private int y = -1;
+    private int width = -1;
+    private int height = -1;
 
     // ── iframe context ──
     // XPath selectors (or index strings) of the iframe chain from the top document to this element,
@@ -201,6 +212,19 @@ public class ElementFingerprint {
                         if (!chain.isEmpty()) fp.iframeChain = java.util.List.copyOf(chain);
                     }
 
+                    try {
+                        Object rx = attrs.get("x");
+                        Object ry = attrs.get("y");
+                        Object rw = attrs.get("width");
+                        Object rh = attrs.get("height");
+                        fp.x      = (rx instanceof Number n) ? n.intValue() : -1;
+                        fp.y      = (ry instanceof Number n) ? n.intValue() : -1;
+                        fp.width  = (rw instanceof Number n) ? n.intValue() : -1;
+                        fp.height = (rh instanceof Number n) ? n.intValue() : -1;
+                    } catch (Exception ignored) {
+                        fp.x = -1; fp.y = -1; fp.width = -1; fp.height = -1;
+                    }
+
                     batchedOk = true;
                 }
             } catch (Exception ignored) {
@@ -238,6 +262,18 @@ public class ElementFingerprint {
             fp.prevSiblingTag = null;
             fp.nextSiblingTag = null;
             fp.customDataAttrs = null;
+            try {
+                org.openqa.selenium.Rectangle rect = element.getRect();
+                fp.x = rect.getX();
+                fp.y = rect.getY();
+                fp.width = rect.getWidth();
+                fp.height = rect.getHeight();
+            } catch (Exception ignored) {
+                fp.x = -1;
+                fp.y = -1;
+                fp.width = -1;
+                fp.height = -1;
+            }
         }
 
         if (!isNonBlank(fp.accessibilityId) && isNonBlank(fp.contentDesc)) {
@@ -1007,6 +1043,40 @@ public class ElementFingerprint {
     public String getNextSiblingTag() { return nextSiblingTag; }
     public long getLastSeenEpoch() { return lastSeenEpoch; }
     public String getPageUrl() { return pageUrl; }
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
+    public boolean hasCoordinates() { return x >= 0 && y >= 0; }
+
+    /**
+     * Computes Euclidean distance between this baseline and candidate coordinates.
+     * Returns -1.0 if either baseline or candidate does not have valid coordinates.
+     */
+    public double distanceTo(int candidateX, int candidateY) {
+        if (!hasCoordinates() || candidateX < 0 || candidateY < 0) return -1.0;
+        double dx = (double) this.x - candidateX;
+        double dy = (double) this.y - candidateY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Bounded positive spatial proximity bonus (0.0 to 0.06).
+     * If candidate is within 100px, scales linearly from +0.06 (at 0px) to +0.0 (at 100px).
+     * Strictly zero penalty is returned if candidate is further than 100px, or if either baseline
+     * or candidate lacks coordinates. Ensures layout shifts or responsive reflows never cause false rejections.
+     */
+    public double calculateSpatialBonus(int candidateX, int candidateY) {
+        if (!hasCoordinates() || candidateX < 0 || candidateY < 0) return 0.0;
+        try {
+            double dist = distanceTo(candidateX, candidateY);
+            if (dist >= 0.0 && dist <= 100.0) {
+                return (1.0 - (dist / 100.0)) * 0.06;
+            }
+        } catch (Exception ignored) {}
+        return 0.0;
+    }
+
     public java.util.List<String> getIframeChain() {
         return iframeChain != null ? iframeChain : java.util.List.of();
     }
