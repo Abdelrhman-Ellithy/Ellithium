@@ -111,7 +111,7 @@
         <AllureJVMVersion>3.1.1</AllureJVMVersion>
         <HikariCPVersion>7.1.0</HikariCPVersion>
         <mysqlVersion>26.10.0</mysqlVersion>
-        <postgresqlVersion>42.7.14</postgresqlVersion>
+        <postgresqlVersion>42.7.15</postgresqlVersion>
         <mssqlVersion>13.6.2.jre11</mssqlVersion>
         <oracleDBVersion>23.26.4.0.0</oracleDBVersion>
         <mongoDBVersion>3.12.14</mongoDBVersion>
